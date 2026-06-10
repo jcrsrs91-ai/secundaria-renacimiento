@@ -171,7 +171,7 @@ export default function HojaDeVida({ student, onClose, onSave }) {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Grupo</label>
-                      <select name="grupo" value={grupo} onChange={handleGrupoChange} className="mt-1 w-full p-2 border rounded" required>
+                      <select name="grupo" value={grupo} onChange={handleGrupoChange} translate="no" className="notranslate mt-1 w-full p-2 border rounded" required>
                         <option value="A" translate="no">A</option><option value="B" translate="no">B</option><option value="C" translate="no">C</option><option value="D" translate="no">D</option><option value="E" translate="no">E</option><option value="F" translate="no">F</option>
                       </select>
                     </div>

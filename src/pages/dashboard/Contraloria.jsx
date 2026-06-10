@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2 } from 'lucide-react';
+import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine } from 'lucide-react';
 import { db } from '../../firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import ActaRecepcionPrint from '../../components/ActaRecepcionPrint';
 import CartaResguardoPrint from '../../components/CartaResguardoPrint';
+import ScannerInventarioModal from '../../components/ScannerInventarioModal';
 
 export default function Contraloria() {
   const [activeTab, setActiveTab] = useState('pagos');
@@ -14,6 +15,8 @@ export default function Contraloria() {
   ];
 
   const [inventario, setInventario] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]); // Array de IDs seleccionados
+  const [showScannerModal, setShowScannerModal] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'inventario'));
@@ -131,11 +134,40 @@ export default function Contraloria() {
     if (window.confirm("¿Estás seguro de eliminar este artículo del inventario de forma permanente?")) {
       try {
         await deleteDoc(doc(db, 'inventario', id));
+        setSelectedItems(prev => prev.filter(itemId => itemId !== id));
       } catch (error) {
         console.error("Error al eliminar:", error);
         alert("Hubo un error al eliminar el artículo.");
       }
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.length === 0) return;
+    if (window.confirm(`¿Estás seguro de eliminar ${selectedItems.length} artículos seleccionados de forma permanente?`)) {
+      try {
+        const promises = selectedItems.map(id => deleteDoc(doc(db, 'inventario', id)));
+        await Promise.all(promises);
+        setSelectedItems([]); // Limpiar selección tras borrar
+      } catch (error) {
+        console.error("Error en eliminación masiva:", error);
+        alert("Hubo un error al eliminar los artículos seleccionados.");
+      }
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.length === inventario.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(inventario.map(item => item.id));
+    }
+  };
+
+  const toggleSelectItem = (id) => {
+    setSelectedItems(prev => 
+      prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+    );
   };
 
   return (
@@ -228,13 +260,31 @@ export default function Contraloria() {
           <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
               <h3 className="font-semibold text-slate-700">Catálogo de Bienes Activos</h3>
-              <button className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700">
-                <Plus className="w-4 h-4 mr-1" /> Añadir Artículo
-              </button>
+              <div className="flex gap-2">
+                {selectedItems.length > 0 && (
+                  <button onClick={handleBulkDelete} className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 shadow-sm transition-colors border border-red-200 mr-2">
+                    <Trash2 className="w-4 h-4 mr-2" /> Eliminar Seleccionados ({selectedItems.length})
+                  </button>
+                )}
+                <button onClick={() => setShowScannerModal(true)} className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors">
+                  <ScanLine className="w-4 h-4 mr-2" /> Escanear Lista (OCR)
+                </button>
+                <button onClick={() => setModalOpen('recepcion')} className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-sm transition-colors">
+                  <Plus className="w-4 h-4 mr-1" /> Añadir Artículo
+                </button>
+              </div>
             </div>
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-6 py-3 text-left w-12">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    checked={inventario.length > 0 && selectedItems.length === inventario.length}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Código</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículo</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Ubicación</th>
@@ -244,27 +294,38 @@ export default function Contraloria() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {inventario.map(i => (
-                <tr key={i.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 text-sm font-medium text-slate-900">{i.codigo}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{i.articulo}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{i.ubicacion}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 font-bold">{i.cantidad}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${i.estado === 'Bueno' || i.estado === 'Nuevo' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                      {i.estado}
-                    </span>
+              {inventario.map(item => (
+                <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-indigo-50/50' : ''}>
+                  <td className="px-6 py-4">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      checked={selectedItems.includes(item.id)}
+                      onChange={() => toggleSelectItem(item.id)}
+                    />
                   </td>
-                  <td className="px-6 py-4 text-sm text-right flex justify-end gap-2">
-                    <button onClick={() => handleEditClick(i)} className="text-blue-600 hover:text-blue-900 p-1 bg-blue-50 rounded" title="Editar">
+                  <td className="px-6 py-4 text-sm font-medium text-slate-900">{item.codigo}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600">{item.articulo}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600">{item.ubicacion}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-slate-800">{item.cantidad}</td>
+                  <td className="px-6 py-4 text-sm text-emerald-600 flex items-center">
+                    <CheckCircle2 className="w-4 h-4 mr-1" /> {item.estado}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-right">
+                    <button onClick={() => handleEditClick(item)} className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors mr-1">
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDeleteClick(i.id)} className="text-red-600 hover:text-red-900 p-1 bg-red-50 rounded" title="Eliminar">
+                    <button onClick={() => handleDeleteClick(item.id)} className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
               ))}
+              {inventario.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="px-6 py-10 text-center text-slate-500">No hay artículos registrados en el inventario.</td>
+                </tr>
+              )}
             </tbody>
           </table>
           </div>
@@ -413,6 +474,12 @@ export default function Contraloria() {
 
     {printMode === 'recepcion' && printData && <ActaRecepcionPrint data={printData} />}
     {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} />}
+    
+    {showScannerModal && (
+      <ScannerInventarioModal 
+        onClose={() => setShowScannerModal(false)} 
+      />
+    )}
     </>
   );
 }

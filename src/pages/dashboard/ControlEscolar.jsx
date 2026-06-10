@@ -6,6 +6,8 @@ import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTim
 import HojaDeVida from '../../components/HojaDeVida';
 import CredencialPrint from '../../components/CredencialPrint';
 import ConstanciaPrint from '../../components/ConstanciaPrint';
+import BoletaPrint from '../../components/BoletaPrint';
+import Calificaciones from '../../components/Calificaciones';
 
 export default function ControlEscolar() {
   const [activeTab, setActiveTab] = useState('pendientes');
@@ -15,54 +17,59 @@ export default function ControlEscolar() {
 
   const [pendientes, setPendientes] = useState([]);
   const [activos, setActivos] = useState([]);
+  const [directorio, setDirectorio] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [printMode, setPrintMode] = useState(null); // 'credencial', 'constancia'
+  const [printMode, setPrintMode] = useState(null); // 'credencial', 'constancia', 'boleta'
   const [printData, setPrintData] = useState(null); // array for credencial, object for constancia
+  const [constanciaType, setConstanciaType] = useState('simple'); // 'simple', 'calificaciones'
 
-  const [masivaFilter, setMasivaFilter] = useState({ grado: '1er Grado', grupo: 'A', asignatura: 'espanol1', trimestre: 't1' });
-  const [masivaAlumnos, setMasivaAlumnos] = useState([]);
-  const [masivaGrades, setMasivaGrades] = useState({});
-  const [savingMasiva, setSavingMasiva] = useState(false);
+
 
   // Estados de filtro para Directorio
   const [searchFilter, setSearchFilter] = useState('');
   const [gradeFilter, setGradeFilter] = useState('Todos');
   const [groupFilter, setGroupFilter] = useState('Todos');
+  const [shiftFilter, setShiftFilter] = useState('Todos');
+  const [statusFilter, setStatusFilter] = useState('Activo');
 
-  // Diccionario de materias por grado
+  // Diccionario de materias por grado (Orden Oficial SEP / NEM)
   const materiasPorGrado = {
     '1er Grado': [
+      // Lenguajes
       { id: 'espanol1', name: 'Español I' },
-      { id: 'matematicas1', name: 'Matemáticas I' },
       { id: 'ingles1', name: 'Inglés I' },
+      { id: 'artes1', name: 'Artes I' },
+      // Saberes y Pensamiento Científico
+      { id: 'matematicas1', name: 'Matemáticas I' },
       { id: 'biologia', name: 'Ciencias I (Biología)' },
+      // Ética, Naturaleza y Sociedades
       { id: 'geografia', name: 'Geografía' },
       { id: 'historia1', name: 'Historia I' },
       { id: 'fce1', name: 'Formación Cívica y Ética I' },
-      { id: 'artes1', name: 'Artes I' },
+      // De lo Humano y lo Comunitario
       { id: 'educfisica1', name: 'Educación Física I' },
       { id: 'tecnologia1', name: 'Tecnología I' }
     ],
     '2do Grado': [
       { id: 'espanol2', name: 'Español II' },
-      { id: 'matematicas2', name: 'Matemáticas II' },
       { id: 'ingles2', name: 'Inglés II' },
+      { id: 'artes2', name: 'Artes II' },
+      { id: 'matematicas2', name: 'Matemáticas II' },
       { id: 'fisica', name: 'Ciencias II (Física)' },
       { id: 'historia2', name: 'Historia II' },
       { id: 'fce2', name: 'Formación Cívica y Ética II' },
-      { id: 'artes2', name: 'Artes II' },
       { id: 'educfisica2', name: 'Educación Física II' },
       { id: 'tecnologia2', name: 'Tecnología II' }
     ],
     '3er Grado': [
       { id: 'espanol3', name: 'Español III' },
-      { id: 'matematicas3', name: 'Matemáticas III' },
       { id: 'ingles3', name: 'Inglés III' },
+      { id: 'artes3', name: 'Artes III' },
+      { id: 'matematicas3', name: 'Matemáticas III' },
       { id: 'quimica', name: 'Ciencias III (Química)' },
       { id: 'historia3', name: 'Historia III' },
       { id: 'fce3', name: 'Formación Cívica y Ética III' },
-      { id: 'artes3', name: 'Artes III' },
       { id: 'educfisica3', name: 'Educación Física III' },
       { id: 'tecnologia3', name: 'Tecnología III' }
     ]
@@ -81,14 +88,12 @@ export default function ControlEscolar() {
   };
 
   useEffect(() => {
-    const qPendientes = query(collection(db, "students"), where("status", "==", "Pendiente"));
-    const unsubPendientes = onSnapshot(qPendientes, (snapshot) => {
-      setPendientes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    const qActivos = query(collection(db, "students"), where("status", "==", "Activo"));
-    const unsubActivos = onSnapshot(qActivos, (snapshot) => {
-      setActivos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const qAll = query(collection(db, "students"));
+    const unsubAll = onSnapshot(qAll, (snapshot) => {
+      const allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setPendientes(allData.filter(s => s.status === 'Pendiente'));
+      setActivos(allData.filter(s => s.status === 'Activo'));
+      setDirectorio(allData.filter(s => s.status !== 'Pendiente'));
       setLoading(false);
     });
 
@@ -96,18 +101,19 @@ export default function ControlEscolar() {
     window.addEventListener('afterprint', handleAfterPrint);
 
     return () => {
-      unsubPendientes();
-      unsubActivos();
+      unsubAll();
       window.removeEventListener('afterprint', handleAfterPrint);
     };
   }, []);
 
-  const filteredActivos = activos.filter(a => {
+  const filteredDirectorio = directorio.filter(a => {
     const matchesSearch = searchFilter === '' || 
       `${a.nombres} ${a.apellidoPaterno} ${a.apellidoMaterno} ${a.matricula}`.toLowerCase().includes(searchFilter.toLowerCase());
     const matchesGrade = gradeFilter === 'Todos' || a.grado === gradeFilter;
     const matchesGroup = groupFilter === 'Todos' || a.grupo === groupFilter;
-    return matchesSearch && matchesGrade && matchesGroup;
+    const matchesShift = shiftFilter === 'Todos' || a.turno === shiftFilter;
+    const matchesStatus = statusFilter === 'Todos' || a.status === statusFilter;
+    return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus;
   });
 
   const openModal = (type, student) => {
@@ -127,15 +133,27 @@ export default function ControlEscolar() {
   };
 
   const handlePrintBatch = () => {
-    if (filteredActivos.length === 0) return alert("No hay alumnos en el filtro actual.");
+    if (filteredDirectorio.length === 0) return alert("No hay alumnos en el filtro actual.");
     setPrintMode('credencial');
-    setPrintData(filteredActivos);
+    setPrintData(filteredDirectorio);
     setTimeout(() => window.print(), 500);
   };
 
   const handlePrintConstancia = (student) => {
+    openModal('constanciaOptions', student);
+  };
+
+  const executePrintConstancia = (type) => {
+    setConstanciaType(type);
     setPrintMode('constancia');
-    setPrintData(student);
+    setPrintData(selectedStudent);
+    setTimeout(() => window.print(), 500);
+    closeModal();
+  };
+
+  const handlePrintBoleta = (studentOrArray) => {
+    setPrintMode('boleta');
+    setPrintData(Array.isArray(studentOrArray) ? studentOrArray : [studentOrArray]);
     setTimeout(() => window.print(), 500);
   };
 
@@ -148,10 +166,10 @@ export default function ControlEscolar() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedStudents.length === filteredActivos.length) {
+    if (selectedStudents.length === filteredDirectorio.length) {
       setSelectedStudents([]);
     } else {
-      setSelectedStudents(filteredActivos.map(a => a.id));
+      setSelectedStudents(filteredDirectorio.map(a => a.id));
     }
   };
 
@@ -199,40 +217,7 @@ export default function ControlEscolar() {
     }
   };
 
-  const loadMasiva = () => {
-    const filtrados = activos.filter(a => a.grado === masivaFilter.grado && a.grupo === masivaFilter.grupo);
-    filtrados.sort((a, b) => (a.apellidoPaterno || '').localeCompare(b.apellidoPaterno || ''));
-    setMasivaAlumnos(filtrados);
-    
-    const grades = {};
-    filtrados.forEach(al => {
-      const val = al.calificaciones?.[masivaFilter.trimestre]?.[masivaFilter.asignatura];
-      if (val) grades[al.id] = val;
-    });
-    setMasivaGrades(grades);
-  };
 
-  const saveMasiva = async () => {
-    if (masivaAlumnos.length === 0) return;
-    setSavingMasiva(true);
-    try {
-      for (const al of masivaAlumnos) {
-        const val = masivaGrades[al.id];
-        if (val !== undefined && val !== '') {
-          const docRef = doc(db, "students", al.id);
-          const currentCal = al.calificaciones || {};
-          if (!currentCal[masivaFilter.trimestre]) currentCal[masivaFilter.trimestre] = {};
-          currentCal[masivaFilter.trimestre][masivaFilter.asignatura] = Number(val);
-          await updateDoc(docRef, { calificaciones: currentCal });
-        }
-      }
-      alert('¡Calificaciones masivas guardadas exitosamente!');
-    } catch (err) {
-      console.error(err);
-      alert('Hubo un error al guardar las calificaciones masivas.');
-    }
-    setSavingMasiva(false);
-  };
 
   const handleAsignacionMasivaSubmit = async (e) => {
     e.preventDefault();
@@ -376,10 +361,11 @@ export default function ControlEscolar() {
             Solicitudes Pendientes <span className="ml-2 bg-amber-100 text-amber-600 py-0.5 px-2.5 rounded-full text-xs">{pendientes.length}</span>
           </button>
           <button onClick={() => setActiveTab('activos')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'activos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            Directorio / Expedientes <span className="ml-2 bg-slate-100 text-slate-600 py-0.5 px-2.5 rounded-full text-xs">{activos.length}</span>
+            Directorio / Expedientes <span className="ml-2 bg-slate-100 text-slate-600 py-0.5 px-2.5 rounded-full text-xs">{directorio.length}</span>
           </button>
-          <button onClick={() => setActiveTab('masiva')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'masiva' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            Captura Masiva
+
+          <button onClick={() => setActiveTab('calificaciones')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'calificaciones' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+            Calificaciones <Star className="w-3 h-3 inline-block ml-1 text-amber-500" />
           </button>
         </nav>
       </div>
@@ -424,6 +410,11 @@ export default function ControlEscolar() {
         </div>
       )}
 
+      {/* Tabla Calificaciones */}
+      {!loading && activeTab === 'calificaciones' && (
+        <Calificaciones activos={activos} materiasPorGrado={materiasPorGrado} onPrintBoleta={handlePrintBoleta} />
+      )}
+
       {/* Tabla Activos / Directorio */}
       {!loading && activeTab === 'activos' && (
         <div className="space-y-4">
@@ -446,9 +437,27 @@ export default function ControlEscolar() {
             </div>
             <div className="w-full md:w-48">
               <label className="block text-xs font-medium text-slate-500 mb-1">Grupo</label>
-              <select className="w-full p-2 border rounded-lg text-sm bg-white" value={groupFilter} onChange={e => setGroupFilter(e.target.value)}>
+              <select translate="no" className="notranslate w-full p-2 border rounded-lg text-sm bg-white" value={groupFilter} onChange={e => setGroupFilter(e.target.value)}>
                 <option value="Todos">Todos los Grupos</option>
                 <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option>
+              </select>
+            </div>
+            <div className="w-full md:w-32">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Turno</label>
+              <select className="w-full p-2 border rounded-lg text-sm bg-white" value={shiftFilter} onChange={e => setShiftFilter(e.target.value)}>
+                <option value="Todos">Ambos</option>
+                <option value="Matutino">Matutino</option>
+                <option value="Vespertino">Vespertino</option>
+              </select>
+            </div>
+            <div className="w-full md:w-32">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Estatus</label>
+              <select className="w-full p-2 border rounded-lg text-sm bg-white" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                <option value="Todos">Todos</option>
+                <option value="Activo">Activos</option>
+                <option value="Baja">Bajas</option>
+                <option value="Egresado">Egresados</option>
+                <option value="Pendiente">Pendientes</option>
               </select>
             </div>
             <div className="w-full md:w-auto self-end flex gap-2">
@@ -469,7 +478,7 @@ export default function ControlEscolar() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">
                   <input type="checkbox" 
-                    checked={selectedStudents.length === filteredActivos.length && filteredActivos.length > 0} 
+                    checked={selectedStudents.length === filteredDirectorio.length && filteredDirectorio.length > 0} 
                     onChange={toggleSelectAll} className="rounded border-slate-300" />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Matrícula</th>
@@ -479,10 +488,10 @@ export default function ControlEscolar() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {filteredActivos.length === 0 ? (
+              {filteredDirectorio.length === 0 ? (
                 <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">No hay alumnos que coincidan con la búsqueda.</td></tr>
               ) : (
-                filteredActivos.map(a => (
+                filteredDirectorio.map(a => (
                   <tr key={a.id} className={`hover:bg-slate-50 ${selectedStudents.includes(a.id) ? 'bg-blue-50/50' : ''}`}>
                     <td className="px-6 py-4 text-sm">
                       <input type="checkbox" checked={selectedStudents.includes(a.id)} onChange={() => toggleSelectStudent(a.id)} className="rounded border-slate-300" />
@@ -517,88 +526,7 @@ export default function ControlEscolar() {
         </div>
       )}
 
-      {/* Captura Masiva */}
-      {!loading && activeTab === 'masiva' && (
-        <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap gap-4 items-end">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Grado</label>
-              <select className="p-2 text-sm border rounded-lg bg-white" value={masivaFilter.grado} 
-                onChange={e => {
-                   const g = e.target.value;
-                   setMasivaFilter({...masivaFilter, grado: g, asignatura: materiasPorGrado[g][0].id});
-                }}>
-                <option>1er Grado</option><option>2do Grado</option><option>3er Grado</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Grupo</label>
-              <select className="p-2 text-sm border rounded-lg bg-white" value={masivaFilter.grupo} onChange={e => setMasivaFilter({...masivaFilter, grupo: e.target.value})}>
-                <option value="A" translate="no">A</option>
-                <option value="B" translate="no">B</option>
-                <option value="C" translate="no">C</option>
-                <option value="D" translate="no">D</option>
-                <option value="E" translate="no">E</option>
-                <option value="F" translate="no">F</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Asignatura</label>
-              <select className="p-2 text-sm border rounded-lg bg-white" value={masivaFilter.asignatura} onChange={e => setMasivaFilter({...masivaFilter, asignatura: e.target.value})}>
-                {materiasPorGrado[masivaFilter.grado].map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Trimestre</label>
-              <select className="p-2 text-sm border rounded-lg bg-white" value={masivaFilter.trimestre} onChange={e => setMasivaFilter({...masivaFilter, trimestre: e.target.value})}>
-                <option value="t1">1er Trimestre</option><option value="t2">2do Trimestre</option><option value="t3">3er Trimestre</option>
-              </select>
-            </div>
-            <button onClick={loadMasiva} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900">
-              <List className="w-4 h-4 mr-2" /> Cargar Lista
-            </button>
-          </div>
 
-          <div className="p-6 overflow-x-auto">
-            {masivaAlumnos.length === 0 ? (
-              <p className="text-center text-slate-500 py-8">Haz clic en "Cargar Lista" para ver a los alumnos del grupo seleccionado.</p>
-            ) : (
-              <div>
-                <table className="min-w-full divide-y divide-slate-200 border rounded-lg mb-6">
-                  <thead className="bg-slate-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-r w-16">No.</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase border-r">Alumno</th>
-                      <th className="px-4 py-2 text-center text-xs font-semibold text-slate-600 w-32">Calificación</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {masivaAlumnos.map((a, i) => (
-                      <tr key={a.id} className="border-b hover:bg-slate-50">
-                        <td className="px-4 py-2 text-sm text-slate-500 border-r text-center">{i + 1}</td>
-                        <td className="px-4 py-2 text-sm font-medium text-slate-800 border-r uppercase">{a.apellidoPaterno} {a.apellidoMaterno} {a.nombres}</td>
-                        <td className="px-2 py-2">
-                          <input 
-                            type="number" min="5" max="10" step="0.1" 
-                            className="w-full p-1.5 text-center border rounded focus:border-primary-500 bg-white shadow-inner" 
-                            value={masivaGrades[a.id] || ''}
-                            onChange={(e) => setMasivaGrades({...masivaGrades, [a.id]: e.target.value})}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="flex justify-end">
-                  <button onClick={saveMasiva} disabled={savingMasiva} className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center">
-                    <Save className="w-4 h-4 mr-2" /> {savingMasiva ? 'Guardando...' : 'Guardar Sábana de Calificaciones'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* MODALES LOCALES (Grade) */}
       {modalType === 'grade' && selectedStudent && (
@@ -719,14 +647,45 @@ export default function ControlEscolar() {
       )}
     </div>
 
-      {/* COMPONENTES OCULTOS PARA IMPRESIÓN */}
-      {printMode === 'credencial' && printData && (
-        <CredencialPrint students={printData} />
+      {/* MODAL DE TIPO DE CONSTANCIA */}
+      {modalType === 'constanciaOptions' && selectedStudent && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative">
+            <button onClick={closeModal} className="absolute right-4 top-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Generar Constancia</h2>
+            <p className="text-sm text-slate-500 mb-6">Selecciona el tipo de documento que deseas emitir para <strong>{selectedStudent.nombres}</strong>.</p>
+            
+            <div className="space-y-3">
+              <button onClick={() => executePrintConstancia('simple')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition text-left group">
+                <div className="bg-primary-100 text-primary-600 p-2 rounded-lg mr-4 group-hover:bg-primary-500 group-hover:text-white transition">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Constancia Simple</h3>
+                  <p className="text-xs text-slate-500 mt-1">Formato tradicional certificando la inscripción y el grado cursado.</p>
+                </div>
+              </button>
+
+              <button onClick={() => executePrintConstancia('calificaciones')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 transition text-left group">
+                <div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg mr-4 group-hover:bg-emerald-500 group-hover:text-white transition">
+                  <Star className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Constancia con Calificaciones</h3>
+                  <p className="text-xs text-slate-500 mt-1">Incluye el promedio general acumulado y la tabla de calificaciones.</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-      
-      {printMode === 'constancia' && printData && (
-        <ConstanciaPrint student={printData} />
-      )}
+
+      {/* IMPRESIÓN */}
+      {printMode === 'credencial' && <CredencialPrint students={printData} />}
+      {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
+      {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
     </>
   );
 }

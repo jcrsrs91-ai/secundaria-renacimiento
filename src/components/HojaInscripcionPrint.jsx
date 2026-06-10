@@ -151,11 +151,11 @@ export default function HojaInscripcionPrint({ data }) {
             </div>
             <p className="text-[8px] text-gray-700 mt-0.5">Firma del Alumno(a)</p>
           </div>
-          <div>
-            <div className="border-t border-black pt-1 w-full mx-auto font-bold uppercase">
-              Director del Plantel
+          <div className="text-center pt-2">
+            <div className="border-t border-black w-40 mx-auto pt-1 font-bold text-[10px] text-black">
+              Profr. Juan Carlos Taboada Barajas
             </div>
-            <p className="text-[8px] text-gray-700 mt-0.5">Sello y Firma de Autorización</p>
+            <p className="text-[8px] text-gray-700 mt-0.5">Sello y Firma de Autorización<br/>(Director del Plantel)</p>
           </div>
         </div>
 
