@@ -47,9 +47,8 @@ export default function Contraloria() {
   const openModal = (type) => {
     setModalOpen(type);
     
-    // Si es baja, pre-poblar los artículos con los seleccionados
     let articulosIniciales = [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }];
-    if (type === 'baja' && selectedItems.length > 0) {
+    if ((type === 'baja' || type === 'resguardo') && selectedItems.length > 0) {
       articulosIniciales = inventario.filter(i => selectedItems.includes(i.id));
     }
 
@@ -291,6 +290,9 @@ export default function Contraloria() {
                   <>
                     <button onClick={handlePrintEtiquetas} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 shadow-sm transition-colors mr-1">
                       <Printer className="w-4 h-4 mr-2" /> Imprimir Etiquetas
+                    </button>
+                    <button onClick={() => openModal('resguardo')} className="flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-lg text-sm font-medium hover:bg-amber-200 shadow-sm transition-colors border border-amber-200 mr-1">
+                      <FileText className="w-4 h-4 mr-2" /> Generar Resguardo
                     </button>
                     <button onClick={() => openModal('baja')} className="flex items-center px-4 py-2 bg-rose-100 text-rose-800 rounded-lg text-sm font-medium hover:bg-rose-200 shadow-sm transition-colors border border-rose-200 mr-1">
                       <FileText className="w-4 h-4 mr-2" /> Generar Baja
