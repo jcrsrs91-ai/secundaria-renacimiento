@@ -5,6 +5,8 @@ import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteD
 import ActaRecepcionPrint from '../../components/ActaRecepcionPrint';
 import CartaResguardoPrint from '../../components/CartaResguardoPrint';
 import ScannerInventarioModal from '../../components/ScannerInventarioModal';
+import EtiquetasPrint from '../../components/EtiquetasPrint';
+import ActaBajaPrint from '../../components/ActaBajaPrint';
 
 export default function Contraloria() {
   const [activeTab, setActiveTab] = useState('pagos');
@@ -28,10 +30,10 @@ export default function Contraloria() {
     return () => unsubscribe();
   }, []);
 
-  const [printMode, setPrintMode] = useState(null); // 'recepcion' | 'resguardo'
+  const [printMode, setPrintMode] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'etiquetas'
   const [printData, setPrintData] = useState(null);
   
-  const [modalOpen, setModalOpen] = useState(null); // 'recepcion' | 'resguardo' | 'editItem'
+  const [modalOpen, setModalOpen] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'editItem'
   const [editingItem, setEditingItem] = useState(null);
   
   const [formData, setFormData] = useState({ articulos: [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }] });
@@ -44,12 +46,27 @@ export default function Contraloria() {
 
   const openModal = (type) => {
     setModalOpen(type);
+    
+    // Si es baja, pre-poblar los artículos con los seleccionados
+    let articulosIniciales = [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }];
+    if (type === 'baja' && selectedItems.length > 0) {
+      articulosIniciales = inventario.filter(i => selectedItems.includes(i.id));
+    }
+
     setFormData({ 
       fecha: new Date().toISOString().split('T')[0],
       hora: '', origen: '', proveedor: '', nombreProveedor: '', nombreContralor: 'Profr. Juan Carlos Taboada B.',
-      folio: '', nombreResguardante: '', areaResguardante: '', observaciones: '',
-      articulos: [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }]
+      folio: '', nombreResguardante: '', areaResguardante: '', observaciones: '', motivo: '',
+      articulos: articulosIniciales
     });
+  };
+
+  const handlePrintEtiquetas = () => {
+    if (selectedItems.length === 0) return;
+    const itemsToPrint = inventario.filter(i => selectedItems.includes(i.id));
+    setPrintData(itemsToPrint);
+    setPrintMode('etiquetas');
+    setTimeout(() => window.print(), 500);
   };
 
   const handleAddRow = () => {
@@ -236,23 +253,32 @@ export default function Contraloria() {
       {activeTab === 'inventario' && (
         <div className="space-y-6">
           {/* Tarjetas de Formatos Oficiales */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 flex items-center justify-between shadow-sm">
-              <div>
-                <h4 className="font-bold text-blue-900 text-lg">Acta de Recepción</h4>
-                <p className="text-blue-700 text-sm mt-1">Para el alta de bienes nuevos o donaciones.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+              <div className="mb-3">
+                <h4 className="font-bold text-blue-900 text-lg">Acta de Recepción (Alta)</h4>
+                <p className="text-blue-700 text-xs mt-1">Alta oficial de bienes nuevos o donaciones.</p>
               </div>
-              <button onClick={() => openModal('recepcion')} className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg shadow-md transition flex items-center">
-                <Printer className="w-5 h-5 mr-2" /> Generar
+              <button onClick={() => openModal('recepcion')} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
+                <Printer className="w-4 h-4 mr-2" /> Generar
               </button>
             </div>
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 flex items-center justify-between shadow-sm">
-              <div>
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+              <div className="mb-3">
                 <h4 className="font-bold text-amber-900 text-lg">Carta de Resguardo</h4>
-                <p className="text-amber-700 text-sm mt-1">Para asignar bienes a maestros o áreas.</p>
+                <p className="text-amber-700 text-xs mt-1">Asignar bienes a maestros o áreas.</p>
               </div>
-              <button onClick={() => openModal('resguardo')} className="bg-amber-600 hover:bg-amber-700 text-white p-3 rounded-lg shadow-md transition flex items-center">
-                <Printer className="w-5 h-5 mr-2" /> Generar
+              <button onClick={() => openModal('resguardo')} className="bg-amber-600 hover:bg-amber-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
+                <Printer className="w-4 h-4 mr-2" /> Generar
+              </button>
+            </div>
+            <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+              <div className="mb-3">
+                <h4 className="font-bold text-rose-900 text-lg">Acta de Baja</h4>
+                <p className="text-rose-700 text-xs mt-1">Desecho oficial de bienes inservibles.</p>
+              </div>
+              <button onClick={() => openModal('baja')} className="bg-rose-600 hover:bg-rose-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
+                <Printer className="w-4 h-4 mr-2" /> Generar Libre
               </button>
             </div>
           </div>
@@ -262,9 +288,17 @@ export default function Contraloria() {
               <h3 className="font-semibold text-slate-700">Catálogo de Bienes Activos</h3>
               <div className="flex gap-2">
                 {selectedItems.length > 0 && (
-                  <button onClick={handleBulkDelete} className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 shadow-sm transition-colors border border-red-200 mr-2">
-                    <Trash2 className="w-4 h-4 mr-2" /> Eliminar Seleccionados ({selectedItems.length})
-                  </button>
+                  <>
+                    <button onClick={handlePrintEtiquetas} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 shadow-sm transition-colors mr-1">
+                      <Printer className="w-4 h-4 mr-2" /> Imprimir Etiquetas
+                    </button>
+                    <button onClick={() => openModal('baja')} className="flex items-center px-4 py-2 bg-rose-100 text-rose-800 rounded-lg text-sm font-medium hover:bg-rose-200 shadow-sm transition-colors border border-rose-200 mr-1">
+                      <FileText className="w-4 h-4 mr-2" /> Generar Baja
+                    </button>
+                    <button onClick={handleBulkDelete} className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 shadow-sm transition-colors border border-red-200 mr-2">
+                      <Trash2 className="w-4 h-4 mr-2" /> Eliminar ({selectedItems.length})
+                    </button>
+                  </>
                 )}
                 <button onClick={() => setShowScannerModal(true)} className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors">
                   <ScanLine className="w-4 h-4 mr-2" /> Escanear Lista (OCR)
@@ -393,14 +427,8 @@ export default function Contraloria() {
                       <label className="block text-sm font-medium text-slate-700 mb-1">Hora de Recepción</label>
                       <input type="time" value={formData.hora} onChange={e => setFormData({...formData, hora: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Documento de Origen</label>
-                      <input type="text" placeholder="Factura, Oficio, Donación..." value={formData.origen} onChange={e => setFormData({...formData, origen: e.target.value})} className="w-full p-2 border rounded" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Proveedor o Entidad</label>
-                      <input type="text" placeholder="Ej. SEP Guerrero" value={formData.proveedor} onChange={e => setFormData({...formData, proveedor: e.target.value})} className="w-full p-2 border rounded" />
-                    </div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Doc. de Origen (Factura, etc.)</label><input type="text" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.origen} onChange={e => setFormData({...formData, origen: e.target.value})} /></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Proveedor</label><input type="text" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.nombreProveedor} onChange={e => setFormData({...formData, nombreProveedor: e.target.value})} /></div>
                   </>
                 )}
 
@@ -420,37 +448,90 @@ export default function Contraloria() {
                     </div>
                   </>
                 )}
+                
+                {modalOpen === 'baja' && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Motivo de Baja</label>
+                    <input type="text" placeholder="Ej. Daño irreparable, Obsolescencia tecnológica" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} required />
+                  </div>
+                )}
               </div>
 
-              <div className="mb-6">
-                <div className="flex justify-between items-center border-b pb-2 mb-4">
-                  <h4 className="font-bold text-slate-800">Artículos</h4>
-                  <button type="button" onClick={handleAddRow} className="text-sm font-medium text-primary-600 hover:text-primary-800">+ Agregar Fila</button>
-                </div>
-                
-                {formData.articulos.map((art, idx) => (
-                  <div key={idx} className="flex gap-2 mb-2">
-                    {modalOpen === 'resguardo' && (
-                      <input type="text" placeholder="No. Inventario" value={art.inventario} onChange={e => {
-                        const newArts = [...formData.articulos]; newArts[idx].inventario = e.target.value; setFormData({...formData, articulos: newArts});
-                      }} className="w-24 p-2 border rounded text-sm" />
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-semibold text-slate-700">Artículos a incluir</h4>
+                    {modalOpen !== 'baja' && (
+                      <button type="button" onClick={handleAddRow} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                        + Añadir fila
+                      </button>
                     )}
-                    <input type="number" placeholder="Cant." value={art.cantidad} onChange={e => {
-                      const newArts = [...formData.articulos]; newArts[idx].cantidad = e.target.value; setFormData({...formData, articulos: newArts});
-                    }} className="w-16 p-2 border rounded text-sm" />
-                    <input type="text" placeholder="Descripción" value={art.descripcion} onChange={e => {
-                      const newArts = [...formData.articulos]; newArts[idx].descripcion = e.target.value; setFormData({...formData, articulos: newArts});
-                    }} className="flex-1 p-2 border rounded text-sm" />
-                    <input type="text" placeholder="Marca/Modelo" value={art.marca} onChange={e => {
-                      const newArts = [...formData.articulos]; newArts[idx].marca = e.target.value; setFormData({...formData, articulos: newArts});
-                    }} className="w-1/4 p-2 border rounded text-sm" />
-                    <input type="text" placeholder="Estado (Bueno, Malo...)" value={art.estado} onChange={e => {
-                      const newArts = [...formData.articulos]; newArts[idx].estado = e.target.value; setFormData({...formData, articulos: newArts});
-                    }} className="w-24 p-2 border rounded text-sm" />
                   </div>
-                ))}
-                <p className="text-xs text-slate-500 mt-2 italic">Nota: Si dejas todos los artículos en blanco, se imprimirá una tabla vacía para llenarla a mano.</p>
-              </div>
+                  <div className="space-y-3">
+                    {formData.articulos.map((art, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <div className="w-16">
+                          <input type="number" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm" value={art.cantidad || ''} onChange={(e) => {
+                            const newArts = [...formData.articulos];
+                            newArts[idx].cantidad = e.target.value;
+                            setFormData({...formData, articulos: newArts});
+                          }} />
+                        </div>
+                        <div className="flex-1">
+                          <input type="text" placeholder="Descripción del artículo" className="w-full rounded-md border-slate-300 text-sm" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                            const newArts = [...formData.articulos];
+                            newArts[idx].descripcion = e.target.value;
+                            setFormData({...formData, articulos: newArts});
+                          }} />
+                        </div>
+                        <div className="w-1/4">
+                          {modalOpen === 'resguardo' || modalOpen === 'baja' ? (
+                            <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                              const newArts = [...formData.articulos];
+                              newArts[idx].codigo = e.target.value;
+                              setFormData({...formData, articulos: newArts});
+                            }} />
+                          ) : (
+                            <input type="text" placeholder="Marca/Modelo" className="w-full rounded-md border-slate-300 text-sm" value={art.marca || ''} onChange={(e) => {
+                              const newArts = [...formData.articulos];
+                              newArts[idx].marca = e.target.value;
+                              setFormData({...formData, articulos: newArts});
+                            }} />
+                          )}
+                        </div>
+                        <div className="w-32">
+                          {modalOpen === 'recepcion' ? (
+                            <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm" value={art.serie || ''} onChange={(e) => {
+                              const newArts = [...formData.articulos];
+                              newArts[idx].serie = e.target.value;
+                              setFormData({...formData, articulos: newArts});
+                            }} />
+                          ) : modalOpen === 'baja' ? (
+                            <input type="text" placeholder="Ubicación" className="w-full rounded-md border-slate-300 text-sm" value={art.ubicacion || ''} onChange={(e) => {
+                              const newArts = [...formData.articulos];
+                              newArts[idx].ubicacion = e.target.value;
+                              setFormData({...formData, articulos: newArts});
+                            }} />
+                          ) : (
+                            <input type="text" placeholder="Estado (Bueno, Regular)" className="w-full rounded-md border-slate-300 text-sm" value={art.estado || ''} onChange={(e) => {
+                              const newArts = [...formData.articulos];
+                              newArts[idx].estado = e.target.value;
+                              setFormData({...formData, articulos: newArts});
+                            }} />
+                          )}
+                        </div>
+                        
+                        {modalOpen !== 'baja' && (
+                          <button type="button" onClick={() => {
+                            const newArts = formData.articulos.filter((_, i) => i !== idx);
+                            setFormData({...formData, articulos: newArts.length ? newArts : [{}]});
+                          }} className="p-2 text-slate-400 hover:text-red-500">
+                            <X className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
               {modalOpen === 'recepcion' && (
                 <div className="mb-6">
