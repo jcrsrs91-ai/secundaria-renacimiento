@@ -56,6 +56,7 @@ export default function Contraloria() {
       fecha: new Date().toISOString().split('T')[0],
       hora: '', origen: '', proveedor: '', nombreProveedor: '', nombreContralor: 'Profr. Juan Carlos Taboada B.',
       folio: '', nombreResguardante: '', areaResguardante: '', observaciones: '', motivo: '',
+      guardarEnInventario: false,
       articulos: articulosIniciales
     });
   };
@@ -112,6 +113,28 @@ export default function Contraloria() {
       } catch (error) {
         console.error("Error guardando en Firebase:", error);
         alert("Hubo un error al guardar en la base de datos.");
+      }
+    } else if (modalOpen === 'resguardo' && formData.guardarEnInventario) {
+      try {
+        const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca);
+        if (validItems.length > 0) {
+          for (let i = 0; i < validItems.length; i++) {
+            const art = validItems[i];
+            const tempCode = `INV-RESG-${Date.now().toString().slice(-4)}${i}`;
+            await addDoc(collection(db, 'inventario'), {
+              codigo: art.codigo || art.inventario || tempCode,
+              articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
+              ubicacion: formData.areaResguardante || 'En resguardo',
+              cantidad: Number(art.cantidad) || 1,
+              estado: art.estado || 'Bueno',
+              serie: art.serie || '',
+              fechaIngreso: new Date().toISOString()
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error guardando resguardos en Firebase:", error);
+        alert("Hubo un error al guardar en el inventario.");
       }
     }
 
@@ -447,6 +470,12 @@ export default function Contraloria() {
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Área o Cargo</label>
                       <input type="text" placeholder="Ej. Aula 3 / Maestro de Historia" value={formData.areaResguardante} onChange={e => setFormData({...formData, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
+                    </div>
+                    <div className="md:col-span-2 mt-2">
+                      <label className="flex items-center space-x-3 text-sm font-medium text-slate-700 cursor-pointer p-4 bg-amber-50 rounded-xl border border-amber-200 hover:bg-amber-100 transition-colors">
+                        <input type="checkbox" checked={formData.guardarEnInventario} onChange={e => setFormData({...formData, guardarEnInventario: e.target.checked})} className="rounded text-amber-600 focus:ring-amber-500 w-5 h-5" />
+                        <span>Guardar estos artículos automáticamente en el <strong>Inventario General</strong> de la escuela.</span>
+                      </label>
                     </div>
                   </>
                 )}
