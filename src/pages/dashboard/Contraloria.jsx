@@ -555,6 +555,8 @@ export default function Contraloria() {
 
     {printMode === 'recepcion' && printData && <ActaRecepcionPrint data={printData} />}
     {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} />}
+    {printMode === 'baja' && printData && <ActaBajaPrint data={printData} />}
+    {printMode === 'etiquetas' && printData && <EtiquetasPrint items={printData} />}
     
     {showScannerModal && (
       <ScannerInventarioModal 
