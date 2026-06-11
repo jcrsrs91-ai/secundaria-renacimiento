@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
@@ -8,6 +8,7 @@ import CredencialPrint from '../../components/CredencialPrint';
 import ConstanciaPrint from '../../components/ConstanciaPrint';
 import BoletaPrint from '../../components/BoletaPrint';
 import Calificaciones from '../../components/Calificaciones';
+import ListaAsistenciaPrint from '../../components/ListaAsistenciaPrint';
 
 export default function ControlEscolar() {
   const [activeTab, setActiveTab] = useState('pendientes');
@@ -20,9 +21,14 @@ export default function ControlEscolar() {
   const [directorio, setDirectorio] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [printMode, setPrintMode] = useState(null); // 'credencial', 'constancia', 'boleta'
+  const [printMode, setPrintMode] = useState(null); // 'credencial', 'constancia', 'boleta', 'listaAsistencia'
   const [printData, setPrintData] = useState(null); // array for credencial, object for constancia
   const [constanciaType, setConstanciaType] = useState('simple'); // 'simple', 'calificaciones'
+
+  // Estados para listas de asistencia
+  const [asisGrado, setAsisGrado] = useState('1er Grado');
+  const [asisGrupo, setAsisGrupo] = useState('A');
+  const [asisMes, setAsisMes] = useState('Septiembre');
 
 
 
@@ -115,6 +121,12 @@ export default function ControlEscolar() {
     const matchesStatus = statusFilter === 'Todos' || a.status === statusFilter;
     return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus;
   });
+
+  const asisAlumnos = useMemo(() => {
+    return activos
+      .filter(a => a.grado === asisGrado && a.grupo === asisGrupo)
+      .sort((a, b) => a.apellidoPaterno.localeCompare(b.apellidoPaterno));
+  }, [activos, asisGrado, asisGrupo]);
 
   const openModal = (type, student) => {
     setModalType(type);
@@ -419,6 +431,9 @@ export default function ControlEscolar() {
           <button onClick={() => setActiveTab('calificaciones')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'calificaciones' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             Calificaciones <Star className="w-3 h-3 inline-block ml-1 text-amber-500" />
           </button>
+          <button onClick={() => setActiveTab('asistencia')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'asistencia' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+            Listas de Asistencia
+          </button>
         </nav>
       </div>
 
@@ -465,6 +480,102 @@ export default function ControlEscolar() {
       {/* Tabla Calificaciones */}
       {!loading && activeTab === 'calificaciones' && (
         <Calificaciones activos={activos} materiasPorGrado={materiasPorGrado} onPrintBoleta={handlePrintBoleta} />
+      )}
+
+      {/* Tabla Listas de Asistencia */}
+      {!loading && activeTab === 'asistencia' && (
+        <div className="space-y-6">
+          {/* Controles de Filtro */}
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end">
+            <div className="w-full md:w-1/4">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Grado</label>
+              <select value={asisGrado} onChange={e => setAsisGrado(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 bg-slate-50">
+                <option value="1er Grado">1er Grado</option>
+                <option value="2do Grado">2do Grado</option>
+                <option value="3er Grado">3er Grado</option>
+              </select>
+            </div>
+            <div className="w-full md:w-1/4">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Grupo</label>
+              <select value={asisGrupo} onChange={e => setAsisGrupo(e.target.value)} translate="no" className="notranslate w-full p-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 bg-slate-50">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="E">E</option>
+                <option value="F">F</option>
+              </select>
+            </div>
+            <div className="w-full md:w-1/4">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Mes de Asistencia</label>
+              <select value={asisMes} onChange={e => setAsisMes(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-primary-700 bg-primary-50">
+                <option value="Septiembre">Septiembre</option>
+                <option value="Octubre">Octubre</option>
+                <option value="Noviembre">Noviembre</option>
+                <option value="Diciembre">Diciembre</option>
+                <option value="Enero">Enero</option>
+                <option value="Febrero">Febrero</option>
+                <option value="Marzo">Marzo</option>
+                <option value="Abril">Abril</option>
+                <option value="Mayo">Mayo</option>
+                <option value="Junio">Junio</option>
+              </select>
+            </div>
+            <div className="flex-1 flex justify-end">
+              <button 
+                onClick={() => {
+                  if (asisAlumnos.length === 0) {
+                    alert("No hay alumnos activos en este grado y grupo.");
+                    return;
+                  }
+                  setPrintData({ students: asisAlumnos, grado: asisGrado, grupo: asisGrupo, mes: asisMes });
+                  setPrintMode('listaAsistencia');
+                  setTimeout(() => window.print(), 500);
+                }} 
+                className="flex items-center px-6 py-2.5 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition shadow-md"
+              >
+                <Printer className="w-5 h-5 mr-2" /> Imprimir Lista Oficial
+              </button>
+            </div>
+          </div>
+
+          {/* Listado de Alumnos en la Vista Previa */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-slate-200 bg-slate-50">
+              <h3 className="font-semibold text-slate-700">Vista Previa de la Lista ({asisAlumnos.length} Alumnos)</h3>
+            </div>
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase w-12">No.</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Matrícula</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Nombre del Alumno</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Taller</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Turno</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {asisAlumnos.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-10 text-center text-slate-500 bg-slate-50">
+                      No hay alumnos activos inscritos en {asisGrado} "{asisGrupo}".
+                    </td>
+                  </tr>
+                ) : (
+                  asisAlumnos.map((al, index) => (
+                    <tr key={al.id} className="hover:bg-slate-50/50">
+                      <td className="px-6 py-4 text-sm font-bold text-slate-400">{index + 1}</td>
+                      <td className="px-6 py-4 text-sm font-semibold text-primary-700">{al.matricula}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-700 uppercase">{al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">{al.taller || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">{al.turno || '-'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* Tabla Activos / Directorio */}
@@ -738,6 +849,7 @@ export default function ControlEscolar() {
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
+      {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} />}
     </>
   );
 }
