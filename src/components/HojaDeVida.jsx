@@ -138,6 +138,12 @@ export default function HojaDeVida({ student, onClose, onSave }) {
           <div className="flex items-center space-x-3">
             <h2 className="font-extrabold text-2xl text-slate-800">Hoja de Vida del Alumno</h2>
             <span className="bg-primary-100 text-primary-800 text-xs font-bold px-3 py-1 rounded-full">{student.matricula}</span>
+            <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+              student.status === 'Activo' ? 'bg-emerald-100 text-emerald-800' :
+              student.status === 'Baja' ? 'bg-rose-100 text-rose-800' :
+              student.status === 'Egresado' ? 'bg-blue-100 text-blue-800' :
+              'bg-amber-100 text-amber-800'
+            }`}>{student.status || 'Activo'}</span>
           </div>
           <div className="flex space-x-2">
             <button onClick={() => setShowPrintMode(true)} className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition">
@@ -162,7 +168,7 @@ export default function HojaDeVida({ student, onClose, onSave }) {
                 {/* 1. Datos Académicos */}
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Datos Académicos</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Grado</label>
                       <select name="grado" defaultValue={student.grado} className="mt-1 w-full p-2 border rounded" required>
@@ -184,6 +190,15 @@ export default function HojaDeVida({ student, onClose, onSave }) {
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Taller / Tecnología</label>
                       <input type="text" name="taller" value={taller} onChange={(e) => setTaller(e.target.value)} className="mt-1 w-full p-2 border rounded" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">Estatus</label>
+                      <select name="status" defaultValue={student.status || 'Activo'} className="mt-1 w-full p-2 border rounded" required>
+                        <option value="Activo">Activo</option>
+                        <option value="Baja">Baja</option>
+                        <option value="Egresado">Egresado</option>
+                        <option value="Pendiente">Pendiente</option>
+                      </select>
                     </div>
                   </div>
                 </div>

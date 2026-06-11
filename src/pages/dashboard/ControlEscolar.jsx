@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
-import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import HojaDeVida from '../../components/HojaDeVida';
 import CredencialPrint from '../../components/CredencialPrint';
 import ConstanciaPrint from '../../components/ConstanciaPrint';
@@ -282,13 +282,29 @@ export default function ControlEscolar() {
         if (!confirmacion) return;
 
         let importados = 0;
+        let duplicados = 0;
         let errores = 0;
 
         for (const row of data) {
           try {
+            const curpVal = (row.curp || '').trim().toUpperCase();
+            if (!curpVal) {
+              errores++;
+              continue;
+            }
+
+            // Validar duplicado por CURP en Firestore
+            const qCurp = query(collection(db, "students"), where("curp", "==", curpVal));
+            const snapCurp = await getDocs(qCurp);
+
+            if (!snapCurp.empty) {
+              duplicados++;
+              continue; // Omitir duplicado
+            }
+
             await addDoc(collection(db, "students"), {
               matricula: row.matricula || '',
-              curp: row.curp || '',
+              curp: curpVal,
               escuelaProcedencia: row.escuelaProcedencia || '',
               domicilioEscuela: row.domicilioEscuela || '',
               promedioEscuela: row.promedioEscuela || '',
@@ -317,7 +333,7 @@ export default function ControlEscolar() {
             errores++;
           }
         }
-        alert(`Importación completada.\n\nÉxitos: ${importados}\nErrores: ${errores}`);
+        alert(`Importación completada.\n\nÉxitos: ${importados}\nDuplicados omitidos: ${duplicados}\nErrores: ${errores}`);
       },
       error: (error) => {
         alert("Error al leer el archivo CSV: " + error.message);
@@ -329,7 +345,43 @@ export default function ControlEscolar() {
   };
   
   const handleExportCSV = () => {
-    alert("Exportar CSV accionado (Simulado)");
+    if (filteredDirectorio.length === 0) {
+      alert("No hay alumnos en la lista filtrada para exportar.");
+      return;
+    }
+    
+    const dataToExport = filteredDirectorio.map(a => ({
+      'Matrícula': a.matricula || '',
+      'CURP': a.curp || '',
+      'Primer Apellido': a.apellidoPaterno || '',
+      'Segundo Apellido': a.apellidoMaterno || '',
+      'Nombre(s)': a.nombres || '',
+      'Grado': a.grado || '',
+      'Grupo': a.grupo || '',
+      'Turno': a.turno || '',
+      'Taller': a.taller || '',
+      'Estatus': a.status || 'Activo',
+      'Tutor': a.tutorNombre || a.tutor || '',
+      'Teléfono Tutor': a.telefono || a.celularTutor || '',
+      'Domicilio': `${a.calle || ''} ${a.numero || ''}, Col. ${a.colonia || ''}, CP ${a.cp || ''}`.trim(),
+      'Tipo de Sangre': a.tipoSangre || '',
+      'Alergias': a.alergias || '',
+      'Padecimientos': a.padecimientos || '',
+      'Escuela de Procedencia': a.escuelaProcedencia || '',
+      'Promedio Primaria': a.promedioEscuela || ''
+    }));
+
+    const csv = Papa.unparse(dataToExport, { delimiter: ';' });
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Directorio_Alumnos_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (

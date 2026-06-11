@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine } from 'lucide-react';
+import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download } from 'lucide-react';
+import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import ActaRecepcionPrint from '../../components/ActaRecepcionPrint';
@@ -20,6 +21,11 @@ export default function Contraloria() {
   const [selectedItems, setSelectedItems] = useState([]); // Array de IDs seleccionados
   const [showScannerModal, setShowScannerModal] = useState(false);
 
+  // Estados para búsqueda y filtrado de inventario
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Todos');
+  const [locationFilter, setLocationFilter] = useState('Todos');
+
   useEffect(() => {
     const q = query(collection(db, 'inventario'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -29,6 +35,21 @@ export default function Contraloria() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Extraer ubicaciones únicas dinámicamente
+  const ubicacionesUnicas = [...new Set(inventario.map(item => item.ubicacion).filter(Boolean))].sort();
+
+  // Filtrar el inventario de acuerdo con los criterios seleccionados
+  const filteredInventario = inventario.filter(item => {
+    const matchesSearch = !searchTerm || 
+      (item.codigo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.articulo || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'Todos' || item.estado === statusFilter;
+    const matchesLocation = locationFilter === 'Todos' || item.ubicacion === locationFilter;
+    
+    return matchesSearch && matchesStatus && matchesLocation;
+  });
 
   const [printMode, setPrintMode] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'etiquetas'
   const [printData, setPrintData] = useState(null);
@@ -196,10 +217,13 @@ export default function Contraloria() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedItems.length === inventario.length) {
-      setSelectedItems([]);
+    const filteredIds = filteredInventario.map(item => item.id);
+    const allFilteredSelected = filteredIds.every(id => selectedItems.includes(id));
+    
+    if (allFilteredSelected) {
+      setSelectedItems(prev => prev.filter(id => !filteredIds.includes(id)));
     } else {
-      setSelectedItems(inventario.map(item => item.id));
+      setSelectedItems(prev => [...new Set([...prev, ...filteredIds])]);
     }
   };
 
@@ -207,6 +231,35 @@ export default function Contraloria() {
     setSelectedItems(prev => 
       prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
     );
+  };
+
+  const handleExportCSV = () => {
+    if (filteredInventario.length === 0) {
+      alert("No hay artículos en la lista filtrada para exportar.");
+      return;
+    }
+    
+    const dataToExport = filteredInventario.map(item => ({
+      'Código de Inventario': item.codigo || '',
+      'Artículo/Descripción': item.articulo || '',
+      'Ubicación': item.ubicacion || '',
+      'Cantidad': item.cantidad || 0,
+      'Estado Físico': item.estado || '',
+      'Número de Serie': item.serie || '',
+      'Fecha de Ingreso': item.fechaIngreso ? new Date(item.fechaIngreso).toLocaleDateString() : ''
+    }));
+    
+    const csv = Papa.unparse(dataToExport);
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Inventario_Mobiliario_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -305,6 +358,50 @@ export default function Contraloria() {
             </div>
           </div>
 
+          {/* BARRA DE BÚSQUEDA Y FILTRADO */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Buscar por Artículo o Código</label>
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input 
+                  type="text" 
+                  className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                  placeholder="Ej. Silla, Computadora, o INV-..." 
+                  value={searchTerm} 
+                  onChange={e => setSearchTerm(e.target.value)} 
+                />
+              </div>
+            </div>
+            <div className="w-full md:w-48">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Ubicación</label>
+              <select 
+                className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                value={locationFilter} 
+                onChange={e => setLocationFilter(e.target.value)}
+              >
+                <option value="Todos">Todas las ubicaciones</option>
+                {ubicacionesUnicas.map(loc => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-full md:w-48">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Estado Físico</label>
+              <select 
+                className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                value={statusFilter} 
+                onChange={e => setStatusFilter(e.target.value)}
+              >
+                <option value="Todos">Todos los estados</option>
+                <option value="Nuevo">Nuevo</option>
+                <option value="Bueno">Bueno</option>
+                <option value="Regular">Regular</option>
+                <option value="Malo">Malo</option>
+              </select>
+            </div>
+          </div>
+
           <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
               <h3 className="font-semibold text-slate-700">Catálogo de Bienes Activos</h3>
@@ -325,6 +422,9 @@ export default function Contraloria() {
                     </button>
                   </>
                 )}
+                <button onClick={handleExportCSV} className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors">
+                  <Download className="w-4 h-4 mr-2 text-primary-600" /> Exportar CSV
+                </button>
                 <button onClick={() => setShowScannerModal(true)} className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors">
                   <ScanLine className="w-4 h-4 mr-2" /> Escanear Lista (OCR)
                 </button>
@@ -340,7 +440,7 @@ export default function Contraloria() {
                   <input 
                     type="checkbox" 
                     className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                    checked={inventario.length > 0 && selectedItems.length === inventario.length}
+                    checked={filteredInventario.length > 0 && filteredInventario.every(item => selectedItems.includes(item.id))}
                     onChange={toggleSelectAll}
                   />
                 </th>
@@ -353,7 +453,7 @@ export default function Contraloria() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {inventario.map(item => (
+              {filteredInventario.map(item => (
                 <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-indigo-50/50' : ''}>
                   <td className="px-6 py-4">
                     <input 
@@ -380,14 +480,15 @@ export default function Contraloria() {
                   </td>
                 </tr>
               ))}
-              {inventario.length === 0 && (
+              {filteredInventario.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="px-6 py-10 text-center text-slate-500">No hay artículos registrados en el inventario.</td>
+                  <td colSpan="7" className="px-6 py-10 text-center text-slate-500">No hay artículos registrados en el inventario que coincidan con los filtros.</td>
                 </tr>
               )}
             </tbody>
           </table>
           </div>
+
         </div>
       )}
     </div>
@@ -425,7 +526,16 @@ export default function Contraloria() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Estado Físico</label>
-                      <input type="text" value={editingItem.estado} onChange={e => setEditingItem({...editingItem, estado: e.target.value})} className="w-full p-2 border rounded" />
+                      <select 
+                        value={editingItem.estado || 'Bueno'} 
+                        onChange={e => setEditingItem({...editingItem, estado: e.target.value})} 
+                        className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="Nuevo">Nuevo</option>
+                        <option value="Bueno">Bueno</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Malo">Malo</option>
+                      </select>
                     </div>
                   </div>
                   <div>
@@ -543,11 +653,20 @@ export default function Contraloria() {
                               setFormData({...formData, articulos: newArts});
                             }} />
                           ) : (
-                            <input type="text" placeholder="Estado (Bueno, Regular)" className="w-full rounded-md border-slate-300 text-sm" value={art.estado || ''} onChange={(e) => {
-                              const newArts = [...formData.articulos];
-                              newArts[idx].estado = e.target.value;
-                              setFormData({...formData, articulos: newArts});
-                            }} />
+                            <select 
+                              className="w-full rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 p-2" 
+                              value={art.estado || 'Bueno'} 
+                              onChange={(e) => {
+                                const newArts = [...formData.articulos];
+                                newArts[idx].estado = e.target.value;
+                                setFormData({...formData, articulos: newArts});
+                              }}
+                            >
+                              <option value="Bueno">Bueno</option>
+                              <option value="Nuevo">Nuevo</option>
+                              <option value="Regular">Regular</option>
+                              <option value="Malo">Malo</option>
+                            </select>
                           )}
                         </div>
                         
