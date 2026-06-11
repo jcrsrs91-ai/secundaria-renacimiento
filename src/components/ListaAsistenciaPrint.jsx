@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function ListaAsistenciaPrint({ students, grado, grupo, mes }) {
+export default function ListaAsistenciaPrint({ students, grado, grupo, mes, paperSize }) {
   if (!students || students.length === 0) return null;
 
   // Ordenar alfabéticamente por apellido paterno
@@ -17,11 +17,13 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes }) {
   const columnsCount = 25;
   const headerCols = Array.from({ length: columnsCount }, (_, i) => i + 1);
 
+  const sizeValue = paperSize === 'legal' ? 'legal landscape' : 'letter landscape';
+
   return (
     <div className="print-lista-asistencia-only">
       <style>{`
         @media print {
-          @page { size: letter landscape; margin: 1cm; }
+          @page { size: ${sizeValue}; margin: 1cm; }
           html, body, #root { height: auto !important; overflow: visible !important; min-height: auto !important; display: block !important; }
           * { overflow: visible !important; }
           aside, header { display: none !important; }

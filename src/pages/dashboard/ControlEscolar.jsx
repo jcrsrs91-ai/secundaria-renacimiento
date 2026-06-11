@@ -29,6 +29,7 @@ export default function ControlEscolar() {
   const [asisGrado, setAsisGrado] = useState('1er Grado');
   const [asisGrupo, setAsisGrupo] = useState('A');
   const [asisMes, setAsisMes] = useState('Septiembre');
+  const [asisPaperSize, setAsisPaperSize] = useState('letter');
 
 
 
@@ -487,7 +488,7 @@ export default function ControlEscolar() {
         <div className="space-y-6">
           {/* Controles de Filtro */}
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end">
-            <div className="w-full md:w-1/4">
+            <div className="w-full md:w-1/5">
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Grado</label>
               <select value={asisGrado} onChange={e => setAsisGrado(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 bg-slate-50">
                 <option value="1er Grado">1er Grado</option>
@@ -495,7 +496,7 @@ export default function ControlEscolar() {
                 <option value="3er Grado">3er Grado</option>
               </select>
             </div>
-            <div className="w-full md:w-1/4">
+            <div className="w-full md:w-1/5">
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Grupo</label>
               <select value={asisGrupo} onChange={e => setAsisGrupo(e.target.value)} translate="no" className="notranslate w-full p-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 bg-slate-50">
                 <option value="A">A</option>
@@ -506,7 +507,7 @@ export default function ControlEscolar() {
                 <option value="F">F</option>
               </select>
             </div>
-            <div className="w-full md:w-1/4">
+            <div className="w-full md:w-1/5">
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Mes de Asistencia</label>
               <select value={asisMes} onChange={e => setAsisMes(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-primary-700 bg-primary-50">
                 <option value="Septiembre">Septiembre</option>
@@ -521,18 +522,25 @@ export default function ControlEscolar() {
                 <option value="Junio">Junio</option>
               </select>
             </div>
-            <div className="flex-1 flex justify-end">
+            <div className="w-full md:w-1/5">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Tamaño de Hoja</label>
+              <select value={asisPaperSize} onChange={e => setAsisPaperSize(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-teal-700 bg-teal-50">
+                <option value="letter">Carta (Letter)</option>
+                <option value="legal">Oficio (Oficio / Legal)</option>
+              </select>
+            </div>
+            <div className="flex-1 flex justify-end w-full md:w-auto">
               <button 
                 onClick={() => {
                   if (asisAlumnos.length === 0) {
                     alert("No hay alumnos activos en este grado y grupo.");
                     return;
                   }
-                  setPrintData({ students: asisAlumnos, grado: asisGrado, grupo: asisGrupo, mes: asisMes });
+                  setPrintData({ students: asisAlumnos, grado: asisGrado, grupo: asisGrupo, mes: asisMes, paperSize: asisPaperSize });
                   setPrintMode('listaAsistencia');
                   setTimeout(() => window.print(), 500);
                 }} 
-                className="flex items-center px-6 py-2.5 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition shadow-md"
+                className="flex items-center justify-center w-full md:w-auto px-6 py-2.5 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition shadow-md"
               >
                 <Printer className="w-5 h-5 mr-2" /> Imprimir Lista Oficial
               </button>
@@ -849,7 +857,7 @@ export default function ControlEscolar() {
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
-      {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} />}
+      {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
     </>
   );
 }
