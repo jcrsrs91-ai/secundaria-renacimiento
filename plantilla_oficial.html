@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentos Oficiales - Secundaria 68 Renacimiento</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Tipografías base */
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .font-sans {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Estilos base de la página para previsualización en pantalla */
+        body {
+            background-color: #f3f4f6;
+            color: #111827;
+        }
+
+        /* Contenedor de la hoja tamaño Carta */
+        .page-container {
+            width: 8.5in;
+            height: 11in;
+            margin: 2rem auto;
+            background-color: white;
+            padding: 2.5cm; /* Márgenes de 2.5 cm según requerimiento */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* Marco perimetral fino solicitado */
+        .page-border {
+            position: absolute;
+            top: 1.5cm;
+            bottom: 1.5cm;
+            left: 1.5cm;
+            right: 1.5cm;
+            border: 1px solid #e5e7eb; /* Línea muy sutil para no gastar tinta, solo elegancia */
+            pointer-events: none;
+        }
+
+        /* Utilidad para forzar el salto de página al imprimir */
+        .page-break {
+            page-break-after: always;
+        }
+
+        /* Configuración estricta para impresión */
+        @media print {
+            body {
+                background-color: white;
+                margin: 0;
+                padding: 0;
+            }
+            .page-container {
+                margin: 0;
+                padding: 2.5cm;
+                box-shadow: none;
+                width: 100%;
+                height: 100vh;
+                page-break-after: always;
+            }
+            /* Ocultar botones de la interfaz al imprimir */
+            .no-print {
+                display: none !important;
+            }
+            /* Asegurar que el tamaño de página sea Carta */
+            @page {
+                size: letter;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800">
+
+    <!-- Botón de impresión (solo visible en pantalla) -->
+    <div class="fixed top-4 right-4 no-print z-50">
+        <button onclick="window.print()" class="bg-blue-800 hover:bg-blue-900 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transition duration-200 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Imprimir Documentos
+        </button>
+    </div>
+
+    <!-- ==========================================
+         DOCUMENTO 1: CONSTANCIA DE PROMEDIO
+         ========================================== -->
+    <div class="page-container relative">
+        <div class="page-border"></div>
+        
+        <div class="relative z-10 h-full flex flex-col">
+            <!-- Encabezado / Membrete -->
+            <header class="flex items-center justify-between mb-2">
+                <!-- Espacio para Logo Escuela -->
+                <div class="w-20 h-24 flex items-center justify-center border border-dashed border-gray-300 bg-gray-50">
+                    <span class="text-[10px] text-gray-400 text-center">LOGO<br>ESCUELA</span>
+                </div>
+                
+                <!-- Textos Centrales -->
+                <div class="flex-1 text-center px-4">
+                    <h1 class="font-serif text-xl font-bold text-gray-900 uppercase tracking-wide">
+                        Escuela Secundaria Técnica N° 68 "Renacimiento"
+                    </h1>
+                    <p class="font-sans text-sm text-gray-600 mt-1">
+                        Ciudad Renacimiento, Acapulco de Juárez, Guerrero.
+                    </p>
+                </div>
+                
+                <!-- Espacio para Escudo Oficial (SEP/Estado) -->
+                <div class="w-20 h-24 flex items-center justify-center border border-dashed border-gray-300 bg-gray-50">
+                    <span class="text-[10px] text-gray-400 text-center">ESCUDO<br>OFICIAL</span>
+                </div>
+            </header>
+
+            <!-- Línea Divisoria Elegante -->
+            <hr class="border-t-[1.5px] border-gray-800 mb-8" />
+
+            <!-- Asunto y Fecha -->
+            <div class="text-right font-sans text-sm mb-8 space-y-1">
+                <p><span class="font-semibold">Asunto:</span> Constancia de Promedio</p>
+                <p>Ciudad Renacimiento, Acapulco de Juárez, Guerrero; a {{dia}} de {{mes}} de 2026.</p>
+            </div>
+
+            <!-- Destinatario -->
+            <div class="mb-6 font-serif font-bold text-gray-900 tracking-wide">
+                <p>A QUIEN CORRESPONDA:</p>
+            </div>
+
+            <!-- Cuerpo del Texto -->
+            <div class="text-justify font-sans text-[14px] leading-[1.8] text-gray-800 space-y-6 flex-1">
+                <p>
+                    El (La) que suscribe, Director(a) de la Escuela Secundaria Técnica N° 68 "Renacimiento", con Clave de Centro de Trabajo (C.C.T.) <strong>{{cct}}</strong>, perteneciente a la zona escolar <strong>{{zona}}</strong>, hace constar que el (la) alumno(a):
+                </p>
+
+                <!-- Nombre del Alumno Destacado -->
+                <div class="text-center my-8">
+                    <h2 class="font-serif text-2xl font-bold uppercase tracking-wider text-gray-900">
+                        {{nombre_alumno}}
+                    </h2>
+                </div>
+
+                <p>
+                    Con Clave Única de Registro de Población (CURP): <strong>{{curp}}</strong>, se encuentra inscrito(a) y cursó regularmente el <strong>{{grado}}</strong> grado, grupo <strong>"{{grupo}}"</strong>, durante el Ciclo Escolar 2025-2026.
+                </p>
+
+                <p>
+                    De acuerdo con el registro que obra en los archivos de Control Escolar de esta institución, el (la) estudiante ha obtenido hasta la fecha un <strong>PROMEDIO GENERAL</strong> de: <strong>{{promedio_numero}} ({{promedio_letra}})</strong>.
+                </p>
+
+                <!-- Tabla de Materias Estilizada -->
+                <div class="px-8 my-6">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="border-b-2 border-gray-800">
+                                <th class="py-2 text-left font-serif text-xs font-bold uppercase tracking-widest text-gray-600">Asignatura</th>
+                                <th class="py-2 text-center font-serif text-xs font-bold uppercase tracking-widest text-gray-600">Calificación</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-gray-200">
+                            <!-- Ejemplo de fila dinámica -->
+                            <tr>
+                                <td class="py-2 text-gray-700">{{materia_1}}</td>
+                                <td class="py-2 text-center font-medium">{{calif_1}}</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 text-gray-700">{{materia_2}}</td>
+                                <td class="py-2 text-center font-medium">{{calif_2}}</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 text-gray-700">{{materia_3}}</td>
+                                <td class="py-2 text-center font-medium">{{calif_3}}</td>
+                            </tr>
+                            <!-- Fila de Promedio General Destacada -->
+                            <tr class="border-t-2 border-gray-800 bg-gray-50">
+                                <td class="py-3 px-2 text-right font-serif font-bold text-gray-900 uppercase tracking-wide text-xs">
+                                    Promedio General
+                                </td>
+                                <td class="py-3 text-center font-bold text-gray-900 text-base">
+                                    {{promedio_numero}}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>
+                    A petición de la parte interesada y para los fines legales o escolares que a la misma convengan, se extiende la presente constancia en Ciudad Renacimiento, Acapulco de Juárez, Guerrero, a los {{dia}} días del mes de {{mes}} de dos mil veintiséis.
+                </p>
+            </div>
+
+            <!-- Pie de Página / Firmas -->
+            <footer class="mt-auto pt-8 relative">
+                <div class="text-center">
+                    <p class="font-sans text-sm tracking-widest mb-16">ATENTAMENTE</p>
+                    
+                    <div class="border-t border-gray-800 w-72 mx-auto pt-2">
+                        <p class="font-serif font-bold text-gray-900 mt-1">{{nombre_director}}</p>
+                        <p class="font-sans text-xs text-gray-600 uppercase tracking-wider mt-1">Director(a) del Plantel</p>
+                    </div>
+                </div>
+
+                <!-- Sello Oficial -->
+                <div class="absolute right-4 bottom-2 w-28 h-28 border-[1.5px] border-dashed border-gray-300 rounded-full flex items-center justify-center opacity-60">
+                    <span class="text-[10px] text-gray-400 font-sans text-center uppercase tracking-widest">Sello<br>Oficial</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         DOCUMENTO 2: CARTA DE BUENA CONDUCTA
+         ========================================== -->
+    <div class="page-container relative">
+        <div class="page-border"></div>
+        
+        <div class="relative z-10 h-full flex flex-col">
+            <!-- Encabezado / Membrete -->
+            <header class="flex items-center justify-between mb-2">
+                <div class="w-20 h-24 flex items-center justify-center border border-dashed border-gray-300 bg-gray-50">
+                    <span class="text-[10px] text-gray-400 text-center">LOGO<br>ESCUELA</span>
+                </div>
+                
+                <div class="flex-1 text-center px-4">
+                    <h1 class="font-serif text-xl font-bold text-gray-900 uppercase tracking-wide">
+                        Escuela Secundaria Técnica N° 68 "Renacimiento"
+                    </h1>
+                    <p class="font-sans text-sm text-gray-600 mt-1">
+                        Ciudad Renacimiento, Acapulco de Juárez, Guerrero.
+                    </p>
+                </div>
+                
+                <div class="w-20 h-24 flex items-center justify-center border border-dashed border-gray-300 bg-gray-50">
+                    <span class="text-[10px] text-gray-400 text-center">ESCUDO<br>OFICIAL</span>
+                </div>
+            </header>
+
+            <hr class="border-t-[1.5px] border-gray-800 mb-8" />
+
+            <!-- Asunto y Fecha -->
+            <div class="text-right font-sans text-sm mb-8 space-y-1">
+                <p><span class="font-semibold">Asunto:</span> Carta de Buena Conducta</p>
+                <p>Ciudad Renacimiento, Acapulco de Juárez, Guerrero; a {{dia}} de {{mes}} de 2026.</p>
+            </div>
+
+            <!-- Destinatario -->
+            <div class="mb-8 font-serif font-bold text-gray-900 tracking-wide">
+                <p>A QUIEN CORRESPONDA:</p>
+            </div>
+
+            <!-- Cuerpo del Texto -->
+            <div class="text-justify font-sans text-[15px] leading-loose text-gray-800 space-y-8 flex-1 mt-4">
+                <p>
+                    La Dirección de la Escuela Secundaria Técnica N° 68 "Renacimiento", a través de quien suscribe, expide la presente Carta de Buena Conducta a favor del (la) alumno(a):
+                </p>
+
+                <!-- Nombre del Alumno Destacado -->
+                <div class="text-center my-10">
+                    <h2 class="font-serif text-2xl font-bold uppercase tracking-wider text-gray-900">
+                        {{nombre_alumno}}
+                    </h2>
+                </div>
+
+                <p>
+                    Quien cursó sus estudios de educación secundaria en esta institución durante el Ciclo Escolar 2025-2026, en el <strong>{{grado}}</strong> grado, grupo <strong>"{{grupo}}"</strong>.
+                </p>
+
+                <p>
+                    Durante su permanencia en este plantel educativo, el (la) alumno(a) demostró en todo momento un comportamiento respetuoso hacia las autoridades escolares, personal docente, administrativo y sus compañeros. Asimismo, acató los lineamientos establecidos en el Reglamento Escolar de nuestra institución, mostrando responsabilidad, disciplina y una <strong>EXCELENTE CONDUCTA</strong>.
+                </p>
+
+                <p>
+                    Se extiende el presente documento a solicitud de la parte interesada, para los fines que a su derecho convengan, en Ciudad Renacimiento, Acapulco de Juárez, Guerrero, a los {{dia}} días del mes de {{mes}} de dos mil veintiséis.
+                </p>
+            </div>
+
+            <!-- Pie de Página / Firmas -->
+            <footer class="mt-auto pt-10 relative">
+                <div class="text-center">
+                    <p class="font-sans text-sm tracking-widest mb-16">ATENTAMENTE</p>
+                    
+                    <div class="border-t border-gray-800 w-72 mx-auto pt-2">
+                        <p class="font-serif font-bold text-gray-900 mt-1">{{nombre_director}}</p>
+                        <p class="font-sans text-xs text-gray-600 uppercase tracking-wider mt-1">Director(a) del Plantel</p>
+                    </div>
+                </div>
+
+                <!-- Sello Oficial -->
+                <div class="absolute right-4 bottom-2 w-28 h-28 border-[1.5px] border-dashed border-gray-300 rounded-full flex items-center justify-center opacity-60">
+                    <span class="text-[10px] text-gray-400 font-sans text-center uppercase tracking-widest">Sello<br>Oficial</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+</body>
+</html>

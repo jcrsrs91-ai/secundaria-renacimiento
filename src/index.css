@@ -35,3 +35,87 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
 }
+
+/* Tipografías para documentos oficiales */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:wght@400;600;700&display=swap');
+
+.font-serif {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+.font-sans {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Estilos de la página tamaño Oficio (Legal) para impresión */
+.page-container {
+  width: 8.5in;
+  min-height: 11in; /* Tamaño Carta */
+  margin: 2rem auto;
+  background-color: white;
+  padding: 1cm; /* Margen drásticamente reducido en pantalla */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.page-border {
+  position: absolute;
+  top: 0.8cm;
+  bottom: 0.8cm;
+  left: 0.8cm;
+  right: 0.8cm;
+  border: 2px solid #1e293b; /* slate-800 oscuro y elegante */
+  pointer-events: none;
+  z-index: 50;
+}
+
+.page-border::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  border: 1px solid #475569; /* slate-600 */
+  pointer-events: none;
+}
+
+.print-page-break {
+  page-break-after: always;
+}
+
+@media print {
+  html, body, #root { height: auto !important; overflow: visible !important; min-height: auto !important; display: block !important; background-color: white !important; }
+  * { overflow: visible !important; }
+  
+  /* Cuidado de no ocultar el header del documento, usamos el selector de ID si es posible o asides directos */
+  aside, nav, .sidebar { display: none !important; }
+  
+  /* Ocultamos el header de la aplicación pero no el del documento */
+  body > div > div > header { display: none !important; }
+  
+  .page-container {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 1cm !important; /* Margen muy delgado para la impresora */
+    box-shadow: none !important;
+  }
+  
+  .print-page-break {
+    page-break-after: always !important;
+  }
+  
+  .print-page-break:last-child {
+    page-break-after: auto !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  @page {
+    size: letter; /* Tamaño Carta */
+    margin: 0mm;
+  }
+}

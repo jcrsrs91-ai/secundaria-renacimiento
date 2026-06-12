@@ -160,7 +160,8 @@ export default function ControlEscolar() {
     setConstanciaType(type);
     setPrintMode('constancia');
     setPrintData(selectedStudent);
-    setTimeout(() => window.print(), 500);
+    // Aumentamos el tiempo para dar oportunidad al navegador de cargar/decodificar la imagen
+    setTimeout(() => window.print(), 800);
     closeModal();
   };
 
@@ -398,8 +399,13 @@ export default function ControlEscolar() {
   };
 
   return (
-    <>
-    <div className={printMode ? "hidden" : "space-y-6 relative"}>
+    <div className="h-full flex flex-col relative print:bg-white">
+      {/* Precarga de imágenes para la impresión */}
+      <div className="hidden">
+        <img src="/logo-sep.png" alt="preload-sep" />
+        <img src="/logo-escuela.png" alt="preload-escuela" />
+      </div>
+      <div className={printMode ? "hidden" : "space-y-6 relative"}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Control Escolar</h2>
@@ -858,6 +864,6 @@ export default function ControlEscolar() {
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
-    </>
+    </div>
   );
 }

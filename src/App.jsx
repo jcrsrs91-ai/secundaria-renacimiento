@@ -11,6 +11,7 @@ import Coordinacion from './pages/dashboard/Coordinacion';
 import Asistencia from './pages/dashboard/Asistencia';
 import Biblioteca from './pages/dashboard/Biblioteca';
 import PortalTutores from './pages/dashboard/PortalTutores';
+import ImpresionDocumentos from './pages/dashboard/ImpresionDocumentos';
 
 function App() {
   return (
@@ -30,9 +31,11 @@ function App() {
           <Route path="asistencia" element={<Asistencia />} />
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="portal-familiar" element={<PortalTutores />} />
+          <Route path="impresion-documentos" element={<ImpresionDocumentos />} />
         </Route>
       </Route>
     </Routes>
+
   );
 }
 

@@ -9,7 +9,8 @@ import {
   ClipboardCheck, 
   Library,
   LogOut,
-  UsersRound
+  UsersRound,
+  Printer
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -24,12 +25,13 @@ export default function DashboardLayout() {
     { name: 'Coordinación Académica', path: '/panel/coordinacion', icon: GraduationCap },
     { name: 'Prefectura / Asistencia', path: '/panel/asistencia', icon: ClipboardCheck },
     { name: 'Biblioteca', path: '/panel/biblioteca', icon: Library },
+    { name: 'Impresión Documentos', path: '/panel/impresion-documentos', icon: Printer },
   ] : [
     { name: 'Mi Portal Familiar', path: '/panel/portal-familiar', icon: UsersRound },
   ];
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen print:h-auto bg-slate-50 print:bg-white">
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all">
         <div className="h-16 flex items-center px-6 bg-slate-950 font-bold text-white tracking-wider border-b border-slate-800">
@@ -63,14 +65,14 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 bg-white shadow-sm flex items-center px-8 border-b border-slate-200">
+      <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible">
+        <header className="h-16 bg-white shadow-sm flex items-center px-8 border-b border-slate-200 no-print">
           <h1 className="text-xl font-semibold text-slate-800">
             {menu.find(m => m.path === location.pathname)?.name || 'Panel'}
           </h1>
         </header>
-        <main className="flex-1 overflow-y-auto p-8">
-          <div className="mx-auto max-w-7xl">
+        <main className="flex-1 overflow-y-auto print:overflow-visible p-8 print:p-0">
+          <div className="mx-auto max-w-7xl print:max-w-none">
             <Outlet />
           </div>
         </main>
