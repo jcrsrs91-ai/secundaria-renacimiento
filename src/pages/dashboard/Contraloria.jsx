@@ -550,6 +550,12 @@ export default function Contraloria() {
     document.body.removeChild(link);
   };
 
+  // Cálculo de estadísticas generales del inventario
+  const totalArticulos = inventario.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+  const libres = inventario.filter(i => i.ubicacion === 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+  const ocupadas = inventario.filter(i => i.ubicacion !== 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+  const malEstado = inventario.filter(i => i.estado === 'Malo').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+
   return (
     <>
     <div className={printMode ? "hidden" : "space-y-6"}>
@@ -621,6 +627,26 @@ export default function Contraloria() {
 
       {activeTab === 'inventario' && (
         <div className="space-y-6">
+          {/* Panel de Estadísticas Generales */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center">
+              <span className="text-sm font-medium text-slate-500 mb-1">Total en Plantel</span>
+              <span className="text-3xl font-bold text-indigo-600">{totalArticulos}</span>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center">
+              <span className="text-sm font-medium text-slate-500 mb-1">Libres (Bodega)</span>
+              <span className="text-3xl font-bold text-emerald-600">{libres}</span>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center">
+              <span className="text-sm font-medium text-slate-500 mb-1">En Uso (Ocupadas)</span>
+              <span className="text-3xl font-bold text-amber-600">{ocupadas}</span>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center">
+              <span className="text-sm font-medium text-slate-500 mb-1">En Mal Estado</span>
+              <span className="text-3xl font-bold text-rose-600">{malEstado}</span>
+            </div>
+          </div>
+
           {/* Tarjetas de Formatos Oficiales */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
