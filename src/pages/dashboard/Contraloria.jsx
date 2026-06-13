@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History } from 'lucide-react';
+import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -71,6 +71,29 @@ const expandCodeRange = (codeStr) => {
     return codes;
   }
   return [startCode, endCode];
+};
+
+const getIconForArticulo = (nombre) => {
+  const n = nombre.toLowerCase();
+  if (n.includes('compu') || n.includes('pc') || n.includes('cpu')) return <Cpu className="w-5 h-5" />;
+  if (n.includes('monitor') || n.includes('pantalla')) return <Monitor className="w-5 h-5" />;
+  if (n.includes('laptop') || n.includes('portatil')) return <Laptop className="w-5 h-5" />;
+  if (n.includes('impresora') || n.includes('printer')) return <Printer className="w-5 h-5" />;
+  if (n.includes('proyector') || n.includes('cañon')) return <Projector className="w-5 h-5" />;
+  if (n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sillón')) return <Armchair className="w-5 h-5" />;
+  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tablón') || n.includes('pupitre')) return <Box className="w-5 h-5" />; // Fallback a Box para mesas si Table no está
+  if (n.includes('libro') || n.includes('diccionario') || n.includes('enciclopedia')) return <BookOpen className="w-5 h-5" />;
+  if (n.includes('tv') || n.includes('televisión') || n.includes('televisor') || n.includes('pantalla')) return <Tv className="w-5 h-5" />;
+  if (n.includes('bocina') || n.includes('altavoz') || n.includes('sonido') || n.includes('audio') || n.includes('microfono')) return <Speaker className="w-5 h-5" />;
+  if (n.includes('teclado')) return <Keyboard className="w-5 h-5" />;
+  if (n.includes('mouse') || n.includes('raton')) return <Mouse className="w-5 h-5" />;
+  if (n.includes('servidor') || n.includes('switch') || n.includes('router') || n.includes('red')) return <Server className="w-5 h-5" />;
+  if (n.includes('telefono') || n.includes('celular')) return <Smartphone className="w-5 h-5" />;
+  if (n.includes('tablet') || n.includes('ipad')) return <Tablet className="w-5 h-5" />;
+  if (n.includes('archivero') || n.includes('gaveta') || n.includes('estante') || n.includes('librero')) return <Archive className="w-5 h-5" />;
+  if (n.includes('pizarrón') || n.includes('pintarrón')) return <PenTool className="w-5 h-5" />;
+  
+  return <Box className="w-5 h-5" />;
 };
 
 export default function Contraloria() {
@@ -639,39 +662,29 @@ export default function Contraloria() {
 
       {activeTab === 'inventario' && (
         <div className="space-y-6">
-          {/* Panel de Estadísticas Generales */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center">
-              <span className="text-sm font-medium text-slate-500 mb-1">Total en Plantel</span>
-              <span className="text-3xl font-bold text-indigo-600">{totalArticulos}</span>
+          {/* Desglose por tipo de artículo (Reemplaza al panel general) */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <h4 className="text-lg font-bold text-slate-800 flex items-center">
+                <PackageOpen className="w-6 h-6 mr-2 text-indigo-600" /> Resumen General del Inventario
+              </h4>
+              <div className="flex gap-2">
+                <span className="bg-indigo-100 text-indigo-800 py-1.5 px-4 rounded-full text-sm font-bold shadow-sm">Total Plantel: {totalArticulos}</span>
+                <span className="bg-emerald-100 text-emerald-800 py-1.5 px-4 rounded-full text-sm font-bold shadow-sm">En Bodega: {libres}</span>
+              </div>
             </div>
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center">
-              <span className="text-sm font-medium text-slate-500 mb-1">Libres (Bodega)</span>
-              <span className="text-3xl font-bold text-emerald-600">{libres}</span>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center">
-              <span className="text-sm font-medium text-slate-500 mb-1">En Uso (Ocupadas)</span>
-              <span className="text-3xl font-bold text-amber-600">{ocupadas}</span>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center">
-              <span className="text-sm font-medium text-slate-500 mb-1">En Mal Estado</span>
-              <span className="text-3xl font-bold text-rose-600">{malEstado}</span>
-            </div>
-          </div>
-
-          {/* Desglose por tipo de artículo */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
-              <PackageOpen className="w-4 h-4 mr-2 text-indigo-600" /> Cantidades por Tipo de Artículo
-            </h4>
-            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar pb-2">
               {desgloseArray.length > 0 ? desgloseArray.map((item, idx) => (
-                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 flex items-center text-sm shadow-sm">
-                  <span className="text-slate-700 font-medium mr-2">{item.nombre}</span>
-                  <span className="bg-indigo-100 text-indigo-800 py-0.5 px-2 rounded-full text-xs font-bold">{item.cantidad}</span>
+                <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center hover:border-indigo-300 hover:shadow-md transition-all group">
+                  <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 mb-3 transition-colors">
+                    {getIconForArticulo(item.nombre)}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600 mb-1 line-clamp-2 leading-tight min-h-[2.5rem] flex items-center">{item.nombre}</span>
+                  <span className="text-2xl font-black text-indigo-600">{item.cantidad}</span>
                 </div>
               )) : (
-                <p className="text-sm text-slate-500 italic">No hay artículos registrados para desglosar.</p>
+                <div className="col-span-full py-10 text-center text-slate-500 italic">No hay artículos registrados en el inventario.</div>
               )}
             </div>
           </div>
