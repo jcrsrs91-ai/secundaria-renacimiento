@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download } from 'lucide-react';
+import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -133,8 +133,9 @@ export default function Contraloria() {
   const [printMode, setPrintMode] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'etiquetas'
   const [printData, setPrintData] = useState(null);
   
-  const [modalOpen, setModalOpen] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'editItem'
+  const [modalOpen, setModalOpen] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'editItem' | 'history'
   const [editingItem, setEditingItem] = useState(null);
+  const [historyItem, setHistoryItem] = useState(null);
   
   const [formData, setFormData] = useState({ articulos: [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }] });
 
@@ -253,10 +254,18 @@ export default function Contraloria() {
             
             if (art.id) {
               // Si ya existe en el inventario, actualizamos su ubicación y estado
+              const invItem = inventario.find(i => i.id === art.id);
+              const currentHistorial = invItem?.historial || [];
               const itemRef = doc(db, 'inventario', art.id);
               await updateDoc(itemRef, {
                 ubicacion: formData.areaResguardante || 'En resguardo',
-                estado: art.estado || 'Bueno'
+                estado: art.estado || 'Bueno',
+                historial: [...currentHistorial, {
+                  fecha: new Date().toISOString(),
+                  accion: "Asignación de Resguardo",
+                  detalle: `Asignado a ${formData.nombreResguardante} (Folio ${formData.folio || 'S/F'}).`,
+                  usuario: "Contraloría"
+                }]
               });
             } else if (formData.guardarEnInventario) {
               // Si no existe y se marcó "Guardar en Inventario", lo desglosamos y guardamos individualmente
@@ -301,6 +310,27 @@ export default function Contraloria() {
     e.preventDefault();
     if (!editingItem) return;
     try {
+      const originalItem = inventario.find(i => i.id === editingItem.id);
+      const currentHistorial = originalItem?.historial || [];
+      const newHistorial = [...currentHistorial];
+      
+      if (originalItem && originalItem.estado !== editingItem.estado) {
+        newHistorial.push({
+          fecha: new Date().toISOString(),
+          accion: "Cambio de Estado",
+          detalle: `Estado modificado manualmente de '${originalItem.estado}' a '${editingItem.estado}'.`,
+          usuario: "Contraloría"
+        });
+      }
+      if (originalItem && originalItem.ubicacion !== editingItem.ubicacion) {
+        newHistorial.push({
+          fecha: new Date().toISOString(),
+          accion: "Cambio de Ubicación",
+          detalle: `Movido manualmente de '${originalItem.ubicacion}' a '${editingItem.ubicacion}'.`,
+          usuario: "Contraloría"
+        });
+      }
+
       const itemRef = doc(db, 'inventario', editingItem.id);
       await updateDoc(itemRef, {
         codigo: editingItem.codigo,
@@ -308,6 +338,7 @@ export default function Contraloria() {
         ubicacion: editingItem.ubicacion,
         cantidad: Number(editingItem.cantidad),
         estado: editingItem.estado,
+        historial: newHistorial
       });
       setModalOpen(null);
       setEditingItem(null);
@@ -355,6 +386,15 @@ export default function Contraloria() {
       const validItems = editingResguardo.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
       const resRef = doc(db, 'resguardos', editingResguardo.id);
       
+      // Encontrar el resguardo original para comparar
+      const originalResguardo = resguardos.find(r => r.id === editingResguardo.id);
+      const originalArticulos = originalResguardo ? originalResguardo.articulos || [] : [];
+      
+      // Artículos que fueron eliminados en la edición
+      const removedItems = originalArticulos.filter(origArt => 
+        !validItems.some(vArt => (vArt.codigo || vArt.inventario) === (origArt.codigo || origArt.inventario) || (vArt.id && vArt.id === origArt.id))
+      );
+
       await updateDoc(resRef, {
         folio: editingResguardo.folio || '',
         fecha: editingResguardo.fecha || '',
@@ -372,14 +412,52 @@ export default function Contraloria() {
         }))
       });
 
+      // Procesar artículos que continúan en el resguardo
       for (const art of validItems) {
         const targetCode = art.codigo || art.inventario;
         const invItem = inventario.find(i => i.codigo === targetCode || i.id === art.id);
         if (invItem) {
           const itemRef = doc(db, 'inventario', invItem.id);
+          const currentHistorial = invItem.historial || [];
+          
+          let updateData = {
+            ubicacion: editingResguardo.areaResguardante || 'En resguardo'
+          };
+          
+          // Si cambió el estado, registrar en historial
+          if (invItem.estado !== (art.estado || 'Bueno')) {
+            updateData.estado = art.estado || 'Bueno';
+            updateData.historial = [...currentHistorial, {
+              fecha: new Date().toISOString(),
+              accion: "Cambio de Estado",
+              detalle: `Estado actualizado a '${updateData.estado}' durante revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
+              usuario: "Contraloría"
+            }];
+          } else {
+             // Si el estado es el mismo, solo actualizamos ubicación
+             updateData.estado = art.estado || 'Bueno';
+          }
+          
+          await updateDoc(itemRef, updateData);
+        }
+      }
+
+      // Procesar artículos que fueron ELIMINADOS del resguardo (Liberados)
+      for (const art of removedItems) {
+        const targetCode = art.codigo || art.inventario;
+        const invItem = inventario.find(i => i.codigo === targetCode || i.id === art.id);
+        if (invItem) {
+          const itemRef = doc(db, 'inventario', invItem.id);
+          const currentHistorial = invItem.historial || [];
+          
           await updateDoc(itemRef, {
-            ubicacion: editingResguardo.areaResguardante || 'En resguardo',
-            estado: art.estado || 'Bueno'
+            ubicacion: 'Bodega Contraloría',
+            historial: [...currentHistorial, {
+              fecha: new Date().toISOString(),
+              accion: "Retorno a Bodega",
+              detalle: `Liberado del resguardo de ${originalResguardo.nombreResguardante} (Folio ${originalResguardo.folio || 'S/F'}).`,
+              usuario: "Contraloría"
+            }]
           });
         }
       }
@@ -405,8 +483,15 @@ export default function Contraloria() {
           const invItem = inventario.find(i => i.codigo === targetCode || i.id === art.id);
           if (invItem) {
             const itemRef = doc(db, 'inventario', invItem.id);
+            const currentHistorial = invItem.historial || [];
             await updateDoc(itemRef, {
-              ubicacion: 'Bodega Contraloría'
+              ubicacion: 'Bodega Contraloría',
+              historial: [...currentHistorial, {
+                fecha: new Date().toISOString(),
+                accion: "Retorno a Bodega",
+                detalle: `Resguardo eliminado. Liberado de ${res.nombreResguardante} (Folio ${res.folio || 'S/F'}).`,
+                usuario: "Contraloría"
+              }]
             });
           }
         }
@@ -683,8 +768,11 @@ export default function Contraloria() {
                     <button onClick={() => handleEditClick(item)} className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors mr-1">
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDeleteClick(item.id)} className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors">
+                    <button onClick={() => handleDeleteClick(item.id)} className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors mr-1">
                       <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => { setHistoryItem(item); setModalOpen('history'); }} className="text-amber-600 hover:text-amber-800 p-2 hover:bg-amber-50 rounded-lg transition-colors">
+                      <History className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
@@ -806,9 +894,10 @@ export default function Contraloria() {
             <h3 className="font-bold text-xl text-slate-800">
               {modalOpen === 'recepcion' ? 'Generar Acta de Recepción' : 
                modalOpen === 'resguardo' ? 'Generar Carta de Resguardo' : 
-               modalOpen === 'editResguardo' ? 'Editar Carta de Resguardo' : 'Editar Bien del Inventario'}
+               modalOpen === 'editResguardo' ? 'Editar Carta de Resguardo' : 
+               modalOpen === 'history' ? 'Historial de Movimientos' : 'Editar Bien del Inventario'}
             </h3>
-            <button onClick={() => { setModalOpen(null); setEditingItem(null); setEditingResguardo(null); }} className="text-slate-400 hover:text-slate-600">
+            <button onClick={() => { setModalOpen(null); setEditingItem(null); setEditingResguardo(null); setHistoryItem(null); }} className="text-slate-400 hover:text-slate-600">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -944,6 +1033,39 @@ export default function Contraloria() {
                   </button>
                 </div>
               </form>
+            ) : modalOpen === 'history' && historyItem ? (
+              <div className="space-y-4">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
+                  <h4 className="font-bold text-slate-800">{historyItem.articulo}</h4>
+                  <p className="text-sm text-slate-500">Código: {historyItem.codigo} | Ubicación Actual: {historyItem.ubicacion}</p>
+                </div>
+                
+                {historyItem.historial && historyItem.historial.length > 0 ? (
+                  <div className="relative border-l-2 border-slate-200 ml-3 space-y-6 pb-4">
+                    {[...historyItem.historial].reverse().map((entry, idx) => (
+                      <div key={idx} className="relative pl-6">
+                        <div className="absolute w-4 h-4 bg-primary-500 rounded-full -left-[9px] top-1 border-4 border-white shadow-sm"></div>
+                        <div className="bg-white border border-slate-100 shadow-sm p-4 rounded-xl">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-semibold text-slate-800 text-sm">{entry.accion}</span>
+                            <span className="text-xs text-slate-400">{new Date(entry.fecha).toLocaleString('es-MX')}</span>
+                          </div>
+                          <p className="text-sm text-slate-600">{entry.detalle}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+                    No hay historial de movimientos para este artículo.
+                  </div>
+                )}
+                <div className="flex justify-end pt-4 border-t border-slate-200 mt-4">
+                  <button type="button" onClick={() => { setModalOpen(null); setHistoryItem(null); }} className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm">
+                    Cerrar Historial
+                  </button>
+                </div>
+              </div>
             ) : (
               <form onSubmit={handlePrintSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
