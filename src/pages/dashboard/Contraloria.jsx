@@ -9,6 +9,70 @@ import ScannerInventarioModal from '../../components/ScannerInventarioModal';
 import EtiquetasPrint from '../../components/EtiquetasPrint';
 import ActaBajaPrint from '../../components/ActaBajaPrint';
 
+// Funciones auxiliares para el manejo de rangos de folios de inventario
+const generateCodeRange = (baseCode, quantity) => {
+  const qty = Number(quantity) || 1;
+  if (qty <= 1) return { codes: [baseCode], display: baseCode };
+
+  // Intentar encontrar un número al final del código (ej. "INV-001", "INV-100", "B-5" o "002")
+  const match = baseCode.match(/^(.*?)(-?\d+)$/);
+  if (match) {
+    const prefix = match[1];
+    const numStr = match[2];
+    const startNum = parseInt(numStr, 10);
+    const padLength = numStr.length; // Para mantener ceros a la izquierda (ej. "001" -> 3)
+    
+    const codes = [];
+    for (let i = 0; i < qty; i++) {
+      const currentNum = startNum + i;
+      const currentNumStr = String(currentNum).padStart(padLength, '0');
+      codes.push(`${prefix}${currentNumStr}`);
+    }
+    const endCode = codes[codes.length - 1];
+    return {
+      codes,
+      display: `${baseCode} al ${endCode}`
+    };
+  } else {
+    // Si no termina en número, agregar sufijo consecutivo -1, -2, etc.
+    const codes = [];
+    for (let i = 1; i <= qty; i++) {
+      codes.push(`${baseCode}-${i}`);
+    }
+    return {
+      codes,
+      display: `${baseCode}-1 al ${baseCode}-${qty}`
+    };
+  }
+};
+
+const expandCodeRange = (codeStr) => {
+  if (!codeStr) return [];
+  if (!codeStr.includes(' al ')) return [codeStr];
+
+  const parts = codeStr.split(' al ');
+  const startCode = parts[0].trim();
+  const endCode = parts[1].trim();
+
+  const matchStart = startCode.match(/^(.*?)(-?\d+)$/);
+  const matchEnd = endCode.match(/^(.*?)(-?\d+)$/);
+
+  if (matchStart && matchEnd && matchStart[1] === matchEnd[1]) {
+    const prefix = matchStart[1];
+    const startNum = parseInt(matchStart[2], 10);
+    const endNum = parseInt(matchEnd[2], 10);
+    const padLength = matchStart[2].length;
+
+    const codes = [];
+    for (let num = startNum; num <= endNum; num++) {
+      const numStr = String(num).padStart(padLength, '0');
+      codes.push(`${prefix}${numStr}`);
+    }
+    return codes;
+  }
+  return [startCode, endCode];
+};
+
 export default function Contraloria() {
   const [activeTab, setActiveTab] = useState('pagos');
 
@@ -154,7 +218,23 @@ export default function Contraloria() {
       try {
         const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
         if (validItems.length > 0) {
-          // 1. Guardar la Acta de Resguardo en la colección 'resguardos'
+          // 1. Crear artículos consolidados para guardar en el Acta de Resguardo y para imprimir
+          const resguardoArticulos = validItems.map((art, idx) => {
+            const baseCode = art.codigo || art.inventario || `INV-RESG-${Date.now().toString().slice(-4)}${idx}`;
+            const qty = Number(art.cantidad) || 1;
+            const { display } = generateCodeRange(baseCode, qty);
+            
+            return {
+              id: art.id || '',
+              cantidad: qty,
+              descripcion: art.descripcion || art.articulo || '',
+              marca: art.marca || '',
+              serie: art.serie || '',
+              codigo: display, // Rangos consolidados para la impresión y visualización
+              estado: art.estado || 'Bueno'
+            };
+          });
+
           const resguardoDoc = {
             folio: formData.folio || '',
             fecha: formData.fecha || new Date().toISOString().split('T')[0],
@@ -162,42 +242,43 @@ export default function Contraloria() {
             areaResguardante: formData.areaResguardante || '',
             nombreContralor: formData.nombreContralor || 'Profr. Juan Carlos Taboada B.',
             observaciones: formData.observaciones || '',
-            articulos: validItems.map(art => ({
-              id: art.id || '',
-              cantidad: Number(art.cantidad) || 1,
-              descripcion: art.descripcion || art.articulo || '',
-              marca: art.marca || '',
-              serie: art.serie || '',
-              codigo: art.codigo || art.inventario || '',
-              estado: art.estado || 'Bueno'
-            })),
+            articulos: resguardoArticulos,
             fechaRegistro: new Date().toISOString()
           };
           await addDoc(collection(db, 'resguardos'), resguardoDoc);
 
-          // 2. Actualizar o agregar artículos en 'inventario'
+          // 2. Guardar o actualizar artículos en el Inventario General INDIVIDUALMENTE
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
             
             if (art.id) {
+              // Si ya existe en el inventario, actualizamos su ubicación y estado
               const itemRef = doc(db, 'inventario', art.id);
               await updateDoc(itemRef, {
                 ubicacion: formData.areaResguardante || 'En resguardo',
                 estado: art.estado || 'Bueno'
               });
             } else if (formData.guardarEnInventario) {
-              const tempCode = `INV-RESG-${Date.now().toString().slice(-4)}${i}`;
-              await addDoc(collection(db, 'inventario'), {
-                codigo: art.codigo || art.inventario || tempCode,
-                articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
-                ubicacion: formData.areaResguardante || 'En resguardo',
-                cantidad: Number(art.cantidad) || 1,
-                estado: art.estado || 'Bueno',
-                serie: art.serie || '',
-                fechaIngreso: new Date().toISOString()
-              });
+              // Si no existe y se marcó "Guardar en Inventario", lo desglosamos y guardamos individualmente
+              const baseCode = art.codigo || art.inventario || `INV-RESG-${Date.now().toString().slice(-4)}${i}`;
+              const qty = Number(art.cantidad) || 1;
+              const { codes } = generateCodeRange(baseCode, qty);
+              
+              for (const code of codes) {
+                await addDoc(collection(db, 'inventario'), {
+                  codigo: code,
+                  articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
+                  ubicacion: formData.areaResguardante || 'En resguardo',
+                  cantidad: 1, // Guardado individualmente
+                  estado: art.estado || 'Bueno',
+                  serie: art.serie || '',
+                  fechaIngreso: new Date().toISOString()
+                });
+              }
             }
           }
+          // Usar artículos consolidados en la impresión
+          formData.articulos = resguardoArticulos;
         }
       } catch (error) {
         console.error("Error guardando resguardos en Firebase:", error);
