@@ -556,6 +556,18 @@ export default function Contraloria() {
   const ocupadas = inventario.filter(i => i.ubicacion !== 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
   const malEstado = inventario.filter(i => i.estado === 'Malo').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
 
+  // Desglose por tipo de artículo
+  const desglosePorArticulo = inventario.reduce((acc, item) => {
+    const nombre = item.articulo ? item.articulo.trim().toUpperCase() : 'SIN NOMBRE';
+    if (!acc[nombre]) acc[nombre] = 0;
+    acc[nombre] += (Number(item.cantidad) || 0);
+    return acc;
+  }, {});
+
+  const desgloseArray = Object.entries(desglosePorArticulo)
+    .map(([nombre, cantidad]) => ({ nombre, cantidad }))
+    .sort((a, b) => b.cantidad - a.cantidad);
+
   return (
     <>
     <div className={printMode ? "hidden" : "space-y-6"}>
@@ -644,6 +656,23 @@ export default function Contraloria() {
             <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center">
               <span className="text-sm font-medium text-slate-500 mb-1">En Mal Estado</span>
               <span className="text-3xl font-bold text-rose-600">{malEstado}</span>
+            </div>
+          </div>
+
+          {/* Desglose por tipo de artículo */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
+              <PackageOpen className="w-4 h-4 mr-2 text-indigo-600" /> Cantidades por Tipo de Artículo
+            </h4>
+            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+              {desgloseArray.length > 0 ? desgloseArray.map((item, idx) => (
+                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 flex items-center text-sm shadow-sm">
+                  <span className="text-slate-700 font-medium mr-2">{item.nombre}</span>
+                  <span className="bg-indigo-100 text-indigo-800 py-0.5 px-2 rounded-full text-xs font-bold">{item.cantidad}</span>
+                </div>
+              )) : (
+                <p className="text-sm text-slate-500 italic">No hay artículos registrados para desglosar.</p>
+              )}
             </div>
           </div>
 
