@@ -206,6 +206,7 @@ export default function Contraloria() {
     if (isSubmitting) return;
     setIsSubmitting(true);
     const toastId = toast.loading('Guardando información...');
+    let dataToPrint = { ...formData };
     
     // Guardar en base de datos si es recepción
     if (modalOpen === 'recepcion') {
@@ -319,7 +320,7 @@ export default function Contraloria() {
             }
           }
           // Usar artículos consolidados en la impresión
-          formData.articulos = resguardoArticulos;
+          dataToPrint.articulos = resguardoArticulos;
         }
       } catch (error) {
         console.error("Error guardando resguardos en Firebase:", error);
@@ -330,7 +331,7 @@ export default function Contraloria() {
     }
 
     if (actionType === 'print') {
-      setPrintData(formData);
+      setPrintData(dataToPrint);
       setPrintMode(modalOpen);
       setModalOpen(null);
       toast.success("¡Preparando documento para impresión!", { id: toastId });
@@ -486,6 +487,17 @@ export default function Contraloria() {
             }
             
             await updateDoc(itemRef, updateData);
+          } else {
+            // Si el artículo no existe en el catálogo, lo creamos
+            await addDoc(collection(db, 'inventario'), {
+              codigo: code,
+              articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
+              ubicacion: editingResguardo.areaResguardante || 'En resguardo',
+              cantidad: 1,
+              estado: art.estado || 'Bueno',
+              serie: art.serie || '',
+              fechaIngreso: new Date().toISOString()
+            });
           }
         }
       }
@@ -634,8 +646,6 @@ export default function Contraloria() {
   // Cálculo de estadísticas generales del inventario
   const totalArticulos = inventario.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
   const libres = inventario.filter(i => i.ubicacion === 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
-  const ocupadas = inventario.filter(i => i.ubicacion !== 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
-  const malEstado = inventario.filter(i => i.estado === 'Malo').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
 
   // Desglose por tipo de artículo
   const desglosePorArticulo = inventario.reduce((acc, item) => {
