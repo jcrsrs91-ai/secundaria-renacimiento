@@ -440,6 +440,37 @@ export default function Contraloria() {
     }
   };
 
+  const handleBulkStatusChange = async (newStatus) => {
+    if (selectedItems.length === 0) return;
+    if (window.confirm(`¿Estás seguro de marcar ${selectedItems.length} artículos seleccionados como '${newStatus}'?`)) {
+      const toastId = toast.loading(`Actualizando a ${newStatus}...`);
+      try {
+        const promises = selectedItems.map(async (id) => {
+          const itemRef = doc(db, 'inventario', id);
+          const originalItem = inventario.find(i => i.id === id);
+          if (originalItem && originalItem.estado !== newStatus) {
+            const currentHistorial = originalItem.historial || [];
+            await updateDoc(itemRef, { 
+              estado: newStatus,
+              historial: [...currentHistorial, {
+                fecha: new Date().toISOString(),
+                accion: "Cambio de Estado Masivo",
+                detalle: `Estado modificado de '${originalItem.estado}' a '${newStatus}'.`,
+                usuario: "Contraloría"
+              }]
+            });
+          }
+        });
+        await Promise.all(promises);
+        setSelectedItems([]);
+        toast.success(`Artículos actualizados a ${newStatus}.`, { id: toastId });
+      } catch (error) {
+        console.error("Error en actualización masiva:", error);
+        toast.error("Hubo un error al actualizar los artículos.", { id: toastId });
+      }
+    }
+  };
+
   const handleEditResguardoClick = (res) => {
     setEditingResguardo({ ...res });
     setModalOpen('editResguardo');
@@ -668,17 +699,38 @@ export default function Contraloria() {
   const totalArticulos = inventario.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
   const libres = inventario.filter(i => i.ubicacion === 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
 
-  // Desglose por tipo de artículo (Categorizado)
-  const desglosePorArticulo = inventario.reduce((acc, item) => {
-    const categoria = getCategoryForArticulo(item.articulo);
-    if (!acc[categoria]) acc[categoria] = 0;
-    acc[categoria] += (Number(item.cantidad) || 0);
-    return acc;
-  }, {});
+  // Desglose por tipo de artículo (Nuevos vs Usados)
+  const inventarioNuevos = inventario.filter(i => i.estado === 'Nuevo');
+  const inventarioUsados = inventario.filter(i => i.estado !== 'Nuevo');
 
-  const desgloseArray = Object.entries(desglosePorArticulo)
-    .map(([nombre, cantidad]) => ({ nombre, cantidad }))
-    .sort((a, b) => b.cantidad - a.cantidad);
+  const crearDesglose = (inv) => {
+    const agrupado = inv.reduce((acc, item) => {
+      const categoria = getCategoryForArticulo(item.articulo);
+      if (!acc[categoria]) acc[categoria] = { total: 0, subItems: {} };
+      
+      const cantidad = Number(item.cantidad) || 0;
+      acc[categoria].total += cantidad;
+      
+      const nombreExacto = item.articulo ? item.articulo.trim() : 'Sin descripción';
+      acc[categoria].subItems[nombreExacto] = (acc[categoria].subItems[nombreExacto] || 0) + cantidad;
+      
+      return acc;
+    }, {});
+
+    return Object.entries(agrupado)
+      .map(([nombre, data]) => ({ 
+        nombre, 
+        cantidad: data.total,
+        detalles: Object.entries(data.subItems)
+          .map(([desc, cant]) => `${cant}x ${desc}`)
+          .sort((a, b) => b.localeCompare(a)) 
+      }))
+      .sort((a, b) => b.cantidad - a.cantidad);
+  };
+
+  const desgloseNuevosArray = crearDesglose(inventarioNuevos);
+  const desgloseUsadosArray = crearDesglose(inventarioUsados);
+
 
   return (
     <>
@@ -751,29 +803,58 @@ export default function Contraloria() {
 
       {activeTab === 'inventario' && (
         <div className="space-y-6">
-          {/* Desglose por tipo de artículo (Reemplaza al panel general) */}
+          {/* Desglose de Bienes Nuevos */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
               <h4 className="text-lg font-bold text-slate-800 flex items-center">
-                <PackageOpen className="w-6 h-6 mr-2 text-indigo-600" /> Resumen General del Inventario
+                <PackageOpen className="w-6 h-6 mr-2 text-indigo-600" /> Bienes Nuevos
               </h4>
-              <div className="flex gap-2">
-                <span className="bg-indigo-100 text-indigo-800 py-1.5 px-4 rounded-full text-sm font-bold shadow-sm">Total Plantel: {totalArticulos}</span>
-                <span className="bg-emerald-100 text-emerald-800 py-1.5 px-4 rounded-full text-sm font-bold shadow-sm">En Bodega: {libres}</span>
-              </div>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar pb-2">
-              {desgloseArray.length > 0 ? desgloseArray.map((item, idx) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto pr-2 custom-scrollbar pb-2">
+              {desgloseNuevosArray.length > 0 ? desgloseNuevosArray.map((item, idx) => (
                 <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center hover:border-indigo-300 hover:shadow-md transition-all group">
                   <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 mb-3 transition-colors">
                     {getIconForArticulo(item.nombre)}
                   </div>
                   <span className="text-xs font-semibold text-slate-600 mb-1 line-clamp-2 leading-tight min-h-[2.5rem] flex items-center">{item.nombre}</span>
-                  <span className="text-2xl font-black text-indigo-600">{item.cantidad}</span>
+                  <span className="text-2xl font-black text-indigo-600 mb-2">{item.cantidad}</span>
+                  <div className="w-full text-left text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 flex-1 overflow-y-auto custom-scrollbar min-h-[3rem]">
+                    {item.detalles.map((det, i) => (
+                      <div key={i} className="truncate" title={det}>• {det}</div>
+                    ))}
+                  </div>
                 </div>
               )) : (
-                <div className="col-span-full py-10 text-center text-slate-500 italic">No hay artículos registrados en el inventario.</div>
+                <div className="col-span-full py-6 text-center text-slate-500 italic">No hay artículos nuevos registrados.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Desglose de Bienes en Uso */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+              <h4 className="text-lg font-bold text-slate-800 flex items-center">
+                <Archive className="w-6 h-6 mr-2 text-indigo-600" /> Bienes en Uso (Bueno, Regular, Malo)
+              </h4>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto pr-2 custom-scrollbar pb-2">
+              {desgloseUsadosArray.length > 0 ? desgloseUsadosArray.map((item, idx) => (
+                <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center hover:border-indigo-300 hover:shadow-md transition-all group">
+                  <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 mb-3 transition-colors">
+                    {getIconForArticulo(item.nombre)}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600 mb-1 line-clamp-2 leading-tight min-h-[2.5rem] flex items-center">{item.nombre}</span>
+                  <span className="text-2xl font-black text-indigo-600 mb-2">{item.cantidad}</span>
+                  <div className="w-full text-left text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 flex-1 overflow-y-auto custom-scrollbar min-h-[3rem]">
+                    {item.detalles.map((det, i) => (
+                      <div key={i} className="truncate" title={det}>• {det}</div>
+                    ))}
+                  </div>
+                </div>
+              )) : (
+                <div className="col-span-full py-6 text-center text-slate-500 italic">No hay artículos en uso registrados.</div>
               )}
             </div>
           </div>
@@ -867,6 +948,9 @@ export default function Contraloria() {
                     </button>
                     <button onClick={() => openModal('baja')} className="flex items-center px-4 py-2 bg-rose-100 text-rose-800 rounded-lg text-sm font-medium hover:bg-rose-200 shadow-sm transition-colors border border-rose-200 mr-1">
                       <FileText className="w-4 h-4 mr-2" /> Generar Baja
+                    </button>
+                    <button onClick={() => handleBulkStatusChange('Nuevo')} className="flex items-center px-4 py-2 bg-emerald-100 text-emerald-800 rounded-lg text-sm font-medium hover:bg-emerald-200 shadow-sm transition-colors border border-emerald-200 mr-1">
+                      <CheckCircle2 className="w-4 h-4 mr-2" /> Marcar como Nuevo
                     </button>
                     <button onClick={handleBulkDelete} className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 shadow-sm transition-colors border border-red-200 mr-2">
                       <Trash2 className="w-4 h-4 mr-2" /> Eliminar ({selectedItems.length})
