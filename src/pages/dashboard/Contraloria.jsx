@@ -438,50 +438,58 @@ export default function Contraloria() {
       // Procesar artículos que continúan en el resguardo
       for (const art of validItems) {
         const targetCode = art.codigo || art.inventario;
-        const invItem = inventario.find(i => i.codigo === targetCode || i.id === art.id);
-        if (invItem) {
-          const itemRef = doc(db, 'inventario', invItem.id);
-          const currentHistorial = invItem.historial || [];
-          
-          let updateData = {
-            ubicacion: editingResguardo.areaResguardante || 'En resguardo'
-          };
-          
-          // Si cambió el estado, registrar en historial
-          if (invItem.estado !== (art.estado || 'Bueno')) {
-            updateData.estado = art.estado || 'Bueno';
-            updateData.historial = [...currentHistorial, {
-              fecha: new Date().toISOString(),
-              accion: "Cambio de Estado",
-              detalle: `Estado actualizado a '${updateData.estado}' durante revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
-              usuario: "Contraloría"
-            }];
-          } else {
-             // Si el estado es el mismo, solo actualizamos ubicación
-             updateData.estado = art.estado || 'Bueno';
+        const expandedCodes = expandCodeRange(targetCode);
+        
+        for (const code of expandedCodes) {
+          const invItem = inventario.find(i => i.codigo === code || (art.id && i.id === art.id));
+          if (invItem) {
+            const itemRef = doc(db, 'inventario', invItem.id);
+            const currentHistorial = invItem.historial || [];
+            
+            let updateData = {
+              ubicacion: editingResguardo.areaResguardante || 'En resguardo'
+            };
+            
+            // Si cambió el estado, registrar en historial
+            if (invItem.estado !== (art.estado || 'Bueno')) {
+              updateData.estado = art.estado || 'Bueno';
+              updateData.historial = [...currentHistorial, {
+                fecha: new Date().toISOString(),
+                accion: "Cambio de Estado",
+                detalle: `Estado actualizado a '${updateData.estado}' durante revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
+                usuario: "Contraloría"
+              }];
+            } else {
+               // Si el estado es el mismo, solo actualizamos ubicación
+               updateData.estado = art.estado || 'Bueno';
+            }
+            
+            await updateDoc(itemRef, updateData);
           }
-          
-          await updateDoc(itemRef, updateData);
         }
       }
 
       // Procesar artículos que fueron ELIMINADOS del resguardo (Liberados)
       for (const art of removedItems) {
         const targetCode = art.codigo || art.inventario;
-        const invItem = inventario.find(i => i.codigo === targetCode || i.id === art.id);
-        if (invItem) {
-          const itemRef = doc(db, 'inventario', invItem.id);
-          const currentHistorial = invItem.historial || [];
-          
-          await updateDoc(itemRef, {
-            ubicacion: 'Bodega Contraloría',
-            historial: [...currentHistorial, {
-              fecha: new Date().toISOString(),
-              accion: "Retorno a Bodega",
-              detalle: `Liberado del resguardo de ${originalResguardo.nombreResguardante} (Folio ${originalResguardo.folio || 'S/F'}).`,
-              usuario: "Contraloría"
-            }]
-          });
+        const expandedCodes = expandCodeRange(targetCode);
+        
+        for (const code of expandedCodes) {
+          const invItem = inventario.find(i => i.codigo === code || (art.id && i.id === art.id));
+          if (invItem) {
+            const itemRef = doc(db, 'inventario', invItem.id);
+            const currentHistorial = invItem.historial || [];
+            
+            await updateDoc(itemRef, {
+              ubicacion: 'Bodega Contraloría',
+              historial: [...currentHistorial, {
+                fecha: new Date().toISOString(),
+                accion: "Retorno a Bodega",
+                detalle: `Liberado del resguardo de ${originalResguardo.nombreResguardante} (Folio ${originalResguardo.folio || 'S/F'}).`,
+                usuario: "Contraloría"
+              }]
+            });
+          }
         }
       }
 
@@ -503,19 +511,23 @@ export default function Contraloria() {
       if (liberarArticulos && res.articulos) {
         for (const art of res.articulos) {
           const targetCode = art.codigo || art.inventario;
-          const invItem = inventario.find(i => i.codigo === targetCode || i.id === art.id);
-          if (invItem) {
-            const itemRef = doc(db, 'inventario', invItem.id);
-            const currentHistorial = invItem.historial || [];
-            await updateDoc(itemRef, {
-              ubicacion: 'Bodega Contraloría',
-              historial: [...currentHistorial, {
-                fecha: new Date().toISOString(),
-                accion: "Retorno a Bodega",
-                detalle: `Resguardo eliminado. Liberado de ${res.nombreResguardante} (Folio ${res.folio || 'S/F'}).`,
-                usuario: "Contraloría"
-              }]
-            });
+          const expandedCodes = expandCodeRange(targetCode);
+          
+          for (const code of expandedCodes) {
+            const invItem = inventario.find(i => i.codigo === code || (art.id && i.id === art.id));
+            if (invItem) {
+              const itemRef = doc(db, 'inventario', invItem.id);
+              const currentHistorial = invItem.historial || [];
+              await updateDoc(itemRef, {
+                ubicacion: 'Bodega Contraloría',
+                historial: [...currentHistorial, {
+                  fecha: new Date().toISOString(),
+                  accion: "Retorno a Bodega",
+                  detalle: `Resguardo eliminado. Liberado de ${res.nombreResguardante} (Folio ${res.folio || 'S/F'}).`,
+                  usuario: "Contraloría"
+                }]
+              });
+            }
           }
         }
       }
