@@ -522,8 +522,12 @@ export default function Contraloria() {
   };
 
   const handleEditResguardoClick = (res) => {
-    setEditingResguardo({ ...res });
+    setEditingResguardo({
+      ...res,
+      articulos: res.articulos ? res.articulos.map((art, i) => ({ ...art, _uid: i })) : []
+    });
     setModalOpen('editResguardo');
+    window.scrollTo(0, 0);
   };
 
   const handleDuplicateResguardo = (res) => {
@@ -583,8 +587,8 @@ export default function Contraloria() {
       const originalResguardo = resguardos.find(r => r.id === editingResguardo.id);
       const originalArticulos = originalResguardo ? originalResguardo.articulos || [] : [];
       
-      const removedItems = originalArticulos.filter(origArt => 
-        !validItems.some(vArt => (vArt.codigo || vArt.inventario) === (origArt.codigo || origArt.inventario) || (vArt.id && vArt.id === origArt.id))
+      const removedItems = originalArticulos.filter((origArt, idx) => 
+        !validItems.some(vArt => vArt._uid === idx)
       );
 
       let autoCodeOffset = 0;
@@ -600,6 +604,7 @@ export default function Contraloria() {
         }
         return {
           id: art.id || '',
+          _uid: art._uid, // Preservar para mapeo
           cantidad: qty,
           descripcion: art.descripcion || art.articulo || '',
           marca: art.marca || '',
@@ -615,16 +620,32 @@ export default function Contraloria() {
         nombreResguardante: editingResguardo.nombreResguardante || '',
         areaResguardante: editingResguardo.areaResguardante || '',
         observaciones: editingResguardo.observaciones || '',
-        articulos: articulosProcesados
+        articulos: articulosProcesados.map(a => {
+           const copy = { ...a };
+           delete copy._uid;
+           return copy;
+        })
       });
 
       // Procesar artículos que continúan en el resguardo
       for (const art of articulosProcesados) {
-        const targetCode = art.codigo;
-        const expandedCodes = expandCodeRange(targetCode);
+        const origArt = art._uid !== undefined ? originalArticulos[art._uid] : null;
+        const oldCode = origArt ? (origArt.codigo || origArt.inventario) : null;
+        const newCode = art.codigo;
         
-        for (const code of expandedCodes) {
-          const invItem = inventario.find(i => i.codigo === code || (art.id && i.id === art.id));
+        const expandedNewCodes = expandCodeRange(newCode);
+        const expandedOldCodes = oldCode ? expandCodeRange(oldCode) : [];
+        
+        for (let i = 0; i < expandedNewCodes.length; i++) {
+          const code = expandedNewCodes[i];
+          const oldCodeMatch = expandedOldCodes[i];
+          
+          const invItem = inventario.find(inv => 
+            inv.codigo === code || 
+            (art.id && inv.id === art.id) || 
+            (oldCodeMatch && inv.codigo === oldCodeMatch)
+          );
+          
           if (invItem) {
             const itemRef = doc(db, 'inventario', invItem.id);
             const currentHistorial = invItem.historial || [];
@@ -639,7 +660,7 @@ export default function Contraloria() {
               updateData.historial = [...currentHistorial, {
                 fecha: new Date().toISOString(),
                 accion: "Cambio de Código",
-                detalle: `Código actualizado a '${code}' en revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
+                detalle: `Código actualizado de '${invItem.codigo}' a '${code}' en revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
                 usuario: "Contraloría"
               }];
             }
@@ -647,14 +668,13 @@ export default function Contraloria() {
             // Si cambió el estado, registrar en historial
             if (invItem.estado !== (art.estado || 'Bueno')) {
               updateData.estado = art.estado || 'Bueno';
-              updateData.historial = [...currentHistorial, {
+              updateData.historial = [...(updateData.historial || currentHistorial), {
                 fecha: new Date().toISOString(),
                 accion: "Cambio de Estado",
                 detalle: `Estado actualizado a '${updateData.estado}' durante revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
                 usuario: "Contraloría"
               }];
             } else {
-               // Si el estado es el mismo, solo actualizamos ubicación
                updateData.estado = art.estado || 'Bueno';
             }
             
@@ -670,6 +690,25 @@ export default function Contraloria() {
               serie: art.serie || '',
               fechaIngreso: new Date().toISOString()
             });
+          }
+        }
+        
+        // Si se redujo la cantidad, liberar los sobrantes
+        for (let i = expandedNewCodes.length; i < expandedOldCodes.length; i++) {
+          const codeToRelease = expandedOldCodes[i];
+          const invItem = inventario.find(inv => inv.codigo === codeToRelease);
+          if (invItem) {
+             const itemRef = doc(db, 'inventario', invItem.id);
+             const currentHistorial = invItem.historial || [];
+             await updateDoc(itemRef, {
+               ubicacion: 'Bodega Contraloría',
+               historial: [...currentHistorial, {
+                 fecha: new Date().toISOString(),
+                 accion: "Liberación por Edición de Resguardo",
+                 detalle: `Liberado a bodega al reducir cantidad en resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
+                 usuario: "Contraloría"
+               }]
+             });
           }
         }
       }
