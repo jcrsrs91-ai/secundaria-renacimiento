@@ -65,13 +65,13 @@ export default function CartaResguardoPrint({ data }) {
                 </tr>
               </thead>
             <tbody className="divide-y divide-slate-200">
-              {data.articulos && data.articulos.some(art => art.cantidad || art.descripcion || art.marca) ? (
+              {data.articulos && data.articulos.some(art => art.cantidad || art.descripcion || art.articulo || art.marca) ? (
                 data.articulos.map((art, idx) => (
                   <tr key={idx} className="hover:bg-slate-50">
-                    <td className="p-2 text-center uppercase font-mono text-xs font-bold text-slate-500 border-r border-slate-200">{art.inventario}</td>
+                    <td className="p-2 text-center uppercase font-mono text-xs font-bold text-slate-500 border-r border-slate-200">{art.codigo || art.inventario}</td>
                     <td className="p-2 text-center font-bold text-slate-800 border-r border-slate-200">{art.cantidad}</td>
-                    <td className="p-2 text-slate-700 border-r border-slate-200">{art.descripcion}</td>
-                    <td className="p-2 uppercase text-[10px] text-slate-500 border-r border-slate-200">{art.marca}</td>
+                    <td className="p-2 text-slate-700 border-r border-slate-200">{art.descripcion || art.articulo}</td>
+                    <td className="p-2 uppercase text-[10px] text-slate-500 border-r border-slate-200">{[art.marca, art.serie && `S/N: ${art.serie}`].filter(Boolean).join(' / ')}</td>
                     <td className="p-2 text-center text-xs border-slate-200">{art.estado}</td>
                   </tr>
                 ))

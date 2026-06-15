@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download } from 'lucide-react';
+import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -8,6 +8,93 @@ import CartaResguardoPrint from '../../components/CartaResguardoPrint';
 import ScannerInventarioModal from '../../components/ScannerInventarioModal';
 import EtiquetasPrint from '../../components/EtiquetasPrint';
 import ActaBajaPrint from '../../components/ActaBajaPrint';
+
+// Funciones auxiliares para el manejo de rangos de folios de inventario
+const generateCodeRange = (baseCode, quantity) => {
+  const qty = Number(quantity) || 1;
+  if (qty <= 1) return { codes: [baseCode], display: baseCode };
+
+  // Intentar encontrar un número al final del código (ej. "INV-001", "INV-100", "B-5" o "002")
+  const match = baseCode.match(/^(.*?)(-?\d+)$/);
+  if (match) {
+    const prefix = match[1];
+    const numStr = match[2];
+    const startNum = parseInt(numStr, 10);
+    const padLength = numStr.length; // Para mantener ceros a la izquierda (ej. "001" -> 3)
+    
+    const codes = [];
+    for (let i = 0; i < qty; i++) {
+      const currentNum = startNum + i;
+      const currentNumStr = String(currentNum).padStart(padLength, '0');
+      codes.push(`${prefix}${currentNumStr}`);
+    }
+    const endCode = codes[codes.length - 1];
+    return {
+      codes,
+      display: `${baseCode} al ${endCode}`
+    };
+  } else {
+    // Si no termina en número, agregar sufijo consecutivo -1, -2, etc.
+    const codes = [];
+    for (let i = 1; i <= qty; i++) {
+      codes.push(`${baseCode}-${i}`);
+    }
+    return {
+      codes,
+      display: `${baseCode}-1 al ${baseCode}-${qty}`
+    };
+  }
+};
+
+const expandCodeRange = (codeStr) => {
+  if (!codeStr) return [];
+  if (!codeStr.includes(' al ')) return [codeStr];
+
+  const parts = codeStr.split(' al ');
+  const startCode = parts[0].trim();
+  const endCode = parts[1].trim();
+
+  const matchStart = startCode.match(/^(.*?)(-?\d+)$/);
+  const matchEnd = endCode.match(/^(.*?)(-?\d+)$/);
+
+  if (matchStart && matchEnd && matchStart[1] === matchEnd[1]) {
+    const prefix = matchStart[1];
+    const startNum = parseInt(matchStart[2], 10);
+    const endNum = parseInt(matchEnd[2], 10);
+    const padLength = matchStart[2].length;
+
+    const codes = [];
+    for (let num = startNum; num <= endNum; num++) {
+      const numStr = String(num).padStart(padLength, '0');
+      codes.push(`${prefix}${numStr}`);
+    }
+    return codes;
+  }
+  return [startCode, endCode];
+};
+
+const getIconForArticulo = (nombre) => {
+  const n = nombre.toLowerCase();
+  if (n.includes('compu') || n.includes('pc') || n.includes('cpu')) return <Cpu className="w-5 h-5" />;
+  if (n.includes('monitor') || n.includes('pantalla')) return <Monitor className="w-5 h-5" />;
+  if (n.includes('laptop') || n.includes('portatil')) return <Laptop className="w-5 h-5" />;
+  if (n.includes('impresora') || n.includes('printer')) return <Printer className="w-5 h-5" />;
+  if (n.includes('proyector') || n.includes('cañon')) return <Projector className="w-5 h-5" />;
+  if (n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sillón')) return <Armchair className="w-5 h-5" />;
+  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tablón') || n.includes('pupitre')) return <Box className="w-5 h-5" />; // Fallback a Box para mesas si Table no está
+  if (n.includes('libro') || n.includes('diccionario') || n.includes('enciclopedia')) return <BookOpen className="w-5 h-5" />;
+  if (n.includes('tv') || n.includes('televisión') || n.includes('televisor') || n.includes('pantalla')) return <Tv className="w-5 h-5" />;
+  if (n.includes('bocina') || n.includes('altavoz') || n.includes('sonido') || n.includes('audio') || n.includes('microfono')) return <Speaker className="w-5 h-5" />;
+  if (n.includes('teclado')) return <Keyboard className="w-5 h-5" />;
+  if (n.includes('mouse') || n.includes('raton')) return <Mouse className="w-5 h-5" />;
+  if (n.includes('servidor') || n.includes('switch') || n.includes('router') || n.includes('red')) return <Server className="w-5 h-5" />;
+  if (n.includes('telefono') || n.includes('celular')) return <Smartphone className="w-5 h-5" />;
+  if (n.includes('tablet') || n.includes('ipad')) return <Tablet className="w-5 h-5" />;
+  if (n.includes('archivero') || n.includes('gaveta') || n.includes('estante') || n.includes('librero')) return <Archive className="w-5 h-5" />;
+  if (n.includes('pizarrón') || n.includes('pintarrón')) return <PenTool className="w-5 h-5" />;
+  
+  return <Box className="w-5 h-5" />;
+};
 
 export default function Contraloria() {
   const [activeTab, setActiveTab] = useState('pagos');
@@ -26,6 +113,11 @@ export default function Contraloria() {
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [locationFilter, setLocationFilter] = useState('Todos');
 
+  // Estados para resguardos
+  const [resguardos, setResguardos] = useState([]);
+  const [editingResguardo, setEditingResguardo] = useState(null);
+  const [resguardoSearch, setResguardoSearch] = useState('');
+
   useEffect(() => {
     const q = query(collection(db, 'inventario'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -34,6 +126,16 @@ export default function Contraloria() {
       setInventario(items);
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const qRes = query(collection(db, 'resguardos'), orderBy('fechaRegistro', 'desc'));
+    const unsubscribeRes = onSnapshot(qRes, (snapshot) => {
+      const items = [];
+      snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+      setResguardos(items);
+    });
+    return () => unsubscribeRes();
   }, []);
 
   // Extraer ubicaciones únicas dinámicamente
@@ -54,8 +156,9 @@ export default function Contraloria() {
   const [printMode, setPrintMode] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'etiquetas'
   const [printData, setPrintData] = useState(null);
   
-  const [modalOpen, setModalOpen] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'editItem'
+  const [modalOpen, setModalOpen] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'editItem' | 'history'
   const [editingItem, setEditingItem] = useState(null);
+  const [historyItem, setHistoryItem] = useState(null);
   
   const [formData, setFormData] = useState({ articulos: [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }] });
 
@@ -135,27 +238,83 @@ export default function Contraloria() {
         console.error("Error guardando en Firebase:", error);
         alert("Hubo un error al guardar en la base de datos.");
       }
-    } else if (modalOpen === 'resguardo' && formData.guardarEnInventario) {
+    } else if (modalOpen === 'resguardo') {
       try {
-        const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca);
+        const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
         if (validItems.length > 0) {
+          // 1. Crear artículos consolidados para guardar en el Acta de Resguardo y para imprimir
+          const resguardoArticulos = validItems.map((art, idx) => {
+            const baseCode = art.codigo || art.inventario || `INV-RESG-${Date.now().toString().slice(-4)}${idx}`;
+            const qty = Number(art.cantidad) || 1;
+            const { display } = generateCodeRange(baseCode, qty);
+            
+            return {
+              id: art.id || '',
+              cantidad: qty,
+              descripcion: art.descripcion || art.articulo || '',
+              marca: art.marca || '',
+              serie: art.serie || '',
+              codigo: display, // Rangos consolidados para la impresión y visualización
+              estado: art.estado || 'Bueno'
+            };
+          });
+
+          const resguardoDoc = {
+            folio: formData.folio || '',
+            fecha: formData.fecha || new Date().toISOString().split('T')[0],
+            nombreResguardante: formData.nombreResguardante || '',
+            areaResguardante: formData.areaResguardante || '',
+            nombreContralor: formData.nombreContralor || 'Profr. Juan Carlos Taboada B.',
+            observaciones: formData.observaciones || '',
+            articulos: resguardoArticulos,
+            fechaRegistro: new Date().toISOString()
+          };
+          await addDoc(collection(db, 'resguardos'), resguardoDoc);
+
+          // 2. Guardar o actualizar artículos en el Inventario General INDIVIDUALMENTE
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
-            const tempCode = `INV-RESG-${Date.now().toString().slice(-4)}${i}`;
-            await addDoc(collection(db, 'inventario'), {
-              codigo: art.codigo || art.inventario || tempCode,
-              articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
-              ubicacion: formData.areaResguardante || 'En resguardo',
-              cantidad: Number(art.cantidad) || 1,
-              estado: art.estado || 'Bueno',
-              serie: art.serie || '',
-              fechaIngreso: new Date().toISOString()
-            });
+            
+            if (art.id) {
+              // Si ya existe en el inventario, actualizamos su ubicación y estado
+              const invItem = inventario.find(i => i.id === art.id);
+              const currentHistorial = invItem?.historial || [];
+              const itemRef = doc(db, 'inventario', art.id);
+              await updateDoc(itemRef, {
+                ubicacion: formData.areaResguardante || 'En resguardo',
+                estado: art.estado || 'Bueno',
+                historial: [...currentHistorial, {
+                  fecha: new Date().toISOString(),
+                  accion: "Asignación de Resguardo",
+                  detalle: `Asignado a ${formData.nombreResguardante} (Folio ${formData.folio || 'S/F'}).`,
+                  usuario: "Contraloría"
+                }]
+              });
+            } else if (formData.guardarEnInventario) {
+              // Si no existe y se marcó "Guardar en Inventario", lo desglosamos y guardamos individualmente
+              const baseCode = art.codigo || art.inventario || `INV-RESG-${Date.now().toString().slice(-4)}${i}`;
+              const qty = Number(art.cantidad) || 1;
+              const { codes } = generateCodeRange(baseCode, qty);
+              
+              for (const code of codes) {
+                await addDoc(collection(db, 'inventario'), {
+                  codigo: code,
+                  articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
+                  ubicacion: formData.areaResguardante || 'En resguardo',
+                  cantidad: 1, // Guardado individualmente
+                  estado: art.estado || 'Bueno',
+                  serie: art.serie || '',
+                  fechaIngreso: new Date().toISOString()
+                });
+              }
+            }
           }
+          // Usar artículos consolidados en la impresión
+          formData.articulos = resguardoArticulos;
         }
       } catch (error) {
         console.error("Error guardando resguardos en Firebase:", error);
-        alert("Hubo un error al guardar en el inventario.");
+        alert("Hubo un error al guardar en la base de datos.");
       }
     }
 
@@ -174,6 +333,27 @@ export default function Contraloria() {
     e.preventDefault();
     if (!editingItem) return;
     try {
+      const originalItem = inventario.find(i => i.id === editingItem.id);
+      const currentHistorial = originalItem?.historial || [];
+      const newHistorial = [...currentHistorial];
+      
+      if (originalItem && originalItem.estado !== editingItem.estado) {
+        newHistorial.push({
+          fecha: new Date().toISOString(),
+          accion: "Cambio de Estado",
+          detalle: `Estado modificado manualmente de '${originalItem.estado}' a '${editingItem.estado}'.`,
+          usuario: "Contraloría"
+        });
+      }
+      if (originalItem && originalItem.ubicacion !== editingItem.ubicacion) {
+        newHistorial.push({
+          fecha: new Date().toISOString(),
+          accion: "Cambio de Ubicación",
+          detalle: `Movido manualmente de '${originalItem.ubicacion}' a '${editingItem.ubicacion}'.`,
+          usuario: "Contraloría"
+        });
+      }
+
       const itemRef = doc(db, 'inventario', editingItem.id);
       await updateDoc(itemRef, {
         codigo: editingItem.codigo,
@@ -181,6 +361,7 @@ export default function Contraloria() {
         ubicacion: editingItem.ubicacion,
         cantidad: Number(editingItem.cantidad),
         estado: editingItem.estado,
+        historial: newHistorial
       });
       setModalOpen(null);
       setEditingItem(null);
@@ -213,6 +394,136 @@ export default function Contraloria() {
         console.error("Error en eliminación masiva:", error);
         alert("Hubo un error al eliminar los artículos seleccionados.");
       }
+    }
+  };
+
+  const handleEditResguardoClick = (res) => {
+    setEditingResguardo({ ...res });
+    setModalOpen('editResguardo');
+  };
+
+  const handleSaveResguardoEdit = async (e) => {
+    e.preventDefault();
+    if (!editingResguardo) return;
+    try {
+      const validItems = editingResguardo.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
+      const resRef = doc(db, 'resguardos', editingResguardo.id);
+      
+      // Encontrar el resguardo original para comparar
+      const originalResguardo = resguardos.find(r => r.id === editingResguardo.id);
+      const originalArticulos = originalResguardo ? originalResguardo.articulos || [] : [];
+      
+      // Artículos que fueron eliminados en la edición
+      const removedItems = originalArticulos.filter(origArt => 
+        !validItems.some(vArt => (vArt.codigo || vArt.inventario) === (origArt.codigo || origArt.inventario) || (vArt.id && vArt.id === origArt.id))
+      );
+
+      await updateDoc(resRef, {
+        folio: editingResguardo.folio || '',
+        fecha: editingResguardo.fecha || '',
+        nombreResguardante: editingResguardo.nombreResguardante || '',
+        areaResguardante: editingResguardo.areaResguardante || '',
+        observaciones: editingResguardo.observaciones || '',
+        articulos: validItems.map(art => ({
+          id: art.id || '',
+          cantidad: Number(art.cantidad) || 1,
+          descripcion: art.descripcion || art.articulo || '',
+          marca: art.marca || '',
+          serie: art.serie || '',
+          codigo: art.codigo || art.inventario || '',
+          estado: art.estado || 'Bueno'
+        }))
+      });
+
+      // Procesar artículos que continúan en el resguardo
+      for (const art of validItems) {
+        const targetCode = art.codigo || art.inventario;
+        const invItem = inventario.find(i => i.codigo === targetCode || i.id === art.id);
+        if (invItem) {
+          const itemRef = doc(db, 'inventario', invItem.id);
+          const currentHistorial = invItem.historial || [];
+          
+          let updateData = {
+            ubicacion: editingResguardo.areaResguardante || 'En resguardo'
+          };
+          
+          // Si cambió el estado, registrar en historial
+          if (invItem.estado !== (art.estado || 'Bueno')) {
+            updateData.estado = art.estado || 'Bueno';
+            updateData.historial = [...currentHistorial, {
+              fecha: new Date().toISOString(),
+              accion: "Cambio de Estado",
+              detalle: `Estado actualizado a '${updateData.estado}' durante revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
+              usuario: "Contraloría"
+            }];
+          } else {
+             // Si el estado es el mismo, solo actualizamos ubicación
+             updateData.estado = art.estado || 'Bueno';
+          }
+          
+          await updateDoc(itemRef, updateData);
+        }
+      }
+
+      // Procesar artículos que fueron ELIMINADOS del resguardo (Liberados)
+      for (const art of removedItems) {
+        const targetCode = art.codigo || art.inventario;
+        const invItem = inventario.find(i => i.codigo === targetCode || i.id === art.id);
+        if (invItem) {
+          const itemRef = doc(db, 'inventario', invItem.id);
+          const currentHistorial = invItem.historial || [];
+          
+          await updateDoc(itemRef, {
+            ubicacion: 'Bodega Contraloría',
+            historial: [...currentHistorial, {
+              fecha: new Date().toISOString(),
+              accion: "Retorno a Bodega",
+              detalle: `Liberado del resguardo de ${originalResguardo.nombreResguardante} (Folio ${originalResguardo.folio || 'S/F'}).`,
+              usuario: "Contraloría"
+            }]
+          });
+        }
+      }
+
+      setModalOpen(null);
+      setEditingResguardo(null);
+    } catch (error) {
+      console.error("Error al actualizar el resguardo:", error);
+      alert("Hubo un error al actualizar el resguardo.");
+    }
+  };
+
+  const handleDeleteResguardoClick = async (res) => {
+    const confirmacion = window.confirm(`¿Estás seguro de eliminar el resguardo con Folio ${res.folio || 'S/F'} de ${res.nombreResguardante}?\n\nEsta acción no se puede deshacer.`);
+    if (!confirmacion) return;
+
+    const liberarArticulos = window.confirm("¿Deseas regresar los artículos asociados de este resguardo a la 'Bodega Contraloría' en el inventario?");
+
+    try {
+      if (liberarArticulos && res.articulos) {
+        for (const art of res.articulos) {
+          const targetCode = art.codigo || art.inventario;
+          const invItem = inventario.find(i => i.codigo === targetCode || i.id === art.id);
+          if (invItem) {
+            const itemRef = doc(db, 'inventario', invItem.id);
+            const currentHistorial = invItem.historial || [];
+            await updateDoc(itemRef, {
+              ubicacion: 'Bodega Contraloría',
+              historial: [...currentHistorial, {
+                fecha: new Date().toISOString(),
+                accion: "Retorno a Bodega",
+                detalle: `Resguardo eliminado. Liberado de ${res.nombreResguardante} (Folio ${res.folio || 'S/F'}).`,
+                usuario: "Contraloría"
+              }]
+            });
+          }
+        }
+      }
+
+      await deleteDoc(doc(db, 'resguardos', res.id));
+    } catch (error) {
+      console.error("Error al eliminar resguardo:", error);
+      alert("Hubo un error al eliminar el resguardo.");
     }
   };
 
@@ -262,6 +573,24 @@ export default function Contraloria() {
     document.body.removeChild(link);
   };
 
+  // Cálculo de estadísticas generales del inventario
+  const totalArticulos = inventario.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+  const libres = inventario.filter(i => i.ubicacion === 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+  const ocupadas = inventario.filter(i => i.ubicacion !== 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+  const malEstado = inventario.filter(i => i.estado === 'Malo').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+
+  // Desglose por tipo de artículo
+  const desglosePorArticulo = inventario.reduce((acc, item) => {
+    const nombre = item.articulo ? item.articulo.trim().toUpperCase() : 'SIN NOMBRE';
+    if (!acc[nombre]) acc[nombre] = 0;
+    acc[nombre] += (Number(item.cantidad) || 0);
+    return acc;
+  }, {});
+
+  const desgloseArray = Object.entries(desglosePorArticulo)
+    .map(([nombre, cantidad]) => ({ nombre, cantidad }))
+    .sort((a, b) => b.cantidad - a.cantidad);
+
   return (
     <>
     <div className={printMode ? "hidden" : "space-y-6"}>
@@ -286,6 +615,12 @@ export default function Contraloria() {
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'inventario' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
             <PackageOpen className="w-4 h-4 mr-2" /> Inventario de Mobiliario
+          </button>
+          <button
+            onClick={() => setActiveTab('resguardos')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'resguardos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            <FileText className="w-4 h-4 mr-2" /> Historial de Resguardos
           </button>
         </nav>
       </div>
@@ -327,6 +662,33 @@ export default function Contraloria() {
 
       {activeTab === 'inventario' && (
         <div className="space-y-6">
+          {/* Desglose por tipo de artículo (Reemplaza al panel general) */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <h4 className="text-lg font-bold text-slate-800 flex items-center">
+                <PackageOpen className="w-6 h-6 mr-2 text-indigo-600" /> Resumen General del Inventario
+              </h4>
+              <div className="flex gap-2">
+                <span className="bg-indigo-100 text-indigo-800 py-1.5 px-4 rounded-full text-sm font-bold shadow-sm">Total Plantel: {totalArticulos}</span>
+                <span className="bg-emerald-100 text-emerald-800 py-1.5 px-4 rounded-full text-sm font-bold shadow-sm">En Bodega: {libres}</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar pb-2">
+              {desgloseArray.length > 0 ? desgloseArray.map((item, idx) => (
+                <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center hover:border-indigo-300 hover:shadow-md transition-all group">
+                  <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 mb-3 transition-colors">
+                    {getIconForArticulo(item.nombre)}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600 mb-1 line-clamp-2 leading-tight min-h-[2.5rem] flex items-center">{item.nombre}</span>
+                  <span className="text-2xl font-black text-indigo-600">{item.cantidad}</span>
+                </div>
+              )) : (
+                <div className="col-span-full py-10 text-center text-slate-500 italic">No hay artículos registrados en el inventario.</div>
+              )}
+            </div>
+          </div>
+
           {/* Tarjetas de Formatos Oficiales */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
@@ -474,8 +836,11 @@ export default function Contraloria() {
                     <button onClick={() => handleEditClick(item)} className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors mr-1">
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDeleteClick(item.id)} className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors">
+                    <button onClick={() => handleDeleteClick(item.id)} className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors mr-1">
                       <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => { setHistoryItem(item); setModalOpen('history'); }} className="text-amber-600 hover:text-amber-800 p-2 hover:bg-amber-50 rounded-lg transition-colors">
+                      <History className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
@@ -491,18 +856,116 @@ export default function Contraloria() {
 
         </div>
       )}
+
+      {activeTab === 'resguardos' && (
+        <div className="space-y-6 animate-in fade-in-50 duration-200">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex gap-4 items-end">
+            <div className="flex-grow">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Buscar por Resguardante o Folio</label>
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input 
+                  type="text" 
+                  className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                  placeholder="Ej. Profr. Juan Pérez, Folio 002..." 
+                  value={resguardoSearch} 
+                  onChange={e => setResguardoSearch(e.target.value)} 
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Folio</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Fecha</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Resguardante</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Área / Cargo</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículos</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {resguardos
+                  .filter(res => {
+                    if (!resguardoSearch) return true;
+                    const query = resguardoSearch.toLowerCase();
+                    return (
+                      (res.folio || '').toLowerCase().includes(query) ||
+                      (res.nombreResguardante || '').toLowerCase().includes(query) ||
+                      (res.areaResguardante || '').toLowerCase().includes(query)
+                    );
+                  })
+                  .map(res => {
+                    const totalArticulos = res.articulos ? res.articulos.reduce((sum, a) => sum + (Number(a.cantidad) || 0), 0) : 0;
+                    return (
+                      <tr key={res.id} className="hover:bg-slate-50">
+                        <td className="px-6 py-4 text-sm font-bold text-red-600">{res.folio || 'S/F'}</td>
+                        <td className="px-6 py-4 text-sm text-slate-500">
+                          {res.fecha ? new Date(res.fecha + 'T00:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-slate-900 uppercase">{res.nombreResguardante}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600">{res.areaResguardante || '-'}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-slate-700">
+                          {totalArticulos} {totalArticulos === 1 ? 'artículo' : 'artículos'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-right space-x-2">
+                          <button 
+                            onClick={() => {
+                              setPrintData(res);
+                              setPrintMode('resguardo');
+                              setTimeout(() => window.print(), 500);
+                            }}
+                            className="text-slate-600 hover:text-slate-800 p-2 hover:bg-slate-100 rounded-lg transition-colors inline-flex items-center text-xs font-medium"
+                            title="Reimprimir Carta de Resguardo"
+                          >
+                            <Printer className="w-4 h-4 mr-1" /> Reimprimir
+                          </button>
+                          <button 
+                            onClick={() => handleEditResguardoClick(res)}
+                            className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center text-xs font-medium"
+                            title="Editar Datos del Resguardo"
+                          >
+                            <Edit2 className="w-4 h-4 mr-1" /> Editar
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteResguardoClick(res)}
+                            className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors inline-flex items-center text-xs font-medium"
+                            title="Eliminar Resguardo"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                {resguardos.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center text-slate-500 bg-slate-50">
+                      No se han emitido Cartas de Resguardo todavía.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
 
-    {/* MODAL PARA GENERAR FORMATOS O EDITAR BIENES */}
     {modalOpen && (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-        <div className={`bg-white rounded-xl shadow-2xl w-full my-8 ${modalOpen === 'editItem' ? 'max-w-lg' : 'max-w-4xl'}`}>
+        <div className={`bg-white rounded-xl shadow-2xl w-full my-8 ${(modalOpen === 'editItem' || modalOpen === 'editResguardo') ? 'max-w-lg' : 'max-w-4xl'}`}>
           <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
             <h3 className="font-bold text-xl text-slate-800">
               {modalOpen === 'recepcion' ? 'Generar Acta de Recepción' : 
-               modalOpen === 'resguardo' ? 'Generar Carta de Resguardo' : 'Editar Bien del Inventario'}
+               modalOpen === 'resguardo' ? 'Generar Carta de Resguardo' : 
+               modalOpen === 'editResguardo' ? 'Editar Carta de Resguardo' : 
+               modalOpen === 'history' ? 'Historial de Movimientos' : 'Editar Bien del Inventario'}
             </h3>
-            <button onClick={() => { setModalOpen(null); setEditingItem(null); }} className="text-slate-400 hover:text-slate-600">
+            <button onClick={() => { setModalOpen(null); setEditingItem(null); setEditingResguardo(null); setHistoryItem(null); }} className="text-slate-400 hover:text-slate-600">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -548,6 +1011,129 @@ export default function Contraloria() {
                   <button type="submit" className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 shadow-sm">Guardar Cambios</button>
                 </div>
               </form>
+            ) : modalOpen === 'editResguardo' && editingResguardo ? (
+              <form onSubmit={handleSaveResguardoEdit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha</label>
+                    <input type="date" value={editingResguardo.fecha} onChange={e => setEditingResguardo({...editingResguardo, fecha: e.target.value})} className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Folio</label>
+                    <input type="text" value={editingResguardo.folio} onChange={e => setEditingResguardo({...editingResguardo, folio: e.target.value})} className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Resguardante</label>
+                    <input type="text" value={editingResguardo.nombreResguardante} onChange={e => setEditingResguardo({...editingResguardo, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Área o Cargo</label>
+                    <input type="text" value={editingResguardo.areaResguardante} onChange={e => setEditingResguardo({...editingResguardo, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
+                    <textarea rows="2" value={editingResguardo.observaciones || ''} onChange={e => setEditingResguardo({...editingResguardo, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, faltantes..."></textarea>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-semibold text-slate-700">Artículos incluidos</h4>
+                    <button type="button" onClick={() => setEditingResguardo({ ...editingResguardo, articulos: [...editingResguardo.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: 'Bueno', codigo: '' }] })} className="text-sm text-primary-600 hover:text-primary-700 font-medium font-bold">
+                      + Añadir fila
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {editingResguardo.articulos.map((art, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <div className="w-16">
+                          <input type="number" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm" value={art.cantidad || ''} onChange={(e) => {
+                            const newArts = [...editingResguardo.articulos];
+                            newArts[idx].cantidad = e.target.value;
+                            setEditingResguardo({...editingResguardo, articulos: newArts});
+                          }} />
+                        </div>
+                        <div className="flex-1">
+                          <input type="text" placeholder="Descripción del artículo" className="w-full rounded-md border-slate-300 text-sm" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                            const newArts = [...editingResguardo.articulos];
+                            newArts[idx].descripcion = e.target.value;
+                            setEditingResguardo({...editingResguardo, articulos: newArts});
+                          }} />
+                        </div>
+                        <div className="w-1/4">
+                          <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                            const newArts = [...editingResguardo.articulos];
+                            newArts[idx].codigo = e.target.value;
+                            setEditingResguardo({...editingResguardo, articulos: newArts});
+                          }} />
+                        </div>
+                        <div className="w-32">
+                          <select 
+                            className="w-full rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 p-2" 
+                            value={art.estado || 'Bueno'} 
+                            onChange={(e) => {
+                              const newArts = [...editingResguardo.articulos];
+                              newArts[idx].estado = e.target.value;
+                              setEditingResguardo({...editingResguardo, articulos: newArts});
+                            }}
+                          >
+                            <option value="Bueno">Bueno</option>
+                            <option value="Nuevo">Nuevo</option>
+                            <option value="Regular">Regular</option>
+                            <option value="Malo">Malo</option>
+                          </select>
+                        </div>
+                        <button type="button" onClick={() => {
+                          const newArts = editingResguardo.articulos.filter((_, i) => i !== idx);
+                          setEditingResguardo({...editingResguardo, articulos: newArts.length ? newArts : [{}]});
+                        }} className="p-2 text-slate-400 hover:text-red-500">
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                  <button type="button" onClick={() => { setModalOpen(null); setEditingResguardo(null); }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancelar</button>
+                  <button type="submit" className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm">
+                    Guardar Cambios
+                  </button>
+                </div>
+              </form>
+            ) : modalOpen === 'history' && historyItem ? (
+              <div className="space-y-4">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
+                  <h4 className="font-bold text-slate-800">{historyItem.articulo}</h4>
+                  <p className="text-sm text-slate-500">Código: {historyItem.codigo} | Ubicación Actual: {historyItem.ubicacion}</p>
+                </div>
+                
+                {historyItem.historial && historyItem.historial.length > 0 ? (
+                  <div className="relative border-l-2 border-slate-200 ml-3 space-y-6 pb-4">
+                    {[...historyItem.historial].reverse().map((entry, idx) => (
+                      <div key={idx} className="relative pl-6">
+                        <div className="absolute w-4 h-4 bg-primary-500 rounded-full -left-[9px] top-1 border-4 border-white shadow-sm"></div>
+                        <div className="bg-white border border-slate-100 shadow-sm p-4 rounded-xl">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-semibold text-slate-800 text-sm">{entry.accion}</span>
+                            <span className="text-xs text-slate-400">{new Date(entry.fecha).toLocaleString('es-MX')}</span>
+                          </div>
+                          <p className="text-sm text-slate-600">{entry.detalle}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+                    No hay historial de movimientos para este artículo.
+                  </div>
+                )}
+                <div className="flex justify-end pt-4 border-t border-slate-200 mt-4">
+                  <button type="button" onClick={() => { setModalOpen(null); setHistoryItem(null); }} className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm">
+                    Cerrar Historial
+                  </button>
+                </div>
+              </div>
             ) : (
               <form onSubmit={handlePrintSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
