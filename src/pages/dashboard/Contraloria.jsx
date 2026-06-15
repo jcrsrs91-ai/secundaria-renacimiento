@@ -150,6 +150,20 @@ export default function Contraloria() {
     return () => unsubscribe();
   }, []);
 
+  const getNextAutoCodeBase = (currentOffset = 0) => {
+    let maxNum = 0;
+    inventario.forEach(item => {
+      if (item.codigo && item.codigo.includes('INV-AUTO-')) {
+        const match = item.codigo.match(/INV-AUTO-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+    });
+    return `INV-AUTO-${String(maxNum + currentOffset + 1).padStart(5, '0')}`;
+  };
+
   useEffect(() => {
     const qRes = query(collection(db, 'resguardos'), orderBy('fechaRegistro', 'desc'));
     const unsubscribeRes = onSnapshot(qRes, (snapshot) => {
@@ -248,10 +262,12 @@ export default function Contraloria() {
             fechaRegistro: new Date().toISOString()
           });
 
+          let autoCodeOffset = 0;
           // 2. Guardar cada artículo en el inventario
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
-            const tempCode = `INV-NUEVO-${Date.now().toString().slice(-4)}${i}`;
+            const tempCode = getNextAutoCodeBase(autoCodeOffset);
+            autoCodeOffset++;
             await addDoc(collection(db, 'inventario'), {
               codigo: tempCode,
               articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
@@ -273,10 +289,15 @@ export default function Contraloria() {
       try {
         const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
         if (validItems.length > 0) {
+          let autoCodeOffset = 0;
           // 1. Crear artículos consolidados para guardar en el Acta de Resguardo y para imprimir
           const resguardoArticulos = validItems.map((art, idx) => {
-            const baseCode = art.codigo || art.inventario || `INV-RESG-${Date.now().toString().slice(-4)}${idx}`;
             const qty = Number(art.cantidad) || 1;
+            let baseCode = art.codigo || art.inventario || '';
+            if (!baseCode) {
+              baseCode = getNextAutoCodeBase(autoCodeOffset);
+              autoCodeOffset += qty;
+            }
             const { display } = generateCodeRange(baseCode, qty);
             
             return {
@@ -289,6 +310,22 @@ export default function Contraloria() {
               estado: art.estado || 'Bueno'
             };
           });
+
+          // Verificar duplicados en códigos manuales
+          for (const art of validItems) {
+            const qty = Number(art.cantidad) || 1;
+            const baseCode = art.codigo || art.inventario;
+            if (baseCode) {
+               const { codes } = generateCodeRange(baseCode, qty);
+               for (const code of codes) {
+                 if (inventario.some(i => i.codigo === code && i.id !== art.id)) {
+                   toast.error(`El código de inventario ${code} ya existe en el sistema. Usa otro folio.`);
+                   setIsSubmitting(false);
+                   return;
+                 }
+               }
+            }
+          }
 
           const resguardoDoc = {
             folio: formData.folio || '',
@@ -390,6 +427,19 @@ export default function Contraloria() {
           fecha: new Date().toISOString(),
           accion: "Cambio de Ubicación",
           detalle: `Movido manualmente de '${originalItem.ubicacion}' a '${editingItem.ubicacion}'.`,
+          usuario: "Contraloría"
+        });
+      }
+
+      if (originalItem && originalItem.codigo !== editingItem.codigo) {
+        if (inventario.some(i => i.codigo === editingItem.codigo && i.id !== editingItem.id)) {
+          toast.error(`El código de inventario ${editingItem.codigo} ya está en uso.`);
+          return;
+        }
+        newHistorial.push({
+          fecha: new Date().toISOString(),
+          accion: "Cambio de Código de Inventario",
+          detalle: `Código modificado de '${originalItem.codigo}' a '${editingItem.codigo}'.`,
           usuario: "Contraloría"
         });
       }
@@ -512,6 +562,22 @@ export default function Contraloria() {
     try {
       const updatePromise = async () => {
       const validItems = editingResguardo.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
+      
+      // Verificar duplicados
+      for (const art of validItems) {
+        const qty = Number(art.cantidad) || 1;
+        const baseCode = art.codigo || art.inventario;
+        if (baseCode) {
+           const { codes } = generateCodeRange(baseCode, qty);
+           for (const code of codes) {
+             if (inventario.some(i => i.codigo === code && i.id !== art.id)) {
+               toast.error(`El código de inventario ${code} ya existe en el sistema. Usa otro folio.`);
+               return;
+             }
+           }
+        }
+      }
+
       const resRef = doc(db, 'resguardos', editingResguardo.id);
       
       const originalResguardo = resguardos.find(r => r.id === editingResguardo.id);
@@ -521,14 +587,16 @@ export default function Contraloria() {
         !validItems.some(vArt => (vArt.codigo || vArt.inventario) === (origArt.codigo || origArt.inventario) || (vArt.id && vArt.id === origArt.id))
       );
 
+      let autoCodeOffset = 0;
       // Asegurar que todos tengan un código, auto-generando si es necesario
       const articulosProcesados = validItems.map((art, idx) => {
         const qty = Number(art.cantidad) || 1;
         let finalCode = art.codigo || art.inventario || '';
         if (!finalCode) {
-           const baseCode = `INV-RESG-${Date.now().toString().slice(-4)}${idx}`;
+           const baseCode = getNextAutoCodeBase(autoCodeOffset);
            const { display } = generateCodeRange(baseCode, qty);
            finalCode = display;
+           autoCodeOffset += qty;
         }
         return {
           id: art.id || '',
@@ -564,6 +632,17 @@ export default function Contraloria() {
             let updateData = {
               ubicacion: editingResguardo.areaResguardante || 'En resguardo'
             };
+            
+            // Si cambió el código, actualizarlo
+            if (invItem.codigo !== code) {
+              updateData.codigo = code;
+              updateData.historial = [...currentHistorial, {
+                fecha: new Date().toISOString(),
+                accion: "Cambio de Código",
+                detalle: `Código actualizado a '${code}' en revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
+                usuario: "Contraloría"
+              }];
+            }
             
             // Si cambió el estado, registrar en historial
             if (invItem.estado !== (art.estado || 'Bueno')) {
