@@ -74,25 +74,46 @@ const expandCodeRange = (codeStr) => {
   return [startCode, endCode];
 };
 
+const getCategoryForArticulo = (nombre) => {
+  const n = nombre ? nombre.toLowerCase() : '';
+  if (n.includes('compu') || n.includes('pc') || n.includes('cpu') || n.includes('laptop') || n.includes('portatil')) return 'Computadoras';
+  if (n.includes('monitor') || n.includes('pantalla')) return 'Monitores y Pantallas';
+  if (n.includes('impresora') || n.includes('printer')) return 'Impresoras';
+  if (n.includes('proyector') || n.includes('cañon') || n.includes('canon')) return 'Proyectores';
+  if (n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sillón') || n.includes('sillon')) return 'Sillería';
+  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tablón') || n.includes('pupitre')) return 'Mesas y Escritorios';
+  if (n.includes('libro') || n.includes('diccionario') || n.includes('enciclopedia')) return 'Libros';
+  if (n.includes('tv') || n.includes('televisión') || n.includes('televisor')) return 'Televisores';
+  if (n.includes('bocina') || n.includes('altavoz') || n.includes('sonido') || n.includes('audio') || n.includes('microfono')) return 'Equipo de Audio';
+  if (n.includes('teclado') || n.includes('mouse') || n.includes('raton')) return 'Periféricos';
+  if (n.includes('servidor') || n.includes('switch') || n.includes('router') || n.includes('red')) return 'Equipo de Red';
+  if (n.includes('telefono') || n.includes('celular') || n.includes('smartphone')) return 'Telefonía';
+  if (n.includes('tablet') || n.includes('ipad')) return 'Tablets';
+  if (n.includes('archivero') || n.includes('gaveta') || n.includes('estante') || n.includes('librero') || n.includes('locker') || n.includes('casillero')) return 'Archiveros y Estantes';
+  if (n.includes('pizarrón') || n.includes('pintarrón') || n.includes('pizarron') || n.includes('pintarron')) return 'Pizarrones';
+  if (n.includes('ventilador') || n.includes('abanico')) return 'Ventiladores';
+  if (n.includes('aire') || n.includes('minisplit') || n.includes('clima')) return 'Aires Acondicionados';
+  
+  return 'Otros Muebles y Equipos';
+};
+
 const getIconForArticulo = (nombre) => {
   const n = nombre.toLowerCase();
-  if (n.includes('compu') || n.includes('pc') || n.includes('cpu')) return <Cpu className="w-5 h-5" />;
+  if (n.includes('compu') || n.includes('pc') || n.includes('cpu') || n.includes('laptop') || n.includes('portatil')) return <Cpu className="w-5 h-5" />;
   if (n.includes('monitor') || n.includes('pantalla')) return <Monitor className="w-5 h-5" />;
-  if (n.includes('laptop') || n.includes('portatil')) return <Laptop className="w-5 h-5" />;
   if (n.includes('impresora') || n.includes('printer')) return <Printer className="w-5 h-5" />;
-  if (n.includes('proyector') || n.includes('cañon')) return <Projector className="w-5 h-5" />;
-  if (n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sillón')) return <Armchair className="w-5 h-5" />;
-  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tablón') || n.includes('pupitre')) return <Box className="w-5 h-5" />; // Fallback a Box para mesas si Table no está
+  if (n.includes('proyector') || n.includes('cañon') || n.includes('canon')) return <Projector className="w-5 h-5" />;
+  if (n.includes('sillería') || n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sillón')) return <Armchair className="w-5 h-5" />;
+  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tablón') || n.includes('pupitre')) return <Box className="w-5 h-5" />;
   if (n.includes('libro') || n.includes('diccionario') || n.includes('enciclopedia')) return <BookOpen className="w-5 h-5" />;
-  if (n.includes('tv') || n.includes('televisión') || n.includes('televisor') || n.includes('pantalla')) return <Tv className="w-5 h-5" />;
-  if (n.includes('bocina') || n.includes('altavoz') || n.includes('sonido') || n.includes('audio') || n.includes('microfono')) return <Speaker className="w-5 h-5" />;
-  if (n.includes('teclado')) return <Keyboard className="w-5 h-5" />;
-  if (n.includes('mouse') || n.includes('raton')) return <Mouse className="w-5 h-5" />;
-  if (n.includes('servidor') || n.includes('switch') || n.includes('router') || n.includes('red')) return <Server className="w-5 h-5" />;
-  if (n.includes('telefono') || n.includes('celular')) return <Smartphone className="w-5 h-5" />;
+  if (n.includes('tv') || n.includes('televisión') || n.includes('televisor')) return <Tv className="w-5 h-5" />;
+  if (n.includes('audio') || n.includes('bocina') || n.includes('altavoz') || n.includes('sonido') || n.includes('microfono')) return <Speaker className="w-5 h-5" />;
+  if (n.includes('periféricos') || n.includes('teclado') || n.includes('mouse') || n.includes('raton')) return <Keyboard className="w-5 h-5" />;
+  if (n.includes('red') || n.includes('servidor') || n.includes('switch') || n.includes('router')) return <Server className="w-5 h-5" />;
+  if (n.includes('telefonía') || n.includes('telefono') || n.includes('celular') || n.includes('smartphone')) return <Smartphone className="w-5 h-5" />;
   if (n.includes('tablet') || n.includes('ipad')) return <Tablet className="w-5 h-5" />;
   if (n.includes('archivero') || n.includes('gaveta') || n.includes('estante') || n.includes('librero')) return <Archive className="w-5 h-5" />;
-  if (n.includes('pizarrón') || n.includes('pintarrón')) return <PenTool className="w-5 h-5" />;
+  if (n.includes('pizarrón') || n.includes('pintarrón') || n.includes('pizarron')) return <PenTool className="w-5 h-5" />;
   
   return <Box className="w-5 h-5" />;
 };
@@ -647,11 +668,11 @@ export default function Contraloria() {
   const totalArticulos = inventario.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
   const libres = inventario.filter(i => i.ubicacion === 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
 
-  // Desglose por tipo de artículo
+  // Desglose por tipo de artículo (Categorizado)
   const desglosePorArticulo = inventario.reduce((acc, item) => {
-    const nombre = item.articulo ? item.articulo.trim().toUpperCase() : 'SIN NOMBRE';
-    if (!acc[nombre]) acc[nombre] = 0;
-    acc[nombre] += (Number(item.cantidad) || 0);
+    const categoria = getCategoryForArticulo(item.articulo);
+    if (!acc[categoria]) acc[categoria] = 0;
+    acc[categoria] += (Number(item.cantidad) || 0);
     return acc;
   }, {});
 
