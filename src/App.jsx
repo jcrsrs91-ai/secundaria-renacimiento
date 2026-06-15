@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -15,6 +16,7 @@ import ImpresionDocumentos from './pages/dashboard/ImpresionDocumentos';
 
 function App() {
   return (
+    <>
     <Routes>
       {/* Rutas Públicas */}
       <Route path="/" element={<Login />} />
@@ -35,6 +37,8 @@ function App() {
         </Route>
       </Route>
     </Routes>
+    <Toaster position="bottom-right" toastOptions={{ duration: 4000, style: { background: '#334155', color: '#fff', padding: '16px', borderRadius: '8px' } }} />
+    </>
 
   );
 }

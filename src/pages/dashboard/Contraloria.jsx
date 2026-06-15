@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -15,7 +16,7 @@ const generateCodeRange = (baseCode, quantity) => {
   if (qty <= 1) return { codes: [baseCode], display: baseCode };
 
   // Intentar encontrar un número al final del código (ej. "INV-001", "INV-100", "B-5" o "002")
-  const match = baseCode.match(/^(.*?)(-?\d+)$/);
+  const match = baseCode.match(/^(.*?)(\d+)$/);
   if (match) {
     const prefix = match[1];
     const numStr = match[2];
@@ -54,8 +55,8 @@ const expandCodeRange = (codeStr) => {
   const startCode = parts[0].trim();
   const endCode = parts[1].trim();
 
-  const matchStart = startCode.match(/^(.*?)(-?\d+)$/);
-  const matchEnd = endCode.match(/^(.*?)(-?\d+)$/);
+  const matchStart = startCode.match(/^(.*?)(\d+)$/);
+  const matchEnd = endCode.match(/^(.*?)(\d+)$/);
 
   if (matchStart && matchEnd && matchStart[1] === matchEnd[1]) {
     const prefix = matchStart[1];
@@ -151,6 +152,8 @@ export default function Contraloria() {
     const matchesLocation = locationFilter === 'Todos' || item.ubicacion === locationFilter;
     
     return matchesSearch && matchesStatus && matchesLocation;
+  }).sort((a, b) => {
+    return (a.codigo || '').localeCompare((b.codigo || ''), undefined, { numeric: true, sensitivity: 'base' });
   });
 
   const [printMode, setPrintMode] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'etiquetas'
@@ -202,6 +205,7 @@ export default function Contraloria() {
     if (e && e.preventDefault) e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
+    const toastId = toast.loading('Guardando información...');
     
     // Guardar en base de datos si es recepción
     if (modalOpen === 'recepcion') {
@@ -239,7 +243,7 @@ export default function Contraloria() {
         }
       } catch (error) {
         console.error("Error guardando en Firebase:", error);
-        alert("Hubo un error al guardar en la base de datos.");
+        toast.error("Hubo un error al guardar en la base de datos.", { id: toastId });
         setIsSubmitting(false);
         return;
       }
@@ -319,7 +323,7 @@ export default function Contraloria() {
         }
       } catch (error) {
         console.error("Error guardando resguardos en Firebase:", error);
-        alert("Hubo un error al guardar en la base de datos.");
+        toast.error("Hubo un error al guardar en la base de datos.", { id: toastId });
         setIsSubmitting(false);
         return;
       }
@@ -329,11 +333,12 @@ export default function Contraloria() {
       setPrintData(formData);
       setPrintMode(modalOpen);
       setModalOpen(null);
+      toast.success("¡Preparando documento para impresión!", { id: toastId });
       setTimeout(() => { window.print(); setIsSubmitting(false); }, 500);
     } else {
       setModalOpen(null);
       setIsSubmitting(false);
-      alert("¡Guardado exitosamente!");
+      toast.success("¡Guardado exitosamente en la base de datos!", { id: toastId });
     }
   };
 
@@ -378,21 +383,23 @@ export default function Contraloria() {
       });
       setModalOpen(null);
       setEditingItem(null);
+      toast.success("Cambios guardados correctamente.");
     } catch (error) {
       console.error("Error al actualizar:", error);
-      alert("Hubo un error al actualizar el artículo.");
+      toast.error("Hubo un error al actualizar el artículo.");
     }
   };
 
   const handleDeleteClick = async (id) => {
     if (window.confirm("¿Estás seguro de eliminar este artículo del inventario de forma permanente?")) {
-      try {
-        await deleteDoc(doc(db, 'inventario', id));
-        setSelectedItems(prev => prev.filter(itemId => itemId !== id));
-      } catch (error) {
-        console.error("Error al eliminar:", error);
-        alert("Hubo un error al eliminar el artículo.");
-      }
+      toast.promise(
+        deleteDoc(doc(db, 'inventario', id)),
+        {
+          loading: 'Eliminando...',
+          success: 'Artículo eliminado correctamente.',
+          error: 'Error al eliminar el artículo.'
+        }
+      );
     }
   };
 
@@ -403,9 +410,10 @@ export default function Contraloria() {
         const promises = selectedItems.map(id => deleteDoc(doc(db, 'inventario', id)));
         await Promise.all(promises);
         setSelectedItems([]); // Limpiar selección tras borrar
+        toast.success("Artículos eliminados correctamente.");
       } catch (error) {
         console.error("Error en eliminación masiva:", error);
-        alert("Hubo un error al eliminar los artículos seleccionados.");
+        toast.error("Hubo un error al eliminar los artículos seleccionados.");
       }
     }
   };
@@ -418,15 +426,14 @@ export default function Contraloria() {
   const handleSaveResguardoEdit = async (e) => {
     e.preventDefault();
     if (!editingResguardo) return;
-    try {
+    
+    const updatePromise = async () => {
       const validItems = editingResguardo.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
       const resRef = doc(db, 'resguardos', editingResguardo.id);
       
-      // Encontrar el resguardo original para comparar
       const originalResguardo = resguardos.find(r => r.id === editingResguardo.id);
       const originalArticulos = originalResguardo ? originalResguardo.articulos || [] : [];
       
-      // Artículos que fueron eliminados en la edición
       const removedItems = originalArticulos.filter(origArt => 
         !validItems.some(vArt => (vArt.codigo || vArt.inventario) === (origArt.codigo || origArt.inventario) || (vArt.id && vArt.id === origArt.id))
       );
@@ -504,13 +511,18 @@ export default function Contraloria() {
             });
           }
         }
-      }
+        setModalOpen(null);
+        setEditingResguardo(null);
+      };
 
-      setModalOpen(null);
-      setEditingResguardo(null);
+      toast.promise(updatePromise(), {
+        loading: 'Guardando cambios del resguardo...',
+        success: '¡Resguardo actualizado correctamente!',
+        error: 'Error al actualizar el resguardo'
+      });
+
     } catch (error) {
-      console.error("Error al actualizar el resguardo:", error);
-      alert("Hubo un error al actualizar el resguardo.");
+      console.error("Error general:", error);
     }
   };
 
@@ -525,7 +537,7 @@ export default function Contraloria() {
       liberarArticulos = window.confirm("Como decidiste no eliminarlos, ¿deseas regresarlos a la 'Bodega Contraloría' como artículos libres?");
     }
 
-    try {
+    const deletePromise = async () => {
       if (eliminarArticulos && res.articulos) {
         for (const art of res.articulos) {
           const targetCode = art.codigo || art.inventario;
@@ -561,12 +573,14 @@ export default function Contraloria() {
           }
         }
       }
-
       await deleteDoc(doc(db, 'resguardos', res.id));
-    } catch (error) {
-      console.error("Error al eliminar resguardo:", error);
-      alert("Hubo un error al eliminar el resguardo.");
-    }
+    };
+
+    toast.promise(deletePromise(), {
+      loading: 'Procesando la eliminación del acta y sus bienes...',
+      success: '¡El acta y los bienes seleccionados fueron eliminados correctamente!',
+      error: 'Hubo un error al eliminar el resguardo.'
+    });
   };
 
   const toggleSelectAll = () => {
@@ -1252,7 +1266,16 @@ export default function Contraloria() {
                             setFormData({...formData, articulos: newArts});
                           }} />
                         </div>
-                        <div className="w-1/4">
+                        {modalOpen === 'recepcion' && (
+                          <div className="w-1/5">
+                            <input type="text" placeholder="Código Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600" value={art.codigo || ''} onChange={(e) => {
+                              const newArts = [...formData.articulos];
+                              newArts[idx].codigo = e.target.value;
+                              setFormData({...formData, articulos: newArts});
+                            }} title="El sistema generará los siguientes folios de forma consecutiva automáticamente." />
+                          </div>
+                        )}
+                        <div className="w-1/5">
                           {modalOpen === 'resguardo' || modalOpen === 'baja' ? (
                             <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
                               const newArts = [...formData.articulos];
@@ -1267,7 +1290,7 @@ export default function Contraloria() {
                             }} />
                           )}
                         </div>
-                        <div className="w-32">
+                        <div className="w-28">
                           {modalOpen === 'recepcion' ? (
                             <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm" value={art.serie || ''} onChange={(e) => {
                               const newArts = [...formData.articulos];
