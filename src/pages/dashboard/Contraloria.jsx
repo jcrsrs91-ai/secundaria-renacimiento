@@ -427,7 +427,8 @@ export default function Contraloria() {
     e.preventDefault();
     if (!editingResguardo) return;
     
-    const updatePromise = async () => {
+    try {
+      const updatePromise = async () => {
       const validItems = editingResguardo.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
       const resRef = doc(db, 'resguardos', editingResguardo.id);
       
@@ -511,8 +512,9 @@ export default function Contraloria() {
             });
           }
         }
-        setModalOpen(null);
-        setEditingResguardo(null);
+      }
+      setModalOpen(null);
+      setEditingResguardo(null);
       };
 
       toast.promise(updatePromise(), {
