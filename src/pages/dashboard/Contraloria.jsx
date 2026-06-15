@@ -161,6 +161,7 @@ export default function Contraloria() {
   const [historyItem, setHistoryItem] = useState(null);
   
   const [formData, setFormData] = useState({ articulos: [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }] });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const handleAfterPrint = () => setPrintMode(null);
@@ -197,8 +198,10 @@ export default function Contraloria() {
     setFormData({ ...formData, articulos: [...formData.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }] });
   };
 
-  const handlePrintSubmit = async (e) => {
-    e.preventDefault();
+  const handlePrintSubmit = async (e, actionType = 'print') => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     
     // Guardar en base de datos si es recepción
     if (modalOpen === 'recepcion') {
@@ -237,6 +240,8 @@ export default function Contraloria() {
       } catch (error) {
         console.error("Error guardando en Firebase:", error);
         alert("Hubo un error al guardar en la base de datos.");
+        setIsSubmitting(false);
+        return;
       }
     } else if (modalOpen === 'resguardo') {
       try {
@@ -315,13 +320,21 @@ export default function Contraloria() {
       } catch (error) {
         console.error("Error guardando resguardos en Firebase:", error);
         alert("Hubo un error al guardar en la base de datos.");
+        setIsSubmitting(false);
+        return;
       }
     }
 
-    setPrintData(formData);
-    setPrintMode(modalOpen);
-    setModalOpen(null);
-    setTimeout(() => window.print(), 500);
+    if (actionType === 'print') {
+      setPrintData(formData);
+      setPrintMode(modalOpen);
+      setModalOpen(null);
+      setTimeout(() => { window.print(); setIsSubmitting(false); }, 500);
+    } else {
+      setModalOpen(null);
+      setIsSubmitting(false);
+      alert("¡Guardado exitosamente!");
+    }
   };
 
   const handleEditClick = (item) => {
@@ -505,10 +518,27 @@ export default function Contraloria() {
     const confirmacion = window.confirm(`¿Estás seguro de eliminar el resguardo con Folio ${res.folio || 'S/F'} de ${res.nombreResguardante}?\n\nEsta acción no se puede deshacer.`);
     if (!confirmacion) return;
 
-    const liberarArticulos = window.confirm("¿Deseas regresar los artículos asociados de este resguardo a la 'Bodega Contraloría' en el inventario?");
+    const eliminarArticulos = window.confirm("¿Deseas ELIMINAR PERMANENTEMENTE los artículos de este resguardo del Inventario General de la escuela?\n\n(Aceptar = Borrar mobiliario del sistema, Cancelar = Mantenerlos en el sistema)");
+    
+    let liberarArticulos = false;
+    if (!eliminarArticulos) {
+      liberarArticulos = window.confirm("Como decidiste no eliminarlos, ¿deseas regresarlos a la 'Bodega Contraloría' como artículos libres?");
+    }
 
     try {
-      if (liberarArticulos && res.articulos) {
+      if (eliminarArticulos && res.articulos) {
+        for (const art of res.articulos) {
+          const targetCode = art.codigo || art.inventario;
+          const expandedCodes = expandCodeRange(targetCode);
+          
+          for (const code of expandedCodes) {
+            const invItem = inventario.find(i => i.codigo === code || (art.id && i.id === art.id));
+            if (invItem) {
+              await deleteDoc(doc(db, 'inventario', invItem.id));
+            }
+          }
+        }
+      } else if (liberarArticulos && res.articulos) {
         for (const art of res.articulos) {
           const targetCode = art.codigo || art.inventario;
           const expandedCodes = expandCodeRange(targetCode);
@@ -1147,7 +1177,7 @@ export default function Contraloria() {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handlePrintSubmit}>
+              <form onSubmit={(e) => handlePrintSubmit(e, 'print')}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Fecha</label>
@@ -1289,9 +1319,14 @@ export default function Contraloria() {
               )}
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-                <button type="button" onClick={() => setModalOpen(null)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancelar</button>
-                <button type="submit" className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm flex items-center">
-                  <Printer className="w-4 h-4 mr-2" /> Imprimir Formato Oficial
+                <button type="button" onClick={() => setModalOpen(null)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium" disabled={isSubmitting}>Cancelar</button>
+                {modalOpen === 'resguardo' && (
+                  <button type="button" onClick={(e) => handlePrintSubmit(e, 'saveOnly')} className={`px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
+                    {isSubmitting ? 'Guardando...' : 'Guardar Solamente'}
+                  </button>
+                )}
+                <button type="submit" className={`px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
+                  <Printer className="w-4 h-4 mr-2" /> {isSubmitting ? 'Procesando...' : (modalOpen === 'resguardo' ? 'Guardar y Generar PDF' : 'Imprimir Formato Oficial')}
                 </button>
               </div>
             </form>
