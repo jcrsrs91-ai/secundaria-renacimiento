@@ -476,6 +476,35 @@ export default function Contraloria() {
     setModalOpen('editResguardo');
   };
 
+  const handleDuplicateResguardo = (res) => {
+    const articulosDuplicados = res.articulos ? res.articulos.map(art => ({
+      ...art,
+      id: '',
+      codigo: '',
+      inventario: '',
+      serie: ''
+    })) : [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: 'Bueno', inventario: '' }];
+
+    setFormData({
+      fecha: new Date().toISOString().split('T')[0],
+      hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      origen: res.origen || '',
+      proveedor: res.proveedor || '',
+      nombreProveedor: res.nombreProveedor || '',
+      nombreContralor: res.nombreContralor || 'Profr. Juan Carlos Taboada B.',
+      folio: '', // Folio en blanco para que le ponga uno nuevo
+      nombreResguardante: res.nombreResguardante || '',
+      areaResguardante: res.areaResguardante || '',
+      observaciones: res.observaciones || '',
+      motivo: res.motivo || '',
+      guardarEnInventario: true,
+      articulos: articulosDuplicados
+    });
+
+    setModalOpen('resguardo');
+    window.scrollTo(0, 0);
+  };
+
   const handleSaveResguardoEdit = async (e) => {
     e.preventDefault();
     if (!editingResguardo) return;
@@ -492,26 +521,38 @@ export default function Contraloria() {
         !validItems.some(vArt => (vArt.codigo || vArt.inventario) === (origArt.codigo || origArt.inventario) || (vArt.id && vArt.id === origArt.id))
       );
 
+      // Asegurar que todos tengan un código, auto-generando si es necesario
+      const articulosProcesados = validItems.map((art, idx) => {
+        const qty = Number(art.cantidad) || 1;
+        let finalCode = art.codigo || art.inventario || '';
+        if (!finalCode) {
+           const baseCode = `INV-RESG-${Date.now().toString().slice(-4)}${idx}`;
+           const { display } = generateCodeRange(baseCode, qty);
+           finalCode = display;
+        }
+        return {
+          id: art.id || '',
+          cantidad: qty,
+          descripcion: art.descripcion || art.articulo || '',
+          marca: art.marca || '',
+          serie: art.serie || '',
+          codigo: finalCode,
+          estado: art.estado || 'Bueno'
+        };
+      });
+
       await updateDoc(resRef, {
         folio: editingResguardo.folio || '',
         fecha: editingResguardo.fecha || '',
         nombreResguardante: editingResguardo.nombreResguardante || '',
         areaResguardante: editingResguardo.areaResguardante || '',
         observaciones: editingResguardo.observaciones || '',
-        articulos: validItems.map(art => ({
-          id: art.id || '',
-          cantidad: Number(art.cantidad) || 1,
-          descripcion: art.descripcion || art.articulo || '',
-          marca: art.marca || '',
-          serie: art.serie || '',
-          codigo: art.codigo || art.inventario || '',
-          estado: art.estado || 'Bueno'
-        }))
+        articulos: articulosProcesados
       });
 
       // Procesar artículos que continúan en el resguardo
-      for (const art of validItems) {
-        const targetCode = art.codigo || art.inventario;
+      for (const art of articulosProcesados) {
+        const targetCode = art.codigo;
         const expandedCodes = expandCodeRange(targetCode);
         
         for (const code of expandedCodes) {
@@ -1102,6 +1143,13 @@ export default function Contraloria() {
                             title="Editar Datos del Resguardo"
                           >
                             <Edit2 className="w-4 h-4 mr-1" /> Editar
+                          </button>
+                          <button 
+                            onClick={() => handleDuplicateResguardo(res)}
+                            className="text-emerald-600 hover:text-emerald-800 p-2 hover:bg-emerald-50 rounded-lg transition-colors inline-flex items-center text-xs font-medium"
+                            title="Duplicar artículos para una nueva acta"
+                          >
+                            <Plus className="w-4 h-4 mr-1" /> Duplicar
                           </button>
                           <button 
                             onClick={() => handleDeleteResguardoClick(res)}
