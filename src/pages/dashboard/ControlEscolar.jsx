@@ -329,9 +329,18 @@ export default function ControlEscolar() {
         let duplicados = 0;
         let errores = 0;
 
+        const getV = (row, ...keys) => {
+          for (let k of keys) {
+            if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
+              return String(row[k]).trim();
+            }
+          }
+          return '';
+        };
+
         for (const row of data) {
           try {
-            const curpVal = (row.curp || '').trim().toUpperCase();
+            const curpVal = getV(row, 'curp').toUpperCase();
             if (!curpVal) {
               errores++;
               continue;
@@ -346,28 +355,30 @@ export default function ControlEscolar() {
               continue; // Omitir duplicado
             }
 
+            const rawGrupo = getV(row, 'grupo', 'grupos');
+
             await addDoc(collection(db, "students"), {
-              matricula: row.matricula || '',
+              matricula: getV(row, 'matricula', 'matriculas'),
               curp: curpVal,
-              escuelaProcedencia: row.escuelaprocedencia || '',
-              domicilioEscuela: row.domicilioescuela || '',
-              promedioEscuela: row.promedioescuela || '',
-              nombres: row.nombres || row.nombre || '',
-              apellidoPaterno: row.apellidopaterno || row.paterno || '',
-              apellidoMaterno: row.apellidomaterno || row.materno || '',
-              grado: row.grado || '',
-              grupo: row.grupo || '',
-              turno: row.turno || '',
-              taller: row.grupo ? getTallerPorGrupo(row.grupo.trim()) : 'Por asignar',
-              calleNumero: row.callenumero || row.calle || '',
-              colonia: row.colonia || '',
-              codigoPostal: row.codigopostal || row.cp || '',
-              tutor: row.tutor || '',
-              celularTutor: row.celulartutor || row.celular || '',
-              referencia1: row.referencia1 || '',
-              celularRef1: row.celularref1 || '',
-              referencia2: row.referencia2 || '',
-              celularRef2: row.celularref2 || '',
+              escuelaProcedencia: getV(row, 'escuelaprocedencia', 'escuela de procedencia', 'escuela', 'procedencia'),
+              domicilioEscuela: getV(row, 'domicilioescuela', 'domicilio de escuela'),
+              promedioEscuela: getV(row, 'promedioescuela', 'promedio', 'calificacion'),
+              nombres: getV(row, 'nombres', 'nombre', 'nombre(s)', 'alumno'),
+              apellidoPaterno: getV(row, 'apellidopaterno', 'paterno', 'apellido paterno'),
+              apellidoMaterno: getV(row, 'apellidomaterno', 'materno', 'apellido materno'),
+              grado: getV(row, 'grado', 'grados'),
+              grupo: rawGrupo,
+              turno: getV(row, 'turno', 'turnos'),
+              taller: rawGrupo ? getTallerPorGrupo(rawGrupo) : 'Por asignar',
+              calleNumero: getV(row, 'callenumero', 'calle y numero', 'calle', 'direccion', 'domicilio'),
+              colonia: getV(row, 'colonia', 'fraccionamiento'),
+              codigoPostal: getV(row, 'codigopostal', 'cp', 'c.p.'),
+              tutor: getV(row, 'tutor', 'nombre del tutor', 'nombre tutor', 'padre o tutor', 'madre', 'padre', 'contacto principal'),
+              celularTutor: getV(row, 'celulartutor', 'celular tutor', 'telefono tutor', 'telefono del tutor', 'celular', 'telefono', 'tel', 'tel tutor'),
+              referencia1: getV(row, 'referencia1', 'referencia 1', 'referencia', 'contacto de emergencia', 'contacto', 'nombre de emergencia'),
+              celularRef1: getV(row, 'celularref1', 'celular referencia 1', 'telefono de emergencia', 'telefono emergencia', 'tel emergencia', 'celular emergencia'),
+              referencia2: getV(row, 'referencia2', 'referencia 2'),
+              celularRef2: getV(row, 'celularref2', 'celular referencia 2'),
               status: "Activo",
               fechaRegistro: serverTimestamp()
             });
