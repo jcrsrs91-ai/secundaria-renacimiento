@@ -205,15 +205,13 @@ export default function ControlEscolar() {
     if (!confirmacion) return;
 
     try {
-      const newMatricula = `2026EST68${student.id.substring(0,4).toUpperCase()}`;
       const studentRef = doc(db, "students", student.id);
       await updateDoc(studentRef, {
         status: "Activo",
-        matricula: newMatricula,
         grupo: "Por asignar",
         taller: "Por asignar"
       });
-      alert(`Alumno aceptado con la matrícula: ${newMatricula}`);
+      alert(`Alumno aceptado y movido al Directorio Activo.`);
     } catch (error) {
       console.error("Error al aceptar:", error);
       alert("Error al actualizar la base de datos.");
