@@ -122,6 +122,10 @@ export default function ControlEscolar() {
     const matchesShift = shiftFilter === 'Todos' || a.turno === shiftFilter;
     const matchesStatus = statusFilter === 'Todos' || a.status === statusFilter;
     return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus;
+  }).sort((a, b) => {
+    const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
+    const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
+    return nameA.localeCompare(nameB);
   });
 
   const asisAlumnos = useMemo(() => {
