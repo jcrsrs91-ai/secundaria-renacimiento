@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer } from 'lucide-react';
+import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2 } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
-import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 import HojaDeVida from '../../components/HojaDeVida';
 import CredencialPrint from '../../components/CredencialPrint';
 import ConstanciaPrint from '../../components/ConstanciaPrint';
@@ -137,6 +138,18 @@ export default function ControlEscolar() {
   const closeModal = () => {
     setModalType(null);
     setSelectedStudent(null);
+  };
+
+  const handleDeleteStudent = async (student) => {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${student.nombres} ${student.apellidoPaterno}? Esta acción no se puede deshacer.`)) {
+      try {
+        await deleteDoc(doc(db, "students", student.id));
+        toast.success("Alumno eliminado correctamente.");
+      } catch (error) {
+        console.error("Error al eliminar alumno:", error);
+        toast.error("Hubo un error al intentar eliminar el alumno.");
+      }
+    }
   };
 
   const handlePrintSingle = (student) => {
@@ -285,6 +298,9 @@ export default function ControlEscolar() {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (header) => header.trim().toLowerCase()
+        .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i')
+        .replace(/ó/g, 'o').replace(/ú/g, 'u'),
       complete: async (results) => {
         const data = results.data;
         if (!data || data.length === 0) {
@@ -319,25 +335,25 @@ export default function ControlEscolar() {
             await addDoc(collection(db, "students"), {
               matricula: row.matricula || '',
               curp: curpVal,
-              escuelaProcedencia: row.escuelaProcedencia || '',
-              domicilioEscuela: row.domicilioEscuela || '',
-              promedioEscuela: row.promedioEscuela || '',
-              nombres: row.nombres || '',
-              apellidoPaterno: row.apellidoPaterno || '',
-              apellidoMaterno: row.apellidoMaterno || '',
+              escuelaProcedencia: row.escuelaprocedencia || '',
+              domicilioEscuela: row.domicilioescuela || '',
+              promedioEscuela: row.promedioescuela || '',
+              nombres: row.nombres || row.nombre || '',
+              apellidoPaterno: row.apellidopaterno || row.paterno || '',
+              apellidoMaterno: row.apellidomaterno || row.materno || '',
               grado: row.grado || '',
               grupo: row.grupo || '',
               turno: row.turno || '',
               taller: row.grupo ? getTallerPorGrupo(row.grupo.trim()) : 'Por asignar',
-              calleNumero: row.calleNumero || '',
+              calleNumero: row.callenumero || row.calle || '',
               colonia: row.colonia || '',
-              codigoPostal: row.codigoPostal || '',
+              codigoPostal: row.codigopostal || row.cp || '',
               tutor: row.tutor || '',
-              celularTutor: row.celularTutor || '',
+              celularTutor: row.celulartutor || row.celular || '',
               referencia1: row.referencia1 || '',
-              celularRef1: row.celularRef1 || '',
+              celularRef1: row.celularref1 || '',
               referencia2: row.referencia2 || '',
-              celularRef2: row.celularRef2 || '',
+              celularRef2: row.celularref2 || '',
               status: "Activo",
               fechaRegistro: serverTimestamp()
             });
@@ -474,6 +490,9 @@ export default function ControlEscolar() {
                     <td className="px-6 py-4 text-right space-x-2">
                       <button onClick={() => aceptarAspirante(p)} className="text-emerald-600 font-medium text-sm hover:bg-emerald-50 px-3 py-1 rounded border border-emerald-200 transition-colors">
                         Aceptar Aspirante
+                      </button>
+                      <button onClick={() => handleDeleteStudent(p)} className="text-red-500 font-medium text-sm hover:bg-red-50 px-3 py-1 rounded border border-red-200 transition-colors">
+                        Eliminar
                       </button>
                     </td>
                   </tr>
@@ -682,7 +701,7 @@ export default function ControlEscolar() {
                     </td>
                     <td className="px-6 py-4 text-right space-x-4">
                       <button onClick={() => openModal('hoja', a)} className="text-blue-600 hover:text-blue-800 font-medium text-sm inline-flex items-center">
-                        <User className="w-4 h-4 mr-1" /> Expediente / Hoja de Vida
+                        <User className="w-4 h-4 mr-1" /> Expediente
                       </button>
                       <button onClick={() => openModal('grade', a)} className="text-emerald-600 hover:text-emerald-800 font-medium text-sm inline-flex items-center">
                         <Star className="w-4 h-4 mr-1" /> Calificar
@@ -692,6 +711,9 @@ export default function ControlEscolar() {
                       </button>
                       <button onClick={() => handlePrintSingle(a)} className="text-slate-500 hover:text-slate-800 font-medium text-sm inline-flex items-center">
                         <QrCode className="w-4 h-4 mr-1" /> Credencial
+                      </button>
+                      <button onClick={() => handleDeleteStudent(a)} className="text-red-500 hover:text-red-700 font-medium text-sm inline-flex items-center">
+                        <Trash2 className="w-4 h-4 mr-1" /> Eliminar
                       </button>
                     </td>
                   </tr>
