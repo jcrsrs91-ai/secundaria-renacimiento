@@ -276,6 +276,22 @@ export default function ControlEscolar() {
     }
   };
 
+  const handleDeleteMasivo = async () => {
+    const confirmacion = window.confirm(`¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE a ${selectedStudents.length} alumnos seleccionados? Esta acción no se puede deshacer.`);
+    if (!confirmacion) return;
+
+    try {
+      for (const studentId of selectedStudents) {
+        await deleteDoc(doc(db, "students", studentId));
+      }
+      toast.success(`¡${selectedStudents.length} alumnos eliminados con éxito!`);
+      setSelectedStudents([]);
+    } catch (error) {
+      console.error(error);
+      toast.error("Hubo un error al eliminar de forma masiva.");
+    }
+  };
+
   const handleDownloadTemplate = () => {
     const BOM = "\uFEFF";
     const csvContent = "matricula;curp;escuelaProcedencia;domicilioEscuela;promedioEscuela;nombres;apellidoPaterno;apellidoMaterno;grado;grupo;turno;calleNumero;colonia;codigoPostal;tutor;celularTutor;referencia1;celularRef1;referencia2;celularRef2\n" +
@@ -661,9 +677,14 @@ export default function ControlEscolar() {
                 <QrCode className="w-4 h-4 mr-2" /> Imprimir Grupo
               </button>
               {selectedStudents.length > 0 && (
-                <button onClick={() => setModalType('asignacionMasiva')} className="w-full md:w-auto px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center">
-                  Asignación Masiva ({selectedStudents.length})
-                </button>
+                <>
+                  <button onClick={() => setModalType('asignacionMasiva')} className="w-full md:w-auto px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center">
+                    Asignación Masiva ({selectedStudents.length})
+                  </button>
+                  <button onClick={handleDeleteMasivo} className="w-full md:w-auto px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm flex items-center justify-center">
+                    <Trash2 className="w-4 h-4 mr-2" /> Eliminar ({selectedStudents.length})
+                  </button>
+                </>
               )}
             </div>
           </div>
