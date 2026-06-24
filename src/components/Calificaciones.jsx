@@ -4,12 +4,13 @@ import Papa from 'papaparse';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 
-export default function Calificaciones({ activos, materiasPorGrado, onPrintBoleta }) {
+export default function Calificaciones({ activos, materiasPorGrado, onPrintBoleta, onPrintConcentradoFinal, onPrintConcentradoParcial }) {
   const [grado, setGrado] = useState('1er Grado');
   const [grupo, setGrupo] = useState('A');
   const [trimestre, setTrimestre] = useState('t1');
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [showConcentradoMenu, setShowConcentradoMenu] = useState(false);
 
   // Filtrar alumnos por grado y grupo
   const alumnos = useMemo(() => {
@@ -109,6 +110,77 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `Plantilla_Calificaciones_${grado}_${grupo}_${trimestre}.csv`;
+    link.click();
+  };
+
+  const getPromedioFinal = (student, materiaId) => {
+    const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
+    const t2 = parseFloat(student.calificaciones?.['t2']?.[materiaId]);
+    const t3 = parseFloat(student.calificaciones?.['t3']?.[materiaId]);
+    let sum = 0, c = 0;
+    if (!isNaN(t1)) { sum += t1; c++; }
+    if (!isNaN(t2)) { sum += t2; c++; }
+    if (!isNaN(t3)) { sum += t3; c++; }
+    return c > 0 ? (sum / c).toFixed(1) : '';
+  };
+
+  const handleExportarExcelFinales = () => {
+    if (alumnos.length === 0) return;
+    const headers = ['Matrícula', 'Nombre del Alumno', ...materias.map(m => m.name), 'Promedio General', 'Materias Reprobadas'];
+    const data = alumnos.map(al => {
+      const row = [al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`];
+      let sum = 0, count = 0, reprobadas = 0;
+      materias.forEach(mat => {
+        const pf = getPromedioFinal(al, mat.id);
+        row.push(pf);
+        if (pf !== '') {
+          sum += parseFloat(pf);
+          count++;
+          if (parseFloat(pf) < 6.0) reprobadas++;
+        }
+      });
+      row.push(count > 0 ? (sum/count).toFixed(1) : '');
+      row.push(reprobadas);
+      return row;
+    });
+    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: ";" });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Concentrado_Finales_${grado}_${grupo}.csv`;
+    link.click();
+  };
+
+  const handleExportarExcelParciales = () => {
+    if (alumnos.length === 0) return;
+    const headers = ['Matrícula', 'Nombre del Alumno'];
+    materias.forEach(mat => {
+      headers.push(`${mat.name} T1`, `${mat.name} T2`, `${mat.name} T3`, `${mat.name} Final`);
+    });
+    headers.push('Promedio General');
+
+    const data = alumnos.map(al => {
+      const row = [al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`];
+      let sum = 0, count = 0;
+      materias.forEach(mat => {
+        const t1 = al.calificaciones?.['t1']?.[mat.id] || '';
+        const t2 = al.calificaciones?.['t2']?.[mat.id] || '';
+        const t3 = al.calificaciones?.['t3']?.[mat.id] || '';
+        const pf = getPromedioFinal(al, mat.id);
+        row.push(t1, t2, t3, pf);
+        if (pf !== '') {
+          sum += parseFloat(pf);
+          count++;
+        }
+      });
+      row.push(count > 0 ? (sum/count).toFixed(1) : '');
+      return row;
+    });
+    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: ";" });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Concentrado_Parciales_${grado}_${grupo}.csv`;
     link.click();
   };
 
@@ -266,14 +338,53 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
           </div>
           
           {/* Action Bar */}
-          <div className="bg-slate-50 border-t border-slate-200 p-4 flex flex-wrap justify-between items-center gap-4">
-            <span className="text-sm font-medium text-slate-500">{alumnos.length} alumnos listados</span>
+          <div className="bg-slate-50 border-t border-slate-200 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-4 relative">
+              <span className="text-sm font-medium text-slate-500">{alumnos.length} alumnos listados</span>
+              
+              <div className="relative">
+                <button 
+                  onClick={() => setShowConcentradoMenu(!showConcentradoMenu)}
+                  className="flex items-center px-4 py-2 border-2 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg font-bold transition text-sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                  Generar Cuadro de Concentración
+                </button>
+                
+                {showConcentradoMenu && (
+                  <div className="absolute bottom-full mb-2 left-0 w-72 bg-white rounded-xl shadow-xl border border-slate-200 p-2 z-50 overflow-hidden">
+                    <div className="px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">Tipo de Cuadro</div>
+                    
+                    <div className="mb-2">
+                      <div className="px-3 py-1 text-xs font-bold text-indigo-600">Con Promedios Finales</div>
+                      <button onClick={() => { onPrintConcentradoFinal && onPrintConcentradoFinal(alumnos, grado, grupo); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> Imprimir PDF
+                      </button>
+                      <button onClick={() => { handleExportarExcelFinales(); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg> Exportar Excel
+                      </button>
+                    </div>
+
+                    <div>
+                      <div className="px-3 py-1 text-xs font-bold text-indigo-600">Con Calificaciones Parciales</div>
+                      <button onClick={() => { onPrintConcentradoParcial && onPrintConcentradoParcial(alumnos, grado, grupo); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> Imprimir PDF
+                      </button>
+                      <button onClick={() => { handleExportarExcelParciales(); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg> Exportar Excel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <button 
                 onClick={() => onPrintBoleta && onPrintBoleta(alumnos)}
                 className="flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-100 transition shadow-sm text-sm"
               >
-                 Imprimir Grupo
+                 Imprimir Grupo (Boletas)
               </button>
               <button 
                 onClick={handleSaveAll}

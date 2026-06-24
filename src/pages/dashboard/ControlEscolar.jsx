@@ -10,6 +10,8 @@ import ConstanciaPrint from '../../components/ConstanciaPrint';
 import BoletaPrint from '../../components/BoletaPrint';
 import Calificaciones from '../../components/Calificaciones';
 import ListaAsistenciaPrint from '../../components/ListaAsistenciaPrint';
+import CuadroFinalPrint from '../../components/CuadroFinalPrint';
+import CuadroParcialPrint from '../../components/CuadroParcialPrint';
 
 export default function ControlEscolar() {
   const [activeTab, setActiveTab] = useState('pendientes');
@@ -182,10 +184,32 @@ export default function ControlEscolar() {
     closeModal();
   };
 
-  const handlePrintBoleta = (studentOrArray) => {
+  const handlePrintBoleta = (studentOrGroup) => {
+    if(Array.isArray(studentOrGroup)) {
+      setPrintData(studentOrGroup);
+    } else {
+      setPrintData([studentOrGroup]);
+    }
     setPrintMode('boleta');
-    setPrintData(Array.isArray(studentOrArray) ? studentOrArray : [studentOrArray]);
-    setTimeout(() => window.print(), 500);
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
+  const handlePrintConcentradoFinal = (alumnos, grado, grupo) => {
+    setPrintData({ alumnos, grado, grupo });
+    setPrintMode('concentrado-final');
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
+  const handlePrintConcentradoParcial = (alumnos, grado, grupo) => {
+    setPrintData({ alumnos, grado, grupo });
+    setPrintMode('concentrado-parcial');
+    setTimeout(() => {
+      window.print();
+    }, 500);
   };
 
   const toggleSelectStudent = (id) => {
@@ -543,7 +567,7 @@ export default function ControlEscolar() {
 
       {/* Tabla Calificaciones */}
       {!loading && activeTab === 'calificaciones' && (
-        <Calificaciones activos={activos} materiasPorGrado={materiasPorGrado} onPrintBoleta={handlePrintBoleta} />
+        <Calificaciones activos={activos} materiasPorGrado={materiasPorGrado} onPrintBoleta={handlePrintBoleta} onPrintConcentradoFinal={handlePrintConcentradoFinal} onPrintConcentradoParcial={handlePrintConcentradoParcial} />
       )}
 
       {/* Tabla Listas de Asistencia */}
@@ -929,6 +953,8 @@ export default function ControlEscolar() {
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
+      {printMode === 'concentrado-final' && <CuadroFinalPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
+      {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
     </div>
   );
 }
