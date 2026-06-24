@@ -12,6 +12,7 @@ import Calificaciones from '../../components/Calificaciones';
 import ListaAsistenciaPrint from '../../components/ListaAsistenciaPrint';
 import CuadroFinalPrint from '../../components/CuadroFinalPrint';
 import CuadroParcialPrint from '../../components/CuadroParcialPrint';
+import AprovechamientoPrint from '../../components/AprovechamientoPrint';
 
 export default function ControlEscolar() {
   const [activeTab, setActiveTab] = useState('pendientes');
@@ -207,6 +208,13 @@ export default function ControlEscolar() {
   const handlePrintConcentradoParcial = (alumnos, grado, grupo) => {
     setPrintData({ alumnos, grado, grupo });
     setPrintMode('concentrado-parcial');
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
+  const handlePrintAprovechamiento = () => {
+    setPrintMode('aprovechamiento');
     setTimeout(() => {
       window.print();
     }, 500);
@@ -490,6 +498,9 @@ export default function ControlEscolar() {
           <p className="text-slate-500 text-sm">Gestión de expedientes, inscripciones y calificaciones.</p>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
+          <button onClick={handlePrintAprovechamiento} className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm">
+            <Star className="w-4 h-4 mr-2" /> Reporte Aprovechamiento
+          </button>
           <button onClick={handleDownloadTemplate} className="flex items-center px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors shadow-sm">
             <Download className="w-4 h-4 mr-2 text-slate-500" /> Descargar Plantilla
           </button>
@@ -955,6 +966,7 @@ export default function ControlEscolar() {
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
       {printMode === 'concentrado-final' && <CuadroFinalPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
+      {printMode === 'aprovechamiento' && <AprovechamientoPrint activos={activos} />}
     </div>
   );
 }
