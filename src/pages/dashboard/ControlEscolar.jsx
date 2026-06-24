@@ -56,8 +56,8 @@ export default function ControlEscolar() {
       { id: 'historia1', name: 'Historia I' },
       { id: 'fce1', name: 'Formación Cívica y Ética I' },
       // De lo Humano y lo Comunitario
-      { id: 'educfisica1', name: 'Educación Física I' },
-      { id: 'tecnologia1', name: 'Tecnología I' }
+      { id: 'tecnologia1', name: 'Tecnología I' },
+      { id: 'educfisica1', name: 'Educación Física I' }
     ],
     '2do Grado': [
       { id: 'espanol2', name: 'Español II' },
@@ -67,8 +67,8 @@ export default function ControlEscolar() {
       { id: 'fisica', name: 'Ciencias II (Física)' },
       { id: 'historia2', name: 'Historia II' },
       { id: 'fce2', name: 'Formación Cívica y Ética II' },
-      { id: 'educfisica2', name: 'Educación Física II' },
-      { id: 'tecnologia2', name: 'Tecnología II' }
+      { id: 'tecnologia2', name: 'Tecnología II' },
+      { id: 'educfisica2', name: 'Educación Física II' }
     ],
     '3er Grado': [
       { id: 'espanol3', name: 'Español III' },
@@ -78,8 +78,8 @@ export default function ControlEscolar() {
       { id: 'quimica', name: 'Ciencias III (Química)' },
       { id: 'historia3', name: 'Historia III' },
       { id: 'fce3', name: 'Formación Cívica y Ética III' },
-      { id: 'educfisica3', name: 'Educación Física III' },
-      { id: 'tecnologia3', name: 'Tecnología III' }
+      { id: 'tecnologia3', name: 'Tecnología III' },
+      { id: 'educfisica3', name: 'Educación Física III' }
     ]
   };
 
