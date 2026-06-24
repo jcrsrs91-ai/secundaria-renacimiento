@@ -27,14 +27,14 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
     <div className="print-concentrado-parcial-only">
       <style>{`
         @media print {
-          @page { size: legal landscape; margin: 0.5cm; }
+          @page { size: legal portrait; margin: 0.5cm; }
           html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; }
           * { overflow: visible !important; }
           aside, header { display: none !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; }
           .print-concentrado-parcial-only { display: block !important; margin: 0; padding: 0; font-family: sans-serif; }
-          .landscape-page { page-break-after: always; break-after: page; width: 100%; box-sizing: border-box; }
-          .landscape-page:last-child { page-break-after: auto; break-after: auto; }
+          .portrait-page { page-break-after: always; break-after: page; width: 100%; box-sizing: border-box; }
+          .portrait-page:last-child { page-break-after: auto; break-after: auto; }
           table { width: 100%; border-collapse: collapse; page-break-inside: auto; }
           tr { page-break-inside: avoid; page-break-after: auto; }
           thead { display: table-header-group; }
@@ -45,7 +45,7 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
         }
       `}</style>
 
-      <div className="landscape-page">
+      <div className="portrait-page">
         <div className="flex justify-between items-center mb-2">
           <img src="/logo-sep.png" alt="SEP" className="h-10 object-contain" />
           <div className="text-center">
@@ -56,13 +56,13 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
           <img src="/logo-escuela.png" alt="Escuela" className="h-12 object-contain" />
         </div>
 
-        <table className="w-full text-[8px] border border-black mb-4">
+        <table className="w-full text-[6px] border border-black mb-4">
           <thead>
             <tr className="bg-slate-200">
-              <th rowSpan="2" className="border border-black p-0.5 text-center w-4">N.</th>
-              <th rowSpan="2" className="border border-black p-1 text-left w-40">Nombre del Alumno</th>
+              <th rowSpan="2" className="border border-black p-0.5 text-center w-3">N.</th>
+              <th rowSpan="2" className="border border-black p-0.5 text-left w-24">Nombre del Alumno</th>
               {materias.map(mat => (
-                <th key={mat.id} colSpan="4" className="border border-black p-0.5 text-center truncate overflow-hidden max-w-[60px]" title={mat.name}>
+                <th key={mat.id} colSpan="4" className="border border-black p-0.5 text-center truncate overflow-hidden max-w-[40px] text-[5px]" title={mat.name}>
                   {mat.name.replace('Formación Cívica y Ética', 'F.C.E.').replace('Educación', 'Educ.').replace('Ciencias', 'Cien.')}
                 </th>
               ))}
@@ -71,10 +71,10 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
             <tr className="bg-slate-100">
               {materias.map(mat => (
                 <React.Fragment key={`sub-${mat.id}`}>
-                  <th className="border border-black p-0.5 text-center w-5">T1</th>
-                  <th className="border border-black p-0.5 text-center w-5">T2</th>
-                  <th className="border border-black p-0.5 text-center w-5">T3</th>
-                  <th className="border border-black p-0.5 text-center bg-slate-200 font-bold w-6">PF</th>
+                  <th className="border border-black p-0.5 text-center w-3 text-[5px]">T1</th>
+                  <th className="border border-black p-0.5 text-center w-3 text-[5px]">T2</th>
+                  <th className="border border-black p-0.5 text-center w-3 text-[5px]">T3</th>
+                  <th className="border border-black p-0.5 text-center bg-slate-200 font-bold w-4 text-[5px]">PF</th>
                 </React.Fragment>
               ))}
             </tr>
