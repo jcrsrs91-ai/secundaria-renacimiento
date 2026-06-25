@@ -11,11 +11,9 @@ import BoletaPrint from '../../components/BoletaPrint';
 import Calificaciones from '../../components/Calificaciones';
 import ListaAsistenciaPrint from '../../components/ListaAsistenciaPrint';
 import CuadroFinalPrint from '../../components/CuadroFinalPrint';
-import CuadroFinalPrint from '../../components/CuadroFinalPrint';
 import CuadroParcialPrint from '../../components/CuadroParcialPrint';
 import AprovechamientoPrint from '../../components/AprovechamientoPrint';
 import MatriculaPrint from '../../components/MatriculaPrint';
-import AprovechamientoPrint from '../../components/AprovechamientoPrint';
 
 export default function ControlEscolar() {
   const [activeTab, setActiveTab] = useState('pendientes');
