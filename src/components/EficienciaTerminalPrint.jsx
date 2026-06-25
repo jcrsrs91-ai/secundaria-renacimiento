@@ -77,6 +77,19 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
       }
     });
 
+    // Sobrescribir datos de inscripción inicial con los de la captura (solo por esta vez para la generación 23-26)
+    data.Matutino.insH = 98;
+    data.Matutino.insM = 91;
+    data.Matutino.insT = 189;
+    
+    data.Vespertino.insH = 0;
+    data.Vespertino.insM = 0;
+    data.Vespertino.insT = 0;
+
+    data.TOTALES.insH = data.Matutino.insH + data.Vespertino.insH;
+    data.TOTALES.insM = data.Matutino.insM + data.Vespertino.insM;
+    data.TOTALES.insT = data.Matutino.insT + data.Vespertino.insT;
+
     return { data, sinGenero };
   };
 
