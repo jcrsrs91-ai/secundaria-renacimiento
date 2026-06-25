@@ -5,8 +5,9 @@ import { truncateTo1Dec } from '../utils/format';
 export default function EficienciaTerminalPrint({ activos = [], bajas = [], materiasPorGrado = {}, onClose }) {
   
   // Calculadora de materias reprobadas por alumno
-  const getMateriasReprobadas = (student, materias) => {
+  const getMateriasReprobadas = (student, materias, missingGradesArr) => {
     let reprobadas = 0;
+    let missing = false;
     const c = student.calificaciones || {};
     materias.forEach(mat => {
       let sum = 0;
@@ -19,7 +20,15 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
       if (count === 0 || avg < 6.0) {
         reprobadas++;
       }
+      if (count === 0) {
+        missing = true;
+      }
     });
+    
+    if (missing && missingGradesArr && !missingGradesArr.find(s => s.id === student.id)) {
+      missingGradesArr.push(student);
+    }
+    
     return reprobadas;
   };
 
@@ -31,6 +40,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
     };
     
     const sinGenero = [];
+    const sinCalificaciones = [];
 
     // Juntamos activos y bajas, solo nos interesa 3er Grado
     const allTercero = [...activos, ...bajas].filter(s => s.grado === '3er Grado');
@@ -59,7 +69,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
       // Egresados (solo los que llegaron activos hasta el final)
       const isActive = s.status === 'Activo' || s.status === 'Egresado';
       if (isActive) {
-        const reprobadas = getMateriasReprobadas(s, materiasTercero);
+        const reprobadas = getMateriasReprobadas(s, materiasTercero, sinCalificaciones);
         
         if (reprobadas === 0) {
           // Con Certificado
@@ -161,7 +171,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
         `}</style>
 
         {sinGenero.length > 0 && (
-          <div className="no-print mb-6 bg-red-50 border-l-4 border-red-500 p-4 shadow-sm">
+          <div className="no-print mb-4 bg-red-50 border-l-4 border-red-500 p-4 shadow-sm">
             <div className="flex items-center">
               <AlertCircle className="w-6 h-6 text-red-500 mr-3" />
               <h3 className="font-bold text-red-800 text-lg">Alerta: Alumnos sin género definido</h3>
@@ -169,6 +179,27 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
             <p className="mt-2 text-sm text-red-700">
               Hay {sinGenero.length} alumno(s) que no tienen su género correctamente especificado. 
             </p>
+          </div>
+        )}
+
+        {sinCalificaciones.length > 0 && (
+          <div className="no-print mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 shadow-sm">
+            <div className="flex items-center">
+              <AlertCircle className="w-6 h-6 text-amber-500 mr-3" />
+              <h3 className="font-bold text-amber-800 text-lg">Aviso: Alumnos con materias sin calificar</h3>
+            </div>
+            <p className="mt-2 text-sm text-amber-700">
+              Hay {sinCalificaciones.length} alumno(s) activos de 3er Grado que tienen <strong>al menos una materia totalmente en blanco (sin calificaciones)</strong>. Estos alumnos son contabilizados automáticamente en la columna de "Egresados sin certificado" (adeudan disciplinas).
+            </p>
+            <div className="mt-3 max-h-32 overflow-y-auto">
+              <ul className="list-disc pl-5 text-xs text-amber-900 space-y-1">
+                {sinCalificaciones.map(s => (
+                  <li key={s.id}>
+                    <span className="font-bold">{s.nombre} {s.apellidos}</span> - {s.grado} {s.grupo} ({s.turno})
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         )}
 
