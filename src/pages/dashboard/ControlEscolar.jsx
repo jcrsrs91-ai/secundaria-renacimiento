@@ -14,6 +14,7 @@ import CuadroFinalPrint from '../../components/CuadroFinalPrint';
 import CuadroParcialPrint from '../../components/CuadroParcialPrint';
 import AprovechamientoPrint from '../../components/AprovechamientoPrint';
 import MatriculaPrint from '../../components/MatriculaPrint';
+import AprobacionPrint from '../../components/AprobacionPrint';
 
 export default function ControlEscolar() {
   const [activeTab, setActiveTab] = useState('pendientes');
@@ -541,6 +542,9 @@ export default function ControlEscolar() {
           <button onClick={() => setActiveTab('aprovechamiento')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'aprovechamiento' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             Aprovechamiento Escolar
           </button>
+          <button onClick={() => setActiveTab('aprobacion')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'aprobacion' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+            Aprobación (E2)
+          </button>
           <button onClick={() => setActiveTab('matricula')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'matricula' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             Estadística de Matrícula
           </button>
@@ -1012,6 +1016,26 @@ export default function ControlEscolar() {
         </div>
       )}
 
+      {/* Sección Aprobación (E2) */}
+      {!loading && activeTab === 'aprobacion' && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+          <h3 className="text-2xl font-bold text-slate-800 mb-2">Reporte de Aprobación (Formato E2)</h3>
+          <p className="text-slate-500 mb-8 max-w-lg">
+            Calcula las estadísticas de aprobación separando a los alumnos en regulares e irregulares (1, 2, 3, 4 y 5 o más disciplinas reprobadas) por género.
+          </p>
+          <button 
+            onClick={handlePrintAprobacion} 
+            className="flex items-center px-8 py-4 bg-blue-600 text-white rounded-xl text-lg font-bold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          >
+            <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Generar Reporte de Aprobación
+          </button>
+        </div>
+      )}
+
       {/* IMPRESIÓN */}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
@@ -1021,6 +1045,7 @@ export default function ControlEscolar() {
       {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'aprovechamiento' && <AprovechamientoPrint activos={activos} onClose={() => setPrintMode(null)} />}
       {printMode === 'matricula' && <MatriculaPrint alumnos={directorio} onClose={() => setPrintMode(null)} />}
+      {printMode === 'aprobacion' && <AprobacionPrint activos={activos} materiasPorGrado={materiasPorGrado} />}
     </div>
   );
 }
