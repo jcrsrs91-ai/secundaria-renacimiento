@@ -53,6 +53,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
     const sinGenero = [];
     const sinCalificaciones = [];
     const califMenor5 = [];
+    const alumnosContabilizados = [];
 
     // Juntamos activos y bajas, solo nos interesa 3er Grado
     const allTercero = [...activos, ...bajas].filter(s => s.grado === '3er Grado');
@@ -81,6 +82,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
       // Egresados (solo los que llegaron activos hasta el final)
       const isActive = s.status === 'Activo' || s.status === 'Egresado';
       if (isActive) {
+        alumnosContabilizados.push(s);
         const reprobadas = getMateriasReprobadas(s, materiasTercero, sinCalificaciones, califMenor5);
         
         if (reprobadas === 0) {
@@ -112,10 +114,10 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
     data.TOTALES.insM = data.Matutino.insM + data.Vespertino.insM;
     data.TOTALES.insT = data.Matutino.insT + data.Vespertino.insT;
 
-    return { data, sinGenero, sinCalificaciones, califMenor5 };
+    return { data, sinGenero, sinCalificaciones, califMenor5, alumnosContabilizados };
   };
 
-  const { data, sinGenero, sinCalificaciones, califMenor5 } = useMemo(processData, [activos, bajas, materiasPorGrado]);
+  const { data, sinGenero, sinCalificaciones, califMenor5, alumnosContabilizados } = useMemo(processData, [activos, bajas, materiasPorGrado]);
 
   const calcEficiencia = (egresados, inscripcion) => {
     if (inscripcion === 0) return '#DIV/0!';
@@ -399,6 +401,26 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
         <p className="mt-4 text-xs print:text-[9px] font-medium text-slate-500 print:text-black">
           (1) Para obtener la Eficiencia Terminal de esta generación, no considerar las altas en 2° (ciclo esc. 2024-2025) y 3° (ciclo esc. 2025-2026).
         </p>
+        {/* Debug: Lista de alumnos contabilizados */}
+        <div className="no-print mt-12 bg-slate-50 border border-slate-300 rounded-xl p-6">
+          <h3 className="font-bold text-slate-800 text-lg mb-2">
+            📊 Auditoría Interna: Alumnos contabilizados en "Egresados" ({alumnosContabilizados.length})
+          </h3>
+          <p className="text-sm text-slate-600 mb-4">
+            Total de egresados mostrados en la tabla: {data.TOTALES.egCertT + data.TOTALES.egSinCertT}. 
+            Si este número no cuadra con tu Existencia actual, revisa si falta alguien en la siguiente lista. Los alumnos dados de 'Baja' o que tengan algún error en su Grado/Turno/Estatus no aparecen aquí.
+          </p>
+          <div className="max-h-64 overflow-y-auto bg-white border border-slate-200 rounded p-4">
+            <ul className="list-disc pl-5 text-xs text-slate-700 space-y-1">
+              {alumnosContabilizados.sort((a,b) => a.apellidos?.localeCompare(b.apellidos)).map(s => (
+                <li key={s.id}>
+                  <span className="font-bold">{s.apellidos} {s.nombre}</span> - {s.grado} {s.grupo} ({s.turno}) - {s.status} - Género: {s.genero || 'N/A'}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
       </div>
     </div>
   );
