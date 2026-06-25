@@ -27,6 +27,9 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
           @media print {
             @page { size: letter landscape; margin: 0; }
             html, body, #root { height: 100% !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
+            body * { visibility: hidden; }
+            .print-wrapper, .print-wrapper * { visibility: visible; }
+            .print-wrapper { position: absolute; left: 0; top: 0; width: 100%; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             aside, header, .no-print { display: none !important; }
             .page-break-after { page-break-after: always; }
@@ -76,7 +79,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
         </button>
       </div>
 
-      <div className="w-full flex flex-col items-center">
+      <div className="w-full flex flex-col items-center print-wrapper">
         {alumnos.map((ganador, index) => {
           const { student, average, place, periodoName } = ganador;
           const nombreCompleto = `${student.nombres} ${student.apellidoPaterno} ${student.apellidoMaterno}`.toUpperCase();
