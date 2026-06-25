@@ -90,13 +90,13 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
             <div key={index} className="diploma-container gold-border p-8 bg-[#fffdf5]">
               {/* Background watermark pattern */}
               <div 
-                className="absolute inset-0 opacity-10 pointer-events-none grayscale" 
+                className="absolute inset-0 pointer-events-none grayscale" 
                 style={{ 
-                  backgroundImage: 'url(/logo-escuela.png)', 
-                  backgroundSize: '150px 150px', 
-                  backgroundRepeat: 'space',
-                  backgroundPosition: 'center',
-                  padding: '40px'
+                  opacity: 0.03,
+                  backgroundImage: 'url(/logo-escuela.png), url(/logo-escuela.png)', 
+                  backgroundSize: '300px 300px', 
+                  backgroundRepeat: 'repeat',
+                  backgroundPosition: '0 0, 150px 150px'
                 }}
               ></div>
 
