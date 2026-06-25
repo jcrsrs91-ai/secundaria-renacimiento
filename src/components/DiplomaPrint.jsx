@@ -88,10 +88,17 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
           
           return (
             <div key={index} className="diploma-container gold-border p-8 bg-[#fffdf5]">
-              {/* Background watermark */}
-              <div className="absolute inset-0 opacity-5 flex items-center justify-center pointer-events-none">
-                <img src="/logo-escuela.png" alt="Watermark" className="w-[400px] h-[400px] object-contain grayscale" />
-              </div>
+              {/* Background watermark pattern */}
+              <div 
+                className="absolute inset-0 opacity-10 pointer-events-none grayscale" 
+                style={{ 
+                  backgroundImage: 'url(/logo-escuela.png)', 
+                  backgroundSize: '150px 150px', 
+                  backgroundRepeat: 'space',
+                  backgroundPosition: 'center',
+                  padding: '40px'
+                }}
+              ></div>
 
               {/* Decorative Corners */}
               <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4 border-amber-500"></div>
@@ -127,11 +134,13 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
 
                 {/* Reason */}
                 <div className="max-w-4xl mb-1 px-8 flex-1 flex flex-col justify-center items-center">
-                  <p className="text-sm text-slate-700 leading-relaxed font-medium text-justify relative z-10" style={{ textJustify: 'inter-word' }}>
-                    Por su destacada dedicación, disciplina y excelencia académica demostrados durante el presente ciclo escolar. Habiendo obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en sus estudios de educación secundaria, cursando en el <strong>{student.grado} Grupo "{student.grupo}"</strong> del Turno <strong>{turno}</strong>, y logrando un promedio sobresaliente de:
-                  </p>
-                  <div className="mt-2 text-2xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-1.5 px-6 rounded-xl inline-block shadow-inner relative z-10">
-                    {average.toFixed(1)}
+                  <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white/50 flex flex-col items-center">
+                    <p className="text-sm text-slate-700 leading-relaxed font-medium text-justify relative z-10" style={{ textJustify: 'inter-word' }}>
+                      Por su destacada dedicación, disciplina y excelencia académica demostrados durante el presente ciclo escolar. Habiendo obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en sus estudios de educación secundaria, cursando en el <strong>{student.grado} Grupo "{student.grupo}"</strong> del Turno <strong>{turno}</strong>, y logrando un promedio sobresaliente de:
+                    </p>
+                    <div className="mt-3 text-2xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-1.5 px-6 rounded-xl inline-block shadow-inner relative z-10">
+                      {average.toFixed(1)}
+                    </div>
                   </div>
                 </div>
 
