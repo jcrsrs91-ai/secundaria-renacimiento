@@ -521,7 +521,7 @@ export default function ControlEscolar() {
       'Promedio Primaria': a.promedioEscuela || ''
     }));
 
-    const csv = Papa.unparse(dataToExport, { delimiter: ';' });
+    const csv = Papa.unparse(dataToExport, { delimiter: ',' });
     const BOM = "\uFEFF";
     const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
