@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Trophy } from 'lucide-react';
+import CuadroHonor from '../../components/CuadroHonor';
 
 export default function Coordinacion() {
   const [activeTab, setActiveTab] = useState('reportes');
@@ -19,6 +20,12 @@ export default function Coordinacion() {
           >
             Reportes e Índice de Reprobación
           </button>
+          <button
+            onClick={() => setActiveTab('cuadro-honor')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${activeTab === 'cuadro-honor' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            <Trophy className="w-4 h-4" /> Cuadro de Honor
+          </button>
         </nav>
       </div>
       
@@ -31,6 +38,10 @@ export default function Coordinacion() {
             <p className="text-slate-500 mt-2">Aquí se generarán los cuadros de honor, boletas y reportes de reprobación por materia (NEM).</p>
           </div>
         </div>
+      )}
+      {/* CUADRO DE HONOR */}
+      {activeTab === 'cuadro-honor' && (
+        <CuadroHonor />
       )}
     </div>
   );
