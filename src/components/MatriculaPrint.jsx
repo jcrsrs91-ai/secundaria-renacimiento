@@ -98,7 +98,7 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
 
     return (
       <tr className={baseClasses} key={key}>
-        <td className="px-3 py-2 border-r border-slate-200 print:border-slate-400 print:px-1 print:py-1">{label}</td>
+        <td colSpan={isTotal ? 2 : 1} className="px-3 py-2 border-r border-slate-200 print:border-slate-400 print:px-1 print:py-1">{label}</td>
         <td className="px-2 py-2 text-center border-r border-slate-200 print:border-slate-400 print:px-1 print:py-1">{d.grupos.size || '-'}</td>
         
         {/* Inicial */}
