@@ -72,122 +72,147 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
         </button>
       </div>
 
-      <div id="printable-desertores" className="bg-white my-8 w-full max-w-[297mm] mx-auto shadow-2xl print:my-0 print:shadow-none print:max-w-none text-xs">
-        {/* Encabezado */}
-        <div className="pt-8 px-8 pb-4 text-center font-bold relative">
-          <div className="absolute top-8 left-8">
+      <div id="printable-desertores" className="bg-white my-8 w-full max-w-[297mm] mx-auto shadow-sm border border-slate-200 rounded-xl print:my-0 print:shadow-none print:border-none print:rounded-none print:max-w-none text-xs">
+        {/* Encabezado Web */}
+        <div className="pt-8 px-8 pb-6 flex items-center justify-between border-b border-slate-100 relative">
+          <div className="flex items-center gap-4">
             <img src="/logo-escuela.png" alt="Escudo" className="h-16 w-auto object-contain" />
+            <div>
+              <h2 className="text-xl font-black text-slate-800 tracking-tight">SECRETARÍA DE EDUCACIÓN GUERRERO</h2>
+              <p className="text-sm font-semibold text-slate-600">DIRECCIÓN GENERAL DE EDUCACIÓN SECUNDARIA</p>
+              <p className="text-xs text-slate-500">SEGUNDO MOMENTO DE VALORACIÓN DE LOS COLECTIVOS ESCOLARES</p>
+            </div>
           </div>
-          <p className="text-sm">SECRETARÍA DE EDUCACIÓN GUERRERO</p>
-          <p className="text-sm">DIRECCIÓN GENERAL DE EDUCACIÓN SECUNDARIA</p>
-          <p className="text-sm uppercase">SEGUNDO MOMENTO DE VALORACIÓN DE LOS COLECTIVOS ESCOLARES.</p>
-          <p className="text-sm">CICLO ESCOLAR 2025-2026</p>
-          
-          <div className="mt-2 text-center text-red-600 font-black tracking-widest text-lg">
-            ~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~.~
+          <div className="text-right">
+            <p className="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg inline-block border border-indigo-100">
+              CICLO ESCOLAR 2025-2026
+            </p>
           </div>
         </div>
 
         {/* Datos de Escuela */}
-        <div className="px-8 pb-4">
-          <table className="w-full text-xs font-bold border-collapse">
-            <tbody>
-              <tr>
-                <td className="w-1/4 text-right pr-2 py-1">ESCUELA SECUNDARIA:</td>
-                <td className="w-1/4 border-b border-black text-center py-1">RENACIMIENTO</td>
-                <td className="w-1/4 text-right pr-2 py-1">C.C.T. :</td>
-                <td className="w-1/4 border-b border-black text-center py-1">12EES0000X</td>
-                <td className="text-right pr-2 py-1">ZONA ESCOLAR:</td>
-                <td className="border-b border-black text-center w-16 py-1">00</td>
-              </tr>
-              <tr>
-                <td className="text-right pr-2 py-1">LOCALIDAD:</td>
-                <td className="border-b border-black text-center py-1">ACAPULCO</td>
-                <td className="text-right pr-2 py-1">MUNICIPIO:</td>
-                <td className="border-b border-black text-center py-1">ACAPULCO DE JUÁREZ</td>
-                <td className="text-right pr-2 py-1">REGIÓN:</td>
-                <td className="border-b border-black text-center py-1">ACAPULCO</td>
-              </tr>
-              <tr>
-                <td className="text-right pr-2 py-1">NOMBRE DEL DIRECTOR(A):</td>
-                <td className="border-b border-black text-center py-1">PROF. JAVIER GOMEZ</td>
-                <td className="text-right pr-2 py-1">TEL DE LA ESC:</td>
-                <td className="border-b border-black text-center py-1">7440000000</td>
-                <td colSpan="2"></td>
-              </tr>
-              <tr>
-                <td className="text-right pr-2 py-1">TEL DEL DIRECTOR:</td>
-                <td className="border-b border-black text-center py-1">7441111111</td>
-                <td className="text-right pr-2 py-1">CORREO ELECTRÓNICO:</td>
-                <td colSpan="3" className="border-b border-black text-center py-1">secundaria@renacimiento.edu.mx</td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="px-8 py-6 grid grid-cols-3 gap-x-8 gap-y-4">
+          <div className="space-y-3">
+            <div className="flex justify-between border-b border-slate-100 pb-1">
+              <span className="text-slate-500 font-semibold">ESCUELA SECUNDARIA:</span>
+              <span className="font-bold text-slate-800">RENACIMIENTO</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-100 pb-1">
+              <span className="text-slate-500 font-semibold">LOCALIDAD:</span>
+              <span className="font-bold text-slate-800">ACAPULCO</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-100 pb-1">
+              <span className="text-slate-500 font-semibold">DIRECTOR(A):</span>
+              <span className="font-bold text-slate-800">PROF. JAVIER GOMEZ</span>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between border-b border-slate-100 pb-1">
+              <span className="text-slate-500 font-semibold">C.C.T.:</span>
+              <span className="font-bold text-indigo-700">12EES0000X</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-100 pb-1">
+              <span className="text-slate-500 font-semibold">MUNICIPIO:</span>
+              <span className="font-bold text-slate-800">ACAPULCO DE JUÁREZ</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-100 pb-1">
+              <span className="text-slate-500 font-semibold">TELÉFONO:</span>
+              <span className="font-bold text-slate-800">7440000000</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex justify-between border-b border-slate-100 pb-1">
+              <span className="text-slate-500 font-semibold">ZONA ESCOLAR:</span>
+              <span className="font-bold text-slate-800">00</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-100 pb-1">
+              <span className="text-slate-500 font-semibold">REGIÓN:</span>
+              <span className="font-bold text-slate-800">ACAPULCO</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-100 pb-1">
+              <span className="text-slate-500 font-semibold">CORREO:</span>
+              <span className="font-bold text-slate-800">secundaria@renacimiento.edu.mx</span>
+            </div>
+          </div>
         </div>
 
         {/* Tabla de Desertores */}
-        <div className="px-8 pb-4">
-          <div className="text-center font-black text-sm uppercase mb-1 flex items-center justify-center bg-amber-200/50 py-1 border border-black border-b-0">
-            RELACIÓN DE ALUMNOS DESERTORES
+        <div className="px-8 pb-6">
+          <div className="flex items-center mb-4 border-b-2 border-rose-200 pb-2">
+            <div className="bg-rose-500 text-white w-8 h-8 rounded-lg flex items-center justify-center mr-3 shadow-sm print:shadow-none">
+              <UserMinus className="w-5 h-5" />
+            </div>
+            <h3 className="text-lg font-black text-slate-800 uppercase tracking-wide">
+              Relación de Alumnos Desertores (E6)
+            </h3>
           </div>
-          <table className="w-full border-collapse text-[10px] text-center border border-black">
-            <thead>
-              <tr className="bg-amber-100/50">
-                <th rowSpan="2" className="border border-black p-1 w-8">N/P</th>
-                <th rowSpan="2" className="border border-black p-1">NOMBRE</th>
-                <th colSpan="2" className="border border-black p-1">SEXO</th>
-                <th rowSpan="2" className="border border-black p-1 w-12">EDAD</th>
-                <th colSpan="3" className="border border-black p-1">FECHA DE<br/>NACIMIENTO</th>
-                <th rowSpan="2" className="border border-black p-1 w-16">GRADO<br/>Y GRUPO</th>
-                <th rowSpan="2" className="border border-black p-1">DOMICILIO</th>
-                <th rowSpan="2" className="border border-black p-1 w-48">CAUSA DE DESERCIÓN*</th>
-              </tr>
-              <tr className="bg-amber-100/50">
-                <th className="border border-black p-1 w-6">H</th>
-                <th className="border border-black p-1 w-6">M</th>
-                <th className="border border-black p-1 w-10">AÑO</th>
-                <th className="border border-black p-1 w-8">MES</th>
-                <th className="border border-black p-1 w-8">DÍA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filas.map((s, idx) => {
-                const nombreCompleto = s ? `${s.apellidoPaterno} ${s.apellidoMaterno} ${s.nombres}`.toUpperCase() : '';
-                const h = (s && s.genero === 'Hombre') ? '1' : '';
-                const m = (s && s.genero === 'Mujer') ? '1' : '';
-                const edad = s ? calcularEdad(s.fechaNacimiento) : '';
-                const fecha = s ? separarFecha(s.fechaNacimiento) : {ano:'', mes:'', dia:''};
-                const gradoGrupo = s ? `${s.grado[0]} "${s.grupo}"` : '';
-                const domicilio = s ? `${s.calle || ''} ${s.numero || ''} ${s.colonia || ''}`.trim().toUpperCase() : '';
-                const motivo = s ? (s.motivoBaja || '').toUpperCase() : '';
+          
+          <div className="rounded-xl border border-slate-200 overflow-hidden print:border-slate-400 print:rounded-none">
+            <table className="w-full border-collapse text-[10px] text-center">
+              <thead>
+                <tr className="bg-slate-100 text-slate-600 print:bg-slate-200 print:text-black">
+                  <th rowSpan="2" className="border-r border-b border-slate-200 print:border-slate-400 p-2 w-8 font-bold">N/P</th>
+                  <th rowSpan="2" className="border-r border-b border-slate-200 print:border-slate-400 p-2 font-bold">NOMBRE COMPLETO</th>
+                  <th colSpan="2" className="border-r border-b border-slate-200 print:border-slate-400 p-1 font-bold">SEXO</th>
+                  <th rowSpan="2" className="border-r border-b border-slate-200 print:border-slate-400 p-2 w-12 font-bold">EDAD</th>
+                  <th colSpan="3" className="border-r border-b border-slate-200 print:border-slate-400 p-1 font-bold">FECHA NACIMIENTO</th>
+                  <th rowSpan="2" className="border-r border-b border-slate-200 print:border-slate-400 p-2 w-16 font-bold">GRADO/GRUPO</th>
+                  <th rowSpan="2" className="border-r border-b border-slate-200 print:border-slate-400 p-2 font-bold">DOMICILIO</th>
+                  <th rowSpan="2" className="border-b border-slate-200 print:border-slate-400 p-2 w-48 font-bold">CAUSA DE DESERCIÓN*</th>
+                </tr>
+                <tr className="bg-slate-50 text-slate-500 print:bg-slate-100 print:text-black">
+                  <th className="border-r border-b border-slate-200 print:border-slate-400 p-1 w-8 font-semibold">H</th>
+                  <th className="border-r border-b border-slate-200 print:border-slate-400 p-1 w-8 font-semibold">M</th>
+                  <th className="border-r border-b border-slate-200 print:border-slate-400 p-1 w-10 font-semibold">AÑO</th>
+                  <th className="border-r border-b border-slate-200 print:border-slate-400 p-1 w-8 font-semibold">MES</th>
+                  <th className="border-r border-b border-slate-200 print:border-slate-400 p-1 w-8 font-semibold">DÍA</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 print:divide-slate-300">
+                {filas.map((s, idx) => {
+                  const nombreCompleto = s ? `${s.apellidoPaterno} ${s.apellidoMaterno} ${s.nombres}`.toUpperCase() : '';
+                  const h = (s && s.genero === 'Hombre') ? '1' : '';
+                  const m = (s && s.genero === 'Mujer') ? '1' : '';
+                  const edad = s ? calcularEdad(s.fechaNacimiento) : '';
+                  const fecha = s ? separarFecha(s.fechaNacimiento) : {ano:'', mes:'', dia:''};
+                  const gradoGrupo = s ? `${s.grado[0]} "${s.grupo}"` : '';
+                  const domicilio = s ? `${s.calle || ''} ${s.numero || ''} ${s.colonia || ''}`.trim().toUpperCase() : '';
+                  const motivo = s ? (s.motivoBaja || '').toUpperCase() : '';
+                  
+                  const rowClass = s ? "hover:bg-slate-50 transition-colors" : "bg-slate-50/30 print:bg-transparent";
 
-                return (
-                  <tr key={idx} className="h-6">
-                    <td className="border border-black p-1">{s ? idx + 1 : ''}</td>
-                    <td className="border border-black p-1 text-left font-bold">{nombreCompleto}</td>
-                    <td className="border border-black p-1">{h}</td>
-                    <td className="border border-black p-1">{m}</td>
-                    <td className="border border-black p-1">{edad}</td>
-                    <td className="border border-black p-1">{fecha.ano}</td>
-                    <td className="border border-black p-1">{fecha.mes}</td>
-                    <td className="border border-black p-1">{fecha.dia}</td>
-                    <td className="border border-black p-1 font-bold">{gradoGrupo}</td>
-                    <td className="border border-black p-1 text-left px-2 truncate max-w-[200px]" title={domicilio}>{domicilio}</td>
-                    <td className="border border-black p-1 text-left px-2 truncate max-w-[150px]" title={motivo}>{motivo}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <p className="text-[10px] font-bold mt-1 text-left">
+                  return (
+                    <tr key={idx} className={`h-8 ${rowClass}`}>
+                      <td className="border-r border-slate-200 print:border-slate-400 p-1 text-slate-500">{s ? idx + 1 : ''}</td>
+                      <td className="border-r border-slate-200 print:border-slate-400 p-1 text-left px-3 font-bold text-slate-700 print:text-black">{nombreCompleto}</td>
+                      <td className="border-r border-slate-200 print:border-slate-400 p-1 font-semibold text-slate-600">{h}</td>
+                      <td className="border-r border-slate-200 print:border-slate-400 p-1 font-semibold text-slate-600">{m}</td>
+                      <td className="border-r border-slate-200 print:border-slate-400 p-1 text-slate-600">{edad}</td>
+                      <td className="border-r border-slate-200 print:border-slate-400 p-1 text-slate-500">{fecha.ano}</td>
+                      <td className="border-r border-slate-200 print:border-slate-400 p-1 text-slate-500">{fecha.mes}</td>
+                      <td className="border-r border-slate-200 print:border-slate-400 p-1 text-slate-500">{fecha.dia}</td>
+                      <td className="border-r border-slate-200 print:border-slate-400 p-1 font-bold text-slate-700 print:text-black">{gradoGrupo}</td>
+                      <td className="border-r border-slate-200 print:border-slate-400 p-1 text-left px-2 truncate max-w-[200px] text-slate-600" title={domicilio}>{domicilio}</td>
+                      <td className="p-1 text-left px-2 truncate max-w-[150px] font-medium text-rose-600 print:text-black" title={motivo}>{motivo}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[10px] font-medium mt-2 text-slate-500 text-left flex items-center">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mr-2 inline-block"></span>
             NOTA: Esta relación deberá anexarse al concentrado de alumnos desertores en la Etapa de Zona Escolar.
           </p>
         </div>
 
         {/* Firmas */}
-        <div className="px-8 pt-8 pb-16 text-center text-xs font-bold w-full max-w-sm mx-auto">
-          <div className="border-b border-black w-full mb-1">NOMBRE DEL DIRECTOR</div>
-          <div className="text-slate-500 font-normal">FIRMA Y SELLO</div>
+        <div className="px-8 pt-8 pb-12 text-center text-xs font-bold w-full max-w-sm mx-auto">
+          <div className="border-b-2 border-slate-300 print:border-black w-full mb-2"></div>
+          <div className="text-slate-800 font-bold mb-1">NOMBRE DEL DIRECTOR(A)</div>
+          <div className="text-slate-400 font-medium">FIRMA Y SELLO</div>
         </div>
       </div>
     </div>
