@@ -73,73 +73,9 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
       </div>
 
       <div id="printable-desertores" className="bg-white my-8 w-full max-w-[297mm] mx-auto shadow-sm border border-slate-200 rounded-xl print:my-0 print:shadow-none print:border-none print:rounded-none print:max-w-none text-xs">
-        {/* Encabezado Web */}
-        <div className="pt-8 px-8 pb-6 flex items-center justify-between border-b border-slate-100 relative">
-          <div className="flex items-center gap-4">
-            <img src="/logo-escuela.png" alt="Escudo" className="h-16 w-auto object-contain" />
-            <div>
-              <h2 className="text-xl font-black text-slate-800 tracking-tight">SECRETARÍA DE EDUCACIÓN GUERRERO</h2>
-              <p className="text-sm font-semibold text-slate-600">DIRECCIÓN GENERAL DE EDUCACIÓN SECUNDARIA</p>
-              <p className="text-xs text-slate-500">SEGUNDO MOMENTO DE VALORACIÓN DE LOS COLECTIVOS ESCOLARES</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg inline-block border border-indigo-100">
-              CICLO ESCOLAR 2025-2026
-            </p>
-          </div>
-        </div>
-
-        {/* Datos de Escuela */}
-        <div className="px-8 py-6 grid grid-cols-3 gap-x-8 gap-y-4">
-          <div className="space-y-3">
-            <div className="flex justify-between border-b border-slate-100 pb-1">
-              <span className="text-slate-500 font-semibold">ESCUELA SECUNDARIA:</span>
-              <span className="font-bold text-slate-800">RENACIMIENTO</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-100 pb-1">
-              <span className="text-slate-500 font-semibold">LOCALIDAD:</span>
-              <span className="font-bold text-slate-800">ACAPULCO</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-100 pb-1">
-              <span className="text-slate-500 font-semibold">DIRECTOR(A):</span>
-              <span className="font-bold text-slate-800">PROF. JAVIER GOMEZ</span>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex justify-between border-b border-slate-100 pb-1">
-              <span className="text-slate-500 font-semibold">C.C.T.:</span>
-              <span className="font-bold text-indigo-700">12EES0000X</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-100 pb-1">
-              <span className="text-slate-500 font-semibold">MUNICIPIO:</span>
-              <span className="font-bold text-slate-800">ACAPULCO DE JUÁREZ</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-100 pb-1">
-              <span className="text-slate-500 font-semibold">TELÉFONO:</span>
-              <span className="font-bold text-slate-800">7440000000</span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex justify-between border-b border-slate-100 pb-1">
-              <span className="text-slate-500 font-semibold">ZONA ESCOLAR:</span>
-              <span className="font-bold text-slate-800">00</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-100 pb-1">
-              <span className="text-slate-500 font-semibold">REGIÓN:</span>
-              <span className="font-bold text-slate-800">ACAPULCO</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-100 pb-1">
-              <span className="text-slate-500 font-semibold">CORREO:</span>
-              <span className="font-bold text-slate-800">secundaria@renacimiento.edu.mx</span>
-            </div>
-          </div>
-        </div>
-
+        
         {/* Tabla de Desertores */}
-        <div className="px-8 pb-6">
+        <div className="px-8 pt-8 pb-6">
           <div className="flex items-center mb-4 border-b-2 border-rose-200 pb-2">
             <div className="bg-rose-500 text-white w-8 h-8 rounded-lg flex items-center justify-center mr-3 shadow-sm print:shadow-none">
               <UserMinus className="w-5 h-5" />
