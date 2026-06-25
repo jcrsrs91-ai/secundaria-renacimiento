@@ -189,7 +189,7 @@ export default function HojaDeVida({ student, onClose, onSave }) {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Taller / Tecnología</label>
-                      <input type="text" name="taller" value={taller} onChange={(e) => setTaller(e.target.value)} className="mt-1 w-full p-2 border rounded" required />
+                      <input type="text" name="taller" value={taller} onChange={(e) => setTaller(e.target.value)} className="mt-1 w-full p-2 border rounded" />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Estatus</label>
@@ -215,43 +215,45 @@ export default function HojaDeVida({ student, onClose, onSave }) {
                   <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Datos Personales</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-slate-500">Nombre(s)</label>
+                      <label className="block text-xs font-medium text-slate-500">Nombre(s) *</label>
                       <input type="text" name="nombres" defaultValue={student.nombres} className="mt-1 w-full p-2 border rounded uppercase" required />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500">Apellido Paterno</label>
+                      <label className="block text-xs font-medium text-slate-500">Apellido Paterno *</label>
                       <input type="text" name="apellidoPaterno" defaultValue={student.apellidoPaterno} className="mt-1 w-full p-2 border rounded uppercase" required />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Apellido Materno</label>
-                      <input type="text" name="apellidoMaterno" defaultValue={student.apellidoMaterno} className="mt-1 w-full p-2 border rounded uppercase" required />
+                      <input type="text" name="apellidoMaterno" defaultValue={student.apellidoMaterno} className="mt-1 w-full p-2 border rounded uppercase" />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">CURP</label>
-                      <input type="text" name="curp" defaultValue={student.curp} className="mt-1 w-full p-2 border rounded uppercase" required />
+                      <input type="text" name="curp" defaultValue={student.curp} className="mt-1 w-full p-2 border rounded uppercase" />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Género</label>
                       <select name="genero" defaultValue={student.genero} className="mt-1 w-full p-2 border rounded">
-                        <option>Hombre</option><option>Mujer</option>
+                        <option value="">Seleccionar...</option>
+                        <option value="Hombre">Hombre</option>
+                        <option value="Mujer">Mujer</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Fecha de Nacimiento</label>
-                      <input type="date" name="fechaNacimiento" defaultValue={student.fechaNacimiento} className="mt-1 w-full p-2 border rounded" required />
+                      <input type="date" name="fechaNacimiento" defaultValue={student.fechaNacimiento} className="mt-1 w-full p-2 border rounded" />
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-medium text-slate-500">Calle y Número</label>
                       <div className="flex gap-2">
-                        <input type="text" name="calle" defaultValue={student.calle} className="mt-1 flex-1 p-2 border rounded" required />
-                        <input type="text" name="numero" defaultValue={student.numero} className="mt-1 w-24 p-2 border rounded" required />
+                        <input type="text" name="calle" defaultValue={student.calle} className="mt-1 flex-1 p-2 border rounded" />
+                        <input type="text" name="numero" defaultValue={student.numero} className="mt-1 w-24 p-2 border rounded" />
                       </div>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Colonia y C.P.</label>
                       <div className="flex gap-2">
-                        <input type="text" name="colonia" defaultValue={student.colonia} className="mt-1 flex-1 p-2 border rounded" required />
-                        <input type="text" name="cp" defaultValue={student.cp} className="mt-1 w-24 p-2 border rounded" required />
+                        <input type="text" name="colonia" defaultValue={student.colonia} className="mt-1 flex-1 p-2 border rounded" />
+                        <input type="text" name="cp" defaultValue={student.cp} className="mt-1 w-24 p-2 border rounded" />
                       </div>
                     </div>
                   </div>
@@ -263,21 +265,21 @@ export default function HojaDeVida({ student, onClose, onSave }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Tipo de Sangre</label>
-                      <input type="text" name="tipoSangre" defaultValue={student.tipoSangre} className="mt-1 w-full p-2 border rounded" required />
+                      <input type="text" name="tipoSangre" defaultValue={student.tipoSangre} className="mt-1 w-full p-2 border rounded" />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Usa Lentes</label>
-                      <select name="lentes" defaultValue={student.lentes} className="mt-1 w-full p-2 border rounded">
-                        <option>NO</option><option>SÍ</option>
+                      <select name="lentes" defaultValue={student.lentes || 'NO'} className="mt-1 w-full p-2 border rounded">
+                        <option value="NO">NO</option><option value="SÍ">SÍ</option>
                       </select>
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-medium text-slate-500">Alergias</label>
-                      <input type="text" name="alergias" defaultValue={student.alergias} className="mt-1 w-full p-2 border rounded" required />
+                      <input type="text" name="alergias" defaultValue={student.alergias} className="mt-1 w-full p-2 border rounded" />
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-medium text-slate-500">Padecimientos Crónicos</label>
-                      <input type="text" name="padecimientos" defaultValue={student.padecimientos} className="mt-1 w-full p-2 border rounded" required />
+                      <input type="text" name="padecimientos" defaultValue={student.padecimientos} className="mt-1 w-full p-2 border rounded" />
                     </div>
                   </div>
                 </div>
@@ -287,9 +289,9 @@ export default function HojaDeVida({ student, onClose, onSave }) {
                   <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Contactos</h3>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded border">
-                      <div className="md:col-span-2"><label className="block text-xs font-bold text-slate-600 mb-1">Tutor Principal</label><input type="text" name="tutorNombre" defaultValue={student.tutorNombre} className="w-full p-2 border rounded" required /></div>
-                      <div><label className="block text-xs font-bold text-slate-600 mb-1">Parentesco</label><input type="text" name="tutorParentesco" defaultValue={student.tutorParentesco} className="w-full p-2 border rounded" required /></div>
-                      <div><label className="block text-xs font-bold text-slate-600 mb-1">Teléfono</label><input type="text" name="telefono" defaultValue={student.telefono} className="w-full p-2 border rounded" required /></div>
+                      <div className="md:col-span-2"><label className="block text-xs font-bold text-slate-600 mb-1">Tutor Principal</label><input type="text" name="tutorNombre" defaultValue={student.tutorNombre} className="w-full p-2 border rounded" /></div>
+                      <div><label className="block text-xs font-bold text-slate-600 mb-1">Parentesco</label><input type="text" name="tutorParentesco" defaultValue={student.tutorParentesco} className="w-full p-2 border rounded" /></div>
+                      <div><label className="block text-xs font-bold text-slate-600 mb-1">Teléfono</label><input type="text" name="telefono" defaultValue={student.telefono} className="w-full p-2 border rounded" /></div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded">
                       <div className="md:col-span-2"><label className="block text-xs font-medium text-slate-500 mb-1">Emergencia 1</label><input type="text" name="emergenciaNombre1" defaultValue={student.emergenciaNombre1} className="w-full p-2 border rounded" /></div>
