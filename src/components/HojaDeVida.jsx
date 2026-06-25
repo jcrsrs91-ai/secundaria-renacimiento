@@ -200,6 +200,13 @@ export default function HojaDeVida({ student, onClose, onSave }) {
                         <option value="Pendiente">Pendiente</option>
                       </select>
                     </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">Tipo Ingreso (Matrícula)</label>
+                      <select name="tipoIngreso" defaultValue={student.tipoIngreso || 'Nuevo Ingreso'} className="mt-1 w-full p-2 border rounded border-indigo-200 bg-indigo-50" required>
+                        <option value="Nuevo Ingreso">Ordinario (Exist. Anterior)</option>
+                        <option value="Alta">Alta (Ingresó después)</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 

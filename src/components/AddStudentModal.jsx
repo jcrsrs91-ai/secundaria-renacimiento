@@ -22,6 +22,8 @@ export default function AddStudentModal({ onClose }) {
     turno: '',
     escuelaProcedencia: '',
     promedioEscuela: '',
+    status: 'Activo',
+    tipoIngreso: 'Nuevo Ingreso',
     
     // Datos Médicos
     tipoSangre: '',
@@ -80,7 +82,6 @@ export default function AddStudentModal({ onClose }) {
       await addDoc(collection(db, "students"), {
         ...formData,
         taller: taller,
-        status: "Activo",
         fechaRegistro: serverTimestamp()
       });
 
@@ -159,6 +160,20 @@ export default function AddStudentModal({ onClose }) {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Matrícula</label>
                   <input type="text" name="matricula" value={formData.matricula} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Estatus Inicial *</label>
+                  <select name="status" required value={formData.status} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+                    <option value="Activo">Activo (Existencia)</option>
+                    <option value="Baja">Baja</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Tipo de Ingreso *</label>
+                  <select name="tipoIngreso" required value={formData.tipoIngreso} onChange={handleChange} className="w-full px-3 py-2 border border-indigo-300 bg-indigo-50 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <option value="Nuevo Ingreso">Ordinario (Inicio de Ciclo)</option>
+                    <option value="Alta">Alta (Ingresó después)</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Grado *</label>

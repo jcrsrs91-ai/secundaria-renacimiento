@@ -40,8 +40,18 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
         data.global.grupos.add(`${grado}-${turno}-${grupo}`);
       }
 
+      const isAlta = a.tipoIngreso === 'Alta';
       const isBaja = status === 'baja';
       const isActivo = status === 'activo' || status === 'egresado'; // Consideramos egresados como activos que terminaron
+
+      if (isAlta) {
+        data[key].altas[genero.toLowerCase()]++;
+        data[key].altas.t++;
+        data[grado].altas[genero.toLowerCase()]++;
+        data[grado].altas.t++;
+        data.global.altas[genero.toLowerCase()]++;
+        data.global.altas.t++;
+      }
 
       if (isBaja) {
         // BAJAS
