@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2 } from 'lucide-react';
+import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2, UserPlus } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
@@ -15,6 +15,7 @@ import CuadroParcialPrint from '../../components/CuadroParcialPrint';
 import AprovechamientoPrint from '../../components/AprovechamientoPrint';
 import MatriculaPrint from '../../components/MatriculaPrint';
 import AprobacionPrint from '../../components/AprobacionPrint';
+import AddStudentModal from '../../components/AddStudentModal';
 
 export default function ControlEscolar() {
   const [activeTab, setActiveTab] = useState('pendientes');
@@ -522,6 +523,9 @@ export default function ControlEscolar() {
             <Upload className="w-4 h-4 mr-2 text-primary-600" /> Importar CSV
             <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
           </label>
+          <button onClick={() => openModal('addStudent')} className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm">
+            <UserPlus className="w-4 h-4 mr-2" /> Agregar Alumno
+          </button>
           <button onClick={handleExportCSV} className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors shadow-sm">
             <Download className="w-4 h-4 mr-2" /> Exportar Activos
           </button>
@@ -876,6 +880,11 @@ export default function ControlEscolar() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL NUEVO ALUMNO */}
+      {modalType === 'addStudent' && (
+        <AddStudentModal onClose={closeModal} />
       )}
 
       {/* MODAL HOJA DE VIDA (Componente Externo) */}
