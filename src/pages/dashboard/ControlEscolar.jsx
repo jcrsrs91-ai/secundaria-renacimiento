@@ -11,7 +11,10 @@ import BoletaPrint from '../../components/BoletaPrint';
 import Calificaciones from '../../components/Calificaciones';
 import ListaAsistenciaPrint from '../../components/ListaAsistenciaPrint';
 import CuadroFinalPrint from '../../components/CuadroFinalPrint';
+import CuadroFinalPrint from '../../components/CuadroFinalPrint';
 import CuadroParcialPrint from '../../components/CuadroParcialPrint';
+import AprovechamientoPrint from '../../components/AprovechamientoPrint';
+import MatriculaPrint from '../../components/MatriculaPrint';
 import AprovechamientoPrint from '../../components/AprovechamientoPrint';
 
 export default function ControlEscolar() {
@@ -220,9 +223,13 @@ export default function ControlEscolar() {
   };
 
   const handlePrintAprovechamiento = () => {
-    toast.success("Abriendo Reporte de Aprovechamiento...", { icon: '📊' });
+    toast.success("Abriendo Reporte de Aprovechamiento...", { icon: '📄' });
     setPrintMode('aprovechamiento');
-    // Eliminamos el window.print() automático para que pueda verlo en pantalla primero
+  };
+
+  const handlePrintMatricula = () => {
+    toast.success("Abriendo Estadística de Matrícula...", { icon: '📊' });
+    setPrintMode('matricula');
   };
 
   const toggleSelectStudent = (id) => {
@@ -535,6 +542,9 @@ export default function ControlEscolar() {
           </button>
           <button onClick={() => setActiveTab('aprovechamiento')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'aprovechamiento' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             Aprovechamiento Escolar
+          </button>
+          <button onClick={() => setActiveTab('matricula')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'matricula' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+            Estadística de Matrícula
           </button>
         </nav>
       </div>
@@ -984,6 +994,26 @@ export default function ControlEscolar() {
         </div>
       )}
 
+      {/* Sección Estadística de Matrícula */}
+      {!loading && activeTab === 'matricula' && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
+            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+          <h3 className="text-2xl font-bold text-slate-800 mb-2">Estadística de Matrícula General</h3>
+          <p className="text-slate-500 mb-8 max-w-lg">
+            Calcula automáticamente la existencia total, inscripciones iniciales, altas, bajas y el porcentaje de deserción de la escuela por grado y turno.
+          </p>
+          <button 
+            onClick={handlePrintMatricula} 
+            className="flex items-center px-8 py-4 bg-emerald-600 text-white rounded-xl text-lg font-bold hover:bg-emerald-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          >
+            <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Generar Estadística de Matrícula
+          </button>
+        </div>
+      )}
+
       {/* IMPRESIÓN */}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
@@ -992,6 +1022,7 @@ export default function ControlEscolar() {
       {printMode === 'concentrado-final' && <CuadroFinalPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'aprovechamiento' && <AprovechamientoPrint activos={activos} onClose={() => setPrintMode(null)} />}
+      {printMode === 'matricula' && <MatriculaPrint alumnos={directorio} onClose={() => setPrintMode(null)} />}
     </div>
   );
 }
