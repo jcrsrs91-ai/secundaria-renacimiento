@@ -232,10 +232,8 @@ export default function ControlEscolar() {
   };
 
   const handlePrintAprobacion = () => {
+    toast.success("Abriendo Reporte de Aprobación...", { icon: '📄' });
     setPrintMode('aprobacion');
-    setTimeout(() => {
-      window.print();
-    }, 500);
   };
 
   const toggleSelectStudent = (id) => {
