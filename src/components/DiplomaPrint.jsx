@@ -108,34 +108,34 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                 </div>
 
                 {/* Reason */}
-                <div className="max-w-3xl mb-8">
-                  <p className="text-xl text-slate-700 leading-relaxed font-medium">
-                    Por haber obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en el <strong>{student.grado} Grupo "{student.grupo}"</strong> Turno <strong>{turno}</strong> con un promedio de:
+                <div className="max-w-4xl mb-6 px-8">
+                  <p className="text-xl text-slate-700 leading-relaxed font-medium text-justify" style={{ textJustify: 'inter-word' }}>
+                    Por su destacada dedicación, disciplina y excelencia académica demostrados durante el presente ciclo escolar. Habiendo obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en sus estudios de educación secundaria, cursando en el <strong>{student.grado} Grupo "{student.grupo}"</strong> del Turno <strong>{turno}</strong>, y logrando un promedio sobresaliente de:
                   </p>
-                  <div className="mt-6 text-4xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-3 px-8 rounded-2xl inline-block shadow-inner">
+                  <div className="mt-8 text-4xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-3 px-8 rounded-2xl inline-block shadow-inner">
                     {average.toFixed(1)}
                   </div>
                 </div>
 
                 {/* Date */}
-                <p className="text-sm text-slate-500 font-semibold italic mb-12">
+                <p className="text-sm text-slate-500 font-semibold italic mb-10">
                   Acapulco de Juárez, Gro., a {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
 
                 {/* Signatures */}
-                <div className="w-full flex justify-between px-12 mt-auto">
+                <div className="w-full flex justify-between px-16 absolute bottom-12 left-0 right-0">
                   <div className="w-64 flex flex-col items-center">
-                    <div className="w-full border-b border-slate-800 mb-2"></div>
+                    <div className="w-full border-b-2 border-slate-800 mb-2"></div>
                     <p className="text-xs font-bold text-slate-800 uppercase text-center h-8 flex items-center justify-center leading-tight">{firmas.coordinador.nombre}</p>
                     <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{firmas.coordinador.cargo}</p>
                   </div>
                   <div className="w-64 flex flex-col items-center">
-                    <div className="w-full border-b border-slate-800 mb-2"></div>
+                    <div className="w-full border-b-2 border-slate-800 mb-2"></div>
                     <p className="text-xs font-bold text-slate-800 uppercase text-center h-8 flex items-center justify-center leading-tight">{firmas.subdirector.nombre}</p>
                     <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{firmas.subdirector.cargo}</p>
                   </div>
                   <div className="w-64 flex flex-col items-center">
-                    <div className="w-full border-b border-slate-800 mb-2"></div>
+                    <div className="w-full border-b-2 border-slate-800 mb-2"></div>
                     <p className="text-xs font-bold text-slate-800 uppercase text-center h-8 flex items-center justify-center leading-tight">{firmas.director.nombre}</p>
                     <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{firmas.director.cargo}</p>
                   </div>
