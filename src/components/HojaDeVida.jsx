@@ -168,7 +168,11 @@ export default function HojaDeVida({ student, onClose, onSave }) {
                 {/* 1. Datos Académicos */}
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Datos Académicos</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">Matrícula</label>
+                      <input type="text" name="matricula" defaultValue={student.matricula} className="mt-1 w-full p-2 border rounded font-bold text-indigo-700 bg-indigo-50" />
+                    </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Grado</label>
                       <select name="grado" defaultValue={student.grado} className="mt-1 w-full p-2 border rounded" required>
