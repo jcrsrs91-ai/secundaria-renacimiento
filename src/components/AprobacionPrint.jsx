@@ -188,12 +188,12 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
       <div className="bg-white max-w-6xl mx-auto p-10 rounded-2xl shadow-xl print:shadow-none print:p-0 print:rounded-none">
         <style>{`
           @media print {
-            @page { size: landscape; margin: 0.3cm; }
-            html, body, #root { height: 100% !important; overflow: hidden !important; display: block !important; margin: 0; padding: 0; background: white; zoom: 0.92; }
+            @page { size: portrait; margin: 0.5cm; }
+            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; zoom: 0.85; }
             * { overflow: visible !important; }
             aside, header { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .print-aprobacion-only { display: flex !important; flex-direction: column !important; justify-content: space-between !important; height: 100vh !important; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+            .print-aprobacion-only { display: block !important; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
             .no-print, [role="status"], [class*="toast"], .go3958311924, .go2072408551, .go685806154, .go4109123758, #toast-container { display: none !important; }
           }
         `}</style>
