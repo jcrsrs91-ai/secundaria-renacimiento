@@ -54,17 +54,31 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
     const sinCalificaciones = [];
     const califMenor5 = [];
     const alumnosContabilizados = [];
+    const alumnosOmitidos = [];
 
-    // Juntamos activos y bajas, solo nos interesa 3er Grado
-    const allTercero = [...activos, ...bajas].filter(s => s.grado === '3er Grado');
+    // Juntamos activos y bajas, buscando cualquier variante de 3er Grado (espacios, minúsculas, etc.)
+    const allTercero = [...activos, ...bajas].filter(s => {
+      const g = (s.grado || '').toString().trim().toLowerCase();
+      return g.startsWith('3') || g === 'tercero';
+    });
+    
     const materiasTercero = materiasPorGrado['3er Grado'] || [];
 
     allTercero.forEach(s => {
       // Ignorar los que ingresaron por Alta (en 2do o 3ro) según regla E4
-      if (s.tipoIngreso === 'Alta') return;
+      if (s.tipoIngreso && s.tipoIngreso.trim().toLowerCase() === 'alta') {
+        alumnosOmitidos.push({ ...s, motivo: 'Regla SEP E4: Ingresó por Alta' });
+        return;
+      }
 
-      const turno = s.turno || 'Matutino';
-      if (!data[turno]) return;
+      // Limpiar turno
+      let turnoBruto = (s.turno || 'Matutino').toString().trim().toLowerCase();
+      let turno = turnoBruto.startsWith('v') ? 'Vespertino' : 'Matutino';
+      
+      if (!data[turno]) {
+        alumnosOmitidos.push({ ...s, motivo: `Turno inválido: ${s.turno}` });
+        return;
+      }
 
       const gen = s.genero?.trim().toLowerCase() || '';
       const isHombre = gen.startsWith('h') || gen === 'masculino';
@@ -115,10 +129,10 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
     data.TOTALES.insM = data.Matutino.insM + data.Vespertino.insM;
     data.TOTALES.insT = data.Matutino.insT + data.Vespertino.insT;
 
-    return { data, sinGenero, sinCalificaciones, califMenor5, alumnosContabilizados };
+    return { data, sinGenero, sinCalificaciones, califMenor5, alumnosContabilizados, alumnosOmitidos };
   };
 
-  const { data, sinGenero, sinCalificaciones, califMenor5, alumnosContabilizados } = useMemo(processData, [activos, bajas, materiasPorGrado]);
+  const { data, sinGenero, sinCalificaciones, califMenor5, alumnosContabilizados, alumnosOmitidos } = useMemo(processData, [activos, bajas, materiasPorGrado]);
 
   const calcEficiencia = (egresados, inscripcion) => {
     if (inscripcion === 0) return '#DIV/0!';
@@ -411,7 +425,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
             Total de egresados mostrados en la tabla: {data.TOTALES.egCertT + data.TOTALES.egSinCertT}. 
             Si este número no cuadra con tu Existencia actual, revisa si falta alguien en la siguiente lista. Los alumnos dados de 'Baja' o que tengan algún error en su Grado/Turno/Estatus no aparecen aquí.
           </p>
-          <div className="max-h-64 overflow-y-auto bg-white border border-slate-200 rounded p-4">
+          <div className="max-h-64 overflow-y-auto bg-white border border-slate-200 rounded p-4 mb-6">
             <ul className="list-disc pl-5 text-xs text-slate-700 space-y-1">
               {alumnosContabilizados.sort((a,b) => a.apellidos?.localeCompare(b.apellidos)).map(s => (
                 <li key={s.id}>
@@ -420,6 +434,27 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
               ))}
             </ul>
           </div>
+
+          {alumnosOmitidos.length > 0 && (
+            <>
+              <h3 className="font-bold text-rose-800 text-lg mb-2 border-t pt-4">
+                ⚠️ Alumnos de 3er Grado que fueron IGNORADOS ({alumnosOmitidos.length})
+              </h3>
+              <p className="text-sm text-rose-600 mb-4">
+                El sistema encontró a estos alumnos en la base de datos de 3er Grado, pero NO los sumó al reporte por las siguientes razones:
+              </p>
+              <div className="max-h-64 overflow-y-auto bg-rose-50 border border-rose-200 rounded p-4">
+                <ul className="list-disc pl-5 text-xs text-rose-900 space-y-1">
+                  {alumnosOmitidos.sort((a,b) => a.apellidos?.localeCompare(b.apellidos)).map(s => (
+                    <li key={s.id}>
+                      <span className="font-bold">{s.apellidos} {s.nombre}</span> - {s.grado} {s.grupo} ({s.turno}) <br/>
+                      <span className="text-rose-600 bg-rose-100 px-1 rounded ml-2">Motivo: {s.motivo}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>
+          )}
         </div>
 
       </div>
