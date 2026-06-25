@@ -28,13 +28,12 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
         {`
           @media print {
             @page { size: portrait; margin: 12mm; }
+            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
+            * { overflow: visible !important; }
+            aside, header { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
             .no-print { display: none !important; }
-            .print-only { display: block !important; }
             .page-break-inside-avoid { page-break-inside: avoid; }
-          }
-          .print-desertores-only > :not(#printable-desertores) {
-            display: none !important;
           }
         `}
       </style>
@@ -42,11 +41,7 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
       {/* Controles NO imprimibles */}
       <div className="absolute top-6 right-6 flex gap-3 no-print fixed z-[60]">
         <button 
-          onClick={() => {
-            document.body.classList.add('print-desertores-only');
-            window.print();
-            setTimeout(() => document.body.classList.remove('print-desertores-only'), 100);
-          }} 
+          onClick={() => window.print()} 
           className="flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 transition font-bold"
         >
           <Printer className="w-5 h-5 mr-2" /> Imprimir Reporte
@@ -151,7 +146,7 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
                         <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Domicilio Registrado</p>
-                          <p className="text-sm font-semibold text-slate-700 truncate pr-2" title={domicilio}>{domicilio || 'N/A'}</p>
+                          <p className="text-sm font-semibold text-slate-700 break-words">{domicilio || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
@@ -163,7 +158,7 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
                       </div>
                       <div>
                         <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Causa de Deserción Oficial</p>
-                        <p className="text-base font-bold text-rose-900">{motivo}</p>
+                        <p className="text-base font-bold text-rose-900 break-words">{motivo}</p>
                       </div>
                     </div>
                   </div>
