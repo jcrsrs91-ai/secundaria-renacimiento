@@ -83,7 +83,7 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
         </div>
 
         {/* Contenido Principal */}
-        <div className="p-10 bg-slate-50/50">
+        <div className="p-6 bg-slate-50/50 max-h-[60vh] overflow-y-auto print:max-h-none print:overflow-visible custom-scrollbar">
           
           {bajasOrdenadas.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
@@ -103,16 +103,16 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
                 const motivo = (s.motivoBaja || 'CAUSA NO ESPECIFICADA').toUpperCase();
 
                 return (
-                  <div key={idx} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col gap-5 page-break-inside-avoid relative overflow-hidden group">
+                  <div key={idx} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col gap-4 page-break-inside-avoid relative overflow-hidden group">
                     {/* Número de lista decorativo */}
-                    <div className="absolute -top-4 -right-4 text-[100px] font-black text-slate-50 leading-none select-none z-0">
+                    <div className="absolute -top-3 -right-3 text-[80px] font-black text-slate-50 leading-none select-none z-0">
                       {idx + 1}
                     </div>
 
                     <div className="relative z-10 flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-3 mb-1">
-                          <h3 className="text-xl font-black text-slate-800">{nombreCompleto}</h3>
+                          <h3 className="text-lg font-black text-slate-800">{nombreCompleto}</h3>
                           {s.genero === 'Mujer' ? (
                             <span className="px-2.5 py-0.5 bg-pink-50 text-pink-700 border border-pink-100 rounded-full text-xs font-bold uppercase">Mujer</span>
                           ) : (
@@ -138,7 +138,7 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
                         <Calendar className="w-5 h-5 text-slate-400 mt-0.5" />
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nacimiento y Edad</p>
-                          <p className="text-sm font-semibold text-slate-700">{s.fechaNacimiento || 'N/A'} <span className="text-slate-400 font-normal">({edad} años)</span></p>
+                          <p className="text-xs font-semibold text-slate-700">{s.fechaNacimiento || 'N/A'} <span className="text-slate-400 font-normal">({edad} años)</span></p>
                         </div>
                       </div>
 
@@ -146,19 +146,19 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
                         <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Domicilio Registrado</p>
-                          <p className="text-sm font-semibold text-slate-700 break-words">{domicilio || 'N/A'}</p>
+                          <p className="text-xs font-semibold text-slate-700 break-words">{domicilio || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Alerta de Causa de Deserción */}
-                    <div className="relative z-10 mt-2 bg-rose-50/80 border border-rose-200/60 p-4 rounded-xl flex items-start gap-4">
-                      <div className="bg-rose-100 p-2 rounded-lg mt-0.5">
-                        <AlertCircle className="w-5 h-5 text-rose-600" />
+                    <div className="relative z-10 bg-rose-50/80 border border-rose-200/60 p-3 rounded-xl flex items-start gap-3">
+                      <div className="bg-rose-100 p-1.5 rounded-lg mt-0.5">
+                        <AlertCircle className="w-4 h-4 text-rose-600" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Causa de Deserción Oficial</p>
-                        <p className="text-base font-bold text-rose-900 break-words">{motivo}</p>
+                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-0.5">Causa de Deserción Oficial</p>
+                        <p className="text-sm font-bold text-rose-900 break-words">{motivo}</p>
                       </div>
                     </div>
                   </div>
