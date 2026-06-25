@@ -120,8 +120,8 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
     };
 
     return (
-      <div className="mb-8 print:mb-4">
-        <h3 className="text-lg font-bold text-indigo-900 mb-3 uppercase tracking-wider print:text-sm print:mb-2 border-b-2 border-indigo-100 pb-1">{title}</h3>
+      <div className="mb-8 print:mb-2">
+        <h3 className="text-lg font-bold text-indigo-900 mb-3 uppercase tracking-wider print:text-sm print:mb-1 border-b-2 border-indigo-100 pb-1 print:pb-0">{title}</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm print:text-[10px]">
             <thead>
@@ -135,23 +135,23 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
                 <th rowSpan="2" className="py-2 px-1 print:py-1 rounded-tr-lg w-16">Comp.</th>
               </tr>
               <tr className="bg-slate-700 text-white font-medium text-xs print:text-[9px]">
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-600">H</th>
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-600">M</th>
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-800 font-bold text-slate-200">T</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600">H</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600">M</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-800 font-bold text-slate-200">T</th>
                 
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-600 bg-emerald-700">H</th>
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-600 bg-emerald-700">M</th>
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-800 bg-emerald-700 font-bold text-emerald-100">T</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-emerald-700">H</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-emerald-700">M</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-800 bg-emerald-700 font-bold text-emerald-100">T</th>
                 
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-600 bg-amber-600">1</th>
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-600 bg-amber-600">2</th>
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-600 bg-amber-600">3</th>
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-600 bg-amber-600">4</th>
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-800 bg-amber-600 font-bold text-amber-100">T</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-amber-600">1</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-amber-600">2</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-amber-600">3</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-amber-600">4</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-800 bg-amber-600 font-bold text-amber-100">T</th>
                 
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-600 bg-red-700">H</th>
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-600 bg-red-700">M</th>
-                <th className="py-1 px-1 print:py-0.5 border-r border-slate-800 bg-red-700 font-bold text-red-100">T</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-red-700">H</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-red-700">M</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-800 bg-red-700 font-bold text-red-100">T</th>
               </tr>
             </thead>
             <tbody>
@@ -188,13 +188,13 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
       <div className="bg-white max-w-6xl mx-auto p-10 rounded-2xl shadow-xl print:shadow-none print:p-0 print:rounded-none">
         <style>{`
           @media print {
-            @page { size: landscape; margin: 0.5cm; }
-            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
+            @page { size: landscape; margin: 0.3cm; }
+            html, body, #root { height: 100% !important; overflow: hidden !important; display: block !important; margin: 0; padding: 0; background: white; zoom: 0.92; }
             * { overflow: visible !important; }
             aside, header { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .print-aprobacion-only { display: block !important; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-            .no-print { display: none !important; }
+            .print-aprobacion-only { display: flex !important; flex-direction: column !important; justify-content: space-between !important; height: 100vh !important; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+            .no-print, [role="status"], [class*="toast"], .go3958311924, .go2072408551, .go685806154, .go4109123758, #toast-container { display: none !important; }
           }
         `}</style>
 
@@ -217,58 +217,58 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
         )}
 
         {/* Encabezado Elegante */}
-        <div className="flex items-center justify-between mb-8 border-b-2 border-slate-200 pb-6 print:border-slate-300 print:pb-2 print:mb-4">
-          <img src="/logo-sep.png" alt="SEP" className="h-16 w-auto object-contain print:h-12" />
+        <div className="flex items-center justify-between mb-8 border-b-2 border-slate-200 pb-6 print:border-slate-300 print:pb-1 print:mb-2">
+          <img src="/logo-sep.png" alt="SEP" className="h-16 w-auto object-contain print:h-10" />
           <div className="text-center flex-1 px-4">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-lg">ESTADÍSTICA DE APROBACIÓN (FORMATO E2)</h1>
-            <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-xs">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
-            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[10px]">Ciclo Escolar 2025-2026 • Cierre del 3er Periodo</p>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-base">ESTADÍSTICA DE APROBACIÓN (FORMATO E2)</h1>
+            <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-[10px]">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
+            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[9px]">Ciclo Escolar 2025-2026 • Cierre del 3er Periodo</p>
           </div>
-          <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-14" />
+          <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-12" />
         </div>
 
         {/* Tarjetas de Resumen Global */}
-        <div className="grid grid-cols-4 gap-4 mb-10 print:gap-2 print:mb-4 break-inside-avoid">
+        <div className="grid grid-cols-4 gap-4 mb-10 print:gap-2 print:mb-2 break-inside-avoid">
           {/* Total Evaluados */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border print:border-slate-300 print:shadow-none print:p-2">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 print:text-[9px]">Alumnos Evaluados</p>
-            <p className="text-3xl font-black text-slate-800 print:text-lg">{totalGeneral.extT}</p>
-            <div className="flex gap-2 mt-2 text-xs font-semibold text-slate-500 print:text-[8px] print:mt-1">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border print:border-slate-300 print:shadow-none print:p-1.5">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 print:text-[8px]">Alumnos Evaluados</p>
+            <p className="text-3xl font-black text-slate-800 print:text-base">{totalGeneral.extT}</p>
+            <div className="flex gap-2 mt-2 text-xs font-semibold text-slate-500 print:text-[7px] print:mt-1">
               <span>H: {totalGeneral.extH}</span><span>M: {totalGeneral.extM}</span>
             </div>
           </div>
           
           {/* Aprobación (Regulares) */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border print:border-emerald-300 print:shadow-none print:p-2">
-            <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1 print:text-[9px]">Índice de Aprobación</p>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border print:border-emerald-300 print:shadow-none print:p-1.5">
+            <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1 print:text-[8px]">Índice de Aprobación</p>
             <div className="flex items-baseline gap-2">
-              <p className="text-3xl font-black text-emerald-700 print:text-lg">
+              <p className="text-3xl font-black text-emerald-700 print:text-base">
                 {totalGeneral.extT > 0 ? ((totalGeneral.regT / totalGeneral.extT) * 100).toFixed(1) : 0}%
               </p>
             </div>
-            <p className="mt-1 text-xs font-semibold text-emerald-600 print:text-[8px] print:mt-1">{totalGeneral.regT} Alumnos Regulares</p>
+            <p className="mt-1 text-xs font-semibold text-emerald-600 print:text-[7px] print:mt-1">{totalGeneral.regT} Alumnos Regulares</p>
           </div>
 
           {/* Irregulares */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border print:border-amber-300 print:shadow-none print:p-2">
-            <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1 print:text-[9px]">Riesgo (1 a 4 Materias)</p>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border print:border-amber-300 print:shadow-none print:p-1.5">
+            <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1 print:text-[8px]">Riesgo (1 a 4 Materias)</p>
             <div className="flex items-baseline gap-2">
-              <p className="text-3xl font-black text-amber-700 print:text-lg">
+              <p className="text-3xl font-black text-amber-700 print:text-base">
                 {totalGeneral.extT > 0 ? ((totalGeneral.irrT / totalGeneral.extT) * 100).toFixed(1) : 0}%
               </p>
             </div>
-            <p className="mt-1 text-xs font-semibold text-amber-600 print:text-[8px] print:mt-1">{totalGeneral.irrT} Alumnos Irregulares</p>
+            <p className="mt-1 text-xs font-semibold text-amber-600 print:text-[7px] print:mt-1">{totalGeneral.irrT} Alumnos Irregulares</p>
           </div>
 
           {/* No Acreditados */}
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border print:border-red-300 print:shadow-none print:p-2">
-            <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-1 print:text-[9px]">No Acreditados (5+)</p>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border print:border-red-300 print:shadow-none print:p-1.5">
+            <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-1 print:text-[8px]">No Acreditados (5+)</p>
             <div className="flex items-baseline gap-2">
-              <p className="text-3xl font-black text-red-700 print:text-lg">
+              <p className="text-3xl font-black text-red-700 print:text-base">
                 {totalGeneral.extT > 0 ? ((totalGeneral.noaT / totalGeneral.extT) * 100).toFixed(1) : 0}%
               </p>
             </div>
-            <p className="mt-1 text-xs font-semibold text-red-600 print:text-[8px] print:mt-1">{totalGeneral.noaT} Alumnos Repetidores</p>
+            <p className="mt-1 text-xs font-semibold text-red-600 print:text-[7px] print:mt-1">{totalGeneral.noaT} Alumnos Repetidores</p>
           </div>
         </div>
 
@@ -278,33 +278,33 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
         {renderTable('3er Grado', 'TERCER GRADO')}
 
         {/* Totales Generales Escuela */}
-        <div className="mt-8 mb-4 break-inside-avoid print:mt-4 print:mb-4">
-          <h3 className="text-xl font-black text-slate-800 mb-3 border-b-2 border-slate-800 pb-1 uppercase print:text-sm print:mb-2 print:border-slate-800 print:pb-1">TOTAL ESCUELA</h3>
-          <div className="bg-indigo-600 text-white rounded-xl p-4 shadow-md flex justify-around text-center print:bg-slate-800 print:p-2 print:rounded-lg">
+        <div className="mt-8 mb-4 break-inside-avoid print:mt-2 print:mb-2">
+          <h3 className="text-xl font-black text-slate-800 mb-3 border-b-2 border-slate-800 pb-1 uppercase print:text-xs print:mb-1 print:border-slate-800 print:pb-0">TOTAL ESCUELA</h3>
+          <div className="bg-indigo-600 text-white rounded-xl p-4 shadow-md flex justify-around text-center print:bg-slate-800 print:p-1.5 print:rounded-lg">
             <div>
-              <p className="text-xs text-indigo-200 font-bold uppercase tracking-wide print:text-[9px]">Inscritos</p>
-              <p className="text-2xl font-black print:text-lg">{totalGeneral.extT}</p>
+              <p className="text-xs text-indigo-200 font-bold uppercase tracking-wide print:text-[8px]">Inscritos</p>
+              <p className="text-2xl font-black print:text-base">{totalGeneral.extT}</p>
             </div>
             <div>
-              <p className="text-xs text-emerald-300 font-bold uppercase tracking-wide print:text-[9px]">Regulares</p>
-              <p className="text-2xl font-black print:text-lg">{totalGeneral.regT}</p>
+              <p className="text-xs text-emerald-300 font-bold uppercase tracking-wide print:text-[8px]">Regulares</p>
+              <p className="text-2xl font-black print:text-base">{totalGeneral.regT}</p>
             </div>
             <div>
-              <p className="text-xs text-amber-300 font-bold uppercase tracking-wide print:text-[9px]">Irregulares</p>
-              <p className="text-2xl font-black print:text-lg">{totalGeneral.irrT}</p>
+              <p className="text-xs text-amber-300 font-bold uppercase tracking-wide print:text-[8px]">Irregulares</p>
+              <p className="text-2xl font-black print:text-base">{totalGeneral.irrT}</p>
             </div>
             <div>
-              <p className="text-xs text-red-300 font-bold uppercase tracking-wide print:text-[9px]">Repetidores</p>
-              <p className="text-2xl font-black print:text-lg">{totalGeneral.noaT}</p>
+              <p className="text-xs text-red-300 font-bold uppercase tracking-wide print:text-[8px]">Repetidores</p>
+              <p className="text-2xl font-black print:text-base">{totalGeneral.noaT}</p>
             </div>
           </div>
         </div>
 
         {/* Pie de Firma */}
-        <div className="mt-16 pt-8 flex justify-center break-inside-avoid print:mt-8 print:pt-4">
+        <div className="mt-16 pt-8 flex justify-center break-inside-avoid print:mt-4 print:pt-2">
           <div className="text-center w-80 print:w-64">
-            <div className="border-t-2 border-slate-800 pt-2 font-bold text-slate-800 text-sm print:border-slate-800 print:text-[10px] print:pt-1">PROFR. JUAN CARLOS TABOADA BARAJAS</div>
-            <div className="mt-1 text-slate-500 text-xs font-semibold tracking-wide print:text-slate-700 print:text-[8px] print:mt-1">DIRECTOR DE LA ESCUELA</div>
+            <div className="border-t-2 border-slate-800 pt-2 font-bold text-slate-800 text-sm print:border-slate-800 print:text-[9px] print:pt-1">PROFR. JUAN CARLOS TABOADA BARAJAS</div>
+            <div className="mt-1 text-slate-500 text-xs font-semibold tracking-wide print:text-slate-700 print:text-[7px] print:mt-1">DIRECTOR DE LA ESCUELA</div>
           </div>
         </div>
 

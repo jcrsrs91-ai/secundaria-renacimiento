@@ -37,7 +37,7 @@ function App() {
         </Route>
       </Route>
     </Routes>
-    <Toaster position="bottom-right" toastOptions={{ duration: 4000, style: { background: '#334155', color: '#fff', padding: '16px', borderRadius: '8px' } }} />
+    <Toaster position="bottom-right" containerClassName="no-print" toastOptions={{ duration: 4000, style: { background: '#334155', color: '#fff', padding: '16px', borderRadius: '8px' } }} />
     </>
 
   );
