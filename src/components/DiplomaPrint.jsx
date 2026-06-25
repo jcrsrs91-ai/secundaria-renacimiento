@@ -83,21 +83,19 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
 
               <div className="relative z-10 w-full h-full flex flex-col items-center text-center justify-between py-4">
                 
-                {/* Header */}
-                <div className="w-full flex items-center justify-between px-16">
-                  <img src="/logo-escuela.png" alt="Escudo" className="w-28 h-28 object-contain" />
-                  <div className="flex-1 px-8 text-center">
+                {/* Header with 2 Logos */}
+                <div className="w-full flex items-center justify-between px-16 mt-4">
+                  <img src="/logo-sep.png" alt="SEP" className="w-48 object-contain" />
+                  <div className="flex-1 px-8 text-center mt-2">
                     <h1 className="text-2xl font-black text-slate-800 uppercase tracking-widest mb-1">Secretaría de Educación Guerrero</h1>
                     <h2 className="text-lg font-bold text-slate-600 uppercase tracking-wider mb-0.5">Escuela Secundaria Técnica "Renacimiento"</h2>
                     <h3 className="text-sm font-semibold text-slate-500 tracking-widest">C.C.T. 12EES0000X</h3>
                   </div>
-                  <div className="w-28 h-28 flex items-center justify-center">
-                    <Medal className={`w-20 h-20 ${place === 1 ? 'text-yellow-400' : place === 2 ? 'text-slate-400' : 'text-amber-600'}`} strokeWidth={1} fill="currentColor" opacity={0.2} />
-                  </div>
+                  <img src="/logo-escuela.png" alt="Escudo" className="w-24 h-24 object-contain" />
                 </div>
 
                 {/* Title */}
-                <div className="mt-8 mb-6">
+                <div className="mt-8 mb-4">
                   <h1 className="text-5xl font-serif italic text-amber-700 tracking-wide mb-4">Diploma de Aprovechamiento</h1>
                   <p className="text-lg font-medium text-slate-600 tracking-widest uppercase">La dirección de la escuela otorga el presente reconocimiento a:</p>
                 </div>
@@ -108,22 +106,22 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                 </div>
 
                 {/* Reason */}
-                <div className="max-w-4xl mb-6 px-8">
+                <div className="max-w-4xl mb-4 px-8 flex-1 flex flex-col justify-center items-center">
                   <p className="text-xl text-slate-700 leading-relaxed font-medium text-justify" style={{ textJustify: 'inter-word' }}>
                     Por su destacada dedicación, disciplina y excelencia académica demostrados durante el presente ciclo escolar. Habiendo obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en sus estudios de educación secundaria, cursando en el <strong>{student.grado} Grupo "{student.grupo}"</strong> del Turno <strong>{turno}</strong>, y logrando un promedio sobresaliente de:
                   </p>
-                  <div className="mt-8 text-4xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-3 px-8 rounded-2xl inline-block shadow-inner">
+                  <div className="mt-6 text-4xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-3 px-8 rounded-2xl inline-block shadow-inner">
                     {average.toFixed(1)}
                   </div>
                 </div>
 
                 {/* Date */}
-                <p className="text-sm text-slate-500 font-semibold italic mb-10">
+                <p className="text-sm text-slate-500 font-semibold italic mb-8">
                   Acapulco de Juárez, Gro., a {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
 
                 {/* Signatures */}
-                <div className="w-full flex justify-between px-16 absolute bottom-12 left-0 right-0">
+                <div className="w-full flex justify-between px-16 mb-4">
                   <div className="w-64 flex flex-col items-center">
                     <div className="w-full border-b-2 border-slate-800 mb-2"></div>
                     <p className="text-xs font-bold text-slate-800 uppercase text-center h-8 flex items-center justify-center leading-tight">{firmas.coordinador.nombre}</p>
