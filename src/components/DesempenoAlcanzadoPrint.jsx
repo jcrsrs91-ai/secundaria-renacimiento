@@ -48,9 +48,11 @@ export default function DesempenoAlcanzadoPrint({ activos = [], materiasPorGrado
           if (!isNaN(val)) { sumTrim += val; countTrim++; }
         });
         
-        const avgMateria = countTrim > 0 ? (sumTrim / countTrim) : 0;
-        sumaFinalMaterias += avgMateria;
-        countMateriasValidas++;
+        if (countTrim > 0) {
+          const avgMateria = sumTrim / countTrim;
+          sumaFinalMaterias += avgMateria;
+          countMateriasValidas++;
+        }
       });
 
       // El promedio general se calcula con todos los decimales y luego se trunca a 1 décima (o centésima si se requiere)
