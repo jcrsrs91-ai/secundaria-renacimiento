@@ -5,16 +5,23 @@ import { truncateTo1Dec } from '../utils/format';
 export default function EficienciaTerminalPrint({ activos = [], bajas = [], materiasPorGrado = {}, onClose }) {
   
   // Calculadora de materias reprobadas por alumno
-  const getMateriasReprobadas = (student, materias, missingGradesArr) => {
+  const getMateriasReprobadas = (student, materias, missingGradesArr, menor5Arr) => {
     let reprobadas = 0;
     let missing = false;
+    let hasMenor5 = false;
     const c = student.calificaciones || {};
     materias.forEach(mat => {
       let sum = 0;
       let count = 0;
       ['t1', 't2', 't3'].forEach(t => {
         const val = parseFloat(c[t]?.[mat.id]);
-        if (!isNaN(val)) { sum += val; count++; }
+        if (!isNaN(val)) { 
+          sum += val; 
+          count++;
+          if (val < 5.0) {
+            hasMenor5 = true;
+          }
+        }
       });
       const avg = count > 0 ? parseFloat(truncateTo1Dec(sum / count)) : 0;
       if (count === 0 || avg < 6.0) {
@@ -29,6 +36,10 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
       missingGradesArr.push(student);
     }
     
+    if (hasMenor5 && menor5Arr && !menor5Arr.find(s => s.id === student.id)) {
+      menor5Arr.push(student);
+    }
+    
     return reprobadas;
   };
 
@@ -41,6 +52,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
     
     const sinGenero = [];
     const sinCalificaciones = [];
+    const califMenor5 = [];
 
     // Juntamos activos y bajas, solo nos interesa 3er Grado
     const allTercero = [...activos, ...bajas].filter(s => s.grado === '3er Grado');
@@ -69,7 +81,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
       // Egresados (solo los que llegaron activos hasta el final)
       const isActive = s.status === 'Activo' || s.status === 'Egresado';
       if (isActive) {
-        const reprobadas = getMateriasReprobadas(s, materiasTercero, sinCalificaciones);
+        const reprobadas = getMateriasReprobadas(s, materiasTercero, sinCalificaciones, califMenor5);
         
         if (reprobadas === 0) {
           // Con Certificado
@@ -100,10 +112,10 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
     data.TOTALES.insM = data.Matutino.insM + data.Vespertino.insM;
     data.TOTALES.insT = data.Matutino.insT + data.Vespertino.insT;
 
-    return { data, sinGenero };
+    return { data, sinGenero, sinCalificaciones, califMenor5 };
   };
 
-  const { data, sinGenero } = useMemo(processData, [activos, bajas, materiasPorGrado]);
+  const { data, sinGenero, sinCalificaciones, califMenor5 } = useMemo(processData, [activos, bajas, materiasPorGrado]);
 
   const calcEficiencia = (egresados, inscripcion) => {
     if (inscripcion === 0) return '#DIV/0!';
@@ -183,7 +195,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
         )}
 
         {sinCalificaciones.length > 0 && (
-          <div className="no-print mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 shadow-sm">
+          <div className="no-print mb-4 bg-amber-50 border-l-4 border-amber-500 p-4 shadow-sm">
             <div className="flex items-center">
               <AlertCircle className="w-6 h-6 text-amber-500 mr-3" />
               <h3 className="font-bold text-amber-800 text-lg">Aviso: Alumnos con materias sin calificar</h3>
@@ -194,6 +206,27 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
             <div className="mt-3 max-h-32 overflow-y-auto">
               <ul className="list-disc pl-5 text-xs text-amber-900 space-y-1">
                 {sinCalificaciones.map(s => (
+                  <li key={s.id}>
+                    <span className="font-bold">{s.nombre} {s.apellidos}</span> - {s.grado} {s.grupo} ({s.turno})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {califMenor5.length > 0 && (
+          <div className="no-print mb-6 bg-red-50 border-l-4 border-red-600 p-4 shadow-sm">
+            <div className="flex items-center">
+              <AlertCircle className="w-6 h-6 text-red-600 mr-3" />
+              <h3 className="font-bold text-red-800 text-lg">Alerta Crítica: Calificaciones menores a 5.0</h3>
+            </div>
+            <p className="mt-2 text-sm text-red-700">
+              Se detectaron {califMenor5.length} alumno(s) con calificaciones capturadas <strong>menores a 5.0</strong>. La SEP no permite calificaciones menores a 5.0 en secundaria; por favor verifica si hubo un error de dedo al capturar.
+            </p>
+            <div className="mt-3 max-h-32 overflow-y-auto">
+              <ul className="list-disc pl-5 text-xs text-red-900 space-y-1">
+                {califMenor5.map(s => (
                   <li key={s.id}>
                     <span className="font-bold">{s.nombre} {s.apellidos}</span> - {s.grado} {s.grupo} ({s.turno})
                   </li>
