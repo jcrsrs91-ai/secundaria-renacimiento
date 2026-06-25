@@ -48,12 +48,14 @@ export default function DesempenoAlcanzadoPrint({ activos = [], materiasPorGrado
           if (!isNaN(val)) { sumTrim += val; countTrim++; }
         });
         
-        const avgMateria = countTrim > 0 ? parseFloat(truncateTo1Dec(sumTrim / countTrim)) : 0;
+        const avgMateria = countTrim > 0 ? (sumTrim / countTrim) : 0;
         sumaFinalMaterias += avgMateria;
         countMateriasValidas++;
       });
 
-      const promedioGeneral = countMateriasValidas > 0 ? (sumaFinalMaterias / countMateriasValidas) : 0;
+      // El promedio general se calcula con todos los decimales y luego se trunca a 1 décima (o centésima si se requiere)
+      const rawPromedio = countMateriasValidas > 0 ? (sumaFinalMaterias / countMateriasValidas) : 0;
+      const promedioGeneral = parseFloat(truncateTo1Dec(rawPromedio));
       
       // Clasificación
       let bucket = 5;
