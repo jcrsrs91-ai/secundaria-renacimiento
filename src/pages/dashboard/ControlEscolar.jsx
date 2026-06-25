@@ -15,6 +15,7 @@ import CuadroParcialPrint from '../../components/CuadroParcialPrint';
 import AprovechamientoPrint from '../../components/AprovechamientoPrint';
 import MatriculaPrint from '../../components/MatriculaPrint';
 import AprobacionPrint from '../../components/AprobacionPrint';
+import EficienciaTerminalPrint from '../../components/EficienciaTerminalPrint';
 import AddStudentModal from '../../components/AddStudentModal';
 
 export default function ControlEscolar() {
@@ -256,6 +257,11 @@ export default function ControlEscolar() {
   const handlePrintAprobacion = () => {
     toast.success("Abriendo Reporte de Aprobación...", { icon: '📄' });
     setPrintMode('aprobacion');
+  };
+
+  const handlePrintEficiencia = () => {
+    toast.success("Abriendo Reporte de Eficiencia Terminal...", { icon: '🎓' });
+    setPrintMode('eficiencia');
   };
 
   const toggleSelectStudent = (id) => {
@@ -574,6 +580,9 @@ export default function ControlEscolar() {
           </button>
           <button onClick={() => setActiveTab('aprobacion')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'aprobacion' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             Aprobación (E2)
+          </button>
+          <button onClick={() => setActiveTab('eficiencia')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'eficiencia' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+            Eficiencia Terminal (E4)
           </button>
           <button onClick={() => setActiveTab('matricula')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'matricula' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             Estadística de Matrícula
@@ -1071,6 +1080,26 @@ export default function ControlEscolar() {
         </div>
       )}
 
+      {/* Sección Eficiencia Terminal (E4) */}
+      {!loading && activeTab === 'eficiencia' && !printMode && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path></svg>
+          </div>
+          <h3 className="text-2xl font-bold text-slate-800 mb-2">Reporte de Eficiencia Terminal (Formato E4)</h3>
+          <p className="text-slate-500 mb-8 max-w-lg">
+            Calcula la eficiencia terminal de la generación que egresa comparando la inscripción inicial con los egresados que logran el certificado.
+          </p>
+          <button 
+            onClick={handlePrintEficiencia} 
+            className="flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl text-lg font-bold hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          >
+            <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Generar Reporte de Eficiencia
+          </button>
+        </div>
+      )}
+
       {/* IMPRESIÓN */}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
@@ -1081,6 +1110,7 @@ export default function ControlEscolar() {
       {printMode === 'aprovechamiento' && <AprovechamientoPrint activos={activos} onClose={() => setPrintMode(null)} />}
       {printMode === 'matricula' && <MatriculaPrint alumnos={directorio} onClose={() => setPrintMode(null)} />}
       {printMode === 'aprobacion' && <AprobacionPrint activos={activos} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
+      {printMode === 'eficiencia' && <EficienciaTerminalPrint activos={directorio.filter(s => s.status === 'Activo' || s.status === 'Egresado')} bajas={directorio.filter(s => s.status === 'Baja')} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
     </div>
   );
 }
