@@ -5,12 +5,12 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
   // Calculadora de materias reprobadas por alumno
   const getMateriasReprobadas = (student, materias) => {
     let reprobadas = 0;
+    const c = student.calificaciones || {};
     materias.forEach(mat => {
-      const keys = [`${mat.id}_t1`, `${mat.id}_t2`, `${mat.id}_t3`];
       let sum = 0;
       let count = 0;
-      keys.forEach(k => {
-        const val = parseFloat(student[k]);
+      ['t1', 't2', 't3'].forEach(t => {
+        const val = parseFloat(c[t]?.[mat.id]);
         if (!isNaN(val)) { sum += val; count++; }
       });
       const avg = count > 0 ? sum / count : 0;
