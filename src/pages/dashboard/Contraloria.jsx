@@ -841,7 +841,7 @@ export default function Contraloria() {
       'Fecha de Ingreso': item.fechaIngreso ? new Date(item.fechaIngreso).toLocaleDateString() : ''
     }));
     
-    const csv = Papa.unparse(dataToExport);
+    const csv = Papa.unparse(dataToExport, { delimiter: ',' });
     const BOM = "\uFEFF";
     const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

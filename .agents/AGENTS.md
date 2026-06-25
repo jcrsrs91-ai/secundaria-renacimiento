@@ -19,3 +19,15 @@ sumaGeneral += promMateriaRaw; // BIEN: Se suman todos los decimales.
 const promedioGeneralRaw = sumaGeneral / totalMaterias;
 const promedioGeneralParaMostrar = truncateTo1Dec(promedioGeneralRaw);
 ``
+
+
+## Exportación a CSV
+
+Al exportar datos a formato CSV usando Papa Parse o cualquier otra librería, SIEMPRE se debe usar la coma (,) como delimitador explícito y agregar el BOM (\uFEFF) al inicio del archivo para garantizar la correcta visualización de caracteres especiales y la correcta separación por columnas en Excel con configuración regional estándar (México/US).
+
+**Ejemplo CORRECTO:**
+``javascript
+const csv = Papa.unparse(dataToExport, { delimiter: , });
+const BOM = \uFEFF;
+const blob = new Blob([BOM + csv], { type: text/csv;charset=utf-8; });
+``
