@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2, UserPlus, Award } from 'lucide-react';
+import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2, UserPlus, Award, UserMinus } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
@@ -17,6 +17,7 @@ import MatriculaPrint from '../../components/MatriculaPrint';
 import AprobacionPrint from '../../components/AprobacionPrint';
 import EficienciaTerminalPrint from '../../components/EficienciaTerminalPrint';
 import DesempenoAlcanzadoPrint from '../../components/DesempenoAlcanzadoPrint';
+import DesertoresPrint from '../../components/DesertoresPrint';
 import AddStudentModal from '../../components/AddStudentModal';
 
 export default function ControlEscolar() {
@@ -266,8 +267,13 @@ export default function ControlEscolar() {
   };
 
   const handlePrintDesempeno = () => {
-    toast.success("Abriendo Reporte de Desempeño Alcanzado...", { icon: '🏅' });
+    toast.success("Abriendo Reporte de Desempeño Alcanzado...", { icon: '📊' });
     setPrintMode('desempeno');
+  };
+
+  const handlePrintDesertores = () => {
+    toast.success("Abriendo Relación de Alumnos Desertores...", { icon: '📉' });
+    setPrintMode('desertores');
   };
 
   const toggleSelectStudent = (id) => {
@@ -592,6 +598,9 @@ export default function ControlEscolar() {
           </button>
           <button onClick={() => setActiveTab('desempeno')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'desempeno' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             Desempeño Alcanzado (E5)
+          </button>
+          <button onClick={() => setActiveTab('desertores')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'desertores' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+            Desertores (E6)
           </button>
           <button onClick={() => setActiveTab('matricula')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'matricula' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             Estadística de Matrícula
@@ -1128,6 +1137,25 @@ export default function ControlEscolar() {
         </div>
       )}
 
+      {/* Sección Desertores */}
+      {!loading && activeTab === 'desertores' && !printMode && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
+            <UserMinus className="w-10 h-10" />
+          </div>
+          <h3 className="text-2xl font-bold text-slate-800 mb-2">Relación de Alumnos Desertores (E6)</h3>
+          <p className="text-slate-500 mb-8 max-w-lg">
+            Genera automáticamente el formato E6 con la información de todos los alumnos dados de baja durante el ciclo escolar y su causa de deserción.
+          </p>
+          <button 
+            onClick={handlePrintDesertores} 
+            className="flex items-center px-8 py-4 bg-rose-600 text-white rounded-xl text-lg font-bold hover:bg-rose-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          >
+            <UserMinus className="w-6 h-6 mr-3" /> Generar y Previsualizar Reporte
+          </button>
+        </div>
+      )}
+
       {/* IMPRESIÓN */}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
@@ -1140,6 +1168,7 @@ export default function ControlEscolar() {
       {printMode === 'aprobacion' && <AprobacionPrint activos={activos} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'eficiencia' && <EficienciaTerminalPrint activos={directorio.filter(s => s.status === 'Activo' || s.status === 'Egresado')} bajas={directorio.filter(s => s.status === 'Baja')} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'desempeno' && <DesempenoAlcanzadoPrint activos={activos} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
+      {printMode === 'desertores' && <DesertoresPrint bajas={directorio.filter(s => s.status === 'Baja')} onClose={() => setPrintMode(null)} />}
     </div>
   );
 }
