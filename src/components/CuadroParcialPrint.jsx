@@ -1,4 +1,5 @@
 import React from 'react';
+import { truncateTo1Dec } from '../utils/format';
 
 export default function CuadroParcialPrint({ alumnos = [], materias = [], grado = '', grupo = '' }) {
   if (!alumnos || alumnos.length === 0) return null;
@@ -20,7 +21,7 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
       const final = getPromedioFinal(student, mat.id);
       if (final !== null) { sum += final; count++; }
     });
-    return count > 0 ? (sum / count).toFixed(1) : '-';
+    return count > 0 ? truncateTo1Dec(sum / count) : '-';
   };
 
   return (
@@ -98,7 +99,7 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
                         <td className="border border-black p-0.5 text-center">{t2}</td>
                         <td className="border border-black p-0.5 text-center">{t3}</td>
                         <td className={`border border-black p-0.5 text-center font-bold bg-slate-50 ${isFailing ? 'text-red-600' : ''}`}>
-                          {val !== null ? val.toFixed(1) : '-'}
+                          {val !== null ? truncateTo1Dec(val) : '-'}
                         </td>
                       </React.Fragment>
                     );

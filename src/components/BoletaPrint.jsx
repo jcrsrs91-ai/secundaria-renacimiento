@@ -1,4 +1,5 @@
 import React from 'react';
+import { truncateTo1Dec } from '../utils/format';
 
 export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
   if (!students || students.length === 0) return null;
@@ -68,14 +69,14 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
           
           return {
             name: mat.name,
-            t1: isNaN(t1) ? '' : t1.toFixed(1),
-            t2: isNaN(t2) ? '' : t2.toFixed(1),
-            t3: isNaN(t3) ? '' : t3.toFixed(1),
-            final: final !== null ? final.toFixed(1) : ''
+            t1: truncateTo1Dec(t1, ''),
+            t2: truncateTo1Dec(t2, ''),
+            t3: truncateTo1Dec(t3, ''),
+            final: truncateTo1Dec(final, '')
           };
         });
 
-        const promedioFinal = countGral > 0 ? (sumGral / countGral).toFixed(1) : '';
+        const promedioFinal = countGral > 0 ? truncateTo1Dec(sumGral / countGral, '') : '';
 
         return (
           <div key={student.id} className="boleta-page bg-white p-6 relative boleta-watermark">

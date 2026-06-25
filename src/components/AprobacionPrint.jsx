@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { AlertCircle, Printer, X } from 'lucide-react';
+import { truncateTo1Dec } from '../utils/format';
 
 export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) {
   // Calculadora de materias reprobadas por alumno
@@ -94,7 +95,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
   const renderTable = (gradoName, title) => {
     const data = stats[gradoName];
     const renderRow = (label, row, isTotal = false) => {
-      const pct = row.extT > 0 ? ((row.irrT + row.noaT) * 100 / row.extT).toFixed(1) + '%' : '0.0%';
+      const pct = row.extT > 0 ? truncateTo1Dec((row.irrT + row.noaT) * 100 / row.extT) + '%' : '0.0%';
       const comprobacion = row.regT + row.irrT + row.noaT;
       return (
         <tr key={label} className={`text-center ${isTotal ? 'bg-indigo-50 font-bold border-t-2 border-indigo-200' : 'border-b border-slate-100 hover:bg-slate-50'}`}>
@@ -243,7 +244,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
             <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-1 print:text-[8px]">Índice de Aprobación</p>
             <div className="flex items-baseline gap-2">
               <p className="text-3xl font-black text-emerald-700 print:text-base">
-                {totalGeneral.extT > 0 ? ((totalGeneral.regT / totalGeneral.extT) * 100).toFixed(1) : 0}%
+                {totalGeneral.extT > 0 ? truncateTo1Dec((totalGeneral.regT / totalGeneral.extT) * 100) : 0}%
               </p>
             </div>
             <p className="mt-1 text-xs font-semibold text-emerald-600 print:text-[7px] print:mt-1">{totalGeneral.regT} Alumnos Regulares</p>
@@ -254,7 +255,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
             <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1 print:text-[8px]">Riesgo (1 a 4 Materias)</p>
             <div className="flex items-baseline gap-2">
               <p className="text-3xl font-black text-amber-700 print:text-base">
-                {totalGeneral.extT > 0 ? ((totalGeneral.irrT / totalGeneral.extT) * 100).toFixed(1) : 0}%
+                {totalGeneral.extT > 0 ? truncateTo1Dec((totalGeneral.irrT / totalGeneral.extT) * 100) : 0}%
               </p>
             </div>
             <p className="mt-1 text-xs font-semibold text-amber-600 print:text-[7px] print:mt-1">{totalGeneral.irrT} Alumnos Irregulares</p>
@@ -265,7 +266,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
             <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-1 print:text-[8px]">No Acreditados (5+)</p>
             <div className="flex items-baseline gap-2">
               <p className="text-3xl font-black text-red-700 print:text-base">
-                {totalGeneral.extT > 0 ? ((totalGeneral.noaT / totalGeneral.extT) * 100).toFixed(1) : 0}%
+                {totalGeneral.extT > 0 ? truncateTo1Dec((totalGeneral.noaT / totalGeneral.extT) * 100) : 0}%
               </p>
             </div>
             <p className="mt-1 text-xs font-semibold text-red-600 print:text-[7px] print:mt-1">{totalGeneral.noaT} Alumnos Repetidores</p>

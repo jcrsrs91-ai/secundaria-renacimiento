@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 
+import { truncateTo1Dec } from '../utils/format';
+
 export default function AprovechamientoPrint({ activos, onClose }) {
   // Configuración de los campos formativos por grado
   const campos = {
@@ -126,7 +128,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
     return data;
   }, [activos]);
 
-  const formatPromedio = (val) => val !== null ? val.toFixed(1) : '-';
+  const formatPromedio = (val) => truncateTo1Dec(val, '-');
 
   const renderTable = (grado, title) => {
     return (

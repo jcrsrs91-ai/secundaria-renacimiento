@@ -3,6 +3,7 @@ import { Download, Upload, Save, CheckCircle, AlertTriangle } from 'lucide-react
 import Papa from 'papaparse';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { truncateTo1Dec } from '../utils/format';
 
 export default function Calificaciones({ activos, materiasPorGrado, onPrintBoleta, onPrintConcentradoFinal, onPrintConcentradoParcial }) {
   const [grado, setGrado] = useState('1er Grado');
@@ -61,7 +62,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         count++;
       }
     });
-    return count === 0 ? '-' : (sum / count).toFixed(1);
+    return count === 0 ? '-' : truncateTo1Dec(sum / count);
   };
 
   const handleSaveAll = async () => {
@@ -121,7 +122,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     if (!isNaN(t1)) { sum += t1; c++; }
     if (!isNaN(t2)) { sum += t2; c++; }
     if (!isNaN(t3)) { sum += t3; c++; }
-    return c > 0 ? (sum / c).toFixed(1) : '';
+    return c > 0 ? truncateTo1Dec(sum / c, '') : '';
   };
 
   const handleExportarExcelFinales = () => {
@@ -139,7 +140,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
           if (parseFloat(pf) < 6.0) reprobadas++;
         }
       });
-      row.push(count > 0 ? (sum/count).toFixed(1) : '');
+      row.push(count > 0 ? truncateTo1Dec(sum / count, '') : '');
       row.push(reprobadas);
       return row;
     });
@@ -173,7 +174,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
           count++;
         }
       });
-      row.push(count > 0 ? (sum/count).toFixed(1) : '');
+      row.push(count > 0 ? truncateTo1Dec(sum / count, '') : '');
       return row;
     });
     const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: ";" });

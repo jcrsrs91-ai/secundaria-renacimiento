@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Users, TrendingDown, BookOpen } from 'lucide-react';
+import { Users, TrendingDown, BookOpen, Printer, X } from 'lucide-react';
+import { truncateTo1Dec } from '../utils/format';
 
 export default function MatriculaPrint({ alumnos = [], onClose }) {
   
@@ -85,7 +86,7 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
   const calcDesercion = (bajas, inicial, altas) => {
     const totalBase = inicial + altas;
     if (totalBase === 0) return '0.0%';
-    return ((bajas / totalBase) * 100).toFixed(1) + '%';
+    return truncateTo1Dec((bajas / totalBase) * 100) + '%';
   };
 
   const renderRow = (label, key, isTotal = false, isGlobal = false) => {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { truncateTo1Dec } from '../utils/format';
 
 const extraerFechaDeCurp = (curp) => {
   if (!curp || curp.length < 10) return null;
@@ -30,12 +31,12 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
     if (!isNaN(t2)) { sum += t2; count++; }
     if (!isNaN(t3)) { sum += t3; count++; }
     
-    const finalMat = count > 0 ? (sum / count).toFixed(1) : '-';
+    const finalMat = count > 0 ? truncateTo1Dec(sum / count) : '-';
     return {
       name: mat.name,
-      t1: isNaN(t1) ? '-' : t1.toFixed(1),
-      t2: isNaN(t2) ? '-' : t2.toFixed(1),
-      t3: isNaN(t3) ? '-' : t3.toFixed(1),
+      t1: truncateTo1Dec(t1),
+      t2: truncateTo1Dec(t2),
+      t3: truncateTo1Dec(t3),
       final: finalMat,
       numFinal: count > 0 ? (sum / count) : null
     };
@@ -51,7 +52,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
     }
   });
   if (countGral > 0) {
-    promedioGeneral = (sumGral / countGral).toFixed(1);
+    promedioGeneral = truncateTo1Dec(sumGral / countGral, '');
   }
 
   return (

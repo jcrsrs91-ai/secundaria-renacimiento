@@ -1,4 +1,5 @@
 import React from 'react';
+import { truncateTo1Dec } from '../utils/format';
 
 export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = '', grupo = '' }) {
   if (!alumnos || alumnos.length === 0) return null;
@@ -32,7 +33,7 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
       const final = getPromedioFinal(student, mat.id);
       if (final !== null) { sum += final; count++; }
     });
-    return count > 0 ? (sum / count).toFixed(1) : '-';
+    return count > 0 ? truncateTo1Dec(sum / count) : '-';
   };
 
   return (
@@ -97,7 +98,7 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
                     const isFailing = val !== null && val < 6.0;
                     return (
                       <td key={mat.id} className={`border border-black p-0.5 text-center font-bold ${isFailing ? 'text-red-600' : ''}`}>
-                        {val !== null ? val.toFixed(1) : '-'}
+                        {val !== null ? truncateTo1Dec(val) : '-'}
                       </td>
                     );
                   })}
@@ -110,7 +111,7 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
             <tr className="bg-slate-100">
               <td colSpan="2" className="border border-black p-0.5 text-right font-black uppercase text-[7px]">Promedio Grupal por Materia:</td>
               {materias.map(mat => {
-                const promGral = countPorMateria[mat.id] > 0 ? (sumaPorMateria[mat.id] / countPorMateria[mat.id]).toFixed(1) : '-';
+                const promGral = countPorMateria[mat.id] > 0 ? truncateTo1Dec(sumaPorMateria[mat.id] / countPorMateria[mat.id]) : '-';
                 return <td key={mat.id} className="border border-black p-0.5 text-center font-black text-blue-800">{promGral}</td>;
               })}
               <td className="border border-black p-0.5 bg-slate-200"></td>
