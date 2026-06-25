@@ -15,8 +15,8 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
         const val = parseFloat(c[t]?.[mat.id]);
         if (!isNaN(val)) { sum += val; count++; }
       });
-      const avg = count > 0 ? sum / count : 0;
-      if (avg > 0 && avg < 6.0) {
+      const avg = count > 0 ? parseFloat(truncateTo1Dec(sum / count)) : 0;
+      if (count === 0 || avg < 6.0) {
         reprobadas++;
       }
     });
