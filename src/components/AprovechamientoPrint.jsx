@@ -130,29 +130,29 @@ export default function AprovechamientoPrint({ activos, onClose }) {
 
   const renderTable = (grado, title) => {
     return (
-      <div className="mb-10 break-inside-avoid">
-        <h3 className="text-xl font-bold text-slate-800 mb-4 border-b-2 border-indigo-200 pb-2 flex items-center print:text-lg print:mb-2 print:pb-1">
-          <span className="bg-indigo-600 text-white w-8 h-8 rounded-lg flex items-center justify-center mr-3 text-sm shadow-sm print:bg-slate-200 print:text-black print:border print:border-black print:shadow-none">{grado[0]}º</span>
+      <div className="mb-10 print:mb-2 break-inside-avoid">
+        <h3 className="text-xl font-bold text-slate-800 mb-4 border-b-2 border-indigo-200 pb-2 flex items-center print:text-sm print:mb-1 print:pb-0.5">
+          <span className="bg-indigo-600 text-white w-8 h-8 rounded-lg flex items-center justify-center mr-3 text-sm shadow-sm print:w-5 print:h-5 print:text-[9px] print:mr-1 print:bg-slate-200 print:text-black print:border print:border-black print:shadow-none">{grado[0]}º</span>
           PROMEDIOS DE {title}
         </h3>
         
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-slate-400 print:rounded-none">
-          <table className="min-w-full divide-y divide-slate-200 text-sm print:text-xs">
+          <table className="min-w-full divide-y divide-slate-200 text-sm print:text-[9px]">
             <thead>
               <tr className="bg-slate-50 print:bg-slate-100">
-                <th rowSpan="2" className="px-4 py-3 text-left font-bold text-slate-700 border-r border-slate-200 w-32 align-middle print:border-slate-400">TURNO</th>
+                <th rowSpan="2" className="px-4 py-3 print:px-1 print:py-1 text-left font-bold text-slate-700 border-r border-slate-200 w-32 print:w-16 align-middle print:border-slate-400">TURNO</th>
                 {campos[grado].map((c, i) => (
-                  <th key={i} colSpan={c.span} className={`px-2 py-2 text-center text-xs font-bold border-r border-slate-200 ${c.bg} print:border-slate-400 print:bg-white print:text-black`}>
+                  <th key={i} colSpan={c.span} className={`px-2 py-2 print:px-1 print:py-0.5 text-center text-xs print:text-[8px] font-bold border-r border-slate-200 ${c.bg} print:border-slate-400 print:bg-white print:text-black`}>
                     {c.name}
                   </th>
                 ))}
-                <th rowSpan="2" className="px-3 py-3 text-center font-black text-indigo-900 bg-indigo-50 border-l border-indigo-200 align-middle w-28 print:border-slate-400 print:bg-slate-200 print:text-black">
+                <th rowSpan="2" className="px-3 py-3 print:px-1 print:py-1 text-center font-black text-indigo-900 bg-indigo-50 border-l border-indigo-200 align-middle w-28 print:w-16 print:text-[9px] print:border-slate-400 print:bg-slate-200 print:text-black">
                   PROM. GRAL
                 </th>
               </tr>
               <tr className="bg-white">
                 {campos[grado].flatMap(c => c.keys).map((k, i) => (
-                  <th key={k} className={`px-2 py-2 text-center text-xs font-semibold text-slate-600 border-r border-slate-200 border-t border-slate-200 bg-slate-50/50 print:border-slate-400 print:bg-white`}>
+                  <th key={k} className={`px-2 py-2 print:px-1 print:py-0.5 text-center text-xs print:text-[8px] font-semibold text-slate-600 border-r border-slate-200 border-t border-slate-200 bg-slate-50/50 print:border-slate-400 print:bg-white`}>
                     {getMateriaLabel(k)}
                   </th>
                 ))}
@@ -160,25 +160,25 @@ export default function AprovechamientoPrint({ activos, onClose }) {
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white print:divide-slate-400">
               <tr className="hover:bg-slate-50 transition-colors">
-                <td className="px-4 py-3 font-semibold text-slate-700 border-r border-slate-200 print:border-slate-400">Matutino</td>
+                <td className="px-4 py-3 print:px-1 print:py-0.5 font-semibold text-slate-700 border-r border-slate-200 print:border-slate-400">Matutino</td>
                 {campos[grado].flatMap(c => c.keys).map(k => (
-                  <td key={k} className="px-2 py-3 text-center text-slate-600 font-medium border-r border-slate-200 print:border-slate-400">{formatPromedio(reportData.Matutino[k])}</td>
+                  <td key={k} className="px-2 py-3 print:px-1 print:py-0.5 text-center text-slate-600 font-medium border-r border-slate-200 print:border-slate-400">{formatPromedio(reportData.Matutino[k])}</td>
                 ))}
-                <td className="px-3 py-3 text-center font-bold text-indigo-700 bg-indigo-50/50 border-l border-indigo-100 print:border-slate-400 print:bg-slate-100 print:text-black">{formatPromedio(reportData.Matutino[`pg_${grado}`])}</td>
+                <td className="px-3 py-3 print:px-1 print:py-0.5 text-center font-bold text-indigo-700 bg-indigo-50/50 border-l border-indigo-100 print:border-slate-400 print:bg-slate-100 print:text-black">{formatPromedio(reportData.Matutino[`pg_${grado}`])}</td>
               </tr>
               <tr className="hover:bg-slate-50 transition-colors">
-                <td className="px-4 py-3 font-semibold text-slate-700 border-r border-slate-200 print:border-slate-400">Vespertino</td>
+                <td className="px-4 py-3 print:px-1 print:py-0.5 font-semibold text-slate-700 border-r border-slate-200 print:border-slate-400">Vespertino</td>
                 {campos[grado].flatMap(c => c.keys).map(k => (
-                  <td key={k} className="px-2 py-3 text-center text-slate-600 font-medium border-r border-slate-200 print:border-slate-400">{formatPromedio(reportData.Vespertino[k])}</td>
+                  <td key={k} className="px-2 py-3 print:px-1 print:py-0.5 text-center text-slate-600 font-medium border-r border-slate-200 print:border-slate-400">{formatPromedio(reportData.Vespertino[k])}</td>
                 ))}
-                <td className="px-3 py-3 text-center font-bold text-indigo-700 bg-indigo-50/50 border-l border-indigo-100 print:border-slate-400 print:bg-slate-100 print:text-black">{formatPromedio(reportData.Vespertino[`pg_${grado}`])}</td>
+                <td className="px-3 py-3 print:px-1 print:py-0.5 text-center font-bold text-indigo-700 bg-indigo-50/50 border-l border-indigo-100 print:border-slate-400 print:bg-slate-100 print:text-black">{formatPromedio(reportData.Vespertino[`pg_${grado}`])}</td>
               </tr>
               <tr className="bg-slate-100 print:bg-slate-200">
-                <td className="px-4 py-3 font-black text-slate-800 border-r border-slate-300 print:border-slate-400">TOTAL GRADO</td>
+                <td className="px-4 py-3 print:px-1 print:py-0.5 font-black text-slate-800 border-r border-slate-300 print:border-slate-400">TOTAL GRADO</td>
                 {campos[grado].flatMap(c => c.keys).map(k => (
-                  <td key={k} className="px-2 py-3 text-center text-slate-800 font-bold border-r border-slate-300 print:border-slate-400">{formatPromedio(reportData.Escuela[k])}</td>
+                  <td key={k} className="px-2 py-3 print:px-1 print:py-0.5 text-center text-slate-800 font-bold border-r border-slate-300 print:border-slate-400">{formatPromedio(reportData.Escuela[k])}</td>
                 ))}
-                <td className="px-3 py-3 text-center font-black text-indigo-900 bg-indigo-200 border-l border-indigo-300 border-t-2 border-t-indigo-300 print:border-slate-400 print:border-t-2 print:border-t-black print:text-black">{formatPromedio(reportData.Escuela[`pg_${grado}`])}</td>
+                <td className="px-3 py-3 print:px-1 print:py-0.5 text-center font-black text-indigo-900 bg-indigo-200 border-l border-indigo-300 border-t-2 border-t-indigo-300 print:border-slate-400 print:border-t-2 print:border-t-black print:text-black">{formatPromedio(reportData.Escuela[`pg_${grado}`])}</td>
               </tr>
             </tbody>
           </table>
@@ -208,7 +208,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
         
         <style>{`
           @media print {
-            @page { size: landscape; margin: 1cm; }
+            @page { size: landscape; margin: 0.5cm; }
             html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
             * { overflow: visible !important; }
             aside, header { display: none !important; }
@@ -218,29 +218,29 @@ export default function AprovechamientoPrint({ activos, onClose }) {
         `}</style>
 
         {/* Encabezado Elegante */}
-        <div className="flex items-center justify-between mb-8 border-b-2 border-slate-200 pb-6 print:border-black print:pb-4 print:mb-6">
-          <img src="/logo-sep.png" alt="SEP" className="h-16 w-auto object-contain print:h-12" />
+        <div className="flex items-center justify-between mb-8 border-b-2 border-slate-200 pb-6 print:border-black print:pb-1 print:mb-2">
+          <img src="/logo-sep.png" alt="SEP" className="h-16 w-auto object-contain print:h-8" />
           <div className="text-center flex-1 px-4">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-xl">REPORTE GLOBAL DE APROVECHAMIENTO</h1>
-            <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-sm">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
-            <p className="text-sm font-medium text-slate-500 mt-1 print:text-xs">Ciclo Escolar 2025-2026 • Evaluación hasta el 3er Periodo</p>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-sm print:leading-tight">REPORTE GLOBAL DE APROVECHAMIENTO</h1>
+            <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-[10px] print:mt-0 print:leading-tight">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
+            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[9px] print:mt-0 print:leading-tight">Ciclo Escolar 2025-2026 • Evaluación hasta el 3er Periodo</p>
           </div>
-          <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-16" />
+          <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-10" />
         </div>
 
         {/* Tarjetas de Promedios Generales Superiores */}
-        <div className="grid grid-cols-3 gap-6 mb-10 print:mb-8 break-inside-avoid">
-          <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl p-5 text-white shadow-md print:border-2 print:border-black print:bg-white print:text-black print:shadow-none print:from-white print:to-white">
-            <p className="text-sm font-semibold opacity-90 tracking-wide mb-1 print:opacity-100">PROMEDIO ESCUELA</p>
-            <p className="text-5xl font-black">{formatPromedio(reportData.Escuela.promedioGralEscuela)}</p>
+        <div className="grid grid-cols-3 gap-6 mb-10 print:gap-2 print:mb-3 break-inside-avoid">
+          <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl p-5 text-white shadow-md print:border-2 print:border-black print:bg-white print:text-black print:shadow-none print:from-white print:to-white print:p-2 print:flex print:items-center print:justify-between">
+            <p className="text-sm font-semibold opacity-90 tracking-wide mb-1 print:mb-0 print:opacity-100 print:text-[10px]">PROMEDIO ESCUELA</p>
+            <p className="text-5xl font-black print:text-xl">{formatPromedio(reportData.Escuela.promedioGralEscuela)}</p>
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-center print:border-2 print:border-black print:shadow-none">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 print:text-black">Turno Matutino</p>
-            <p className="text-3xl font-black text-slate-800 print:text-black">{formatPromedio(reportData.Matutino.promedioGralTurno)}</p>
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-center print:border-2 print:border-black print:shadow-none print:p-2 print:flex-row print:items-center print:justify-between">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 print:mb-0 print:text-black print:text-[10px]">Turno Matutino</p>
+            <p className="text-3xl font-black text-slate-800 print:text-xl print:text-black">{formatPromedio(reportData.Matutino.promedioGralTurno)}</p>
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-center print:border-2 print:border-black print:shadow-none">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 print:text-black">Turno Vespertino</p>
-            <p className="text-3xl font-black text-slate-800 print:text-black">{formatPromedio(reportData.Vespertino.promedioGralTurno)}</p>
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-center print:border-2 print:border-black print:shadow-none print:p-2 print:flex-row print:items-center print:justify-between">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 print:mb-0 print:text-black print:text-[10px]">Turno Vespertino</p>
+            <p className="text-3xl font-black text-slate-800 print:text-xl print:text-black">{formatPromedio(reportData.Vespertino.promedioGralTurno)}</p>
           </div>
         </div>
 
@@ -250,10 +250,10 @@ export default function AprovechamientoPrint({ activos, onClose }) {
         {renderTable('3er Grado', 'TERCER GRADO')}
 
         {/* Pie de Firma */}
-        <div className="mt-16 pt-8 flex justify-center break-inside-avoid print:mt-10">
-          <div className="text-center w-80">
-            <div className="border-t-2 border-slate-800 pt-2 font-bold text-slate-800 text-sm print:border-black">PROFR. JUAN CARLOS TABOADA BARAJAS</div>
-            <div className="mt-1 text-slate-500 text-xs font-semibold tracking-wide print:text-black">DIRECTOR DE LA ESCUELA</div>
+        <div className="mt-16 pt-8 flex justify-center break-inside-avoid print:mt-4 print:pt-2">
+          <div className="text-center w-80 print:w-64">
+            <div className="border-t-2 border-slate-800 pt-2 font-bold text-slate-800 text-sm print:border-black print:text-[10px] print:pt-1">PROFR. JUAN CARLOS TABOADA BARAJAS</div>
+            <div className="mt-1 text-slate-500 text-xs font-semibold tracking-wide print:text-black print:text-[8px] print:mt-0">DIRECTOR DE LA ESCUELA</div>
           </div>
         </div>
 
