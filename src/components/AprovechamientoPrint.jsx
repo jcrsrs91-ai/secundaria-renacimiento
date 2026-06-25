@@ -156,9 +156,6 @@ export default function AprovechamientoPrint({ activos, onClose }) {
           th, td { border: 1px solid black; padding: 2px; text-align: center; }
           .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); }
         }
-        @media screen {
-          .print-aprovechamiento-only { display: none !important; }
-        }
       `}</style>
 
       <div className="w-full text-[9px] font-bold">

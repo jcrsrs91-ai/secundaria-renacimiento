@@ -160,6 +160,7 @@ export default function ControlEscolar() {
   };
 
   const handlePrintSingle = (student) => {
+    toast.success("Generando credencial...", { icon: '🪪' });
     setPrintMode('credencial');
     setPrintData([student]);
     setTimeout(() => window.print(), 500);
@@ -167,6 +168,7 @@ export default function ControlEscolar() {
 
   const handlePrintBatch = () => {
     if (filteredDirectorio.length === 0) return alert("No hay alumnos en el filtro actual.");
+    toast.success("Generando credenciales para el grupo...", { icon: '🪪' });
     setPrintMode('credencial');
     setPrintData(filteredDirectorio);
     setTimeout(() => window.print(), 500);
@@ -177,6 +179,7 @@ export default function ControlEscolar() {
   };
 
   const executePrintConstancia = (type) => {
+    toast.success("Generando constancia...", { icon: '📝' });
     setConstanciaType(type);
     setPrintMode('constancia');
     setPrintData(selectedStudent);
@@ -186,6 +189,7 @@ export default function ControlEscolar() {
   };
 
   const handlePrintBoleta = (studentOrGroup) => {
+    toast.success("Preparando boletas para impresión...", { icon: '🖨️' });
     if(Array.isArray(studentOrGroup)) {
       setPrintData(studentOrGroup);
     } else {
@@ -198,6 +202,7 @@ export default function ControlEscolar() {
   };
 
   const handlePrintConcentradoFinal = (alumnos, grado, grupo) => {
+    toast.success("Generando Concentrado Final...", { icon: '📄' });
     setPrintData({ alumnos, grado, grupo });
     setPrintMode('concentrado-final');
     setTimeout(() => {
@@ -206,6 +211,7 @@ export default function ControlEscolar() {
   };
 
   const handlePrintConcentradoParcial = (alumnos, grado, grupo) => {
+    toast.success("Generando Concentrado Parcial...", { icon: '📄' });
     setPrintData({ alumnos, grado, grupo });
     setPrintMode('concentrado-parcial');
     setTimeout(() => {
@@ -214,6 +220,7 @@ export default function ControlEscolar() {
   };
 
   const handlePrintAprovechamiento = () => {
+    toast.success("Abriendo Reporte de Aprovechamiento...", { icon: '📊' });
     setPrintMode('aprovechamiento');
     // Eliminamos el window.print() automático para que pueda verlo en pantalla primero
   };
