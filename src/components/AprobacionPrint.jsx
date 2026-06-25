@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Printer, X } from 'lucide-react';
 
-export default function AprobacionPrint({ activos, materiasPorGrado }) {
+export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) {
   // Calculadora de materias reprobadas por alumno
   const getMateriasReprobadas = (student, materias) => {
     let reprobadas = 0;
@@ -129,23 +129,40 @@ export default function AprobacionPrint({ activos, materiasPorGrado }) {
   };
 
   return (
-    <div className="print-aprobacion-only">
-      <style>{`
-        @media print {
-          @page { size: landscape; margin: 1cm; }
-          html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; }
-          * { overflow: visible !important; }
-          aside, header { display: none !important; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; }
-          .print-aprobacion-only { display: block !important; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
-          .no-print { display: none !important; }
-          table { border-collapse: collapse; width: 100%; border: 2px solid black; }
-          th, td { border: 1px solid black; padding: 2px; text-align: center; }
-        }
-        @media screen {
-          .print-aprobacion-only { display: none !important; }
-        }
-      `}</style>
+    <div className="w-full bg-slate-100 min-h-screen py-8 print:py-0 print:bg-white print-aprobacion-only">
+      <div className="no-print max-w-6xl mx-auto mb-6 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Vista Previa: Reporte de Aprobación</h2>
+          <p className="text-sm text-slate-500">Revisa que la información sea correcta antes de imprimir.</p>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
+            <Printer className="w-5 h-5 mr-2" />
+            Imprimir Documento
+          </button>
+          {onClose && (
+            <button onClick={onClose} className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
+              <X className="w-5 h-5 mr-2" />
+              Cerrar Vista Previa
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white max-w-[1400px] mx-auto p-10 rounded-2xl shadow-xl print:shadow-none print:p-0 print:rounded-none">
+        <style>{`
+          @media print {
+            @page { size: landscape; margin: 1cm; }
+            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; }
+            * { overflow: visible !important; }
+            aside, header { display: none !important; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; }
+            .print-aprobacion-only { display: block !important; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
+            .no-print { display: none !important; }
+            table { border-collapse: collapse; width: 100%; border: 2px solid black; }
+            th, td { border: 1px solid black; padding: 2px; text-align: center; }
+          }
+        `}</style>
 
       {/* Alerta de estudiantes sin género en pantalla */}
       {sinGenero.length > 0 && (
@@ -280,9 +297,9 @@ export default function AprobacionPrint({ activos, materiasPorGrado }) {
         </div>
 
         <div className="mt-8 flex justify-center text-[10px]">
-          <div className="text-center">
-            <div className="border-t border-black w-64 pt-1 font-bold">NOMBRE DEL DIRECTOR</div>
-            <div className="mt-4">FIRMA Y SELLO</div>
+          <div className="text-center w-80 print:w-64">
+            <div className="border-t-2 border-slate-800 pt-2 font-bold text-slate-800 text-sm print:border-black print:text-[10px] print:pt-1">PROFR. JUAN CARLOS TABOADA BARAJAS</div>
+            <div className="mt-1 text-slate-500 text-xs font-semibold tracking-wide print:text-black print:text-[8px] print:mt-0">DIRECTOR DE LA ESCUELA</div>
           </div>
         </div>
       </div>

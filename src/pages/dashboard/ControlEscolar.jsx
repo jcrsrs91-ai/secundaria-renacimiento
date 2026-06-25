@@ -231,6 +231,13 @@ export default function ControlEscolar() {
     setPrintMode('matricula');
   };
 
+  const handlePrintAprobacion = () => {
+    setPrintMode('aprobacion');
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
   const toggleSelectStudent = (id) => {
     if (selectedStudents.includes(id)) {
       setSelectedStudents(selectedStudents.filter(sid => sid !== id));
@@ -1045,7 +1052,7 @@ export default function ControlEscolar() {
       {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'aprovechamiento' && <AprovechamientoPrint activos={activos} onClose={() => setPrintMode(null)} />}
       {printMode === 'matricula' && <MatriculaPrint alumnos={directorio} onClose={() => setPrintMode(null)} />}
-      {printMode === 'aprobacion' && <AprobacionPrint activos={activos} materiasPorGrado={materiasPorGrado} />}
+      {printMode === 'aprobacion' && <AprobacionPrint activos={activos} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
     </div>
   );
 }
