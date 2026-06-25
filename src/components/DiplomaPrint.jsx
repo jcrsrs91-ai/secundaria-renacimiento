@@ -88,8 +88,8 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                   <img src="/logo-sep.png" alt="SEP" className="w-48 object-contain" />
                   <div className="flex-1 px-8 text-center mt-2">
                     <h1 className="text-2xl font-black text-slate-800 uppercase tracking-widest mb-1">Secretaría de Educación Guerrero</h1>
-                    <h2 className="text-lg font-bold text-slate-600 uppercase tracking-wider mb-0.5">Escuela Secundaria Técnica "Renacimiento"</h2>
-                    <h3 className="text-sm font-semibold text-slate-500 tracking-widest">C.C.T. 12EES0000X</h3>
+                    <h2 className="text-lg font-bold text-slate-600 uppercase tracking-wider mb-0.5">Escuela Secundaria Técnica No. 68 "Renacimiento"</h2>
+                    <h3 className="text-sm font-semibold text-slate-500 tracking-widest">C.C.T. 12DST0077B</h3>
                   </div>
                   <img src="/logo-escuela.png" alt="Escudo" className="w-24 h-24 object-contain" />
                 </div>
