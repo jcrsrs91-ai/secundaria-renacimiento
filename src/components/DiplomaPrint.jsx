@@ -25,16 +25,30 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
       <style>
         {`
           @media print {
-            @page { size: landscape; margin: 0; }
+            @page { size: letter landscape; margin: 0; }
             html, body, #root { height: 100% !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             aside, header, .no-print { display: none !important; }
             .page-break-after { page-break-after: always; }
-            .diploma-container { width: 297mm; height: 210mm; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; page-break-after: always; margin: 0 auto; box-sizing: border-box; }
+            .diploma-container { 
+              width: 11in; 
+              height: 8.5in; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              position: relative; 
+              overflow: hidden; 
+              page-break-after: always; 
+              margin: 0 auto; 
+              box-sizing: border-box; 
+            }
+            .diploma-container:last-child {
+              page-break-after: auto;
+            }
           }
           .diploma-container {
-            width: 297mm;
-            height: 210mm;
+            width: 11in;
+            height: 8.5in;
             background: white;
             position: relative;
             margin: 2rem auto;
