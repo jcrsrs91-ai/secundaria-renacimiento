@@ -120,7 +120,6 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
     };
 
     return (
-    return (
       <div className="mb-8 print:mb-2">
         <h3 className="text-lg font-bold text-indigo-900 mb-3 uppercase tracking-wider print:text-xs print:mb-0 border-b-2 border-indigo-100 pb-1 print:border-none print:pb-0">{title}</h3>
         <div className="overflow-x-auto">
