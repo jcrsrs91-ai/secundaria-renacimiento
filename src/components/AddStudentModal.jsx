@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Save, User, GraduationCap, HeartPulse, Users } from 'lucide-react';
-import { db } from '../../firebase';
+import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
