@@ -65,12 +65,6 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
     const materiasTercero = materiasPorGrado['3er Grado'] || [];
 
     allTercero.forEach(s => {
-      // Ignorar los que ingresaron por Alta (en 2do o 3ro) según regla E4
-      if (s.tipoIngreso && s.tipoIngreso.trim().toLowerCase() === 'alta') {
-        alumnosOmitidos.push({ ...s, motivo: 'Regla SEP E4: Ingresó por Alta' });
-        return;
-      }
-
       // Limpiar turno
       let turnoBruto = (s.turno || 'Matutino').toString().trim().toLowerCase();
       let turno = turnoBruto.startsWith('v') ? 'Vespertino' : 'Matutino';
