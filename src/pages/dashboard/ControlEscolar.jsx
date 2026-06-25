@@ -533,6 +533,9 @@ export default function ControlEscolar() {
           <button onClick={() => setActiveTab('asistencia')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'asistencia' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             Listas de Asistencia
           </button>
+          <button onClick={() => setActiveTab('aprovechamiento')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'aprovechamiento' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+            Aprovechamiento Escolar
+          </button>
         </nav>
       </div>
 
@@ -630,10 +633,7 @@ export default function ControlEscolar() {
                 <option value="legal">Oficio (Oficio / Legal)</option>
               </select>
             </div>
-            <div className="flex-1 flex justify-end w-full md:w-auto gap-2">
-              <button onClick={handlePrintAprovechamiento} className="flex items-center justify-center w-full md:w-auto px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">
-                <Star className="w-5 h-5 mr-2" /> Reporte Aprovechamiento
-              </button>
+            <div className="flex-1 flex justify-end w-full md:w-auto">
               <button 
                 onClick={() => {
                   if (asisAlumnos.length === 0) {
@@ -962,6 +962,25 @@ export default function ControlEscolar() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Sección Aprovechamiento Escolar */}
+      {!loading && activeTab === 'aprovechamiento' && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
+            <Star className="w-10 h-10" />
+          </div>
+          <h3 className="text-2xl font-bold text-slate-800 mb-2">Reporte Global de Aprovechamiento Escolar</h3>
+          <p className="text-slate-500 mb-8 max-w-lg">
+            Genera un informe completo con los promedios generales de todos los alumnos de la escuela, desglosado por grados, turnos y campos formativos.
+          </p>
+          <button 
+            onClick={handlePrintAprovechamiento} 
+            className="flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl text-lg font-bold hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          >
+            <Star className="w-6 h-6 mr-3" /> Generar y Previsualizar Reporte
+          </button>
         </div>
       )}
 
