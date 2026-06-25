@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-export default function AprovechamientoPrint({ activos }) {
+export default function AprovechamientoPrint({ activos, onClose }) {
   // Configuración de los campos formativos por grado
   const campos = {
     '1er Grado': [
@@ -128,7 +128,22 @@ export default function AprovechamientoPrint({ activos }) {
   const formatPromedio = (val) => val !== null ? val.toFixed(1) : '#¡DIV/0!';
 
   return (
-    <div className="print-aprovechamiento-only">
+    <div className="print-aprovechamiento-only relative bg-slate-100 min-h-screen py-8 print:py-0 print:bg-white">
+      {/* Botones Flotantes para la pantalla */}
+      <div className="flex justify-center mb-8 gap-4 print:hidden no-print">
+        <button onClick={() => window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
+          <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Imprimir Reporte
+        </button>
+        {onClose && (
+          <button onClick={onClose} className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            Cerrar Vista Previa
+          </button>
+        )}
+      </div>
+
+      <div className="bg-white max-w-full mx-auto p-4 shadow-xl print:shadow-none print:p-0">
       <style>{`
         @media print {
           @page { size: landscape; margin: 0.5cm; }
@@ -286,6 +301,7 @@ export default function AprovechamientoPrint({ activos }) {
             <div className="border-t border-black w-64 pt-1 font-bold">NOMBRE DEL DIRECTOR</div>
             <div className="mt-4">FIRMA Y SELLO</div>
           </div>
+        </div>
         </div>
       </div>
     </div>

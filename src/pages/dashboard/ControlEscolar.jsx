@@ -215,9 +215,7 @@ export default function ControlEscolar() {
 
   const handlePrintAprovechamiento = () => {
     setPrintMode('aprovechamiento');
-    setTimeout(() => {
-      window.print();
-    }, 500);
+    // Eliminamos el window.print() automático para que pueda verlo en pantalla primero
   };
 
   const toggleSelectStudent = (id) => {
@@ -966,7 +964,7 @@ export default function ControlEscolar() {
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
       {printMode === 'concentrado-final' && <CuadroFinalPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
-      {printMode === 'aprovechamiento' && <AprovechamientoPrint activos={activos} />}
+      {printMode === 'aprovechamiento' && <AprovechamientoPrint activos={activos} onClose={() => setPrintMode(null)} />}
     </div>
   );
 }
