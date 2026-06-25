@@ -89,8 +89,8 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
           return (
             <div key={index} className="diploma-container gold-border p-8 bg-[#fffdf5]">
               {/* Background watermark */}
-              <div className="absolute inset-0 opacity-[0.03] flex items-center justify-center pointer-events-none">
-                <img src="/logo-escuela.png" alt="Watermark" className="w-[500px] h-[500px] object-contain grayscale" />
+              <div className="absolute inset-0 opacity-5 flex items-center justify-center pointer-events-none">
+                <img src="/logo-escuela.png" alt="Watermark" className="w-[400px] h-[400px] object-contain grayscale" />
               </div>
 
               {/* Decorative Corners */}
@@ -102,46 +102,46 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
               <div className="relative z-10 w-full h-full flex flex-col items-center text-center justify-between py-4">
                 
                 {/* Header with 2 Logos */}
-                <div className="w-full flex items-center justify-between px-16 mt-4">
-                  <img src="/logo-sep.png" alt="SEP" className="w-48 object-contain" />
-                  <div className="flex-1 px-8 text-center mt-2">
-                    <h1 className="text-2xl font-black text-slate-800 uppercase tracking-widest mb-1">Secretaría de Educación Guerrero</h1>
-                    <h2 className="text-lg font-bold text-slate-600 uppercase tracking-wider mb-0.5">Escuela Secundaria Técnica No. 68 "Renacimiento"</h2>
-                    <h3 className="text-sm font-semibold text-slate-500 tracking-widest">C.C.T. 12DST0077B</h3>
+                <div className="w-full flex items-center justify-between px-12 mt-2">
+                  <img src="/logo-sep.png" alt="SEP" className="w-32 object-contain" />
+                  <div className="flex-1 px-6 text-center mt-1">
+                    <h1 className="text-xl font-black text-slate-800 uppercase tracking-widest mb-0.5">Secretaría de Educación Guerrero</h1>
+                    <h2 className="text-base font-bold text-slate-600 uppercase tracking-wider mb-0.5">Escuela Secundaria Técnica No. 68 "Renacimiento"</h2>
+                    <h3 className="text-xs font-semibold text-slate-500 tracking-widest">C.C.T. 12DST0077B</h3>
                   </div>
-                  <img src="/logo-escuela.png" alt="Escudo" className="w-24 h-24 object-contain" />
+                  <img src="/logo-escuela.png" alt="Escudo" className="w-20 h-20 object-contain" />
                 </div>
 
                 {/* Title */}
-                <div className="mt-4 mb-2">
-                  <h1 className="text-4xl md:text-5xl font-serif italic text-amber-700 tracking-wide mb-2">Diploma de Aprovechamiento</h1>
-                  <p className="text-base md:text-lg font-medium text-slate-600 tracking-widest uppercase">La dirección de la escuela otorga el presente reconocimiento a:</p>
+                <div className="mt-2 mb-1">
+                  <h1 className="text-3xl font-serif italic text-amber-700 tracking-wide mb-1">Diploma de Aprovechamiento</h1>
+                  <p className="text-xs font-medium text-slate-600 tracking-widest uppercase">La dirección de la escuela otorga el presente reconocimiento a:</p>
                 </div>
 
                 {/* Student Name */}
-                <div className="my-4 w-full max-w-4xl border-b border-amber-300 pb-2 relative flex justify-center">
-                  <div className="bg-[#fffdf5]/90 backdrop-blur-sm px-8 py-2 rounded-2xl">
-                    <h2 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight" style={{ textShadow: '0 0 10px #fffdf5, 0 0 20px #fffdf5' }}>{nombreCompleto}</h2>
+                <div className="my-2 w-full max-w-4xl border-b border-amber-300 pb-1 relative flex justify-center">
+                  <div className="bg-white/90 backdrop-blur-sm px-8 py-1.5 rounded-xl shadow-sm border border-white/50">
+                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">{nombreCompleto}</h2>
                   </div>
                 </div>
 
                 {/* Reason */}
-                <div className="max-w-4xl mb-2 px-8 flex-1 flex flex-col justify-center items-center">
-                  <p className="text-lg md:text-xl text-slate-700 leading-relaxed font-medium text-justify relative z-10" style={{ textJustify: 'inter-word' }}>
+                <div className="max-w-4xl mb-1 px-8 flex-1 flex flex-col justify-center items-center">
+                  <p className="text-sm text-slate-700 leading-relaxed font-medium text-justify relative z-10" style={{ textJustify: 'inter-word' }}>
                     Por su destacada dedicación, disciplina y excelencia académica demostrados durante el presente ciclo escolar. Habiendo obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en sus estudios de educación secundaria, cursando en el <strong>{student.grado} Grupo "{student.grupo}"</strong> del Turno <strong>{turno}</strong>, y logrando un promedio sobresaliente de:
                   </p>
-                  <div className="mt-4 text-3xl md:text-4xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-2 px-8 rounded-2xl inline-block shadow-inner relative z-10">
+                  <div className="mt-2 text-2xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-1.5 px-6 rounded-xl inline-block shadow-inner relative z-10">
                     {average.toFixed(1)}
                   </div>
                 </div>
 
                 {/* Date */}
-                <p className="text-sm text-slate-500 font-semibold italic mb-6">
+                <p className="text-xs text-slate-500 font-semibold italic mb-4">
                   Acapulco de Juárez, Gro., a {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
 
                 {/* Signatures */}
-                <div className="w-full flex justify-between px-16 mb-4">
+                <div className="w-full flex justify-between px-12 mb-2">
                   <div className="w-64 flex flex-col items-center">
                     <div className="w-full border-b-2 border-slate-800 mb-2"></div>
                     <p className="text-xs font-bold text-slate-800 uppercase text-center h-8 flex items-center justify-center leading-tight">{firmas.coordinador.nombre}</p>
