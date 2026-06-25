@@ -304,5 +304,6 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
         </div>
       </div>
     </div>
+    </div>
   );
 }
