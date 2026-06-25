@@ -983,7 +983,7 @@ export default function ControlEscolar() {
       )}
 
       {/* Sección Aprovechamiento Escolar */}
-      {!loading && activeTab === 'aprovechamiento' && (
+      {!loading && activeTab === 'aprovechamiento' && !printMode && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
           <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
             <Star className="w-10 h-10" />
@@ -1002,7 +1002,7 @@ export default function ControlEscolar() {
       )}
 
       {/* Sección Estadística de Matrícula */}
-      {!loading && activeTab === 'matricula' && (
+      {!loading && activeTab === 'matricula' && !printMode && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
           <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
             <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
@@ -1022,7 +1022,7 @@ export default function ControlEscolar() {
       )}
 
       {/* Sección Aprobación (E2) */}
-      {!loading && activeTab === 'aprobacion' && (
+      {!loading && activeTab === 'aprobacion' && !printMode && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
           <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
             <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
