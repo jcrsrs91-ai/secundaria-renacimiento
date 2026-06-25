@@ -69,9 +69,9 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
           const placeText = place === 1 ? 'PRIMER LUGAR' : place === 2 ? 'SEGUNDO LUGAR' : 'TERCER LUGAR';
           
           return (
-            <div key={index} className="diploma-container gold-border p-12 bg-[#fffdf5]">
+            <div key={index} className="diploma-container gold-border p-8 bg-[#fffdf5]">
               {/* Background watermark */}
-              <div className="absolute inset-0 opacity-5 flex items-center justify-center pointer-events-none">
+              <div className="absolute inset-0 opacity-[0.03] flex items-center justify-center pointer-events-none">
                 <img src="/logo-escuela.png" alt="Watermark" className="w-[500px] h-[500px] object-contain grayscale" />
               </div>
 
@@ -95,28 +95,30 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                 </div>
 
                 {/* Title */}
-                <div className="mt-8 mb-4">
-                  <h1 className="text-5xl font-serif italic text-amber-700 tracking-wide mb-4">Diploma de Aprovechamiento</h1>
-                  <p className="text-lg font-medium text-slate-600 tracking-widest uppercase">La dirección de la escuela otorga el presente reconocimiento a:</p>
+                <div className="mt-4 mb-2">
+                  <h1 className="text-4xl md:text-5xl font-serif italic text-amber-700 tracking-wide mb-2">Diploma de Aprovechamiento</h1>
+                  <p className="text-base md:text-lg font-medium text-slate-600 tracking-widest uppercase">La dirección de la escuela otorga el presente reconocimiento a:</p>
                 </div>
 
                 {/* Student Name */}
-                <div className="my-6 w-full max-w-4xl border-b border-amber-300 pb-2">
-                  <h2 className="text-5xl font-black text-slate-800 tracking-tight">{nombreCompleto}</h2>
+                <div className="my-4 w-full max-w-4xl border-b border-amber-300 pb-2 relative flex justify-center">
+                  <div className="bg-[#fffdf5]/90 backdrop-blur-sm px-8 py-2 rounded-2xl">
+                    <h2 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight" style={{ textShadow: '0 0 10px #fffdf5, 0 0 20px #fffdf5' }}>{nombreCompleto}</h2>
+                  </div>
                 </div>
 
                 {/* Reason */}
-                <div className="max-w-4xl mb-4 px-8 flex-1 flex flex-col justify-center items-center">
-                  <p className="text-xl text-slate-700 leading-relaxed font-medium text-justify" style={{ textJustify: 'inter-word' }}>
+                <div className="max-w-4xl mb-2 px-8 flex-1 flex flex-col justify-center items-center">
+                  <p className="text-lg md:text-xl text-slate-700 leading-relaxed font-medium text-justify relative z-10" style={{ textJustify: 'inter-word' }}>
                     Por su destacada dedicación, disciplina y excelencia académica demostrados durante el presente ciclo escolar. Habiendo obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en sus estudios de educación secundaria, cursando en el <strong>{student.grado} Grupo "{student.grupo}"</strong> del Turno <strong>{turno}</strong>, y logrando un promedio sobresaliente de:
                   </p>
-                  <div className="mt-6 text-4xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-3 px-8 rounded-2xl inline-block shadow-inner">
+                  <div className="mt-4 text-3xl md:text-4xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-2 px-8 rounded-2xl inline-block shadow-inner relative z-10">
                     {average.toFixed(1)}
                   </div>
                 </div>
 
                 {/* Date */}
-                <p className="text-sm text-slate-500 font-semibold italic mb-8">
+                <p className="text-sm text-slate-500 font-semibold italic mb-6">
                   Acapulco de Juárez, Gro., a {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
 
