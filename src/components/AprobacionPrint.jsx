@@ -14,9 +14,8 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
         const val = parseFloat(c[t]?.[mat.id]);
         if (!isNaN(val)) { sum += val; count++; }
       });
-      const avg = count > 0 ? (sum / count) : 0;
-      const finalAvg = parseFloat(truncateTo1Dec(avg));
-      if (count === 0 || finalAvg < 6.0) {
+      const avg = count > 0 ? parseFloat(truncateTo1Dec(sum / count)) : 0;
+      if (count === 0 || avg < 6.0) {
         reprobadas++;
       }
     });

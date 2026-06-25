@@ -49,7 +49,7 @@ export default function DesempenoAlcanzadoPrint({ activos = [], materiasPorGrado
         });
         
         if (countTrim > 0) {
-          const avgMateria = sumTrim / countTrim;
+          const avgMateria = parseFloat(truncateTo1Dec(sumTrim / countTrim));
           sumaFinalMaterias += avgMateria;
           countMateriasValidas++;
         }
