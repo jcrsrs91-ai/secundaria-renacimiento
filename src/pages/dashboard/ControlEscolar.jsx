@@ -104,7 +104,28 @@ export default function ControlEscolar() {
   useEffect(() => {
     const qAll = query(collection(db, "students"));
     const unsubAll = onSnapshot(qAll, (snapshot) => {
-      const allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const allData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        if (data.curp && data.curp.length >= 18) {
+           const curp = data.curp.toUpperCase();
+           if (!data.genero) {
+              const genderChar = curp.charAt(10);
+              if (genderChar === 'H') data.genero = 'Hombre';
+              if (genderChar === 'M') data.genero = 'Mujer';
+           }
+           if (!data.fechaNacimiento) {
+              const yearStr = curp.substring(4, 6);
+              const mm = curp.substring(6, 8);
+              const dd = curp.substring(8, 10);
+              const yy = parseInt(yearStr, 10);
+              if (!isNaN(yy)) {
+                 const year = yy > 50 ? '19' + yearStr : '20' + yearStr;
+                 data.fechaNacimiento = `${year}-${mm}-${dd}`;
+              }
+           }
+        }
+        return { id: doc.id, ...data };
+      });
       setPendientes(allData.filter(s => s.status === 'Pendiente'));
       setActivos(allData.filter(s => s.status === 'Activo'));
       setDirectorio(allData.filter(s => s.status !== 'Pendiente'));
