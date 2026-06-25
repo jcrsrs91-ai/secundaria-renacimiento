@@ -66,8 +66,9 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
       const turno = s.turno || 'Matutino';
       if (!data[turno]) return;
 
-      const isHombre = s.genero?.toLowerCase().startsWith('h') || s.genero?.toLowerCase() === 'masculino';
-      const isMujer = s.genero?.toLowerCase().startsWith('m') || s.genero?.toLowerCase() === 'femenino';
+      const gen = s.genero?.trim().toLowerCase() || '';
+      const isHombre = gen.startsWith('h') || gen === 'masculino';
+      const isMujer = gen.startsWith('m') || gen === 'femenino';
       
       if (!isHombre && !isMujer) {
         sinGenero.push(s);

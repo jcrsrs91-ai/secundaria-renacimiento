@@ -40,8 +40,9 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
         const students = activos.filter(a => a.grado === grado && a.grupo === grupo);
         
         students.forEach(s => {
-          const isHombre = s.genero?.toLowerCase().startsWith('h') || s.genero?.toLowerCase() === 'masculino';
-          const isMujer = s.genero?.toLowerCase().startsWith('m') || s.genero?.toLowerCase() === 'femenino';
+          const gen = s.genero?.trim().toLowerCase() || '';
+          const isHombre = gen.startsWith('h') || gen === 'masculino';
+          const isMujer = gen.startsWith('m') || gen === 'femenino';
           
           if (!isHombre && !isMujer) {
             sinGenero.push(s);
