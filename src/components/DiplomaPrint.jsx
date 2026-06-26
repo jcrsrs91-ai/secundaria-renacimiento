@@ -92,7 +92,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
               <div 
                 className="absolute inset-0 pointer-events-none grayscale" 
                 style={{ 
-                  opacity: 0.06,
+                  opacity: 0.10,
                   backgroundImage: 'url(/logo-escuela.png), url(/logo-escuela.png)', 
                   backgroundSize: '300px 300px', 
                   backgroundRepeat: 'repeat',
