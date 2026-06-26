@@ -26,10 +26,10 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
         {`
           @media print {
             @page { size: letter landscape; margin: 0; }
-            html, body, #root { height: 100% !important; overflow: hidden !important; display: block !important; margin: 0; padding: 0; background: white; }
+            html, body, #root { height: auto !important; min-height: 100% !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
             body * { visibility: hidden; }
             .print-wrapper, .print-wrapper * { visibility: visible; }
-            .print-wrapper { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+            .print-wrapper { position: absolute; left: 0; top: 0; width: 100%; height: auto; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             aside, header, .no-print { display: none !important; }
             .page-break-after { page-break-after: always; }
