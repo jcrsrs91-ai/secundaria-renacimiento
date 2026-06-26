@@ -177,7 +177,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                 {/* Reason */}
                 <div className="max-w-4xl mb-1 px-8 flex-1 flex flex-col justify-center items-center">
                   <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white/50 flex flex-col items-center">
-                    <p className="text-lg text-slate-700 leading-relaxed font-medium text-justify relative z-10" style={{ textJustify: 'inter-word' }}>
+                    <p className="text-2xl text-slate-700 leading-relaxed font-medium text-center relative z-10">
                       {Math.floor((average + 0.00001) * 10) / 10 === 10 ? (
                         <>
                           Por haber logrado la <strong className="text-amber-700">Excelencia Académica</strong>, obteniendo el <strong className="text-amber-700">1er Lugar de Aprovechamiento</strong> en la Generación <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
