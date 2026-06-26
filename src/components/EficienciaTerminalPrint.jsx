@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { AlertCircle, Printer, X } from 'lucide-react';
 import { truncateTo1Dec } from '../utils/format';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function EficienciaTerminalPrint({ activos = [], bajas = [], materiasPorGrado = {}, onClose }) {
   
@@ -127,6 +128,15 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
   };
 
   const { data, sinGenero, sinCalificaciones, califMenor5, alumnosContabilizados, alumnosOmitidos } = useMemo(processData, [activos, bajas, materiasPorGrado]);
+
+  const chartData = useMemo(() => {
+    return [
+      { name: 'Con Certificado', value: data.TOTALES.egCertT },
+      { name: 'Sin Certificado (Adeudan)', value: data.TOTALES.egSinCertT }
+    ];
+  }, [data]);
+
+  const COLORS = ['#10b981', '#f59e0b'];
 
   const calcEficiencia = (egresados, inscripcion) => {
     if (inscripcion === 0) return '#DIV/0!';
@@ -283,6 +293,53 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
               <p className="text-xs font-bold uppercase tracking-wide print:text-[10px]">% Eficiencia Global</p>
             </div>
             <p className="text-2xl font-black text-blue-800 print:text-lg print:text-black">{calcEficiencia(data.TOTALES.egCertT, data.TOTALES.insT)}</p>
+          </div>
+        </div>
+
+        {/* Gráfica Interactiva (No imprimible) */}
+        <div className="mb-8 p-6 bg-white border border-slate-200 rounded-xl shadow-sm no-print print:hidden">
+          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            Proporción de Egresados con vs sin Certificado
+          </h3>
+          <div className="h-80 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <defs>
+                  <linearGradient id="colorCert" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={1}/>
+                    <stop offset="95%" stopColor="#047857" stopOpacity={0.9}/>
+                  </linearGradient>
+                  <linearGradient id="colorSinCert" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={1}/>
+                    <stop offset="95%" stopColor="#b45309" stopOpacity={0.9}/>
+                  </linearGradient>
+                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="5" floodOpacity="0.2" />
+                  </filter>
+                </defs>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={85}
+                  outerRadius={130}
+                  paddingAngle={8}
+                  dataKey="value"
+                  cornerRadius={8}
+                  animationDuration={1500}
+                  filter="url(#shadow)"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  <Cell key="cell-0" fill="url(#colorCert)" />
+                  <Cell key="cell-1" fill="url(#colorSinCert)" />
+                </Pie>
+                <RechartsTooltip 
+                  contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', fontWeight: 'bold'}}
+                />
+                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px', fontWeight: 600}} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
 

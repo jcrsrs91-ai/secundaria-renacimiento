@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Users, TrendingDown, BookOpen, Printer, X } from 'lucide-react';
 import { truncateTo1Dec } from '../utils/format';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function MatriculaPrint({ alumnos = [], onClose }) {
   
@@ -82,6 +83,26 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
 
     return data;
   }, [alumnos]);
+
+  const chartData = useMemo(() => {
+    return [
+      {
+        name: '1er Grado',
+        Hombres: matriculaData['1er Grado'].existencia.h,
+        Mujeres: matriculaData['1er Grado'].existencia.m,
+      },
+      {
+        name: '2do Grado',
+        Hombres: matriculaData['2do Grado'].existencia.h,
+        Mujeres: matriculaData['2do Grado'].existencia.m,
+      },
+      {
+        name: '3er Grado',
+        Hombres: matriculaData['3er Grado'].existencia.h,
+        Mujeres: matriculaData['3er Grado'].existencia.m,
+      }
+    ];
+  }, [matriculaData]);
 
   const calcDesercion = (bajas, inicial, altas) => {
     const totalBase = inicial + altas;
@@ -198,6 +219,44 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
               <p className="text-xs font-bold uppercase tracking-wide print:text-[10px]">Deserción Global</p>
             </div>
             <p className="text-2xl font-black text-orange-700 print:text-lg print:text-black">{calcDesercion(matriculaData.global.bajas.t, matriculaData.global.inicial.t, matriculaData.global.altas.t)}</p>
+          </div>
+        </div>
+
+        {/* Gráfica Interactiva (No imprimible) */}
+        <div className="mb-8 p-6 bg-white border border-slate-200 rounded-xl shadow-sm no-print print:hidden">
+          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            Distribución de Existencia por Género y Grado
+          </h3>
+          <div className="h-80 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                <defs>
+                  <linearGradient id="colorHombre" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={1}/>
+                    <stop offset="95%" stopColor="#1d4ed8" stopOpacity={0.9}/>
+                  </linearGradient>
+                  <linearGradient id="colorMujer" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ec4899" stopOpacity={1}/>
+                    <stop offset="95%" stopColor="#be185d" stopOpacity={0.9}/>
+                  </linearGradient>
+                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
+                  </filter>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#475569', fontWeight: 600, dy: 10}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px'}}
+                  labelStyle={{fontWeight: 'bold', color: '#1e293b', marginBottom: '8px'}}
+                />
+                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px', fontWeight: 600}} />
+                <Bar dataKey="Hombres" fill="url(#colorHombre)" radius={[6, 6, 0, 0]} barSize={40} animationDuration={1500} filter="url(#shadow)" />
+                <Bar dataKey="Mujeres" fill="url(#colorMujer)" radius={[6, 6, 0, 0]} barSize={40} animationDuration={1500} filter="url(#shadow)" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 

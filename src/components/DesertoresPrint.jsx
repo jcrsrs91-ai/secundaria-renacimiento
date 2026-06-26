@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { UserMinus, Printer, X, Calendar, MapPin, AlertCircle, Hash, GraduationCap } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
 
 export default function DesertoresPrint({ bajas = [], onClose }) {
   // Función para calcular edad
@@ -21,6 +22,27 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
     const nameB = `${b.apellidoPaterno} ${b.apellidoMaterno} ${b.nombres}`.trim().toLowerCase();
     return nameA.localeCompare(nameB);
   });
+
+  const chartData = useMemo(() => {
+    const data = {
+      '1er Grado': 0,
+      '2do Grado': 0,
+      '3er Grado': 0
+    };
+    
+    bajas.forEach(b => {
+      const g = b.grado;
+      if (data[g] !== undefined) {
+        data[g]++;
+      }
+    });
+
+    return [
+      { name: '1er Grado', Bajas: data['1er Grado'], fill: '#ef4444' },
+      { name: '2do Grado', Bajas: data['2do Grado'], fill: '#f43f5e' },
+      { name: '3er Grado', Bajas: data['3er Grado'], fill: '#e11d48' }
+    ];
+  }, [bajas]);
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/90 flex justify-center overflow-y-auto print:bg-white print:block print:inset-auto print:overflow-visible custom-scrollbar">
@@ -95,6 +117,51 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
             </div>
           ) : (
             <div className="space-y-6">
+              
+              {/* Gráfica Interactiva (No imprimible) */}
+              <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm no-print print:hidden mb-6">
+                <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                  Distribución de Bajas por Grado
+                </h3>
+                <div className="h-72 w-full max-w-2xl mx-auto mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                      <defs>
+                        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                          <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
+                        </filter>
+                        <linearGradient id="color1er" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={1}/>
+                          <stop offset="95%" stopColor="#be123c" stopOpacity={0.9}/>
+                        </linearGradient>
+                        <linearGradient id="color2do" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#e11d48" stopOpacity={1}/>
+                          <stop offset="95%" stopColor="#9f1239" stopOpacity={0.9}/>
+                        </linearGradient>
+                        <linearGradient id="color3er" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#be123c" stopOpacity={1}/>
+                          <stop offset="95%" stopColor="#881337" stopOpacity={0.9}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#475569', fontWeight: 600, dy: 10}} />
+                      <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
+                      <RechartsTooltip 
+                        cursor={{fill: '#f8fafc'}}
+                        contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', fontWeight: 'bold'}}
+                        labelStyle={{color: '#1e293b', marginBottom: '8px'}}
+                      />
+                      <Bar dataKey="Bajas" radius={[6, 6, 0, 0]} barSize={50} animationDuration={1500} filter="url(#shadow)">
+                        {chartData.map((entry, index) => {
+                          const grad = index === 0 ? "url(#color1er)" : index === 1 ? "url(#color2do)" : "url(#color3er)";
+                          return <Cell key={`cell-${index}`} fill={grad} />
+                        })}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
               {bajasOrdenadas.map((s, idx) => {
                 const nombreCompleto = `${s.apellidoPaterno} ${s.apellidoMaterno} ${s.nombres}`.toUpperCase();
                 const edad = calcularEdad(s.fechaNacimiento);

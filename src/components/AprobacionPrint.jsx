@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { AlertCircle, Printer, X } from 'lucide-react';
 import { truncateTo1Dec } from '../utils/format';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) {
   // Calculadora de materias reprobadas por alumno
@@ -92,6 +93,29 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
   };
 
   const { stats, totalGeneral, sinGenero } = useMemo(procesarEstadisticas, [activos, materiasPorGrado]);
+
+  const chartData = useMemo(() => {
+    return [
+      {
+        name: '1er Grado',
+        Regulares: stats['1er Grado']?.total.regT || 0,
+        Irregulares: stats['1er Grado']?.total.irrT || 0,
+        'No Acreditados': stats['1er Grado']?.total.noaT || 0,
+      },
+      {
+        name: '2do Grado',
+        Regulares: stats['2do Grado']?.total.regT || 0,
+        Irregulares: stats['2do Grado']?.total.irrT || 0,
+        'No Acreditados': stats['2do Grado']?.total.noaT || 0,
+      },
+      {
+        name: '3er Grado',
+        Regulares: stats['3er Grado']?.total.regT || 0,
+        Irregulares: stats['3er Grado']?.total.irrT || 0,
+        'No Acreditados': stats['3er Grado']?.total.noaT || 0,
+      }
+    ];
+  }, [stats]);
 
   const renderTable = (gradoName, title) => {
     const data = stats[gradoName];
@@ -271,6 +295,49 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
               </p>
             </div>
             <p className="mt-1 text-xs font-semibold text-red-600 print:text-[7px] print:mt-1">{totalGeneral.noaT} Alumnos Repetidores</p>
+          </div>
+        </div>
+
+        {/* Gráfica Interactiva (No imprimible) */}
+        <div className="mb-10 p-6 bg-white border border-slate-200 rounded-xl shadow-sm no-print print:hidden">
+          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            Distribución de Aprobación por Grado
+          </h3>
+          <div className="h-80 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                <defs>
+                  <linearGradient id="colorReg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={1}/>
+                    <stop offset="95%" stopColor="#047857" stopOpacity={0.9}/>
+                  </linearGradient>
+                  <linearGradient id="colorIrr" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={1}/>
+                    <stop offset="95%" stopColor="#b45309" stopOpacity={0.9}/>
+                  </linearGradient>
+                  <linearGradient id="colorNoA" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={1}/>
+                    <stop offset="95%" stopColor="#b91c1c" stopOpacity={0.9}/>
+                  </linearGradient>
+                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
+                  </filter>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#475569', fontWeight: 600, dy: 10}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px'}}
+                  labelStyle={{fontWeight: 'bold', color: '#1e293b', marginBottom: '8px'}}
+                />
+                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px', fontWeight: 600}} />
+                <Bar dataKey="Regulares" fill="url(#colorReg)" radius={[6, 6, 0, 0]} barSize={30} animationDuration={1500} filter="url(#shadow)" />
+                <Bar dataKey="Irregulares" fill="url(#colorIrr)" radius={[6, 6, 0, 0]} barSize={30} animationDuration={1500} filter="url(#shadow)" />
+                <Bar dataKey="No Acreditados" fill="url(#colorNoA)" radius={[6, 6, 0, 0]} barSize={30} animationDuration={1500} filter="url(#shadow)" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
