@@ -22,14 +22,14 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
   const firmas = getFirmas();
 
   return createPortal(
-    <div className="fixed inset-0 z-50 bg-slate-900/90 flex justify-center overflow-y-auto print:bg-white print:block print:inset-auto print:overflow-visible custom-scrollbar">
+    <div className="fixed inset-0 z-50 bg-slate-900/90 flex justify-center overflow-y-auto print:bg-white print:block print:static print:inset-auto print:overflow-visible custom-scrollbar">
       <style>
         {`
           @media print {
             @page { size: letter landscape; margin: 0; }
             #root { display: none !important; }
             html, body { height: auto !important; min-height: 100% !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
-            .print-wrapper { position: relative; width: 100%; height: auto; display: block !important; }
+            .print-wrapper { position: relative; width: 100%; height: auto; display: block !important; text-align: center; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             aside, header, .no-print { display: none !important; }
             .page-break-after { page-break-after: always; }
@@ -43,7 +43,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
               overflow: hidden; 
               page-break-after: always;
               page-break-inside: avoid;
-              margin: auto; 
+              margin: 0 auto !important;
               box-sizing: border-box; 
               flex-shrink: 0;
             }
