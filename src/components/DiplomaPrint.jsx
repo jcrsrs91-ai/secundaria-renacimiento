@@ -34,15 +34,11 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
             aside, header, .no-print { display: none !important; }
             
             .print-page-wrapper {
-              width: 100vw;
-              height: 100vh;
-              display: flex;
-              align-items: center;
-              justify-content: center;
+              display: block;
+              width: 100%;
               page-break-after: always;
+              padding-top: 7.95mm; /* Centrado vertical matemático para hoja carta (215.9mm - 200mm) / 2 */
               margin: 0;
-              padding: 0;
-              overflow: hidden;
             }
             .diploma-container { 
               width: 265mm; 
@@ -54,7 +50,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
               overflow: hidden; 
               page-break-after: avoid;
               page-break-inside: avoid;
-              margin: 0 !important;
+              margin: 0 auto !important; /* Centrado horizontal */
               box-sizing: border-box; 
               flex-shrink: 0;
             }
