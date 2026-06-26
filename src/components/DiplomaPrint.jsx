@@ -29,7 +29,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
             html, body, #root { height: auto !important; min-height: 100% !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
             body * { visibility: hidden; }
             .print-wrapper, .print-wrapper * { visibility: visible; }
-            .print-wrapper { position: absolute; left: 0; top: 0; width: 100%; height: auto; }
+            .print-wrapper { position: absolute; left: 0; top: 0; width: 100%; height: auto; display: block !important; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             aside, header, .no-print { display: none !important; }
             .page-break-after { page-break-after: always; }
@@ -45,6 +45,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
               page-break-inside: avoid;
               margin: auto; 
               box-sizing: border-box; 
+              flex-shrink: 0;
             }
             .diploma-container:last-child {
               page-break-after: auto;
@@ -61,6 +62,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            flex-shrink: 0;
           }
           .gold-border {
             border: 12px double #ca8a04;
