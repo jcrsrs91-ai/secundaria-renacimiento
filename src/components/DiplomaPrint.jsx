@@ -184,7 +184,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                         </>
                       ) : (
                         <>
-                          Por su destacada dedicación, disciplina y excelencia académica demostrados durante el presente ciclo escolar. Habiendo obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en sus estudios de educación secundaria del Turno <strong>{turno}</strong>, y logrando un promedio sobresaliente de:
+                          Por haber logrado el <strong className="text-amber-700">{placeText === 'PRIMER LUGAR' ? '1er Lugar' : placeText === 'SEGUNDO LUGAR' ? '2do Lugar' : '3er Lugar'} de Aprovechamiento</strong> en la Generación <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
                         </>
                       )}
                     </p>
