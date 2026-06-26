@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { truncateTo1Dec } from '../utils/format';
 import DiplomaPrint from './DiplomaPrint';
+import CuadroHonorListaPrint from './CuadroHonorListaPrint';
 
 const materiasPorGrado = {
   '1er Grado': [
@@ -33,6 +34,7 @@ export default function CuadroHonor() {
   const [periodo, setPeriodo] = useState('t1');
   const [activos, setActivos] = useState([]);
   const [printData, setPrintData] = useState(null); // null o arreglo de { student, average, place, periodoName }
+  const [showPrintLista, setShowPrintLista] = useState(false);
 
   // Cargar estudiantes
   useEffect(() => {
@@ -189,6 +191,16 @@ export default function CuadroHonor() {
       {printData && (
         <DiplomaPrint alumnos={printData} turno={turno} onClose={() => setPrintData(null)} />
       )}
+      
+      {showPrintLista && (
+        <CuadroHonorListaPrint 
+          ganadores={ganadores} 
+          grado={grado} 
+          turno={turno} 
+          periodoName={getPeriodoName()} 
+          onClose={() => setShowPrintLista(false)} 
+        />
+      )}
 
       {/* Header & Filtros */}
       <div className="p-6 border-b border-slate-200 bg-slate-50">
@@ -201,12 +213,20 @@ export default function CuadroHonor() {
             <p className="text-slate-500 mt-1 font-medium">Reconocimiento a los mejores promedios de la institución.</p>
           </div>
           {ganadores.length > 0 && (
-            <button 
-              onClick={() => setPrintData(ganadores)}
-              className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-amber-200 transition flex items-center"
-            >
-              <Printer className="w-5 h-5 mr-2" /> Imprimir Todos los Diplomas
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowPrintLista(true)}
+                className="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-slate-200 transition flex items-center"
+              >
+                <Printer className="w-5 h-5 mr-2" /> Imprimir Lista Oficial
+              </button>
+              <button 
+                onClick={() => setPrintData(ganadores)}
+                className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-amber-200 transition flex items-center"
+              >
+                <Printer className="w-5 h-5 mr-2" /> Imprimir Diplomas
+              </button>
+            </div>
           )}
         </div>
 

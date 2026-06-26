@@ -106,7 +106,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       return row;
     });
 
-    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
+    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: ";" });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -144,7 +144,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       row.push(reprobadas);
       return row;
     });
-    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
+    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: ";" });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -177,7 +177,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       row.push(count > 0 ? truncateTo1Dec(sum / count, '') : '');
       return row;
     });
-    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
+    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: ";" });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);

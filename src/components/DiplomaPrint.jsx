@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Award, Printer, X, Medal } from 'lucide-react';
 
 export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
+  const [fecha, setFecha] = useState(() => new Date().toISOString().split('T')[0]);
+
+  const getFormattedDate = () => {
+    if (!fecha) return '';
+    // Prevent timezone offset issues by specifying time
+    const d = new Date(`${fecha}T12:00:00`);
+    return d.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
   const getFirmas = () => {
     if (turno === 'Matutino') {
       return {
@@ -91,12 +100,21 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
         `}
       </style>
 
-      <div className="absolute top-6 right-6 flex gap-3 no-print fixed z-[60]">
-        <button onClick={() => window.print()} className="flex items-center px-5 py-2.5 bg-amber-600 text-white rounded-xl shadow-lg hover:bg-amber-700 transition font-bold">
+      <div className="absolute top-6 right-6 flex items-center gap-3 no-print fixed z-[60] bg-white p-2 rounded-xl shadow-lg border border-slate-200">
+        <div className="flex items-center px-3 border-r border-slate-200">
+          <label className="text-xs font-bold text-slate-500 mr-2 uppercase tracking-wider">Fecha:</label>
+          <input 
+            type="date" 
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+            className="text-sm font-bold text-slate-700 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-amber-500"
+          />
+        </div>
+        <button onClick={() => window.print()} className="flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition font-bold">
           <Printer className="w-5 h-5 mr-2" /> Imprimir
         </button>
-        <button onClick={onClose} className="p-2.5 bg-white text-slate-500 rounded-xl shadow-lg hover:bg-slate-100 hover:text-slate-800 transition">
-          <X className="w-6 h-6" />
+        <button onClick={onClose} className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200 hover:text-slate-800 transition">
+          <X className="w-5 h-5" />
         </button>
       </div>
 
@@ -170,7 +188,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
 
                 {/* Date */}
                 <p className="text-xs text-slate-500 font-semibold italic mb-4">
-                  Acapulco de Juárez, Gro., a {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  Acapulco de Juárez, Gro., a {getFormattedDate()}
                 </p>
 
                 {/* Signatures */}
