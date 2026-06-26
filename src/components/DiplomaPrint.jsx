@@ -182,6 +182,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                   </div>
                 </div>
 
+                </div>
               </div>
             </div>
           );
