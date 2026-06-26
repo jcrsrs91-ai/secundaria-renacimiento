@@ -15,7 +15,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
   const getFirmas = () => {
     if (turno === 'Matutino') {
       return {
-        coordinador: { nombre: 'Profa. Lucila Rodríguez Morales', cargo: 'Coordinadora Académica' },
+        coordinador: { nombre: 'Profa. Lucila Rodríguez Martínez', cargo: 'Coordinadora Académica' },
         subdirector: { nombre: 'Prof. Ubaldo Meza Lorenzo', cargo: 'Subdirector' },
         director: { nombre: 'Prof. Juan Carlos Taboada Barajas', cargo: 'Director' }
       };
@@ -169,7 +169,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                   <div className="bg-white/90 backdrop-blur-sm px-8 py-2 rounded-xl shadow-sm border border-white/50 text-center">
                     <h2 className="text-3xl font-black text-slate-800 tracking-tight">{nombreCompleto}</h2>
                     <p className="text-sm font-bold text-amber-700 tracking-widest uppercase mt-1">
-                      {student.grado} Grado Grupo "{student.grupo}"
+                      {student.grado} Grupo "{student.grupo}"
                     </p>
                   </div>
                 </div>
