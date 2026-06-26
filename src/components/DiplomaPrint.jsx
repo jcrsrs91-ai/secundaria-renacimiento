@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Award, Printer, X, Medal } from 'lucide-react';
 
 export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
@@ -20,16 +21,15 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
 
   const firmas = getFirmas();
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 bg-slate-900/90 flex justify-center overflow-y-auto print:bg-white print:block print:inset-auto print:overflow-visible custom-scrollbar">
       <style>
         {`
           @media print {
             @page { size: letter landscape; margin: 0; }
-            html, body, #root { height: auto !important; min-height: 100% !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
-            body * { visibility: hidden; }
-            .print-wrapper, .print-wrapper * { visibility: visible; }
-            .print-wrapper { position: absolute; left: 0; top: 0; width: 100%; height: auto; display: block !important; }
+            #root { display: none !important; }
+            html, body { height: auto !important; min-height: 100% !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
+            .print-wrapper { position: relative; width: 100%; height: auto; display: block !important; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             aside, header, .no-print { display: none !important; }
             .page-break-after { page-break-after: always; }
@@ -178,6 +178,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
           );
         })}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
