@@ -547,7 +547,7 @@ export default function ControlEscolar() {
         <img src="/logo-sep.png" alt="preload-sep" />
         <img src="/logo-escuela.png" alt="preload-escuela" />
       </div>
-      <div className={printMode ? "hidden" : "space-y-6 relative"}>
+      <div className={printMode ? "hidden" : "space-y-6 relative print:hidden"}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Control Escolar</h2>
@@ -1060,134 +1060,41 @@ export default function ControlEscolar() {
 
       {/* Sección Aprovechamiento Escolar */}
       {!loading && activeTab === 'aprovechamiento' && !printMode && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
-            <Star className="w-10 h-10" />
-          </div>
-          <h3 className="text-2xl font-bold text-slate-800 mb-2">Reporte Global de Aprovechamiento Escolar</h3>
-          <p className="text-slate-500 mb-8 max-w-lg">
-            Genera un informe completo con los promedios generales de todos los alumnos de la escuela, desglosado por grados, turnos y campos formativos.
-          </p>
-          <button 
-            onClick={handlePrintAprovechamiento} 
-            className="flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl text-lg font-bold hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-          >
-            <Star className="w-6 h-6 mr-3" /> Generar y Previsualizar Reporte
-          </button>
-        </div>
+        <AprovechamientoPrint activos={activos} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* Sección Estadística de Matrícula */}
       {!loading && activeTab === 'matricula' && !printMode && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
-            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-          </div>
-          <h3 className="text-2xl font-bold text-slate-800 mb-2">Estadística de Matrícula General</h3>
-          <p className="text-slate-500 mb-8 max-w-lg">
-            Calcula automáticamente la existencia total, inscripciones iniciales, altas, bajas y el porcentaje de deserción de la escuela por grado y turno.
-          </p>
-          <button 
-            onClick={handlePrintMatricula} 
-            className="flex items-center px-8 py-4 bg-emerald-600 text-white rounded-xl text-lg font-bold hover:bg-emerald-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-          >
-            <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-            Generar Estadística de Matrícula
-          </button>
-        </div>
+        <MatriculaPrint alumnos={directorio} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* Sección Aprobación (E2) */}
       {!loading && activeTab === 'aprobacion' && !printMode && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
-            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          </div>
-          <h3 className="text-2xl font-bold text-slate-800 mb-2">Reporte de Aprobación (Formato E2)</h3>
-          <p className="text-slate-500 mb-8 max-w-lg">
-            Calcula las estadísticas de aprobación separando a los alumnos en regulares e irregulares (1, 2, 3, 4 y 5 o más disciplinas reprobadas) por género.
-          </p>
-          <button 
-            onClick={handlePrintAprobacion} 
-            className="flex items-center px-8 py-4 bg-blue-600 text-white rounded-xl text-lg font-bold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-          >
-            <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-            Generar Reporte de Aprobación
-          </button>
-        </div>
+        <AprobacionPrint activos={activos} materiasPorGrado={materiasPorGrado} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* Sección Eficiencia Terminal */}
       {!loading && activeTab === 'eficiencia' && !printMode && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
-            <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
-          </div>
-          <h3 className="text-2xl font-bold text-slate-800 mb-2">Reporte de Eficiencia Terminal (E4)</h3>
-          <p className="text-slate-500 mb-8 max-w-lg">
-            Calcula automáticamente el total de egresados, promovidos y la eficiencia terminal cruzando la matrícula inicial, existencia, altas y bajas.
-          </p>
-          <button 
-            onClick={handlePrintEficiencia} 
-            className="flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl text-lg font-bold hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-          >
-            <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path></svg>
-            Generar y Previsualizar Reporte
-          </button>
-        </div>
+        <EficienciaTerminalPrint activos={directorio.filter(s => s.status === 'Activo' || s.status === 'Egresado')} bajas={directorio.filter(s => s.status === 'Baja')} materiasPorGrado={materiasPorGrado} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* Sección Desempeño Alcanzado */}
       {!loading && activeTab === 'desempeno' && !printMode && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
-            <Star className="w-10 h-10" />
-          </div>
-          <h3 className="text-2xl font-bold text-slate-800 mb-2">Indicadores de Logro / Desempeño Alcanzado (E5)</h3>
-          <p className="text-slate-500 mb-8 max-w-lg">
-            Clasifica automáticamente a los alumnos según su promedio general en rangos de calificación y contabiliza la inasistencia global.
-          </p>
-          <button 
-            onClick={handlePrintDesempeno} 
-            className="flex items-center px-8 py-4 bg-emerald-600 text-white rounded-xl text-lg font-bold hover:bg-emerald-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-          >
-            <Award className="w-6 h-6 mr-3" /> Generar y Previsualizar Reporte
-          </button>
-        </div>
+        <DesempenoAlcanzadoPrint activos={activos} materiasPorGrado={materiasPorGrado} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* Sección Desertores */}
       {!loading && activeTab === 'desertores' && !printMode && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
-            <UserMinus className="w-10 h-10" />
-          </div>
-          <h3 className="text-2xl font-bold text-slate-800 mb-2">Relación de Alumnos Desertores (E6)</h3>
-          <p className="text-slate-500 mb-8 max-w-lg">
-            Genera automáticamente el formato E6 con la información de todos los alumnos dados de baja durante el ciclo escolar y su causa de deserción.
-          </p>
-          <button 
-            onClick={handlePrintDesertores} 
-            className="flex items-center px-8 py-4 bg-rose-600 text-white rounded-xl text-lg font-bold hover:bg-rose-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-          >
-            <UserMinus className="w-6 h-6 mr-3" /> Generar y Previsualizar Reporte
-          </button>
-        </div>
+        <DesertoresPrint bajas={directorio.filter(s => s.status === 'Baja')} onClose={() => setActiveTab('activos')} />
       )}
 
-      {/* IMPRESIÓN */}
+      {/* IMPRESIÓN MODALES INDIVIDUALES */}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
       {printMode === 'concentrado-final' && <CuadroFinalPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
-      {printMode === 'aprovechamiento' && <AprovechamientoPrint activos={activos} onClose={() => setPrintMode(null)} />}
-      {printMode === 'matricula' && <MatriculaPrint alumnos={directorio} onClose={() => setPrintMode(null)} />}
-      {printMode === 'aprobacion' && <AprobacionPrint activos={activos} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
-      {printMode === 'eficiencia' && <EficienciaTerminalPrint activos={directorio.filter(s => s.status === 'Activo' || s.status === 'Egresado')} bajas={directorio.filter(s => s.status === 'Baja')} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
-      {printMode === 'desempeno' && <DesempenoAlcanzadoPrint activos={activos} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
-      {printMode === 'desertores' && <DesertoresPrint bajas={directorio.filter(s => s.status === 'Baja')} onClose={() => setPrintMode(null)} />}
     </div>
   );
 }
