@@ -54,34 +54,44 @@ export default function CuadroHonor() {
   }, []);
 
   const getAverage = (student, currentPeriodo, materias) => {
+    let sum = 0, count = 0, hasFailed = false;
+
     if (currentPeriodo === 'anual') {
-      let sum = 0, count = 0;
       materias.forEach(mat => {
         const t1 = parseFloat(student.calificaciones?.['t1']?.[mat.id]);
         const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
         const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
         let s = 0, c = 0;
-        if (!isNaN(t1)) { s += t1; c++; }
-        if (!isNaN(t2)) { s += t2; c++; }
-        if (!isNaN(t3)) { s += t3; c++; }
+        if (!isNaN(t1)) { s += t1; c++; if (t1 < 6) hasFailed = true; }
+        if (!isNaN(t2)) { s += t2; c++; if (t2 < 6) hasFailed = true; }
+        if (!isNaN(t3)) { s += t3; c++; if (t3 < 6) hasFailed = true; }
         
-        if (c > 0) {
-          sum += parseFloat(truncateTo1Dec(s / c, '0'));
+        if (c === 3) {
+          const matAvg = parseFloat(truncateTo1Dec(s / c, '0'));
+          sum += matAvg;
           count++;
+          if (matAvg < 6) hasFailed = true;
+        } else {
+          // Si no tiene los 3 trimestres en alguna materia, no puede entrar al anual
+          hasFailed = true; 
         }
       });
-      return count > 0 ? parseFloat(truncateTo1Dec(sum / count, '0')) : 0;
     } else {
-      let sum = 0, count = 0;
       materias.forEach(mat => {
         const val = parseFloat(student.calificaciones?.[currentPeriodo]?.[mat.id]);
         if (!isNaN(val)) {
           sum += val;
           count++;
+          if (val < 6) hasFailed = true;
         }
       });
-      return count > 0 ? parseFloat(truncateTo1Dec(sum / count, '0')) : 0;
     }
+
+    // Para el cuadro de honor, deben tener todas las materias y ninguna reprobada
+    if (count < materias.length || hasFailed) return 0;
+
+    // Retornamos el promedio exacto sin redondear ni truncar para que el desempate sea preciso
+    return sum / count;
   };
 
   const getPeriodoName = () => {
@@ -147,7 +157,7 @@ export default function CuadroHonor() {
           </div>
           <div>
             <h3 className={`text-xl font-black uppercase tracking-widest ${textClass}`}>{title}</h3>
-            <p className="text-sm font-semibold opacity-80">{lista[0].average.toFixed(1)} de Promedio</p>
+            <p className="text-sm font-semibold opacity-80">{truncateTo1Dec(lista[0].average)} de Promedio</p>
           </div>
         </div>
 

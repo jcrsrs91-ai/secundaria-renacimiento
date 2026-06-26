@@ -20,3 +20,9 @@ const promedioGeneral = truncateTo1Dec(sumaGeneral / totalMaterias);
 ## Exportación a CSV
 
 Al exportar datos a formato CSV usando Papa Parse o cualquier otra librería, SIEMPRE se debe usar la coma (,) como delimitador explícito y agregar el BOM (\uFEFF) al inicio del archivo para garantizar la correcta visualización de caracteres especiales y la correcta separación por columnas en Excel con configuración regional estándar (México/US).
+
+
+## SEP Grading Rules (Secretaría de Educación Pública)
+- **Internal Calculations**: Always calculate averages with exact precision (no truncation or rounding in intermediate steps) to properly break ties.
+- **Honor Roll / Merits**: Any student with a failing grade (score < 6) or missing grades in any subject MUST be strictly excluded from honor rolls and merit lists, regardless of their overall average.
+- **Display Truncation**: When displaying final averages, NEVER round up. Always truncate strictly to 1 decimal place. Do not use standard \.toFixed(1)\ or \Math.round\ for display. Use the SEP-compliant truncation: \(Math.floor((value + 0.00001) * 10) / 10).toFixed(1)\.
