@@ -5,6 +5,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { truncateTo1Dec, truncateTo2Dec } from '../utils/format';
 import DiplomaPrint from './DiplomaPrint';
 import CuadroHonorListaPrint from './CuadroHonorListaPrint';
+import ManualDiplomaModal from './ManualDiplomaModal';
 
 const materiasPorGrado = {
   '1er Grado': [
@@ -35,6 +36,7 @@ export default function CuadroHonor() {
   const [activos, setActivos] = useState([]);
   const [printData, setPrintData] = useState(null); // null o arreglo de { student, average, place, periodoName }
   const [showPrintLista, setShowPrintLista] = useState(false);
+  const [showManualDiploma, setShowManualDiploma] = useState(false);
 
   // Cargar estudiantes
   useEffect(() => {
@@ -212,6 +214,17 @@ export default function CuadroHonor() {
         />
       )}
 
+      {showManualDiploma && (
+        <ManualDiplomaModal 
+          onClose={() => setShowManualDiploma(false)} 
+          onGenerate={(data, manualTurno) => {
+            setShowManualDiploma(false);
+            setTurno(manualTurno); // Temporary override for printing signature
+            setPrintData(data);
+          }} 
+        />
+      )}
+
       {/* Header & Filtros */}
       <div className="p-6 border-b border-slate-200 bg-slate-50">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -222,22 +235,30 @@ export default function CuadroHonor() {
             </h2>
             <p className="text-slate-500 mt-1 font-medium">Reconocimiento a los mejores promedios de la institución.</p>
           </div>
-          {ganadores.length > 0 && (
-            <div className="flex gap-3">
-              <button 
-                onClick={() => setShowPrintLista(true)}
-                className="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-slate-200 transition flex items-center"
-              >
-                <Printer className="w-5 h-5 mr-2" /> Imprimir Lista Oficial
-              </button>
-              <button 
-                onClick={() => setPrintData(ganadores)}
-                className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-amber-200 transition flex items-center"
-              >
-                <Printer className="w-5 h-5 mr-2" /> Imprimir Diplomas
-              </button>
-            </div>
-          )}
+          <div className="flex gap-3 flex-wrap justify-end">
+            <button 
+              onClick={() => setShowManualDiploma(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-200 transition flex items-center"
+            >
+              <Award className="w-5 h-5 mr-2" /> Diploma Manual
+            </button>
+            {ganadores.length > 0 && (
+              <>
+                <button 
+                  onClick={() => setShowPrintLista(true)}
+                  className="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-slate-200 transition flex items-center"
+                >
+                  <Printer className="w-5 h-5 mr-2" /> Imprimir Lista Oficial
+                </button>
+                <button 
+                  onClick={() => setPrintData(ganadores)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-amber-200 transition flex items-center"
+                >
+                  <Printer className="w-5 h-5 mr-2" /> Imprimir Diplomas
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

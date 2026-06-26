@@ -184,7 +184,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                         </>
                       ) : (
                         <>
-                          Por haber logrado el <strong className="text-amber-700">{placeText === 'PRIMER LUGAR' ? '1er Lugar' : placeText === 'SEGUNDO LUGAR' ? '2do Lugar' : '3er Lugar'} de Aprovechamiento</strong> en el Ciclo Escolar <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
+                          Por haber logrado el <strong className="text-amber-700">{placeText === 'PRIMER LUGAR' ? '1er Lugar' : placeText === 'SEGUNDO LUGAR' ? '2do Lugar' : placeText === 'TERCER LUGAR' ? '3er Lugar' : 'Mención Honorífica'} de Aprovechamiento</strong> en el Ciclo Escolar <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
                         </>
                       )}
                     </p>
