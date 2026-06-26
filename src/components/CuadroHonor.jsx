@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Trophy, Medal, Award, Printer, Search } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { truncateTo1Dec } from '../utils/format';
+import { truncateTo1Dec, truncateTo2Dec } from '../utils/format';
 import DiplomaPrint from './DiplomaPrint';
 import CuadroHonorListaPrint from './CuadroHonorListaPrint';
 
@@ -157,7 +157,7 @@ export default function CuadroHonor() {
           </div>
           <div>
             <h3 className={`text-xl font-black uppercase tracking-widest ${textClass}`}>{title}</h3>
-            <p className="text-sm font-semibold opacity-80">{truncateTo1Dec(lista[0].average)} de Promedio</p>
+            <p className="text-sm font-semibold opacity-80">{truncateTo2Dec(lista[0].average)} de Promedio</p>
           </div>
         </div>
 

@@ -93,7 +93,7 @@ export default function CuadroHonorListaPrint({ ganadores = [], grado, turno, pe
                         <td className="px-4 py-2 text-left border-r border-slate-200 print:border-slate-400 print:py-2 font-semibold">{nombreCompleto}</td>
                         <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-2 font-bold">{g.student.grupo}</td>
                         <td className="px-4 py-2 text-center print:py-2 font-black text-indigo-700 print:text-black text-base">
-                          {(Math.floor((g.average + 0.00001) * 10) / 10).toFixed(1)}
+                          {(Math.floor((g.average + 0.00001) * 100) / 100).toFixed(2)}
                         </td>
                       </tr>
                     );

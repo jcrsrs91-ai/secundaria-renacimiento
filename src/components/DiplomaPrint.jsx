@@ -189,7 +189,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                       )}
                     </p>
                     <div className="mt-3 text-2xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-1.5 px-6 rounded-xl inline-block shadow-inner relative z-10">
-                      {(Math.floor((average + 0.00001) * 10) / 10).toFixed(1)}
+                      {(Math.floor((average + 0.00001) * 100) / 100).toFixed(2)}
                     </div>
                   </div>
                 </div>
