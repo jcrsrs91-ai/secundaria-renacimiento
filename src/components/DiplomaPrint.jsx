@@ -32,7 +32,18 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
             .print-wrapper { position: relative; width: 100%; height: auto; display: block !important; text-align: center; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             aside, header, .no-print { display: none !important; }
-            .page-break-after { page-break-after: always; }
+            
+            .print-page-wrapper {
+              width: 100vw;
+              height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              page-break-after: always;
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+            }
             .diploma-container { 
               width: 265mm; 
               height: 200mm; 
@@ -41,14 +52,11 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
               justify-content: center; 
               position: relative; 
               overflow: hidden; 
-              page-break-after: always;
+              page-break-after: avoid;
               page-break-inside: avoid;
-              margin: 0 auto !important;
+              margin: 0 !important;
               box-sizing: border-box; 
               flex-shrink: 0;
-            }
-            .diploma-container:last-child {
-              page-break-after: auto;
             }
           }
           .diploma-container {
@@ -89,8 +97,9 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
           const placeText = place === 1 ? 'PRIMER LUGAR' : place === 2 ? 'SEGUNDO LUGAR' : 'TERCER LUGAR';
           
           return (
-            <div key={index} className="diploma-container gold-border p-8 bg-[#fffdf5]">
-              {/* Background watermark pattern */}
+            <div key={index} className="print-page-wrapper">
+              <div className="diploma-container gold-border p-8 bg-[#fffdf5]">
+                {/* Background watermark pattern */}
               <div 
                 className="absolute inset-0 pointer-events-none grayscale" 
                 style={{ 
