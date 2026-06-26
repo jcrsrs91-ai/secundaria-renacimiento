@@ -22,23 +22,37 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
   const firmas = getFirmas();
 
   return createPortal(
-    <div className="fixed inset-0 z-50 bg-slate-900/90 flex justify-center overflow-y-auto print:bg-white print:block print:static print:inset-auto print:overflow-visible custom-scrollbar">
+    <div id="print-modal-overlay" className="fixed inset-0 z-50 bg-slate-900/90 flex justify-center overflow-y-auto custom-scrollbar">
       <style>
         {`
           @media print {
             @page { size: letter landscape; margin: 0; }
             #root { display: none !important; }
+            
+            #print-modal-overlay {
+              position: static !important;
+              display: block !important;
+              height: auto !important;
+              min-height: 100% !important;
+              overflow: visible !important;
+              background: white !important;
+            }
+            
             html, body { height: auto !important; min-height: 100% !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
             .print-wrapper { position: relative; width: 100%; height: auto; display: block !important; text-align: center; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             aside, header, .no-print { display: none !important; }
             
             .print-page-wrapper {
-              display: block;
-              width: 100%;
+              width: 100vw;
+              height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
               page-break-after: always;
-              padding-top: 7.95mm; /* Centrado vertical matemático para hoja carta (215.9mm - 200mm) / 2 */
               margin: 0;
+              padding: 0;
+              overflow: hidden;
             }
             .diploma-container { 
               width: 265mm; 
