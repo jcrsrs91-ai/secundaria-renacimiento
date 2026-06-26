@@ -5,14 +5,14 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
   const getFirmas = () => {
     if (turno === 'Matutino') {
       return {
-        coordinador: { nombre: 'Mtra. Lucila Rodríguez Morales', cargo: 'Coordinadora Académica' },
+        coordinador: { nombre: 'Profa. Lucila Rodríguez Morales', cargo: 'Coordinadora Académica' },
         subdirector: { nombre: 'Prof. Ubaldo Meza Lorenzo', cargo: 'Subdirector' },
         director: { nombre: 'Prof. Juan Carlos Taboada Barajas', cargo: 'Director' }
       };
     } else {
       return {
-        coordinador: { nombre: 'Mtro. José Barrera Vázquez', cargo: 'Coordinador Académico' },
-        subdirector: { nombre: 'Mtra. Teresa de Jesús Salazar Moreno', cargo: 'Subdirectora' },
+        coordinador: { nombre: 'Prof. José Barrera Vázquez', cargo: 'Coordinador Académico' },
+        subdirector: { nombre: 'Profa. Teresa de Jesús Salazar Moreno', cargo: 'Subdirectora' },
         director: { nombre: 'Prof. Juan Carlos Taboada Barajas', cargo: 'Director' }
       };
     }
