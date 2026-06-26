@@ -156,6 +156,12 @@ export default function AprovechamientoPrint({ activos, onClose }) {
     }));
   }, [reportData]);
 
+  const COLORS = {
+    General: '#4f46e5', // Indigo-600
+    Matutino: '#0ea5e9', // Sky-500
+    Vespertino: '#8b5cf6', // Violet-500
+  };
+
   const formatPromedio = (val) => truncateTo1Dec(val, '-');
 
   const renderTable = (grado, title) => {
@@ -238,12 +244,13 @@ export default function AprovechamientoPrint({ activos, onClose }) {
         
         <style>{`
           @media print {
-            @page { size: landscape; margin: 0.5cm; }
-            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
+            @page { size: letter portrait; margin: 0.5cm; }
+            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; zoom: 0.80; }
             * { overflow: visible !important; }
             aside, header { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .print-aprovechamiento-only { display: block !important; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
           }
         `}</style>
 
@@ -274,44 +281,26 @@ export default function AprovechamientoPrint({ activos, onClose }) {
           </div>
         </div>
 
-        {/* Gráfica Interactiva (No imprimible) */}
-        <div className="mb-10 p-6 bg-white border border-slate-200 rounded-xl shadow-sm no-print print:hidden">
-          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            Promedios Generales por Grado y Turno
+        {/* Gráfica (Imprimible y Optimizada) */}
+        <div className="mb-8 p-6 bg-white border border-slate-200 rounded-xl shadow-sm break-inside-avoid print:shadow-none print:border-slate-400 print:p-4 print:mb-12">
+          <h3 className="text-center text-sm font-black text-slate-800 mb-4 uppercase tracking-wide print:text-black print:mb-6">
+            Promedio General por Grado
           </h3>
-          <div className="h-80 w-full mt-4">
+          <div className="h-64 w-full mt-4 print:h-96">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                <defs>
-                  <linearGradient id="colorGeneral" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={1}/>
-                    <stop offset="95%" stopColor="#312e81" stopOpacity={0.9}/>
-                  </linearGradient>
-                  <linearGradient id="colorMat" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={1}/>
-                    <stop offset="95%" stopColor="#0369a1" stopOpacity={0.9}/>
-                  </linearGradient>
-                  <linearGradient id="colorVesp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={1}/>
-                    <stop offset="95%" stopColor="#5b21b6" stopOpacity={0.9}/>
-                  </linearGradient>
-                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
-                  </filter>
-                </defs>
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#475569', fontWeight: 600, dy: 10}} />
-                <YAxis domain={[5, 10]} axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#1e293b', fontWeight: 700, fontSize: 12}} />
+                <YAxis domain={[5, 10]} axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 12, fontWeight: 600}} />
                 <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px'}}
-                  labelStyle={{fontWeight: 'bold', color: '#1e293b', marginBottom: '8px'}}
+                  cursor={{fill: '#f1f5f9'}}
+                  contentStyle={{borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: 'none'}}
+                  labelStyle={{fontWeight: 'bold', color: '#1e293b', marginBottom: '4px'}}
                 />
-                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px', fontWeight: 600}} />
-                <Bar dataKey="General" fill="url(#colorGeneral)" radius={[6, 6, 0, 0]} barSize={30} animationDuration={1500} filter="url(#shadow)" />
-                <Bar dataKey="Matutino" fill="url(#colorMat)" radius={[6, 6, 0, 0]} barSize={30} animationDuration={1500} filter="url(#shadow)" />
-                <Bar dataKey="Vespertino" fill="url(#colorVesp)" radius={[6, 6, 0, 0]} barSize={30} animationDuration={1500} filter="url(#shadow)" />
+                <Legend iconType="circle" wrapperStyle={{paddingTop: '10px', fontWeight: 700, fontSize: '12px'}} />
+                <Bar dataKey="General" fill={COLORS.General} radius={[4, 4, 0, 0]} barSize={30} />
+                <Bar dataKey="Matutino" fill={COLORS.Matutino} radius={[4, 4, 0, 0]} barSize={30} />
+                <Bar dataKey="Vespertino" fill={COLORS.Vespertino} radius={[4, 4, 0, 0]} barSize={30} />
               </BarChart>
             </ResponsiveContainer>
           </div>

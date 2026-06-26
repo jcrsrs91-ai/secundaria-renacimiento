@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Users, TrendingDown, BookOpen, Printer, X } from 'lucide-react';
 import { truncateTo1Dec } from '../utils/format';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function MatriculaPrint({ alumnos = [], onClose }) {
   
@@ -104,6 +104,19 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
     ];
   }, [matriculaData]);
 
+  const pieData = useMemo(() => {
+    return [
+      { name: 'Hombres', value: matriculaData.global.existencia.h },
+      { name: 'Mujeres', value: matriculaData.global.existencia.m },
+    ];
+  }, [matriculaData]);
+
+  // Colores CMYK Safe (Flat Design)
+  const COLORS = {
+    Hombres: '#2563eb', // Blue-600
+    Mujeres: '#db2777', // Pink-600
+  };
+
   const calcDesercion = (bajas, inicial, altas) => {
     const totalBase = inicial + altas;
     if (totalBase === 0) return '0.0%';
@@ -170,8 +183,8 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
         
         <style>{`
           @media print {
-            @page { size: landscape; margin: 0.5cm; }
-            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
+            @page { size: letter portrait; margin: 0.5cm; }
+            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; zoom: 0.75; }
             * { overflow: visible !important; }
             aside, header { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -222,41 +235,64 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
           </div>
         </div>
 
-        {/* Gráfica Interactiva (No imprimible) */}
-        <div className="mb-8 p-6 bg-white border border-slate-200 rounded-xl shadow-sm no-print print:hidden">
-          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            Distribución de Existencia por Género y Grado
-          </h3>
-          <div className="h-80 w-full mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                <defs>
-                  <linearGradient id="colorHombre" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={1}/>
-                    <stop offset="95%" stopColor="#1d4ed8" stopOpacity={0.9}/>
-                  </linearGradient>
-                  <linearGradient id="colorMujer" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ec4899" stopOpacity={1}/>
-                    <stop offset="95%" stopColor="#be185d" stopOpacity={0.9}/>
-                  </linearGradient>
-                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
-                  </filter>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#475569', fontWeight: 600, dy: 10}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
-                <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px'}}
-                  labelStyle={{fontWeight: 'bold', color: '#1e293b', marginBottom: '8px'}}
-                />
-                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px', fontWeight: 600}} />
-                <Bar dataKey="Hombres" fill="url(#colorHombre)" radius={[6, 6, 0, 0]} barSize={40} animationDuration={1500} filter="url(#shadow)" />
-                <Bar dataKey="Mujeres" fill="url(#colorMujer)" radius={[6, 6, 0, 0]} barSize={40} animationDuration={1500} filter="url(#shadow)" />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Gráficas (Imprimibles y Optimizadas) */}
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6 break-inside-avoid print:grid-cols-2 print:gap-4 print:mb-4">
+          
+          {/* Gráfica de Proporción General (Donut) */}
+          <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm print:shadow-none print:border-slate-400 print:p-4 print:mb-8">
+            <h3 className="text-center text-sm font-black text-slate-800 mb-2 uppercase tracking-wide print:text-black print:mb-4">
+              Proporción por Género (Global)
+            </h3>
+            <div className="h-64 w-full print:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelStyle={{ fontSize: '12px', fontWeight: 'bold', fill: '#1e293b' }}
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[entry.name]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: 'none'}}
+                    itemStyle={{fontWeight: 'bold', color: '#1e293b'}}
+                  />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{fontWeight: 700, fontSize: '12px'}} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Gráfica de Distribución por Grado (Stacked Bar) */}
+          <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm print:shadow-none print:border-slate-400 print:p-4 print:mb-8">
+            <h3 className="text-center text-sm font-black text-slate-800 mb-2 uppercase tracking-wide print:text-black print:mb-4">
+              Distribución por Grado
+            </h3>
+            <div className="h-64 w-full print:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#1e293b', fontWeight: 700, fontSize: 12}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 12, fontWeight: 600}} />
+                  <Tooltip 
+                    cursor={{fill: '#f1f5f9'}}
+                    contentStyle={{borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: 'none'}}
+                    labelStyle={{fontWeight: 'bold', color: '#1e293b', marginBottom: '4px'}}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{paddingTop: '10px', fontWeight: 700, fontSize: '12px'}} />
+                  <Bar dataKey="Hombres" stackId="a" fill={COLORS.Hombres} barSize={40} />
+                  <Bar dataKey="Mujeres" stackId="a" fill={COLORS.Mujeres} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 

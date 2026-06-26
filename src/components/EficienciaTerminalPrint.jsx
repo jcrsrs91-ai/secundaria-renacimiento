@@ -136,7 +136,11 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
     ];
   }, [data]);
 
-  const COLORS = ['#10b981', '#f59e0b'];
+  // CMYK Safe Flat Colors
+  const COLORS = {
+    ConCertificado: '#10b981', // Emerald-500
+    SinCertificado: '#f59e0b', // Amber-500
+  };
 
   const calcEficiencia = (egresados, inscripcion) => {
     if (inscripcion === 0) return '#DIV/0!';
@@ -193,8 +197,8 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
         
         <style>{`
           @media print {
-            @page { size: landscape; margin: 1cm; }
-            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
+            @page { size: letter portrait; margin: 0.5cm; }
+            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; zoom: 0.75; }
             * { overflow: visible !important; }
             aside, header { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -296,48 +300,33 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
           </div>
         </div>
 
-        {/* Gráfica Interactiva (No imprimible) */}
-        <div className="mb-8 p-6 bg-white border border-slate-200 rounded-xl shadow-sm no-print print:hidden">
-          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            Proporción de Egresados con vs sin Certificado
+        {/* Gráfica (Imprimible y Optimizada) */}
+        <div className="mb-8 p-6 bg-white border border-slate-200 rounded-xl shadow-sm break-inside-avoid print:shadow-none print:border-slate-400 print:p-4 print:mb-12">
+          <h3 className="text-center text-sm font-black text-slate-800 mb-4 uppercase tracking-wide print:text-black print:mb-6">
+            Proporción de Eficiencia Terminal
           </h3>
-          <div className="h-80 w-full mt-4">
+          <div className="h-64 w-full mt-2 print:h-96">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <defs>
-                  <linearGradient id="colorCert" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={1}/>
-                    <stop offset="95%" stopColor="#047857" stopOpacity={0.9}/>
-                  </linearGradient>
-                  <linearGradient id="colorSinCert" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={1}/>
-                    <stop offset="95%" stopColor="#b45309" stopOpacity={0.9}/>
-                  </linearGradient>
-                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="5" floodOpacity="0.2" />
-                  </filter>
-                </defs>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={85}
-                  outerRadius={130}
-                  paddingAngle={8}
+                  innerRadius={70}
+                  outerRadius={110}
+                  paddingAngle={4}
                   dataKey="value"
-                  cornerRadius={8}
-                  animationDuration={1500}
-                  filter="url(#shadow)"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelStyle={{ fontSize: '13px', fontWeight: 'bold', fill: '#1e293b' }}
                 >
-                  <Cell key="cell-0" fill="url(#colorCert)" />
-                  <Cell key="cell-1" fill="url(#colorSinCert)" />
+                  <Cell fill={COLORS.ConCertificado} />
+                  <Cell fill={COLORS.SinCertificado} />
                 </Pie>
                 <RechartsTooltip 
-                  contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', fontWeight: 'bold'}}
+                  contentStyle={{borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: 'none'}}
+                  itemStyle={{fontWeight: 'bold', color: '#1e293b'}}
                 />
-                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px', fontWeight: 600}} />
+                <Legend iconType="circle" wrapperStyle={{paddingTop: '10px', fontWeight: 700, fontSize: '12px'}} />
               </PieChart>
             </ResponsiveContainer>
           </div>

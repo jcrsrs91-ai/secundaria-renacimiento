@@ -38,9 +38,9 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
     });
 
     return [
-      { name: '1er Grado', Bajas: data['1er Grado'], fill: '#ef4444' },
-      { name: '2do Grado', Bajas: data['2do Grado'], fill: '#f43f5e' },
-      { name: '3er Grado', Bajas: data['3er Grado'], fill: '#e11d48' }
+      { name: '1er Grado', Bajas: data['1er Grado'], fill: '#ef4444' }, // Red
+      { name: '2do Grado', Bajas: data['2do Grado'], fill: '#f43f5e' }, // Rose
+      { name: '3er Grado', Bajas: data['3er Grado'], fill: '#e11d48' }  // Dark Rose
     ];
   }, [bajas]);
 
@@ -49,8 +49,8 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
       <style>
         {`
           @media print {
-            @page { size: portrait; margin: 1cm; }
-            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
+            @page { size: letter portrait; margin: 0.5cm; }
+            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; zoom: 0.95; }
             * { overflow: visible !important; }
             aside, header { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
@@ -115,119 +115,62 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
           ) : (
             <div className="space-y-6">
               
-              {/* Gráfica Interactiva (No imprimible) */}
-              <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm no-print print:hidden mb-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
-                  <svg className="w-5 h-5 mr-2 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+              {/* Gráfica (Imprimible y Optimizada) */}
+              <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm break-inside-avoid print:shadow-none print:border-slate-400 print:p-4 mb-6 print:mb-12">
+                <h3 className="text-center text-sm font-black text-slate-800 mb-4 uppercase tracking-wide print:text-black print:mb-6">
                   Distribución de Bajas por Grado
                 </h3>
-                <div className="h-72 w-full max-w-2xl mx-auto mt-4">
+                <div className="h-64 w-full max-w-2xl mx-auto mt-4 print:h-96">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                      <defs>
-                        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                          <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
-                        </filter>
-                        <linearGradient id="color1er" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={1}/>
-                          <stop offset="95%" stopColor="#be123c" stopOpacity={0.9}/>
-                        </linearGradient>
-                        <linearGradient id="color2do" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#e11d48" stopOpacity={1}/>
-                          <stop offset="95%" stopColor="#9f1239" stopOpacity={0.9}/>
-                        </linearGradient>
-                        <linearGradient id="color3er" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#be123c" stopOpacity={1}/>
-                          <stop offset="95%" stopColor="#881337" stopOpacity={0.9}/>
-                        </linearGradient>
-                      </defs>
+                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#475569', fontWeight: 600, dy: 10}} />
-                      <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#1e293b', fontWeight: 700, fontSize: 12}} />
+                      <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 12, fontWeight: 600}} />
                       <RechartsTooltip 
-                        cursor={{fill: '#f8fafc'}}
-                        contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', fontWeight: 'bold'}}
-                        labelStyle={{color: '#1e293b', marginBottom: '8px'}}
+                        cursor={{fill: '#f1f5f9'}}
+                        contentStyle={{borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: 'none'}}
+                        labelStyle={{color: '#1e293b', marginBottom: '4px', fontWeight: 'bold'}}
                       />
-                      <Bar dataKey="Bajas" radius={[6, 6, 0, 0]} barSize={50} animationDuration={1500} filter="url(#shadow)">
-                        {chartData.map((entry, index) => {
-                          const grad = index === 0 ? "url(#color1er)" : index === 1 ? "url(#color2do)" : "url(#color3er)";
-                          return <Cell key={`cell-${index}`} fill={grad} />
-                        })}
+                      <Bar dataKey="Bajas" radius={[4, 4, 0, 0]} barSize={50}>
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
-              {bajasOrdenadas.map((s, idx) => {
-                const nombreCompleto = `${s.apellidoPaterno} ${s.apellidoMaterno} ${s.nombres}`.toUpperCase();
-                const edad = calcularEdad(s.fechaNacimiento);
-                const gradoGrupo = `${s.grado[0]} "${s.grupo}"`;
-                const domicilio = `${s.calle || ''} ${s.numero || ''} ${s.colonia || ''}`.trim().toUpperCase();
-                const motivo = (s.motivoBaja || 'CAUSA NO ESPECIFICADA').toUpperCase();
 
-                return (
-                  <div key={idx} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col gap-4 page-break-inside-avoid relative overflow-hidden group">
-                    {/* Número de lista decorativo */}
-                    <div className="absolute -top-3 -right-3 text-[80px] font-black text-slate-50 leading-none select-none z-0">
-                      {idx + 1}
-                    </div>
-
-                    <div className="relative z-10 flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="text-lg font-black text-slate-800">{nombreCompleto}</h3>
-                          {s.genero === 'Mujer' ? (
-                            <span className="px-2.5 py-0.5 bg-pink-50 text-pink-700 border border-pink-100 rounded-full text-xs font-bold uppercase">Mujer</span>
-                          ) : (
-                            <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-xs font-bold uppercase">Hombre</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-500 font-medium text-sm">
-                          <Hash className="w-4 h-4 text-slate-400" />
-                          <span>Matrícula: {s.matricula || 'N/A'}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-end">
-                        <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 px-4 py-1.5 rounded-xl text-sm font-black flex items-center gap-2 shadow-sm">
-                          <GraduationCap className="w-4 h-4" />
-                          {gradoGrupo}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="relative z-10 grid grid-cols-2 gap-4 mt-2">
-                      <div className="flex items-start gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-100">
-                        <Calendar className="w-5 h-5 text-slate-400 mt-0.5" />
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nacimiento y Edad</p>
-                          <p className="text-xs font-semibold text-slate-700">{s.fechaNacimiento || 'N/A'} <span className="text-slate-400 font-normal">({edad} años)</span></p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-100">
-                        <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Domicilio Registrado</p>
-                          <p className="text-xs font-semibold text-slate-700 break-words">{domicilio || 'N/A'}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Alerta de Causa de Deserción */}
-                    <div className="relative z-10 bg-rose-50/80 border border-rose-200/60 p-3 rounded-xl flex items-start gap-3">
-                      <div className="bg-rose-100 p-1.5 rounded-lg mt-0.5">
-                        <AlertCircle className="w-4 h-4 text-rose-600" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-0.5">Causa de Deserción Oficial</p>
-                        <p className="text-sm font-bold text-rose-900 break-words">{motivo}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {/* Tabla Desglosada */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-slate-400 print:rounded-none mt-6">
+                <table className="min-w-full divide-y divide-slate-200 text-sm print:text-[10px]">
+                  <thead>
+                    <tr className="bg-slate-800 text-white print:bg-slate-200 print:text-black">
+                      <th className="px-3 py-3 text-center font-bold border-r border-slate-700 print:border-slate-400 w-12 print:py-1">N°</th>
+                      <th className="px-4 py-3 text-left font-bold border-r border-slate-700 print:border-slate-400 print:py-1">NOMBRE COMPLETO DEL ALUMNO</th>
+                      <th className="px-3 py-3 text-center font-bold border-r border-slate-700 print:border-slate-400 print:py-1">SEXO</th>
+                      <th className="px-3 py-3 text-center font-bold border-r border-slate-700 print:border-slate-400 print:py-1">GRADO Y GRUPO</th>
+                      <th className="px-4 py-3 text-left font-bold border-r border-slate-700 print:border-slate-400 print:py-1">CAUSA DE DESERCIÓN OFICIAL</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white print:divide-slate-400">
+                    {bajasOrdenadas.map((s, idx) => {
+                      const nombreCompleto = `${s.apellidoPaterno} ${s.apellidoMaterno} ${s.nombres}`.toUpperCase();
+                      const gradoGrupo = `${s.grado[0]} "${s.grupo}"`;
+                      const motivo = (s.motivoBaja || 'CAUSA NO ESPECIFICADA').toUpperCase();
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50 transition-colors text-slate-700 print:text-black break-inside-avoid">
+                          <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-1 font-bold">{idx + 1}</td>
+                          <td className="px-4 py-2 text-left border-r border-slate-200 print:border-slate-400 print:py-1 font-semibold">{nombreCompleto}</td>
+                          <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-1">{s.genero === 'Mujer' ? 'M' : 'H'}</td>
+                          <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-1 font-bold">{gradoGrupo}</td>
+                          <td className="px-4 py-2 text-left print:py-1 text-rose-700 font-bold print:text-black">{motivo}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 

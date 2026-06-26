@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { AlertCircle, Printer, X } from 'lucide-react';
 import { truncateTo1Dec } from '../utils/format';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) {
   // Calculadora de materias reprobadas por alumno
@@ -117,6 +117,21 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
     ];
   }, [stats]);
 
+  const pieData = useMemo(() => {
+    return [
+      { name: 'Aprobados (Regulares)', value: totalGeneral.regT },
+      { name: 'Reprobados (Irregulares + No Acred.)', value: totalGeneral.irrT + totalGeneral.noaT },
+    ];
+  }, [totalGeneral]);
+
+  // CMYK Safe Flat Colors
+  const COLORS = {
+    Regulares: '#10b981', // Emerald-500
+    Irregulares: '#f59e0b', // Amber-500
+    NoAcreditados: '#ef4444', // Red-500
+    ReprobadosTotal: '#ef4444' 
+  };
+
   const renderTable = (gradoName, title) => {
     const data = stats[gradoName];
     const renderRow = (label, row, isTotal = false) => {
@@ -214,8 +229,8 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
       <div className="bg-white max-w-6xl mx-auto p-10 rounded-2xl shadow-xl print:shadow-none print:p-0 print:rounded-none">
         <style>{`
           @media print {
-            @page { size: portrait; margin: 0.5cm; }
-            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; zoom: 0.85; }
+            @page { size: letter portrait; margin: 0.5cm; }
+            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; zoom: 0.95; }
             * { overflow: visible !important; }
             aside, header { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -298,46 +313,62 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
           </div>
         </div>
 
-        {/* Gráfica Interactiva (No imprimible) */}
-        <div className="mb-10 p-6 bg-white border border-slate-200 rounded-xl shadow-sm no-print print:hidden">
-          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            Distribución de Aprobación por Grado
-          </h3>
-          <div className="h-80 w-full mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                <defs>
-                  <linearGradient id="colorReg" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={1}/>
-                    <stop offset="95%" stopColor="#047857" stopOpacity={0.9}/>
-                  </linearGradient>
-                  <linearGradient id="colorIrr" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={1}/>
-                    <stop offset="95%" stopColor="#b45309" stopOpacity={0.9}/>
-                  </linearGradient>
-                  <linearGradient id="colorNoA" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={1}/>
-                    <stop offset="95%" stopColor="#b91c1c" stopOpacity={0.9}/>
-                  </linearGradient>
-                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
-                  </filter>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#475569', fontWeight: 600, dy: 10}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
-                <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px'}}
-                  labelStyle={{fontWeight: 'bold', color: '#1e293b', marginBottom: '8px'}}
-                />
-                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px', fontWeight: 600}} />
-                <Bar dataKey="Regulares" fill="url(#colorReg)" radius={[6, 6, 0, 0]} barSize={30} animationDuration={1500} filter="url(#shadow)" />
-                <Bar dataKey="Irregulares" fill="url(#colorIrr)" radius={[6, 6, 0, 0]} barSize={30} animationDuration={1500} filter="url(#shadow)" />
-                <Bar dataKey="No Acreditados" fill="url(#colorNoA)" radius={[6, 6, 0, 0]} barSize={30} animationDuration={1500} filter="url(#shadow)" />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Gráficas (Imprimibles y Optimizadas) */}
+        <div className="mb-10 grid grid-cols-1 md:grid-cols-2 gap-6 break-inside-avoid print:grid-cols-2 print:gap-4 print:mb-4">
+          
+          {/* Gráfica de Proporción (Pie Chart) */}
+          <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm break-inside-avoid print:shadow-none print:border-slate-400 print:p-4 print:mb-8">
+            <h3 className="text-center text-sm font-black text-slate-800 mb-4 uppercase tracking-wide print:text-black print:mb-6">
+              Porcentaje General de Aprobación
+            </h3>
+            <div className="h-64 w-full mt-2 print:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    dataKey="value"
+                    label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                    labelStyle={{ fontSize: '14px', fontWeight: 'bold', fill: '#1e293b' }}
+                  >
+                    <Cell fill={COLORS.Regulares} />
+                    <Cell fill={COLORS.ReprobadosTotal} />
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: 'none'}}
+                    itemStyle={{fontWeight: 'bold', color: '#1e293b'}}
+                  />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{fontWeight: 700, fontSize: '11px'}} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Gráfica por Grado (Bar Chart) */}
+          <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm break-inside-avoid print:shadow-none print:border-slate-400 print:p-4 print:mb-8">
+            <h3 className="text-center text-sm font-black text-slate-800 mb-4 uppercase tracking-wide print:text-black print:mb-6">
+              Aprobación por Grado
+            </h3>
+            <div className="h-64 w-full mt-2 print:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#1e293b', fontWeight: 700, fontSize: 12}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 12, fontWeight: 600}} />
+                  <Tooltip 
+                    cursor={{fill: '#f1f5f9'}}
+                    contentStyle={{borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: 'none'}}
+                    labelStyle={{fontWeight: 'bold', color: '#1e293b', marginBottom: '4px'}}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{paddingTop: '10px', fontWeight: 700, fontSize: '11px'}} />
+                  <Bar dataKey="Regulares" stackId="a" fill={COLORS.Regulares} barSize={30} />
+                  <Bar dataKey="Irregulares" stackId="a" fill={COLORS.Irregulares} />
+                  <Bar dataKey="No Acreditados" stackId="a" fill={COLORS.NoAcreditados} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
