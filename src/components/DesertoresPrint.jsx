@@ -45,67 +45,64 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
   }, [bajas]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/90 flex justify-center overflow-y-auto print:bg-white print:block print:inset-auto print:overflow-visible custom-scrollbar">
+    <div className="print-desertores-only relative bg-slate-100 min-h-screen py-8 print:py-0 print:bg-white font-sans text-slate-800">
       <style>
         {`
           @media print {
-            @page { size: portrait; margin: 12mm; }
+            @page { size: portrait; margin: 1cm; }
             html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; }
             * { overflow: visible !important; }
             aside, header { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
             .no-print { display: none !important; }
             .page-break-inside-avoid { page-break-inside: avoid; }
+            .print-desertores-only { display: block !important; margin: 0; padding: 0; }
           }
         `}
       </style>
 
-      {/* Controles NO imprimibles */}
-      <div className="absolute top-6 right-6 flex gap-3 no-print fixed z-[60]">
-        <button 
-          onClick={() => window.print()} 
-          className="flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 transition font-bold"
-        >
-          <Printer className="w-5 h-5 mr-2" /> Imprimir Reporte
+      {/* Botones Flotantes para la pantalla */}
+      <div className="flex justify-center mb-8 gap-4 print:hidden no-print">
+        <button onClick={() => window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
+          <Printer className="w-5 h-5 mr-2" />
+          Imprimir Reporte
         </button>
-        <button onClick={onClose} className="p-2.5 bg-white text-slate-500 rounded-xl shadow-lg hover:bg-slate-100 hover:text-slate-800 transition">
-          <X className="w-6 h-6" />
-        </button>
+        {onClose && (
+          <button onClick={onClose} className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
+            <X className="w-5 h-5 mr-2" />
+            Cerrar Vista Previa
+          </button>
+        )}
       </div>
 
-      <div id="printable-desertores" className="bg-white my-10 w-full max-w-[210mm] mx-auto shadow-2xl rounded-2xl overflow-hidden print:my-0 print:shadow-none print:border-none print:rounded-none print:max-w-none text-slate-800">
+      <div className="bg-white max-w-4xl mx-auto p-10 rounded-2xl shadow-xl print:shadow-none print:p-0 print:rounded-none">
         
-        {/* Encabezado Principal */}
-        <div className="bg-slate-800 px-10 py-10 text-white relative overflow-hidden">
-          {/* Decoración de fondo */}
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-slate-700 rounded-full opacity-50 blur-3xl"></div>
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-indigo-600 rounded-full opacity-20 blur-2xl"></div>
+        {/* Encabezado Elegante */}
+        <div className="flex items-center justify-between mb-8 border-b-2 border-slate-200 pb-6 print:border-black print:pb-1 print:mb-4">
+          <img src="/logo-sep.png" alt="SEP" className="h-16 w-auto object-contain print:h-12" />
+          <div className="text-center flex-1 px-4">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-lg print:leading-tight">RELACIÓN DE ALUMNOS DESERTORES</h1>
+            <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-xs print:mt-0 print:leading-tight">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
+            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[10px] print:mt-0 print:leading-tight">Ciclo Escolar 2025-2026 • Formato E6</p>
+          </div>
+          <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-14" />
+        </div>
 
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/20 shadow-inner">
-                <UserMinus className="w-10 h-10 text-rose-300" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-black tracking-tight text-white mb-1">
-                  Relación de Alumnos Desertores
-                </h1>
-                <p className="text-slate-300 font-medium tracking-wide">
-                  Ciclo Escolar 2025-2026 • Formato E6
-                </p>
-              </div>
+        {/* Resumen Total Bajas */}
+        <div className="flex justify-center mb-8 print:mb-4">
+          <div className="bg-rose-50 border border-rose-100 px-6 py-3 rounded-xl flex items-center gap-4 print:border-none print:bg-transparent print:p-0">
+            <div className="bg-rose-100 p-2 rounded-lg print:hidden">
+              <UserMinus className="w-6 h-6 text-rose-600" />
             </div>
-            <div className="text-right">
-              <div className="bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-700 inline-block shadow-inner">
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total Bajas</p>
-                <p className="text-3xl font-black text-rose-400 leading-none">{bajasOrdenadas.length}</p>
-              </div>
+            <div>
+              <p className="text-xs text-rose-600 font-bold uppercase tracking-wider mb-0.5 print:text-black">Total de Bajas Registradas</p>
+              <p className="text-3xl font-black text-rose-700 leading-none print:text-xl print:text-black">{bajasOrdenadas.length}</p>
             </div>
           </div>
         </div>
 
         {/* Contenido Principal */}
-        <div className="p-6 bg-slate-50/50 max-h-[60vh] overflow-y-auto print:max-h-none print:overflow-visible custom-scrollbar">
+        <div className="mt-6">
           
           {bajasOrdenadas.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
@@ -236,16 +233,17 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
 
           {/* Pie de página oficial */}
           {bajasOrdenadas.length > 0 && (
-            <div className="mt-12 pt-10 border-t border-slate-200">
-              <p className="text-xs font-semibold text-slate-500 text-center mb-10 flex items-center justify-center bg-slate-100 py-3 rounded-xl">
-                <span className="w-2 h-2 rounded-full bg-slate-400 mr-2 inline-block"></span>
+            <div className="mt-12 pt-10 border-t border-slate-200 print:mt-6 print:pt-4 break-inside-avoid">
+              <p className="text-xs font-semibold text-slate-500 text-center mb-10 flex items-center justify-center bg-slate-100 py-3 rounded-xl print:text-[10px] print:bg-transparent print:mb-6 print:text-black">
+                <span className="w-2 h-2 rounded-full bg-slate-400 mr-2 inline-block print:bg-black"></span>
                 NOTA: Esta relación deberá anexarse al concentrado de alumnos desertores en la Etapa de Zona Escolar.
               </p>
               
-              <div className="text-center w-full max-w-sm mx-auto">
-                <div className="border-b-2 border-slate-800 w-full mb-3"></div>
-                <div className="text-slate-800 font-black tracking-wide text-sm mb-1">NOMBRE Y FIRMA DEL DIRECTOR(A)</div>
-                <div className="text-slate-400 font-semibold text-xs tracking-widest">SELLO DE LA INSTITUCIÓN</div>
+              <div className="mt-16 pt-8 flex justify-center print:mt-8 print:pt-2">
+                <div className="text-center w-80 print:w-64">
+                  <div className="border-t-2 border-slate-800 pt-2 font-bold text-slate-800 text-sm print:border-black print:text-[10px] print:pt-1">PROFR. JUAN CARLOS TABOADA BARAJAS</div>
+                  <div className="mt-1 text-slate-500 text-xs font-semibold tracking-wide print:text-black print:text-[8px] print:mt-0">DIRECTOR DE LA ESCUELA</div>
+                </div>
               </div>
             </div>
           )}
