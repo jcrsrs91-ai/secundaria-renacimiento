@@ -571,41 +571,60 @@ export default function ControlEscolar() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-slate-200 overflow-x-auto">
-        <nav className="-mb-px flex space-x-8 min-w-max">
-          <button onClick={() => setActiveTab('pendientes')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'pendientes' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            Solicitudes Pendientes <span className="ml-2 bg-amber-100 text-amber-600 py-0.5 px-2.5 rounded-full text-xs">{pendientes.length}</span>
+      {/* Módulos de Navegación (Tabs envueltos) */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Módulos de Control Escolar</h3>
+        <div className="flex flex-wrap gap-2">
+          {/* Pendientes */}
+          <button onClick={() => setActiveTab('pendientes')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'pendientes' ? 'bg-primary-600 text-white shadow-primary-200 ring-2 ring-primary-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Solicitudes Pendientes <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${activeTab === 'pendientes' ? 'bg-primary-500 text-white' : 'bg-amber-100 text-amber-700'}`}>{pendientes.length}</span>
           </button>
-          <button onClick={() => setActiveTab('activos')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'activos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            Directorio / Expedientes <span className="ml-2 bg-slate-100 text-slate-600 py-0.5 px-2.5 rounded-full text-xs">{directorio.length}</span>
+          
+          {/* Activos */}
+          <button onClick={() => setActiveTab('activos')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'activos' ? 'bg-primary-600 text-white shadow-primary-200 ring-2 ring-primary-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Directorio / Expedientes <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${activeTab === 'activos' ? 'bg-primary-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{directorio.length}</span>
           </button>
-
-          <button onClick={() => setActiveTab('calificaciones')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'calificaciones' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            Calificaciones <Star className="w-3 h-3 inline-block ml-1 text-amber-500" />
+          
+          {/* Calificaciones */}
+          <button onClick={() => setActiveTab('calificaciones')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'calificaciones' ? 'bg-amber-500 text-white shadow-amber-200 ring-2 ring-amber-500 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Calificaciones <Star className={`w-3.5 h-3.5 ml-2 ${activeTab === 'calificaciones' ? 'text-amber-100' : 'text-amber-500'}`} />
           </button>
-          <button onClick={() => setActiveTab('asistencia')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'asistencia' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          
+          {/* Asistencia */}
+          <button onClick={() => setActiveTab('asistencia')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'asistencia' ? 'bg-emerald-600 text-white shadow-emerald-200 ring-2 ring-emerald-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Listas de Asistencia
           </button>
-          <button onClick={() => setActiveTab('aprovechamiento')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'aprovechamiento' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            Aprovechamiento Escolar
+
+          {/* Matrícula */}
+          <button onClick={() => setActiveTab('matricula')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'matricula' ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Estadística Matrícula
           </button>
-          <button onClick={() => setActiveTab('aprobacion')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'aprobacion' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+
+          {/* Aprovechamiento */}
+          <button onClick={() => setActiveTab('aprovechamiento')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'aprovechamiento' ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Aprovechamiento
+          </button>
+          
+          {/* SEP E2 */}
+          <button onClick={() => setActiveTab('aprobacion')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'aprobacion' ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Aprobación (E2)
           </button>
-          <button onClick={() => setActiveTab('eficiencia')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'eficiencia' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          
+          {/* SEP E4 */}
+          <button onClick={() => setActiveTab('eficiencia')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'eficiencia' ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Eficiencia Terminal (E4)
           </button>
-          <button onClick={() => setActiveTab('desempeno')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'desempeno' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          
+          {/* SEP E5 */}
+          <button onClick={() => setActiveTab('desempeno')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'desempeno' ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Desempeño Alcanzado (E5)
           </button>
-          <button onClick={() => setActiveTab('desertores')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'desertores' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+
+          {/* SEP E6 */}
+          <button onClick={() => setActiveTab('desertores')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'desertores' ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Desertores (E6)
           </button>
-          <button onClick={() => setActiveTab('matricula')} className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'matricula' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            Estadística de Matrícula
-          </button>
-        </nav>
+        </div>
       </div>
 
       {loading && <p className="text-center py-8 text-slate-500 animate-pulse">Cargando base de datos...</p>}
