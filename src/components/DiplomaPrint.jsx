@@ -126,9 +126,12 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                 </div>
 
                 {/* Student Name */}
-                <div className="my-2 w-full max-w-4xl border-b border-amber-300 pb-1 relative flex justify-center">
-                  <div className="bg-white/90 backdrop-blur-sm px-8 py-1.5 rounded-xl shadow-sm border border-white/50">
+                <div className="my-2 w-full max-w-4xl border-b border-amber-300 pb-2 relative flex justify-center">
+                  <div className="bg-white/90 backdrop-blur-sm px-8 py-2 rounded-xl shadow-sm border border-white/50 text-center">
                     <h2 className="text-3xl font-black text-slate-800 tracking-tight">{nombreCompleto}</h2>
+                    <p className="text-sm font-bold text-amber-700 tracking-widest uppercase mt-1">
+                      {student.grado} Grado Grupo "{student.grupo}"
+                    </p>
                   </div>
                 </div>
 
@@ -136,7 +139,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                 <div className="max-w-4xl mb-1 px-8 flex-1 flex flex-col justify-center items-center">
                   <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white/50 flex flex-col items-center">
                     <p className="text-sm text-slate-700 leading-relaxed font-medium text-justify relative z-10" style={{ textJustify: 'inter-word' }}>
-                      Por su destacada dedicación, disciplina y excelencia académica demostrados durante el presente ciclo escolar. Habiendo obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en sus estudios de educación secundaria, cursando en el <strong>{student.grado} Grupo "{student.grupo}"</strong> del Turno <strong>{turno}</strong>, y logrando un promedio sobresaliente de:
+                      Por su destacada dedicación, disciplina y excelencia académica demostrados durante el presente ciclo escolar. Habiendo obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en sus estudios de educación secundaria del Turno <strong>{turno}</strong>, y logrando un promedio sobresaliente de:
                     </p>
                     <div className="mt-3 text-2xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-1.5 px-6 rounded-xl inline-block shadow-inner relative z-10">
                       {average.toFixed(1)}
