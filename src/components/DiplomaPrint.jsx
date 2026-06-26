@@ -138,7 +138,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                 {/* Reason */}
                 <div className="max-w-4xl mb-1 px-8 flex-1 flex flex-col justify-center items-center">
                   <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white/50 flex flex-col items-center">
-                    <p className="text-base text-slate-700 leading-relaxed font-medium text-justify relative z-10" style={{ textJustify: 'inter-word' }}>
+                    <p className="text-lg text-slate-700 leading-relaxed font-medium text-justify relative z-10" style={{ textJustify: 'inter-word' }}>
                       Por su destacada dedicación, disciplina y excelencia académica demostrados durante el presente ciclo escolar. Habiendo obtenido el <strong className="text-amber-700">{placeText}</strong> de aprovechamiento escolar correspondiente al <strong className="text-slate-900">{periodoName}</strong> en sus estudios de educación secundaria del Turno <strong>{turno}</strong>, y logrando un promedio sobresaliente de:
                     </p>
                     <div className="mt-3 text-2xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-1.5 px-6 rounded-xl inline-block shadow-inner relative z-10">
