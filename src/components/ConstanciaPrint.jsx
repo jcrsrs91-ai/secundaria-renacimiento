@@ -212,7 +212,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
             <p className="font-sans text-[10pt] mt-1 text-slate-600 font-bold">DIRECTOR DEL PLANTEL</p>
             
             {/* SELLO OFICIAL SIMULADO (Alineado junto a la firma) */}
-            <div className="absolute top-10 left-10 w-32 h-32 border-4 border-slate-300 rounded-full flex flex-col items-center justify-center opacity-40 -rotate-12">
+            <div className="absolute top-10 left-10 w-32 h-32 border-4 border-slate-300 rounded-full flex flex-col items-center justify-center opacity-10 -rotate-12">
                <p className="text-[8px] font-bold uppercase tracking-widest mb-1">SEP</p>
                <div className="w-20 h-px bg-slate-300 mb-1"></div>
                <p className="text-[10px] font-black uppercase text-center leading-tight">Sello de la<br/>Institución</p>
