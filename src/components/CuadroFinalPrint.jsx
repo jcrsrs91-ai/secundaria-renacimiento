@@ -1,5 +1,5 @@
 import React from 'react';
-import { truncateTo1Dec } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
 
 export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = '', grupo = '' }) {
   if (!alumnos || alumnos.length === 0) return null;
@@ -16,22 +16,15 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
     countPorMateria[mat.id] = 0;
   });
 
-  const getPromedioFinal = (student, materiaId) => {
-    const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
-    const t2 = parseFloat(student.calificaciones?.['t2']?.[materiaId]);
-    const t3 = parseFloat(student.calificaciones?.['t3']?.[materiaId]);
-    let sum = 0, c = 0;
-    if (!isNaN(t1)) { sum += t1; c++; }
-    if (!isNaN(t2)) { sum += t2; c++; }
-    if (!isNaN(t3)) { sum += t3; c++; }
-    return c > 0 ? (sum / c) : null;
+  const getPromedioFinalObj = (student, materiaId) => {
+    return getCalificacionFinal(student, materiaId);
   };
 
   const getPromedioGeneralAlumno = (student) => {
     let sum = 0, count = 0;
     materias.forEach(mat => {
-      const final = getPromedioFinal(student, mat.id);
-      if (final !== null) { sum += final; count++; }
+      const finalObj = getPromedioFinalObj(student, mat.id);
+      if (finalObj !== null) { sum += finalObj.valor; count++; }
     });
     return count > 0 ? truncateTo1Dec(sum / count) : '-';
   };
@@ -89,16 +82,22 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
                   <td className="border border-black p-0.5 text-center font-bold">{idx + 1}</td>
                   <td className="border border-black p-0.5 font-medium truncate uppercase whitespace-nowrap">{al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}</td>
                   {materias.map(mat => {
-                    const val = getPromedioFinal(al, mat.id);
-                    if (val !== null) {
+                    const finalObj = getPromedioFinalObj(al, mat.id);
+                    let val = null;
+                    let isReg = false;
+                    
+                    if (finalObj !== null) {
+                      val = finalObj.valor;
+                      isReg = finalObj.isRegularizacion;
                       sumaPorMateria[mat.id] += val;
                       countPorMateria[mat.id]++;
                       if (val < 6.0) reprobadosPorMateria[mat.id]++;
                     }
+                    
                     const isFailing = val !== null && val < 6.0;
                     return (
                       <td key={mat.id} className={`border border-black p-0.5 text-center font-bold ${isFailing ? 'text-red-600' : ''}`}>
-                        {val !== null ? truncateTo1Dec(val) : '-'}
+                        {val !== null ? `${truncateTo1Dec(val)}${isReg ? '*' : ''}` : '-'}
                       </td>
                     );
                   })}

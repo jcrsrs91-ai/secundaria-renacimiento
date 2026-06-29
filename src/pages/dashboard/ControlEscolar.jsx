@@ -18,6 +18,7 @@ import AprobacionPrint from '../../components/AprobacionPrint';
 import EficienciaTerminalPrint from '../../components/EficienciaTerminalPrint';
 import DesempenoAlcanzadoPrint from '../../components/DesempenoAlcanzadoPrint';
 import DesertoresPrint from '../../components/DesertoresPrint';
+import RegularizacionPrint from '../../components/RegularizacionPrint';
 import AddStudentModal from '../../components/AddStudentModal';
 
 export default function ControlEscolar() {
@@ -26,6 +27,11 @@ export default function ControlEscolar() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [constanciaPromedio, setConstanciaPromedio] = useState('');
+  
+  // Estados para Modal de Extraordinarios
+  const [extraStudent, setExtraStudent] = useState(null);
+  const [extraSubjects, setExtraSubjects] = useState([]);
+  const [extraData, setExtraData] = useState({});
 
   const [pendientes, setPendientes] = useState([]);
   const [activos, setActivos] = useState([]);
@@ -178,6 +184,48 @@ export default function ControlEscolar() {
     setModalType(null);
     setSelectedStudent(null);
     setConstanciaPromedio('');
+    setExtraStudent(null);
+    setExtraSubjects([]);
+    setExtraData({});
+  };
+
+  const handleCaptureExtra = (student, subjects) => {
+    setExtraStudent(student);
+    setExtraSubjects(subjects);
+    setExtraData({}); // clear previous inputs
+    setModalType('extraordinario');
+  };
+
+  const saveExtraordinario = async () => {
+    let hasData = false;
+    for (const matId in extraData) {
+      if (extraData[matId].calificacion && extraData[matId].fecha) hasData = true;
+    }
+    if (!hasData) {
+      toast.error('Captura al menos una calificación y fecha para guardar.');
+      return;
+    }
+
+    try {
+      const studentRef = doc(db, 'students', extraStudent.id);
+      const currentReg = extraStudent.regularizacion || {};
+      const newReg = { ...currentReg };
+      for (const matId in extraData) {
+        if (extraData[matId].calificacion && extraData[matId].fecha) {
+           newReg[matId] = {
+             calificacion: parseFloat(extraData[matId].calificacion),
+             fecha: extraData[matId].fecha
+           };
+        }
+      }
+      
+      await updateDoc(studentRef, { regularizacion: newReg });
+      toast.success('Historial de regularización guardado exitosamente.');
+      closeModal();
+    } catch (error) {
+      console.error("Error al guardar extraordinario:", error);
+      toast.error('Hubo un error al guardar el extraordinario.');
+    }
   };
 
   const hasFailedSubjects = useMemo(() => {
@@ -613,6 +661,11 @@ export default function ControlEscolar() {
           {/* Calificaciones */}
           <button onClick={() => setActiveTab('calificaciones')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'calificaciones' ? 'bg-amber-500 text-white shadow-amber-200 ring-2 ring-amber-500 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Calificaciones <Star className={`w-3.5 h-3.5 ml-2 ${activeTab === 'calificaciones' ? 'text-amber-100' : 'text-amber-500'}`} />
+          </button>
+
+          {/* Regularización / Extraordinarios */}
+          <button onClick={() => setActiveTab('regularizacion')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'regularizacion' ? 'bg-orange-600 text-white shadow-orange-200 ring-2 ring-orange-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Regularización
           </button>
           
           {/* Asistencia */}
@@ -1105,6 +1158,78 @@ export default function ControlEscolar() {
                   <h3 className="font-bold text-slate-800">Constancia con Calificaciones</h3>
                   <p className="text-xs text-slate-500 mt-1">Incluye el promedio general acumulado y la tabla de calificaciones.</p>
                 </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sección Regularización / Extraordinarios */}
+      {!loading && activeTab === 'regularizacion' && !printMode && (
+        <RegularizacionPrint 
+          activos={activos} 
+          materiasPorGrado={materiasPorGrado} 
+          onCaptureExtra={handleCaptureExtra} 
+          onClose={() => setActiveTab('activos')} 
+        />
+      )}
+
+      {/* Modal para Capturar Extraordinario */}
+      {modalType === 'extraordinario' && extraStudent && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 print:hidden">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 relative">
+            <button onClick={closeModal} className="absolute right-4 top-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold text-slate-800 mb-1">Capturar Extraordinario</h2>
+            <p className="text-sm text-slate-500 mb-6">
+              Ingresa la calificación obtenida por <strong>{extraStudent.nombres} {extraStudent.apellidoPaterno}</strong>.
+            </p>
+
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+              {extraSubjects.map(mat => (
+                <div key={mat.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <h3 className="font-bold text-slate-700 mb-3">{mat.name}</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Calificación Final (Aprobatoria)</label>
+                      <input 
+                        type="number" 
+                        step="0.1" 
+                        min="6" max="10"
+                        value={extraData[mat.id]?.calificacion || ''}
+                        onChange={(e) => setExtraData(prev => ({ 
+                          ...prev, 
+                          [mat.id]: { ...prev[mat.id], calificacion: e.target.value } 
+                        }))}
+                        placeholder="Ej. 7.5"
+                        className="w-full border border-slate-300 rounded-md p-2 text-sm focus:border-orange-500 focus:ring-orange-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Fecha de Acreditación</label>
+                      <input 
+                        type="date" 
+                        value={extraData[mat.id]?.fecha || ''}
+                        onChange={(e) => setExtraData(prev => ({ 
+                          ...prev, 
+                          [mat.id]: { ...prev[mat.id], fecha: e.target.value } 
+                        }))}
+                        className="w-full border border-slate-300 rounded-md p-2 text-sm focus:border-orange-500 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <button onClick={closeModal} className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                Cancelar
+              </button>
+              <button onClick={saveExtraordinario} className="px-4 py-2 text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center shadow-sm">
+                <Save className="w-4 h-4 mr-2" />
+                Guardar Calificaciones
               </button>
             </div>
           </div>

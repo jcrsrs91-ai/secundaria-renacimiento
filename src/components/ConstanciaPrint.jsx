@@ -1,5 +1,5 @@
 import React from 'react';
-import { truncateTo1Dec } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
 
 const extraerFechaDeCurp = (curp) => {
   if (!curp || curp.length < 10) return null;
@@ -64,20 +64,25 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
     const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
     const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
     
-    let sum = 0;
-    let count = 0;
-    if (!isNaN(t1)) { sum += t1; count++; }
-    if (!isNaN(t2)) { sum += t2; count++; }
-    if (!isNaN(t3)) { sum += t3; count++; }
+    const califFinalObj = getCalificacionFinal(student, mat.id);
+    let finalMat = '-';
+    let numFinal = null;
+    let isRegularizacion = false;
+
+    if (califFinalObj) {
+       finalMat = truncateTo1Dec(califFinalObj.valor);
+       numFinal = califFinalObj.valor;
+       isRegularizacion = califFinalObj.isRegularizacion;
+    }
     
-    const finalMat = count > 0 ? truncateTo1Dec(sum / count) : '-';
     return {
       name: mat.name,
       t1: truncateTo1Dec(t1),
       t2: truncateTo1Dec(t2),
       t3: truncateTo1Dec(t3),
-      final: finalMat,
-      numFinal: count > 0 ? (sum / count) : null
+      final: isRegularizacion ? `${finalMat}*` : finalMat,
+      numFinal: numFinal,
+      isRegularizacion
     };
   });
 
@@ -192,7 +197,12 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
                  </tr>
                </tbody>
              </table>
-           </div>
+            </div>
+         )}
+         {type === 'calificaciones' && calificacionesData.some(m => m.isRegularizacion) && (
+           <p className="text-[8pt] text-slate-500 italic mb-2 -mt-2">
+             * Calificación obtenida en periodo de regularización.
+           </p>
          )}
 
          {type === 'calificaciones' && student.manualPromedio && student.grado === '3er Grado' && (

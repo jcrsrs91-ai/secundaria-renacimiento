@@ -1,5 +1,5 @@
 import React from 'react';
-import { truncateTo1Dec } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
 
 export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
   if (!students || students.length === 0) return null;
@@ -55,24 +55,32 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
         // Calcular calificaciones
         let sumGral = 0;
         let countGral = 0;
+        let hasRegularizacion = false;
         const califs = materias.map(mat => {
           const t1 = parseFloat(student.calificaciones?.['t1']?.[mat.id]);
           const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
           const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
-          let sum = 0, c = 0;
-          if(!isNaN(t1)) { sum+=t1; c++; }
-          if(!isNaN(t2)) { sum+=t2; c++; }
-          if(!isNaN(t3)) { sum+=t3; c++; }
           
-          const final = c > 0 ? (sum/c) : null;
-          if (final !== null) { sumGral+=final; countGral++; }
+          const califFinalObj = getCalificacionFinal(student, mat.id);
+          let final = null;
+          let finalStr = '';
+          if (califFinalObj) {
+            final = califFinalObj.valor;
+            finalStr = truncateTo1Dec(final, '');
+            if (califFinalObj.isRegularizacion) {
+               finalStr += '*';
+               hasRegularizacion = true;
+            }
+            sumGral += final; 
+            countGral++;
+          }
           
           return {
             name: mat.name,
             t1: truncateTo1Dec(t1, ''),
             t2: truncateTo1Dec(t2, ''),
             t3: truncateTo1Dec(t3, ''),
-            final: truncateTo1Dec(final, '')
+            final: finalStr
           };
         });
 
@@ -141,6 +149,12 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                   </tbody>
                 </table>
               </div>
+
+              {hasRegularizacion && (
+                <p className="text-[8px] text-slate-500 italic mb-4 mt-1">
+                  * Calificación obtenida en periodo de regularización.
+                </p>
+              )}
 
               {/* ASISTENCIA (Opcional simulado) */}
               <div className="flex gap-4 mb-8">
