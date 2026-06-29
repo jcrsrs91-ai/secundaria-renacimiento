@@ -13,6 +13,45 @@ const extraerFechaDeCurp = (curp) => {
   return `${dd}/${mm}/${fullYear}`;
 };
 
+const promedioALetras = (promedioNum) => {
+  if (!promedioNum) return '';
+  const num = parseFloat(promedioNum);
+  if (isNaN(num)) return '';
+
+  const enteros = Math.floor(num);
+  const decimal = Math.round((num - enteros) * 10);
+
+  const numWords = {
+    5: 'CINCO',
+    6: 'SEIS',
+    7: 'SIETE',
+    8: 'OCHO',
+    9: 'NUEVE',
+    10: 'DIEZ'
+  };
+
+  const decWords = {
+    0: 'CERO',
+    1: 'UNO',
+    2: 'DOS',
+    3: 'TRES',
+    4: 'CUATRO',
+    5: 'CINCO',
+    6: 'SEIS',
+    7: 'SIETE',
+    8: 'OCHO',
+    9: 'NUEVE'
+  };
+
+  const enteroStr = numWords[enteros] || enteros.toString();
+  if (enteros === 10 && decimal === 0) {
+      return 'DIEZ PUNTO CERO';
+  }
+  const decStr = decWords[decimal] || 'CERO';
+
+  return `${enteroStr} PUNTO ${decStr}`;
+};
+
 export default function ConstanciaPrint({ student, type = 'simple', materiasPorGrado = {} }) {
   if (!student) return null;
 
@@ -110,7 +149,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
          </div>
 
          <p className="mb-6 indent-12">
-            El que suscribe, <strong>Profr. Juan Carlos Taboada Barajas</strong>, Director de la Escuela Secundaria Técnica N° 68 "Renacimiento", por medio de la presente:
+            El que suscribe, <strong>Profr. Juan Carlos Taboada Barajas</strong>, Director de la Escuela Secundaria Técnica N° 68 "Renacimiento", con domicilio en Calle Alta Quebradora y Andador 24 de Febrero S/N, Cd. Renacimiento, C.P. 39715, Tel. 744 441 5678, por medio de la presente:
          </p>
 
          <div className="text-center mb-6 font-black text-lg tracking-[0.3em] uppercase">
@@ -158,7 +197,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
 
          {type === 'calificaciones' && student.manualPromedio && student.grado === '3er Grado' && (
            <p className="mt-4 mb-2 indent-12 text-[10pt] text-justify font-bold">
-             Adicionalmente, se hace constar que el (la) alumno(a) cuenta con un Promedio de Nivel Educativo (Certificado) de: {student.manualPromedio}.
+             Adicionalmente, se hace constar que el (la) alumno(a) cuenta con un Promedio de Nivel Educativo (Certificado) de: {student.manualPromedio} ({promedioALetras(student.manualPromedio)}).
            </p>
          )}
 
