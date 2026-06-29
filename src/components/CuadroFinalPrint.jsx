@@ -73,10 +73,12 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
                 </th>
               ))}
               <th className="border border-black p-1 text-center bg-slate-300">PROM<br/>GRAL</th>
+              <th className="border border-black p-1 text-center bg-red-100 text-red-800 text-[6px]">MAT<br/>REP</th>
             </tr>
           </thead>
           <tbody>
             {alumnos.map((al, idx) => {
+              let matRepAlumno = 0;
               return (
                 <tr key={al.id}>
                   <td className="border border-black p-0.5 text-center font-bold">{idx + 1}</td>
@@ -91,7 +93,10 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
                       isReg = finalObj.isRegularizacion;
                       sumaPorMateria[mat.id] += val;
                       countPorMateria[mat.id]++;
-                      if (val < 6.0) reprobadosPorMateria[mat.id]++;
+                      if (val < 6.0) {
+                        reprobadosPorMateria[mat.id]++;
+                        matRepAlumno++;
+                      }
                     }
                     
                     const isFailing = val !== null && val < 6.0;
@@ -102,6 +107,9 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
                     );
                   })}
                   <td className="border border-black p-0.5 text-center font-black bg-slate-100">{getPromedioGeneralAlumno(al)}</td>
+                  <td className={`border border-black p-0.5 text-center font-black ${matRepAlumno > 0 ? 'text-red-700 bg-red-50' : 'text-slate-300'}`}>
+                    {matRepAlumno}
+                  </td>
                 </tr>
               );
             })}
@@ -114,12 +122,14 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
                 return <td key={mat.id} className="border border-black p-0.5 text-center font-black text-blue-800">{promGral}</td>;
               })}
               <td className="border border-black p-0.5 bg-slate-200"></td>
+              <td className="border border-black p-0.5 bg-slate-200"></td>
             </tr>
             <tr className="bg-red-50">
               <td colSpan="2" className="border border-black p-0.5 text-right font-black uppercase text-red-700 text-[7px]">Alumnos Reprobados:</td>
               {materias.map(mat => (
                 <td key={mat.id} className="border border-black p-0.5 text-center font-black text-red-700">{reprobadosPorMateria[mat.id]}</td>
               ))}
+              <td className="border border-black p-0.5 bg-slate-200"></td>
               <td className="border border-black p-0.5 bg-slate-200"></td>
             </tr>
           </tfoot>
