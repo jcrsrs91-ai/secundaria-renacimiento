@@ -134,6 +134,18 @@ export default function CuadroHonor() {
       });
     }
 
+    // Ordenar alfabéticamente por apellido paterno, apellido materno y finalmente por grupo
+    places.sort((a, b) => {
+      const apA = (a.student.apellidoPaterno || '').trim().localeCompare((b.student.apellidoPaterno || '').trim(), 'es', { sensitivity: 'base' });
+      if (apA !== 0) return apA;
+
+      const amA = (a.student.apellidoMaterno || '').trim().localeCompare((b.student.apellidoMaterno || '').trim(), 'es', { sensitivity: 'base' });
+      if (amA !== 0) return amA;
+
+      const grA = (a.student.grupo || '').trim().localeCompare((b.student.grupo || '').trim(), 'es', { sensitivity: 'base' });
+      return grA;
+    });
+
     return places;
   }, [activos, grado, turno, periodo]);
 
