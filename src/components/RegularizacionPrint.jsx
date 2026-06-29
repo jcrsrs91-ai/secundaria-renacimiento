@@ -3,6 +3,7 @@ import { getCalificacionFinal } from '../utils/format';
 import { FileText, Calendar, PlusCircle, X, Save } from 'lucide-react';
 
 export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptureExtra, onClose }) {
+  const [filtroGrado, setFiltroGrado] = useState('Todos');
   
   // Computar alumnos con adeudos (materias reprobadas y no regularizadas)
   const adeudosData = useMemo(() => {
@@ -32,13 +33,22 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
       }
     });
 
-    // Ordenar alfabéticamente
+    // Ordenar por grupo y luego alfabéticamente
     return list.sort((a, b) => {
+      const grupoA = (a.student.grupo || '').toUpperCase();
+      const grupoB = (b.student.grupo || '').toUpperCase();
+      if (grupoA !== grupoB) return grupoA.localeCompare(grupoB);
+
       const nameA = `${a.student.apellidoPaterno || ''} ${a.student.apellidoMaterno || ''} ${a.student.nombres || ''}`.trim().toUpperCase();
       const nameB = `${b.student.apellidoPaterno || ''} ${b.student.apellidoMaterno || ''} ${b.student.nombres || ''}`.trim().toUpperCase();
       return nameA.localeCompare(nameB);
     });
   }, [activos, materiasPorGrado]);
+
+  const filteredData = useMemo(() => {
+    if (filtroGrado === 'Todos') return adeudosData;
+    return adeudosData.filter(item => item.student.grado === filtroGrado);
+  }, [adeudosData, filtroGrado]);
 
   const handleImprimir = () => {
     setTimeout(() => window.print(), 500);
@@ -59,6 +69,23 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
             Cerrar Vista Previa
           </button>
         )}
+      </div>
+
+      {/* Filtro de Grado */}
+      <div className="flex justify-center mb-6 gap-4 print:hidden no-print">
+        <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-3">
+          <label className="text-sm font-bold text-slate-700">Filtrar por Grado:</label>
+          <select 
+            value={filtroGrado} 
+            onChange={(e) => setFiltroGrado(e.target.value)}
+            className="border-slate-300 rounded-md text-sm py-1.5 pl-3 pr-8 focus:border-orange-500 focus:ring-orange-500 font-medium text-slate-700"
+          >
+            <option value="Todos">Todos los grados</option>
+            <option value="1er Grado">1er Grado</option>
+            <option value="2do Grado">2do Grado</option>
+            <option value="3er Grado">3er Grado</option>
+          </select>
+        </div>
       </div>
 
       <div className="bg-white max-w-5xl mx-auto p-10 rounded-2xl shadow-xl print:shadow-none print:p-0 print:rounded-none">
@@ -86,9 +113,9 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
           <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-14" />
         </div>
 
-        {adeudosData.length === 0 ? (
+        {filteredData.length === 0 ? (
           <div className="text-center py-20 text-slate-500 font-bold text-lg">
-            ¡No hay ningún alumno con adeudos o materias reprobadas en este momento!
+            ¡No hay ningún alumno con adeudos o materias reprobadas en este momento para el filtro seleccionado!
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -103,7 +130,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                 </tr>
               </thead>
               <tbody>
-                {adeudosData.map((item, index) => (
+                {filteredData.map((item, index) => (
                   <tr key={item.student.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                     <td className="border border-slate-300 px-3 py-2">
                       <div className="font-bold text-slate-800 uppercase">{item.student.apellidoPaterno} {item.student.apellidoMaterno} {item.student.nombres}</div>
