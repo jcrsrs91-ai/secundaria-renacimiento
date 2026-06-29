@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2, UserPlus, Award, UserMinus } from 'lucide-react';
+import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2, UserPlus, Award, UserMinus, AlertTriangle } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
