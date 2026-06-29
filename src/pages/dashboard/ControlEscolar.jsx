@@ -25,6 +25,7 @@ export default function ControlEscolar() {
   const [modalType, setModalType] = useState(null); // 'hoja', 'grade', 'asignacionMasiva'
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
+  const [constanciaPromedio, setConstanciaPromedio] = useState('');
 
   const [pendientes, setPendientes] = useState([]);
   const [activos, setActivos] = useState([]);
@@ -176,7 +177,27 @@ export default function ControlEscolar() {
   const closeModal = () => {
     setModalType(null);
     setSelectedStudent(null);
+    setConstanciaPromedio('');
   };
+
+  const hasFailedSubjects = useMemo(() => {
+    if (!selectedStudent || !materiasPorGrado[selectedStudent.grado]) return false;
+    const materias = materiasPorGrado[selectedStudent.grado];
+    for (let mat of materias) {
+      const t1 = parseFloat(selectedStudent.calificaciones?.['t1']?.[mat.id]);
+      const t2 = parseFloat(selectedStudent.calificaciones?.['t2']?.[mat.id]);
+      const t3 = parseFloat(selectedStudent.calificaciones?.['t3']?.[mat.id]);
+      let sum = 0; let count = 0;
+      if (!isNaN(t1)) { sum += t1; count++; }
+      if (!isNaN(t2)) { sum += t2; count++; }
+      if (!isNaN(t3)) { sum += t3; count++; }
+      if (count > 0) {
+        const finalMat = Math.floor((sum / count + 0.00001) * 10) / 10;
+        if (finalMat < 6) return true;
+      }
+    }
+    return false;
+  }, [selectedStudent, materiasPorGrado]);
 
   const handleDeleteStudent = async (student) => {
     if (window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${student.nombres} ${student.apellidoPaterno}? Esta acción no se puede deshacer.`)) {
@@ -213,7 +234,7 @@ export default function ControlEscolar() {
     toast.success("Generando constancia...", { icon: '📝' });
     setConstanciaType(type);
     setPrintMode('constancia');
-    setPrintData(selectedStudent);
+    setPrintData({ ...selectedStudent, manualPromedio: constanciaPromedio });
     // Aumentamos el tiempo para dar oportunidad al navegador de cargar/decodificar la imagen
     setTimeout(() => window.print(), 800);
     closeModal();
@@ -1035,8 +1056,36 @@ export default function ControlEscolar() {
               <X className="w-5 h-5" />
             </button>
             <h2 className="text-xl font-bold text-slate-800 mb-2">Generar Constancia</h2>
-            <p className="text-sm text-slate-500 mb-6">Selecciona el tipo de documento que deseas emitir para <strong>{selectedStudent.nombres}</strong>.</p>
+            <p className="text-sm text-slate-500 mb-4">Selecciona el tipo de documento que deseas emitir para <strong>{selectedStudent.nombres}</strong>.</p>
             
+            {hasFailedSubjects && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Aviso: Alumno con materias reprobadas.</p>
+                  <p className="text-xs">Según el cuadro de concentración final, este alumno tiene al menos una materia con promedio final menor a 6.0.</p>
+                </div>
+              </div>
+            )}
+
+            {selectedStudent.grado === '3er Grado' && (
+              <div className="mb-4 bg-slate-50 border border-slate-200 p-3 rounded-lg">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Promedio del Nivel Educativo (Opcional)
+                </label>
+                <input 
+                  type="number" 
+                  step="0.1" 
+                  min="6" max="10"
+                  value={constanciaPromedio}
+                  onChange={(e) => setConstanciaPromedio(e.target.value)}
+                  placeholder="Ej. 9.8"
+                  className="w-full border-slate-300 rounded-md shadow-sm p-2 text-sm focus:border-primary-500 focus:ring-primary-500"
+                />
+                <p className="text-xs text-slate-500 mt-1">Este dato se añadirá a la Constancia con Calificaciones.</p>
+              </div>
+            )}
+
             <div className="space-y-3">
               <button onClick={() => executePrintConstancia('simple')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition text-left group">
                 <div className="bg-primary-100 text-primary-600 p-2 rounded-lg mr-4 group-hover:bg-primary-500 group-hover:text-white transition">

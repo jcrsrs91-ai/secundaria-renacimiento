@@ -156,6 +156,12 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
            </div>
          )}
 
+         {type === 'calificaciones' && student.manualPromedio && student.grado === '3er Grado' && (
+           <p className="mt-4 mb-2 indent-12 text-[10pt] text-justify font-bold">
+             Adicionalmente, se hace constar que el (la) alumno(a) cuenta con un Promedio de Nivel Educativo (Certificado) de: {student.manualPromedio}.
+           </p>
+         )}
+
          <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-10'}`}>
             A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
          </p>
