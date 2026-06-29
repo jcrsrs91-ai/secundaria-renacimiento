@@ -134,8 +134,10 @@ export default function CuadroHonor() {
       });
     }
 
-    // Ordenar alfabéticamente por apellido paterno, apellido materno y finalmente por grupo
+    // Ordenar por lugar, luego alfabéticamente por apellido y finalmente por grupo
     places.sort((a, b) => {
+      if (a.place !== b.place) return a.place - b.place;
+
       const apA = (a.student.apellidoPaterno || '').trim().localeCompare((b.student.apellidoPaterno || '').trim(), 'es', { sensitivity: 'base' });
       if (apA !== 0) return apA;
 
