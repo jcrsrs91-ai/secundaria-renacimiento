@@ -180,11 +180,11 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                     <p className="text-2xl text-slate-700 leading-relaxed font-medium text-center relative z-10">
                       {Math.floor((average + 0.00001) * 10) / 10 === 10 ? (
                         <>
-                          Por haber logrado la <strong className="text-amber-700">Excelencia Académica</strong>, obteniendo el <strong className="text-amber-700">1er Lugar de Aprovechamiento</strong> en el Ciclo Escolar <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
+                          Por haber logrado la <strong className="text-amber-700">Excelencia Académica</strong>, obteniendo el <strong className="text-amber-700">1er Lugar de Aprovechamiento Académico</strong> en el Ciclo Escolar <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
                         </>
                       ) : (
                         <>
-                          Por haber logrado el <strong className="text-amber-700">{placeText === 'PRIMER LUGAR' ? '1er Lugar' : placeText === 'SEGUNDO LUGAR' ? '2do Lugar' : placeText === 'TERCER LUGAR' ? '3er Lugar' : 'Mención Honorífica'} de Aprovechamiento</strong> en el Ciclo Escolar <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
+                          Por haber logrado el <strong className="text-amber-700">{placeText === 'PRIMER LUGAR' ? '1er Lugar' : placeText === 'SEGUNDO LUGAR' ? '2do Lugar' : placeText === 'TERCER LUGAR' ? '3er Lugar' : 'Mención Honorífica'} de Aprovechamiento Académico</strong> en el Ciclo Escolar <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
                         </>
                       )}
                     </p>
