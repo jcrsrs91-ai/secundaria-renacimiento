@@ -17,7 +17,11 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   const alumnos = useMemo(() => {
     return activos
       .filter(a => a.grado === grado && a.grupo === grupo)
-      .sort((a, b) => a.apellidoPaterno.localeCompare(b.apellidoPaterno));
+      .sort((a, b) => {
+        const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
+        const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
+        return nameA.localeCompare(nameB);
+      });
   }, [activos, grado, grupo]);
 
   const materias = materiasPorGrado[grado] || [];

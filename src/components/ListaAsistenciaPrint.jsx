@@ -3,10 +3,12 @@ import React from 'react';
 export default function ListaAsistenciaPrint({ students, grado, grupo, mes, paperSize }) {
   if (!students || students.length === 0) return null;
 
-  // Ordenar alfabéticamente por apellido paterno
-  const sortedStudents = [...students].sort((a, b) => 
-    a.apellidoPaterno.localeCompare(b.apellidoPaterno)
-  );
+  // Ordenar alfabéticamente por nombre completo (Paterno Materno Nombres)
+  const sortedStudents = [...students].sort((a, b) => {
+    const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
+    const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
+    return nameA.localeCompare(nameB);
+  });
 
   // Obtener el taller automático y el turno del primer alumno si existen
   const firstStudent = sortedStudents[0];

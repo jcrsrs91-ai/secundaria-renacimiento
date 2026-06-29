@@ -161,7 +161,11 @@ export default function ControlEscolar() {
   const asisAlumnos = useMemo(() => {
     return activos
       .filter(a => a.grado === asisGrado && a.grupo === asisGrupo)
-      .sort((a, b) => a.apellidoPaterno.localeCompare(b.apellidoPaterno));
+      .sort((a, b) => {
+        const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
+        const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
+        return nameA.localeCompare(nameB);
+      });
   }, [activos, asisGrado, asisGrupo]);
 
   const openModal = (type, student) => {
