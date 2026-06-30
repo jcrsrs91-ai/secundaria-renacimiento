@@ -167,7 +167,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                 {/* Student Name */}
                 <div className="my-2 w-full max-w-4xl border-b border-amber-300 pb-2 relative flex justify-center">
                   <div className="bg-white/90 backdrop-blur-sm px-8 py-2 rounded-xl shadow-sm border border-white/50 text-center">
-                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">{nombreCompleto}</h2>
+                    <h2 className="text-3xl font-black text-slate-800 tracking-widest" style={{ wordSpacing: '0.4em' }}>{nombreCompleto}</h2>
                     <p className="text-sm font-bold text-amber-700 tracking-widest uppercase mt-1">
                       {student.grado} Grupo "{student.grupo}"
                     </p>
