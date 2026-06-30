@@ -38,6 +38,7 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
         {`
           @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Montserrat:wght@300;400;500;600;700;900&family=Pinyon+Script&display=swap');
           
+          /* CLASES BLOQUEADAS - DISEÑO EXCLUSIVO PARA ESTE DIPLOMA */
           @media print {
             @page { size: letter landscape; margin: 0; }
             #root { display: none !important; }
@@ -66,7 +67,7 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
               overflow: hidden;
             }
             
-            .diploma-container { 
+            .diploma-gen-container { 
               width: 265mm; 
               height: 200mm; 
               position: relative; 
@@ -77,7 +78,7 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
             }
           }
           
-          .diploma-container {
+          .diploma-gen-container {
             width: 265mm;
             height: 200mm;
             background: #fff;
@@ -91,7 +92,7 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
           }
           
           /* Marco exterior azul marino */
-          .border-outer {
+          .border-gen-outer {
               border: 2px solid #1A2B4C;
               width: 100%;
               height: 100%;
@@ -100,7 +101,7 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
           }
 
           /* Marco interior dorado */
-          .border-inner {
+          .border-gen-inner {
               border: 1px solid #C5A059;
               width: 100%;
               height: 100%;
@@ -115,7 +116,7 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
           }
 
           /* Adornos dorados en las esquinas */
-          .corner {
+          .gen-corner {
               position: absolute;
               width: 50px;
               height: 50px;
@@ -158,13 +159,13 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
       </div>
 
       <div className="print-page-wrapper">
-        <div className="diploma-container">
-          <div className="border-outer">
-            <div className="border-inner">
-              <div className="corner tl"></div>
-              <div className="corner tr"></div>
-              <div className="corner bl"></div>
-              <div className="corner br"></div>
+        <div className="diploma-gen-container">
+          <div className="border-gen-outer">
+            <div className="border-gen-inner">
+              <div className="gen-corner tl"></div>
+              <div className="gen-corner tr"></div>
+              <div className="gen-corner bl"></div>
+              <div className="gen-corner br"></div>
 
               {/* Sello de agua central sutil */}
               <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none">
