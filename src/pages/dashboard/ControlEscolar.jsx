@@ -20,6 +20,7 @@ import DesempenoAlcanzadoPrint from '../../components/DesempenoAlcanzadoPrint';
 import DesertoresPrint from '../../components/DesertoresPrint';
 import RegularizacionPrint from '../../components/RegularizacionPrint';
 import AddStudentModal from '../../components/AddStudentModal';
+import { autoAcentuar } from '../../utils/format';
 
 export default function ControlEscolar() {
   const [activeTab, setActiveTab] = useState('pendientes');
@@ -134,6 +135,12 @@ export default function ControlEscolar() {
               }
            }
         }
+        
+        // Aplicar reglas ortográficas (Acentos) a nivel global en memoria
+        if (data.nombres) data.nombres = autoAcentuar(data.nombres);
+        if (data.apellidoPaterno) data.apellidoPaterno = autoAcentuar(data.apellidoPaterno);
+        if (data.apellidoMaterno) data.apellidoMaterno = autoAcentuar(data.apellidoMaterno);
+
         return { id: doc.id, ...data };
       });
       setPendientes(allData.filter(s => s.status === 'Pendiente'));
