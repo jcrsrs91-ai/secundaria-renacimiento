@@ -6,6 +6,7 @@ import { truncateTo1Dec, truncateTo2Dec } from '../utils/format';
 import DiplomaPrint from './DiplomaPrint';
 import CuadroHonorListaPrint from './CuadroHonorListaPrint';
 import ManualDiplomaModal from './ManualDiplomaModal';
+import DiplomaGeneracionPrint from './DiplomaGeneracionPrint';
 
 const materiasPorGrado = {
   '1er Grado': [
@@ -37,6 +38,15 @@ export default function CuadroHonor() {
   const [printData, setPrintData] = useState(null); // null o arreglo de { student, average, place, periodoName }
   const [showPrintLista, setShowPrintLista] = useState(false);
   const [showManualDiploma, setShowManualDiploma] = useState(false);
+  
+  // Generación
+  const [showGeneracionModal, setShowGeneracionModal] = useState(false);
+  const [generacionPrintData, setGeneracionPrintData] = useState(null);
+  
+  const [genStudentId, setGenStudentId] = useState('');
+  const [genPromedio, setGenPromedio] = useState('');
+  const [genText, setGenText] = useState('2023-2026');
+  const [genTurno, setGenTurno] = useState('Matutino');
 
   // Cargar estudiantes
   useEffect(() => {
@@ -239,6 +249,84 @@ export default function CuadroHonor() {
         />
       )}
 
+      {generacionPrintData && (
+        <DiplomaGeneracionPrint
+          student={generacionPrintData.student}
+          promedio={generacionPrintData.promedio}
+          generacion={generacionPrintData.generacion}
+          turno={generacionPrintData.turno}
+          onClose={() => setGeneracionPrintData(null)}
+        />
+      )}
+
+      {showGeneracionModal && (
+        <div className="fixed inset-0 z-[60] bg-slate-900/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+            <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+              <Award className="w-6 h-6 text-amber-500" /> Diploma de Generación
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Alumno (Solo 3er Grado)</label>
+                <select 
+                  value={genStudentId}
+                  onChange={e => setGenStudentId(e.target.value)}
+                  className="w-full border-slate-300 rounded-lg shadow-sm p-2 text-sm"
+                >
+                  <option value="">Selecciona al ganador...</option>
+                  {activos.filter(s => s.grado === '3er Grado').sort((a,b) => a.apellidoPaterno.localeCompare(b.apellidoPaterno)).map(al => (
+                    <option key={al.id} value={al.id}>{al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Promedio de Generación</label>
+                <input 
+                  type="number" step="0.01" 
+                  value={genPromedio} onChange={e => setGenPromedio(e.target.value)}
+                  placeholder="Ej. 9.9"
+                  className="w-full border-slate-300 rounded-lg shadow-sm p-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Texto de Generación</label>
+                <input 
+                  type="text" 
+                  value={genText} onChange={e => setGenText(e.target.value)}
+                  className="w-full border-slate-300 rounded-lg shadow-sm p-2 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Turno</label>
+                <select value={genTurno} onChange={e => setGenTurno(e.target.value)} className="w-full border-slate-300 rounded-lg shadow-sm p-2 text-sm">
+                  <option value="Matutino">Matutino</option>
+                  <option value="Vespertino">Vespertino</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3">
+              <button onClick={() => setShowGeneracionModal(false)} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-lg text-sm">Cancelar</button>
+              <button 
+                disabled={!genStudentId || !genPromedio || !genText}
+                onClick={() => {
+                  const student = activos.find(s => s.id === genStudentId);
+                  setGeneracionPrintData({ student, promedio: genPromedio, generacion: genText, turno: genTurno });
+                  setShowGeneracionModal(false);
+                }}
+                className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-bold text-sm"
+              >
+                Generar Diploma
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header & Filtros */}
       <div className="p-6 border-b border-slate-200 bg-slate-50">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -250,6 +338,12 @@ export default function CuadroHonor() {
             <p className="text-slate-500 mt-1 font-medium">Reconocimiento a los mejores promedios de la institución.</p>
           </div>
           <div className="flex gap-3 flex-wrap justify-end">
+            <button 
+              onClick={() => setShowGeneracionModal(true)}
+              className="bg-slate-900 hover:bg-black text-amber-500 px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-slate-300 transition flex items-center"
+            >
+              <Trophy className="w-5 h-5 mr-2" /> Diploma Generación
+            </button>
             <button 
               onClick={() => setShowManualDiploma(true)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-200 transition flex items-center"
