@@ -90,6 +90,23 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
     });
   }, [activos, materiasPorGrado]);
 
+  // Ordenar activos para el selector del modal
+  const sortedActivos = useMemo(() => {
+    return [...activos].sort((a, b) => {
+      const gradoA = (a.grado || '').toString();
+      const gradoB = (b.grado || '').toString();
+      if (gradoA !== gradoB) return gradoA.localeCompare(gradoB);
+      
+      const grupoA = (a.grupo || '').toUpperCase();
+      const grupoB = (b.grupo || '').toUpperCase();
+      if (grupoA !== grupoB) return grupoA.localeCompare(grupoB);
+      
+      const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
+      const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, [activos]);
+
   const filteredData = useMemo(() => {
     if (filtroGrado === 'Todos') return adeudosData;
     return adeudosData.filter(item => item.student.grado === filtroGrado);
@@ -273,7 +290,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                   className="w-full border-slate-300 rounded-md shadow-sm p-2 text-sm"
                 >
                   <option value="">Selecciona un alumno...</option>
-                  {activos.map(al => (
+                  {sortedActivos.map(al => (
                     <option key={al.id} value={al.id}>
                       {al.grado} "{al.grupo}" - {al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}
                     </option>
