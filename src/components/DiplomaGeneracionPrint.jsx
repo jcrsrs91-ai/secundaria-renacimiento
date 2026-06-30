@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Award, Printer, X, Star } from 'lucide-react';
+import { autoAcentuar } from '../utils/format';
 
 export default function DiplomaGeneracionPrint({ student, promedio, generacion, turno, onClose }) {
   const [fecha] = useState(() => new Date().toISOString().split('T')[0]);
@@ -30,7 +31,7 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
   const firmas = getFirmas();
   
   if (!student) return null;
-  const nombreCompleto = `${student.nombres} ${student.apellidoPaterno} ${student.apellidoMaterno}`.toUpperCase();
+  const nombreCompleto = `${autoAcentuar(student.nombres)} ${autoAcentuar(student.apellidoPaterno)} ${autoAcentuar(student.apellidoMaterno)}`.toUpperCase();
 
   return createPortal(
     <div id="print-modal-overlay" className="fixed inset-0 z-50 bg-slate-900/90 flex justify-center overflow-y-auto custom-scrollbar">

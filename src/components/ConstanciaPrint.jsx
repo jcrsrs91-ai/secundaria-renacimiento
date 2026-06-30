@@ -1,5 +1,5 @@
 import React from 'react';
-import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal, autoAcentuar } from '../utils/format';
 
 const extraerFechaDeCurp = (curp) => {
   if (!curp || curp.length < 10) return null;
@@ -76,7 +76,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
     }
     
     return {
-      name: mat.name,
+      name: autoAcentuar(mat.name),
       t1: truncateTo1Dec(t1),
       t2: truncateTo1Dec(t2),
       t3: truncateTo1Dec(t3),
@@ -163,15 +163,15 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
 
          {type === 'terminacion' ? (
            <p className="mb-6 indent-12">
-             Que el (la) alumno(a) <strong>{student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios correspondientes a la Educación Secundaria en el ciclo escolar 2025-2026 en esta Institución Educativa.
+             Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios correspondientes a la Educación Secundaria en el ciclo escolar 2025-2026 en esta Institución Educativa.
            </p>
          ) : type === 'promedio_generacion' ? (
            <p className="mb-6 indent-12">
-             Que el (la) alumno(a) <strong>{student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios de educación secundaria en esta institución durante la <strong>Generación 2023-2026</strong>.
+             Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios de educación secundaria en esta institución durante la <strong>Generación 2023-2026</strong>.
            </p>
          ) : (
            <p className="mb-6 indent-12">
-             Que el (la) alumno(a) <strong>{student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente 2025-2026.
+             Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente 2025-2026.
            </p>
          )}
 
