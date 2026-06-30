@@ -201,14 +201,17 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
                 <p className="text-[10px] font-medium text-slate-400 tracking-[0.2em] uppercase mt-2">A:</p>
 
                 {/* Nombre del Alumno */}
-                <div className="my-1 w-full max-w-4xl border-b-[1px] border-gold pb-1 flex justify-center">
-                  <h2 className="text-4xl font-cinzel font-black text-navy tracking-widest" style={{ wordSpacing: '0.4em' }}>{nombreCompleto}</h2>
+                <div className="my-1 w-full max-w-4xl border-b-[1px] border-gold pb-2 flex flex-col items-center">
+                  <h2 className="text-4xl font-cinzel font-black text-navy tracking-widest text-center leading-none" style={{ wordSpacing: '0.4em' }}>{nombreCompleto}</h2>
+                  <p className="text-[14px] font-bold text-slate-500 tracking-[0.3em] font-montserrat mt-2">
+                    GRUPO "{student.grupo}"
+                  </p>
                 </div>
 
                 {/* Razón */}
                 <div className="max-w-4xl text-center px-4 mt-2">
                   <p className="text-[12pt] text-navy leading-normal font-medium font-montserrat">
-                    En reconocimiento a su brillante desempeño, dedicación y esfuerzo constante durante los tres años de su educación secundaria (Generación <strong className="font-bold">{generacion}</strong>, Grupo <strong className="font-bold">"{student.grupo}"</strong>). 
+                    En reconocimiento a su brillante desempeño, dedicación y esfuerzo constante durante los tres años de su educación secundaria (Generación <strong className="font-bold">{generacion}</strong>). 
                     Su resiliencia ante los desafíos y su conducta ejemplar le han hecho merecedor del más alto reconocimiento de nuestra institución.
                   </p>
                   
