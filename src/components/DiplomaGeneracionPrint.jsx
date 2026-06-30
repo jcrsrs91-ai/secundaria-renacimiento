@@ -133,7 +133,9 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
           
           .text-navy { color: #1A2B4C; }
           .text-gold { color: #C5A059; }
+          .bg-navy { background-color: #1A2B4C; }
           .border-navy { border-color: #1A2B4C; }
+          .border-gold { border-color: #C5A059; }
         `}
       </style>
 
