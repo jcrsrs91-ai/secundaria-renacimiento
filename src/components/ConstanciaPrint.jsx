@@ -133,7 +133,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
       <div className="page-container relative block">
         <div className="page-border"></div>
         
-        <div className={`bg-white px-10 py-6 text-slate-800 font-serif text-justify relative z-10 watermark ${type === 'calificaciones' ? 'leading-snug' : 'leading-loose'}`} style={{ fontSize: type === 'calificaciones' ? '10pt' : '11pt' }}>
+        <div className={`bg-white px-10 py-6 text-slate-800 font-serif text-justify relative z-10 watermark ${type === 'calificaciones' ? 'leading-snug' : 'leading-relaxed'}`} style={{ fontSize: type === 'calificaciones' ? '10pt' : '11pt' }}>
          {/* HEADER LOGOS AND TITLE */}
          {/* HEADER LOGOS AND TITLE */}
          <div className="flex items-center justify-between mb-4">
@@ -250,9 +250,9 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
            </p>
          )}
 
-         <div className={`text-center relative ${type === 'calificaciones' ? 'mt-4' : 'mt-8'}`}>
+         <div className={`text-center relative ${type === 'calificaciones' ? 'mt-2' : 'mt-4'}`}>
             <p className="font-bold tracking-widest text-[11pt]">A T E N T A M E N T E</p>
-            <div className={`border-b border-black w-80 mx-auto ${type === 'calificaciones' ? 'mt-4 mb-2' : 'mt-10 mb-2'}`}></div>
+            <div className={`border-b border-black w-80 mx-auto ${type === 'calificaciones' ? 'mt-4 mb-2' : 'mt-6 mb-2'}`}></div>
             <p className="font-bold text-[12pt] mt-2 uppercase">Profr. Juan Carlos Taboada Barajas</p>
             <p className="font-sans text-[10pt] mt-1 text-slate-600 font-bold">DIRECTOR DEL PLANTEL</p>
             
