@@ -1,9 +1,44 @@
 import React, { useState, useMemo } from 'react';
 import { getCalificacionFinal } from '../utils/format';
-import { FileText, Calendar, PlusCircle, X, Save } from 'lucide-react';
+import { FileText, Calendar, PlusCircle, X, Save, History } from 'lucide-react';
+import { db } from '../firebase';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptureExtra, onClose }) {
   const [filtroGrado, setFiltroGrado] = useState('Todos');
+  
+  // Modal Histórico
+  const [showHistoricModal, setShowHistoricModal] = useState(false);
+  const [histStudentId, setHistStudentId] = useState('');
+  const [histMateria, setHistMateria] = useState('');
+  const [histGrade, setHistGrade] = useState('');
+  const [isSavingHistoric, setIsSavingHistoric] = useState(false);
+
+  const handleSaveHistoric = async () => {
+    if (!histStudentId || !histMateria.trim()) return;
+    setIsSavingHistoric(true);
+    try {
+      const studentRef = doc(db, 'students', histStudentId);
+      const newAdeudo = {
+        id: 'hist_' + Date.now(),
+        name: histMateria.trim(),
+        finalGrade: histGrade ? parseFloat(histGrade) : 5.0,
+        isHistoric: true
+      };
+      await updateDoc(studentRef, {
+        adeudosAnteriores: arrayUnion(newAdeudo)
+      });
+      setShowHistoricModal(false);
+      setHistStudentId('');
+      setHistMateria('');
+      setHistGrade('');
+    } catch (error) {
+      console.error(error);
+      alert('Error al guardar el adeudo histórico.');
+    } finally {
+      setIsSavingHistoric(false);
+    }
+  };
   
   // Computar alumnos con adeudos (materias reprobadas y no regularizadas)
   const adeudosData = useMemo(() => {
@@ -24,6 +59,16 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
             adeudos.push({ ...mat, finalGrade: calif.valor });
           }
         }
+      });
+
+      const adeudosAnteriores = student.adeudosAnteriores || [];
+      adeudosAnteriores.forEach(histMat => {
+         const reg = student.regularizacion?.[histMat.id];
+         if (reg) {
+            regularizadas.push({ ...histMat, finalGrade: reg.calificacion, fecha: reg.fecha, isHistoric: true });
+         } else {
+            adeudos.push({ ...histMat, isHistoric: true });
+         }
       });
 
       // El alumno aparece en la lista SI tiene adeudos (aún no los ha regularizado)
@@ -86,6 +131,14 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
             <option value="3er Grado">3er Grado</option>
           </select>
         </div>
+        
+        <button 
+          onClick={() => setShowHistoricModal(true)} 
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors flex items-center"
+        >
+          <History className="w-5 h-5 mr-2" />
+          Añadir Adeudo Anterior
+        </button>
       </div>
 
       <div className="bg-white max-w-5xl mx-auto p-10 rounded-2xl shadow-xl print:shadow-none print:p-0 print:rounded-none">
@@ -144,7 +197,9 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                         <ul className="list-disc list-inside space-y-1">
                           {item.adeudos.map(mat => (
                             <li key={mat.id} className="text-red-600 font-medium text-xs">
-                              {mat.name} <span className="font-bold bg-red-100 px-1 rounded ml-1">({mat.finalGrade})</span>
+                              {mat.name} 
+                              <span className="font-bold bg-red-100 px-1 rounded ml-1">({mat.finalGrade})</span>
+                              {mat.isHistoric && <span className="ml-2 text-[9px] text-indigo-600 font-bold bg-indigo-100 px-1 rounded uppercase">Histórico</span>}
                             </li>
                           ))}
                         </ul>
@@ -157,7 +212,9 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                         <ul className="list-disc list-inside space-y-1">
                           {item.regularizadas.map(mat => (
                             <li key={mat.id} className="text-emerald-700 font-medium text-xs">
-                              {mat.name} <span className="font-bold bg-emerald-100 px-1 rounded ml-1">({mat.finalGrade})</span>
+                              {mat.name} 
+                              <span className="font-bold bg-emerald-100 px-1 rounded ml-1">({mat.finalGrade})</span>
+                              {mat.isHistoric && <span className="ml-2 text-[9px] text-indigo-600 font-bold bg-indigo-100 px-1 rounded uppercase">Histórico</span>}
                               <div className="text-[10px] text-slate-500 ml-4">Fecha: {mat.fecha}</div>
                             </li>
                           ))}
@@ -192,6 +249,78 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
           </div>
         </div>
       </div>
+
+      {/* Modal para Agregar Adeudo Histórico */}
+      {showHistoricModal && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 print:hidden">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <h3 className="text-xl font-black text-slate-800 flex items-center">
+                <History className="w-6 h-6 mr-2 text-indigo-600" />
+                Adeudo Anterior
+              </h3>
+              <button onClick={() => setShowHistoricModal(false)} className="text-slate-400 hover:text-red-500">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Seleccionar Alumno:</label>
+                <select 
+                  value={histStudentId} 
+                  onChange={e => setHistStudentId(e.target.value)}
+                  className="w-full border-slate-300 rounded-md shadow-sm p-2 text-sm"
+                >
+                  <option value="">Selecciona un alumno...</option>
+                  {activos.map(al => (
+                    <option key={al.id} value={al.id}>
+                      {al.grado} "{al.grupo}" - {al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Materia Reprobada:</label>
+                <input 
+                  type="text" 
+                  value={histMateria}
+                  onChange={e => setHistMateria(e.target.value)}
+                  placeholder="Ej. Matemáticas I"
+                  className="w-full border-slate-300 rounded-md shadow-sm p-2 text-sm uppercase"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Calificación (Opcional):</label>
+                <input 
+                  type="number"
+                  step="0.1"
+                  max="5.9"
+                  value={histGrade}
+                  onChange={e => setHistGrade(e.target.value)}
+                  placeholder="5.0"
+                  className="w-full border-slate-300 rounded-md shadow-sm p-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3 pt-4 border-t">
+              <button onClick={() => setShowHistoricModal(false)} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-lg text-sm">Cancelar</button>
+              <button 
+                onClick={handleSaveHistoric} 
+                disabled={!histStudentId || !histMateria.trim() || isSavingHistoric}
+                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-bold flex items-center text-sm"
+              >
+                <Save className="w-4 h-4 mr-2" /> 
+                {isSavingHistoric ? 'Guardando...' : 'Guardar Adeudo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
