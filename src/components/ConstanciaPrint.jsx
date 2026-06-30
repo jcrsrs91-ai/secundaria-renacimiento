@@ -133,7 +133,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
       <div className="page-container relative block">
         <div className="page-border"></div>
         
-        <div className={`bg-white text-slate-800 font-serif text-justify relative z-10 watermark ${type === 'calificaciones' ? 'leading-snug' : 'leading-loose'}`} style={{ fontSize: type === 'calificaciones' ? '10pt' : '11pt' }}>
+        <div className={`bg-white px-10 py-6 text-slate-800 font-serif text-justify relative z-10 watermark ${type === 'calificaciones' ? 'leading-snug' : 'leading-loose'}`} style={{ fontSize: type === 'calificaciones' ? '10pt' : '11pt' }}>
          {/* HEADER LOGOS AND TITLE */}
          {/* HEADER LOGOS AND TITLE */}
          <div className="flex items-center justify-between mb-4">
