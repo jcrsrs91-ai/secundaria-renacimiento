@@ -106,7 +106,7 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
               width: 100%;
               height: 100%;
               position: relative;
-              padding: 30px 40px;
+              padding: 20px 40px;
               box-sizing: border-box;
               text-align: center;
               display: flex;
@@ -175,50 +175,54 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
               <div className="relative z-10 w-full h-full flex flex-col items-center justify-between">
                 
                 {/* Header Logos */}
-                <div className="w-full flex items-center justify-between px-8">
-                  <img src="/logo-sep.png" alt="SEP" className="w-48 object-contain" />
-                  <div className="text-center">
-                     <p className="text-[10px] font-bold text-navy uppercase tracking-[0.2em] mb-1">Secretaría de Educación Pública</p>
-                     <h2 className="text-[14px] font-black text-navy uppercase tracking-[0.2em]">Escuela Secundaria Técnica No. 68 "Renacimiento"</h2>
-                     <p className="text-[10px] font-semibold text-slate-500 tracking-widest mt-1">C.C.T. 12DST0077B</p>
+                <div className="w-full flex items-center justify-between px-8 relative">
+                  <div className="w-40">
+                    <img src="/logo-sep.png" alt="SEP" className="w-40 object-contain" />
                   </div>
-                  <img src="/logo-escuela.png" alt="Escudo" className="w-24 h-24 object-contain" />
+                  <div className="text-center flex-1 px-2">
+                     <p className="text-[10px] font-bold text-navy uppercase tracking-[0.2em] mb-1">Secretaría de Educación Pública</p>
+                     <h2 className="text-[13px] font-black text-navy uppercase tracking-[0.2em]">Escuela Secundaria Técnica No. 68 "Renacimiento"</h2>
+                     <p className="text-[9px] font-semibold text-slate-500 tracking-widest mt-1">C.C.T. 12DST0077B</p>
+                  </div>
+                  <div className="w-40 flex justify-end">
+                    <img src="/logo-escuela.png" alt="Escudo" className="w-20 h-20 object-contain" />
+                  </div>
                 </div>
 
-                <div className="text-center mt-2">
-                  <p className="font-pinyon text-3xl text-gold mb-2">otorga el presente</p>
+                <div className="text-center mt-1">
+                  <p className="font-pinyon text-3xl text-gold mb-1">otorga el presente</p>
                 </div>
 
                 {/* Título del Diploma */}
-                <div className="text-center mb-2">
-                  <h1 className="text-5xl font-cinzel font-black text-navy tracking-[0.2em] mb-2 leading-none drop-shadow-sm">DIPLOMA</h1>
+                <div className="text-center mb-1">
+                  <h1 className="text-5xl font-cinzel font-black text-navy tracking-[0.2em] mb-1 leading-none drop-shadow-sm">DIPLOMA</h1>
                   <h2 className="text-xl font-cinzel font-bold text-gold tracking-[0.3em]">DE EXCELENCIA ACADÉMICA</h2>
                 </div>
 
-                <p className="text-[11px] font-medium text-slate-400 tracking-[0.2em] uppercase mt-2">A:</p>
+                <p className="text-[10px] font-medium text-slate-400 tracking-[0.2em] uppercase mt-2">A:</p>
 
                 {/* Nombre del Alumno */}
-                <div className="my-2 w-full max-w-4xl border-b-[1px] border-gold pb-1 flex justify-center">
+                <div className="my-1 w-full max-w-4xl border-b-[1px] border-gold pb-1 flex justify-center">
                   <h2 className="text-4xl font-cinzel font-black text-navy tracking-widest" style={{ wordSpacing: '0.4em' }}>{nombreCompleto}</h2>
                 </div>
 
                 {/* Razón */}
-                <div className="max-w-3xl text-center px-4 mt-2">
-                  <p className="text-[13pt] text-navy leading-relaxed font-medium font-montserrat">
+                <div className="max-w-4xl text-center px-4 mt-2">
+                  <p className="text-[12pt] text-navy leading-normal font-medium font-montserrat">
                     En reconocimiento a su brillante desempeño, dedicación y esfuerzo constante durante los tres años de su educación secundaria (Generación <strong className="font-bold">{generacion}</strong>). 
                     Su resiliencia ante los desafíos y su conducta ejemplar le han hecho merecedor del más alto reconocimiento de nuestra institución.
                   </p>
                   
-                  <div className="mt-4 flex flex-col items-center justify-center">
-                    <span className="text-[10px] uppercase tracking-widest text-slate-500 mb-1 font-bold">Promedio Final de Generación</span>
-                    <div className="text-3xl font-cinzel font-black text-white bg-navy px-8 py-1 rounded-sm shadow-md tracking-wider border border-gold">
+                  <div className="mt-3 flex flex-col items-center justify-center">
+                    <span className="text-[9px] uppercase tracking-widest text-slate-500 mb-1 font-bold">Promedio Final de Generación</span>
+                    <div className="text-2xl font-cinzel font-black text-white bg-navy px-8 py-1 rounded-sm shadow-md tracking-wider border border-gold">
                       {promedio}
                     </div>
                   </div>
                 </div>
 
                 {/* Fecha */}
-                <p className="text-[11px] text-slate-500 font-medium mt-4">
+                <p className="text-[10px] text-slate-500 font-medium mt-3 mb-2">
                   Acapulco de Juárez, Gro., a {getFormattedDate()}
                 </p>
 
