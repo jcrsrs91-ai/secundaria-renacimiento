@@ -7,9 +7,8 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
   const [fecha] = useState(() => new Date().toISOString().split('T')[0]);
 
   const getFormattedDate = () => {
-    if (!fecha) return '';
-    const d = new Date(`${fecha}T12:00:00`);
-    return d.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+    // Fecha oficial de fin de ciclo para los diplomas de generación
+    return "15 de julio de 2026";
   };
 
   const getFirmas = () => {
