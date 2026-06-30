@@ -279,6 +279,10 @@ export default function ControlEscolar() {
   };
 
   const executePrintConstancia = (type) => {
+    if (type === 'terminacion' && selectedStudent?.grado !== '3er Grado') {
+      alert("La Constancia de Terminación de Estudios es exclusiva para alumnos de 3er Grado.");
+      return;
+    }
     toast.success("Generando constancia...", { icon: '📝' });
     setConstanciaType(type);
     setPrintMode('constancia');
@@ -1171,12 +1175,22 @@ export default function ControlEscolar() {
               </button>
 
               <button onClick={() => executePrintConstancia('promedio_generacion')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition text-left group">
-                <div className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-4 group-hover:bg-purple-500 group-hover:text-white transition">
+                <div className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-4 group-hover:bg-purple-500 group-hover:text-white transition shrink-0">
                   <Star className="w-6 h-6" />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800">Constancia de Promedio (Generación)</h3>
                   <p className="text-xs text-slate-500 mt-1">Requiere capturar el promedio manual arriba. Ideal para 3er año.</p>
+                </div>
+              </button>
+
+              <button onClick={() => executePrintConstancia('terminacion')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-amber-500 hover:bg-amber-50 transition text-left group">
+                <div className="bg-amber-100 text-amber-600 p-2 rounded-lg mr-4 group-hover:bg-amber-500 group-hover:text-white transition shrink-0">
+                  <Award className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Constancia de Terminación (3er Año)</h3>
+                  <p className="text-xs text-slate-500 mt-1">Con fecha fija de cierre de ciclo. Solo para alumnos de 3er grado.</p>
                 </div>
               </button>
             </div>

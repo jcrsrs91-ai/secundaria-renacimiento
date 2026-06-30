@@ -161,7 +161,11 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
             C E R T I F I C A
          </div>
 
-         {type === 'promedio_generacion' ? (
+         {type === 'terminacion' ? (
+           <p className="mb-6 indent-12">
+             Que el (la) alumno(a) <strong>{student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios correspondientes a la Educación Secundaria en el ciclo escolar 2025-2026 en esta Institución Educativa.
+           </p>
+         ) : type === 'promedio_generacion' ? (
            <p className="mb-6 indent-12">
              Que el (la) alumno(a) <strong>{student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios de educación secundaria en esta institución durante la <strong>Generación 2023-2026</strong>.
            </p>
@@ -180,6 +184,12 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
          {type === 'promedio_generacion' && (
            <p className="mb-6 indent-12 font-medium">
              Y de acuerdo con nuestros registros, obtuvo un Promedio General de Generación de: <strong>{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
+           </p>
+         )}
+
+         {type === 'terminacion' && (
+           <p className="mb-6 indent-12 font-medium">
+             Y se hace constar que cuenta con un Promedio de Nivel Educativo (Certificado) de: <strong>{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
            </p>
          )}
 
@@ -229,9 +239,15 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
            </p>
          )}
 
-         <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-10'}`}>
-            A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
-         </p>
+         {type === 'terminacion' ? (
+           <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-10'}`}>
+             A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, <strong>a los 15 días del mes de julio del año 2026</strong>.
+           </p>
+         ) : (
+           <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-10'}`}>
+             A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
+           </p>
+         )}
 
          <div className={`text-center relative ${type === 'calificaciones' ? 'mt-4' : 'mt-10'}`}>
             <p className="font-bold tracking-widest text-[11pt]">A T E N T A M E N T E</p>
