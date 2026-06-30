@@ -1159,6 +1159,26 @@ export default function ControlEscolar() {
                   <p className="text-xs text-slate-500 mt-1">Incluye el promedio general acumulado y la tabla de calificaciones.</p>
                 </div>
               </button>
+
+              <button onClick={() => executePrintConstancia('promedio_ciclo')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition text-left group">
+                <div className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-4 group-hover:bg-blue-500 group-hover:text-white transition">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Constancia de Promedio (Ciclo Actual)</h3>
+                  <p className="text-xs text-slate-500 mt-1">Solo muestra el promedio general de este ciclo escolar.</p>
+                </div>
+              </button>
+
+              <button onClick={() => executePrintConstancia('promedio_generacion')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition text-left group">
+                <div className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-4 group-hover:bg-purple-500 group-hover:text-white transition">
+                  <Star className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Constancia de Promedio (Generación)</h3>
+                  <p className="text-xs text-slate-500 mt-1">Requiere capturar el promedio manual arriba. Ideal para 3er año.</p>
+                </div>
+              </button>
             </div>
           </div>
         </div>

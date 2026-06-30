@@ -161,9 +161,27 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
             C E R T I F I C A
          </div>
 
-         <p className="mb-6 indent-12">
-            Que el (la) alumno(a) <strong>{student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente 2025-2026.
-         </p>
+         {type === 'promedio_generacion' ? (
+           <p className="mb-6 indent-12">
+             Que el (la) alumno(a) <strong>{student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios de educación secundaria en esta institución durante la <strong>Generación 2023-2026</strong>.
+           </p>
+         ) : (
+           <p className="mb-6 indent-12">
+             Que el (la) alumno(a) <strong>{student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente 2025-2026.
+           </p>
+         )}
+
+         {type === 'promedio_ciclo' && (
+           <p className="mb-6 indent-12 font-medium">
+             Y ha obtenido hasta la fecha un Promedio General en el presente ciclo escolar de: <strong>{promedioGeneral} ({promedioALetras(promedioGeneral)})</strong>.
+           </p>
+         )}
+
+         {type === 'promedio_generacion' && (
+           <p className="mb-6 indent-12 font-medium">
+             Y de acuerdo con nuestros registros, obtuvo un Promedio General de Generación de: <strong>{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
+           </p>
+         )}
 
           {/* TABLA DE CALIFICACIONES INYECTADA */}
          {type === 'calificaciones' && (
