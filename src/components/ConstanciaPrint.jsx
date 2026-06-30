@@ -133,7 +133,16 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
       <div className="page-container relative block">
         <div className="page-border"></div>
         
-        <div className={`bg-white px-10 py-6 text-slate-800 font-serif text-justify relative z-10 watermark ${type === 'calificaciones' ? 'leading-snug' : 'leading-relaxed'}`} style={{ fontSize: type === 'calificaciones' ? '10pt' : '11pt' }}>
+        {/* 
+          NOTA IMPORTANTE (BLOQUEO DE MÁRGENES):
+          El usuario solicitó que la constancia de "terminacion" quede estrictamente bloqueada 
+          con este formato (px-10 py-6 leading-relaxed 11pt) para que quepa en una sola hoja. 
+          Cualquier cambio futuro a las demás constancias NO DEBE afectar a 'terminacion'.
+        */}
+        <div className={`bg-white text-slate-800 font-serif text-justify relative z-10 watermark 
+          ${type === 'terminacion' ? 'px-10 py-6 leading-relaxed' : 
+            type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 'px-10 py-6 leading-relaxed'}`} 
+          style={{ fontSize: type === 'calificaciones' ? '10pt' : '11pt' }}>
          {/* HEADER LOGOS AND TITLE */}
          {/* HEADER LOGOS AND TITLE */}
          <div className="flex items-center justify-between mb-4">
