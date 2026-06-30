@@ -179,6 +179,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
             <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-lg print:leading-tight">REPORTE DE ALUMNOS EN REGULARIZACIÓN</h1>
             <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-xs print:mt-0 print:leading-tight">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
             <p className="text-sm font-medium text-slate-500 mt-1 print:text-[10px] print:mt-0 print:leading-tight">Ciclo Escolar 2025-2026</p>
+            <p className="text-xs font-medium text-slate-400 mt-1 print:text-[9px] print:mt-1 italic">Fecha de impresión: {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
           <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-14" />
         </div>
