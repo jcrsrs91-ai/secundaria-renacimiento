@@ -177,19 +177,19 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
 
          {type === 'promedio_ciclo' && (
            <p className="mb-6 indent-12 font-medium">
-             Y ha obtenido hasta la fecha un Promedio General en el presente ciclo escolar de: <strong>{promedioGeneral} ({promedioALetras(promedioGeneral)})</strong>.
+             Y ha obtenido hasta la fecha un Promedio General en el presente ciclo escolar de: <strong className="whitespace-nowrap">{promedioGeneral} ({promedioALetras(promedioGeneral)})</strong>.
            </p>
          )}
 
          {type === 'promedio_generacion' && (
            <p className="mb-6 indent-12 font-medium">
-             Y de acuerdo con nuestros registros, obtuvo un Promedio General de Generación de: <strong>{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
+             Y de acuerdo con nuestros registros, obtuvo un Promedio General de Generación de: <strong className="whitespace-nowrap">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
            </p>
          )}
 
          {type === 'terminacion' && (
            <p className="mb-6 indent-12 font-medium">
-             Se hace constar que cuenta con un Promedio de Nivel Educativo (Certificado) de: <strong>{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
+             Se hace constar que cuenta con un Promedio de Nivel Educativo (Certificado) de: <strong className="whitespace-nowrap">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
            </p>
          )}
 
@@ -235,7 +235,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
 
          {type === 'calificaciones' && student.manualPromedio && student.grado === '3er Grado' && (
            <p className="mt-4 mb-2 indent-12 text-[10pt] text-justify font-bold">
-             Adicionalmente, se hace constar que el (la) alumno(a) cuenta con un Promedio de Nivel Educativo (Certificado) de: {student.manualPromedio} ({promedioALetras(student.manualPromedio)}).
+             Adicionalmente, se hace constar que el (la) alumno(a) cuenta con un Promedio de Nivel Educativo (Certificado) de: <span className="whitespace-nowrap">{student.manualPromedio} ({promedioALetras(student.manualPromedio)})</span>.
            </p>
          )}
 
