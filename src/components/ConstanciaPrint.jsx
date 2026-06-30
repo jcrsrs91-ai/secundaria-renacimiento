@@ -143,7 +143,11 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
           ${type === 'terminacion' ? 'px-10 py-6 leading-relaxed' : 
             type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 'px-10 py-6 leading-relaxed'}`} 
           style={{ fontSize: type === 'calificaciones' ? '10pt' : '11pt' }}>
-         {/* HEADER LOGOS AND TITLE */}
+         {/* LEYENDA OFICIAL DEL AÑO */}
+         <p className="text-center font-bold text-[9pt] uppercase mb-4 tracking-widest text-slate-500">
+            "2026, Año de Margarita Maza"
+         </p>
+
          {/* HEADER LOGOS AND TITLE */}
          <div className="flex items-center justify-between mb-4">
             <img src="/logo-sep.png" alt="Logo SEP / Guerrero" className="w-24 h-20 object-contain shrink-0" />
