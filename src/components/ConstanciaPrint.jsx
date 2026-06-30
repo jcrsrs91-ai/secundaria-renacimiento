@@ -143,10 +143,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
           ${type === 'terminacion' ? 'px-10 py-6 leading-relaxed' : 
             type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 'px-10 py-6 leading-relaxed'}`} 
           style={{ fontSize: type === 'calificaciones' ? '10pt' : '11pt' }}>
-         {/* LEYENDA OFICIAL DEL AÑO */}
-         <p className="text-center font-bold text-[9pt] uppercase mb-4 tracking-widest text-slate-500">
-            "2026, Año de Margarita Maza"
-         </p>
+         {/* HEADER LOGOS AND TITLE */}
 
          {/* HEADER LOGOS AND TITLE */}
          <div className="flex items-center justify-between mb-4">
@@ -163,6 +160,12 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
 
          <div className={`text-right font-bold uppercase text-[11pt] ${type === 'calificaciones' ? 'mb-4' : 'mb-6'}`}>
             <p>ASUNTO: CONSTANCIA DE ESTUDIOS {type === 'calificaciones' && 'CON CALIFICACIONES'}</p>
+            
+            {/* LEYENDA OFICIAL DEL AÑO */}
+            <p className="mt-4 text-center font-bold text-[9pt] uppercase tracking-widest text-slate-500">
+               "2026, Año de Margarita Maza"
+            </p>
+
             <p className="mt-4 text-[12pt] normal-case font-normal text-left">A quien corresponda:</p>
          </div>
 
