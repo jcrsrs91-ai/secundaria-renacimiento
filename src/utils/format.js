@@ -52,7 +52,14 @@ export const autoAcentuar = (text) => {
     'GUTIERREZ': 'GUTIÉRREZ', 'CHAVEZ': 'CHÁVEZ', 'DOMINGUEZ': 'DOMÍNGUEZ',
     'VAZQUEZ': 'VÁZQUEZ', 'ALVAREZ': 'ÁLVAREZ', 'SUAREZ': 'SUÁREZ',
     'MARQUEZ': 'MÁRQUEZ', 'JIMENEZ': 'JIMÉNEZ', 'MENDEZ': 'MÉNDEZ',
-    'NUÑEZ': 'NÚÑEZ', 'NUNEZ': 'NÚÑEZ',
+    'NUÑEZ': 'NÚÑEZ', 'NUNEZ': 'NÚÑEZ', 'BARRAGAN': 'BARRAGÁN',
+    'GUZMAN': 'GUZMÁN', 'CORTES': 'CORTÉS', 'RIOS': 'RÍOS', 'LEON': 'LEÓN',
+    'AVALOS': 'ÁVALOS', 'CARDENAS': 'CÁRDENAS', 'BELTRAN': 'BELTRÁN',
+    'GIRON': 'GIRÓN', 'GALVAN': 'GALVÁN', 'VALDES': 'VALDÉS',
+    'SALOMON': 'SALOMÓN', 'RINCON': 'RINCÓN', 'ROMAN': 'ROMÁN',
+    'RENDON': 'RENDÓN', 'MILLAN': 'MILLÁN', 'PADRON': 'PADRÓN',
+    'MEJIA': 'MEJÍA', 'MACIAS': 'MACÍAS', 'MUNGUIA': 'MUNGUÍA',
+    'BAEZ': 'BÁEZ', 'JUAREZ': 'JUÁREZ', 'PELAEZ': 'PELÁEZ', 'SAENZ': 'SÁENZ',
     
     // Nombres
     'CESAR': 'CÉSAR', 'ANGEL': 'ÁNGEL', 'MARIA': 'MARÍA',
@@ -61,7 +68,14 @@ export const autoAcentuar = (text) => {
     'MARTIN': 'MARTÍN', 'ANDRES': 'ANDRÉS', 'TOMAS': 'TOMÁS',
     'VERONICA': 'VERÓNICA', 'MONICA': 'MÓNICA', 'ANGELICA': 'ANGÉLICA',
     'RAUL': 'RAÚL', 'JOAQUIN': 'JOAQUÍN', 'RUBEN': 'RUBÉN',
-    'HECTOR': 'HÉCTOR',
+    'SOFIA': 'SOFÍA', 'NOE': 'NOÉ', 'AARON': 'AARÓN', 'SAUL': 'SAÚL',
+    'MOISES': 'MOISÉS', 'INES': 'INÉS', 'LUCIA': 'LUCÍA',
+    'SEBASTIAN': 'SEBASTIÁN', 'JULIAN': 'JULIÁN', 'ADRIAN': 'ADRIÁN',
+    'DAMIAN': 'DAMIÁN', 'FABIAN': 'FABIÁN', 'DARIO': 'DARÍO',
+    'IVAN': 'IVÁN', 'GERMAN': 'GERMÁN', 'HERNAN': 'HERNÁN',
+    'SIMON': 'SIMÓN', 'AGUSTIN': 'AGUSTÍN', 'BENJAMIN': 'BENJAMÍN',
+    'VALENTIN': 'VALENTÍN', 'FERMIN': 'FERMÍN', 'NESTOR': 'NÉSTOR',
+    'ALVARO': 'ÁLVARO', 'EDGAR': 'ÉDGAR', 'FELIX': 'FÉLIX', 'RENE': 'RENÉ',
 
     // Materias
     'MATEMATICAS': 'MATEMÁTICAS', 'FISICA': 'FÍSICA', 'QUIMICA': 'QUÍMICA',
