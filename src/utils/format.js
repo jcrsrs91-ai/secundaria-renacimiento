@@ -60,6 +60,7 @@ export const autoAcentuar = (text) => {
     'RENDON': 'RENDÓN', 'MILLAN': 'MILLÁN', 'PADRON': 'PADRÓN',
     'MEJIA': 'MEJÍA', 'MACIAS': 'MACÍAS', 'MUNGUIA': 'MUNGUÍA',
     'BAEZ': 'BÁEZ', 'JUAREZ': 'JUÁREZ', 'PELAEZ': 'PELÁEZ', 'SAENZ': 'SÁENZ',
+    'RENTERIA': 'RENTERÍA', 'MEZA': 'MEZA',
     
     // Nombres
     'CESAR': 'CÉSAR', 'ANGEL': 'ÁNGEL', 'MARIA': 'MARÍA',
