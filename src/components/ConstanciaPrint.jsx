@@ -188,9 +188,9 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
          )}
 
          {type === 'terminacion' && (
-           <p className="mt-10 mb-10 text-center font-medium px-8 text-[12pt]">
+           <p className="mt-6 mb-6 text-center font-medium px-8 text-[12pt]">
              Se hace constar que cuenta con un Promedio de Nivel Educativo (Certificado) de: <br/>
-             <strong className="whitespace-nowrap text-[14pt] block mt-4">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>
+             <strong className="whitespace-nowrap text-[14pt] block mt-2">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>
            </p>
          )}
 
@@ -241,16 +241,16 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
          )}
 
          {type === 'terminacion' ? (
-           <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-10'}`}>
+           <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-6'}`}>
              A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, <strong>a los 15 días del mes de julio del año 2026</strong>.
            </p>
          ) : (
-           <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-10'}`}>
+           <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-6'}`}>
              A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
            </p>
          )}
 
-         <div className={`text-center relative ${type === 'calificaciones' ? 'mt-4' : 'mt-10'}`}>
+         <div className={`text-center relative ${type === 'calificaciones' ? 'mt-4' : 'mt-8'}`}>
             <p className="font-bold tracking-widest text-[11pt]">A T E N T A M E N T E</p>
             <div className={`border-b border-black w-80 mx-auto ${type === 'calificaciones' ? 'mt-4 mb-2' : 'mt-10 mb-2'}`}></div>
             <p className="font-bold text-[12pt] mt-2 uppercase">Profr. Juan Carlos Taboada Barajas</p>
