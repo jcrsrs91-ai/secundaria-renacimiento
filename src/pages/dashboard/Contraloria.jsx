@@ -172,6 +172,55 @@ export default function Contraloria() {
     return `${prefix}-${String(maxNum + 1 + currentOffset).padStart(4, '0')}`;
   };
 
+  const migrarCodigos = async () => {
+    try {
+      setIsSubmitting(true);
+      toast.loading("Migrando códigos antiguos...", { id: 'migrar' });
+      
+      const toUpdate = inventario.filter(item => item.codigo && item.codigo.includes('INV-AUTO-'));
+      
+      if (toUpdate.length === 0) {
+        toast.success("No hay códigos antiguos para migrar.", { id: 'migrar' });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const prefixCounters = {};
+
+      // Initialize counters based on existing non-INV-AUTO items
+      inventario.forEach(item => {
+        if (item.codigo && !item.codigo.includes('INV-AUTO-')) {
+           const match = item.codigo.match(/^([A-Z]{3})-(\d+)/);
+           if (match) {
+             const prefix = match[1];
+             const num = parseInt(match[2], 10);
+             if (!prefixCounters[prefix] || num > prefixCounters[prefix]) {
+               prefixCounters[prefix] = num;
+             }
+           }
+        }
+      });
+
+      let actualizados = 0;
+      for (const item of toUpdate) {
+        const prefix = generatePrefix(item.articulo);
+        if (!prefixCounters[prefix]) prefixCounters[prefix] = 0;
+        prefixCounters[prefix]++;
+        const newCode = `${prefix}-${String(prefixCounters[prefix]).padStart(4, '0')}`;
+        
+        await updateDoc(doc(db, 'inventario', item.id), { codigo: newCode });
+        actualizados++;
+      }
+      
+      toast.success(`Se actualizaron ${actualizados} códigos exitosamente.`, { id: 'migrar' });
+    } catch (e) {
+      console.error(e);
+      toast.error("Error al migrar códigos.", { id: 'migrar' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     const qRes = query(collection(db, 'resguardos'), orderBy('fechaRegistro', 'desc'));
     const unsubscribeRes = onSnapshot(qRes, (snapshot) => {
@@ -1071,7 +1120,22 @@ export default function Contraloria() {
                   onChange={e => setSearchTerm(e.target.value)} 
                 />
               </div>
+              </div>
             </div>
+            
+            {inventario.some(item => item.codigo && item.codigo.includes('INV-AUTO-')) && (
+              <div className="w-full md:w-auto">
+                <button 
+                  onClick={migrarCodigos}
+                  disabled={isSubmitting}
+                  title="Actualiza los códigos antiguos 'INV-AUTO' al nuevo formato basado en el nombre."
+                  className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 border border-amber-600 rounded-lg text-sm font-bold shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Migrando...' : 'Migrar Códigos Antiguos'}
+                </button>
+              </div>
+            )}
+
             <div className="w-full md:w-48">
               <label className="block text-xs font-medium text-slate-500 mb-1">Ubicación</label>
               <select 
