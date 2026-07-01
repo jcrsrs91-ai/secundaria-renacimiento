@@ -151,10 +151,17 @@ export default function Contraloria() {
   }, []);
 
   const generatePrefix = (name) => {
-    if (!name) return 'INV';
-    const firstWord = name.trim().split(' ')[0].toUpperCase();
-    const cleaned = firstWord.replace(/[^A-Z]/g, '');
-    return cleaned.substring(0, 3) || 'INV';
+    if (!name) return 'ART';
+    const cleanName = name
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
+      .replace(/[^a-zA-Z\s]/g, "") // Quitar números y caracteres especiales
+      .trim()
+      .toUpperCase();
+    
+    const words = cleanName.split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) return 'ART';
+    
+    return words[0].substring(0, 3).toUpperCase().padEnd(3, 'X');
   };
 
   const getNextAutoCodeBase = (name, offsetsObj = {}) => {
@@ -867,7 +874,7 @@ export default function Contraloria() {
           const expandedCodes = expandCodeRange(targetCode);
           
           for (const code of expandedCodes) {
-            const invItem = inventario.find(i => i.codigo === code || (art.id && i.id === art.id));
+            const invItem = inventario.find(i => i.codigo === code);
             if (invItem) {
               await deleteDoc(doc(db, 'inventario', invItem.id));
             }
@@ -879,7 +886,7 @@ export default function Contraloria() {
           const expandedCodes = expandCodeRange(targetCode);
           
           for (const code of expandedCodes) {
-            const invItem = inventario.find(i => i.codigo === code || (art.id && i.id === art.id));
+            const invItem = inventario.find(i => i.codigo === code);
             if (invItem) {
               const itemRef = doc(db, 'inventario', invItem.id);
               const currentHistorial = invItem.historial || [];
