@@ -137,7 +137,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
             <h1 className="font-bold text-lg uppercase leading-tight">Secretaría de Educación Pública</h1>
             <h2 className="font-bold text-md mt-1">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
             <p className="text-xs mt-1">C.C.T. 12DST0077B</p>
-            <p className="text-xs">Zona Escolar: 011</p>
+            <p className="text-xs">Zona Escolar: 24</p>
           </div>
           <div className="w-1/4 flex justify-end">
             <img src="/logo-escuela.png" alt="Escuela" className="w-20 object-contain" />
