@@ -93,7 +93,6 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
       <style>
         {`
           @media print {
-            @page { size: letter portrait; margin-top: 5mm; margin-bottom: 5mm; margin-left: 10mm; margin-right: 10mm; }
             #root { display: none !important; }
             #print-modal-overlay {
               position: static !important;
