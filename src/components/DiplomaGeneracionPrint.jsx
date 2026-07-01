@@ -212,8 +212,8 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
                 {/* Razón */}
                 <div className="max-w-4xl text-center px-4 mt-2">
                   <p className="text-[12pt] text-navy leading-normal font-medium font-montserrat">
-                    En reconocimiento a su brillante desempeño, dedicación y esfuerzo constante durante los tres años de su educación secundaria (Generación <strong className="font-bold">{generacion}</strong>). 
-                    Su resiliencia ante los desafíos y su conducta ejemplar le han hecho merecedor del más alto reconocimiento de nuestra institución.
+                    En reconocimiento a su <strong className="font-bold">brillante desempeño</strong>, <strong className="font-bold">dedicación</strong> y <strong className="font-bold">esfuerzo constante</strong> durante los tres años de su educación secundaria (Generación <strong className="font-bold">{generacion}</strong>). 
+                    Su resiliencia ante los desafíos y su <strong className="font-bold">conducta ejemplar</strong> le han hecho merecedor del <strong className="font-bold">más alto reconocimiento</strong> de nuestra institución.
                   </p>
                   
                   <div className="mt-3 flex flex-col items-center justify-center">
