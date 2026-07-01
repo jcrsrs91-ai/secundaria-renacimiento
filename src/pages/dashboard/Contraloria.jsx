@@ -162,10 +162,18 @@ export default function Contraloria() {
     let maxNum = 0;
     inventario.forEach(item => {
       if (item.codigo && item.codigo.startsWith(`${prefix}-`)) {
-        const match = item.codigo.match(new RegExp(`^${prefix}-(\\d+)`));
-        if (match) {
-          const num = parseInt(match[1], 10);
+        const rangeMatch = item.codigo.match(/al\s+.*?(\d+)$/);
+        if (rangeMatch) {
+          const num = parseInt(rangeMatch[1], 10);
           if (num > maxNum) maxNum = num;
+        } else {
+          const match = item.codigo.match(new RegExp(`^${prefix}-(\\d+)`));
+          if (match) {
+            const startNum = parseInt(match[1], 10);
+            const qty = Number(item.cantidad) || 1;
+            const num = startNum + qty - 1;
+            if (num > maxNum) maxNum = num;
+          }
         }
       }
     });
@@ -341,22 +349,31 @@ export default function Contraloria() {
           });
 
           let autoCodeOffsets = {};
+          const recepcionArticulos = [];
           // 2. Guardar cada artículo en el inventario
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
+            const qty = Number(art.cantidad) || 1;
             const tempCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffsets);
             const prefix = generatePrefix(art.descripcion || art.articulo || art.marca);
-            autoCodeOffsets[prefix] = (autoCodeOffsets[prefix] || 0) + 1;
-            await addDoc(collection(db, 'inventario'), {
-              codigo: tempCode,
-              articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
-              ubicacion: 'Bodega Contraloría',
-              cantidad: Number(art.cantidad) || 1,
-              estado: art.estado || 'Nuevo',
-              serie: art.serie || '',
-              fechaIngreso: new Date().toISOString()
-            });
+            autoCodeOffsets[prefix] = (autoCodeOffsets[prefix] || 0) + qty;
+            
+            const { codes, display } = generateCodeRange(tempCode, qty);
+            
+            for (const code of codes) {
+              await addDoc(collection(db, 'inventario'), {
+                codigo: code,
+                articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
+                ubicacion: 'Bodega Contraloría',
+                cantidad: 1,
+                estado: art.estado || 'Nuevo',
+                serie: art.serie || '',
+                fechaIngreso: new Date().toISOString()
+              });
+            }
+            recepcionArticulos.push({ ...art, codigo: display });
           }
+          dataToPrint.articulos = recepcionArticulos;
         }
       } catch (error) {
         console.error("Error guardando en Firebase:", error);
