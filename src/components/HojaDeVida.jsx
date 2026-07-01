@@ -331,8 +331,9 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Historial Académico (Para Kárdex)</h3>
                     <p className="text-sm text-slate-500 mb-4">Ingrese las calificaciones de los trimestres (T1, T2, T3) de los años anteriores.</p>
                     
-                    {['1er Grado', '2do Grado'].map((gradoKey) => {
-                      if (gradoKey === '2do Grado' && student.grado !== '3er Grado') return null;
+                    {['1er Grado', '2do Grado', '3er Grado'].map((gradoKey) => {
+                      if (gradoKey === '2do Grado' && !['3er Grado', 'Egresado'].includes(student.grado)) return null;
+                      if (gradoKey === '3er Grado' && !['3er Grado', 'Egresado'].includes(student.grado)) return null;
                       const materias = materiasPorGrado[gradoKey] || [];
                       if (materias.length === 0) return null;
                       

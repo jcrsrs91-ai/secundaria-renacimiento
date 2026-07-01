@@ -11,44 +11,46 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
   
   // Calculate final grade for a given materia in a given historical year (or current year if applicable)
   const getHistorialMateria = (gradoKey, materiaId) => {
-    // If it's the student's CURRENT grade, we calculate from current calificaciones or regularizacion
-    if (student.grado === gradoKey) {
-      return getCalificacionFinal(student, materiaId);
-    }
-    // If it's a PAST grade, we look in student.historial
+    // 1. Try to get from manual historial first
     if (student.historial && student.historial[gradoKey] && student.historial[gradoKey][materiaId]) {
       const hist = student.historial[gradoKey][materiaId];
-      // hist should have { t1, t2, t3 }
       const t1 = parseFloat(hist.t1);
       const t2 = parseFloat(hist.t2);
       const t3 = parseFloat(hist.t3);
       
-      // Also check if passed via regularizacion in the past
-      if (student.regularizacion && student.regularizacion[materiaId]) {
-        return {
-          valor: parseFloat(student.regularizacion[materiaId].calificacion),
-          isRegularizacion: true,
-          fecha: student.regularizacion[materiaId].fecha,
-          t1, t2, t3
-        };
-      }
+      if (!isNaN(t1) || !isNaN(t2) || !isNaN(t3)) {
+        // Check if passed via regularizacion in the past
+        if (student.regularizacion && student.regularizacion[materiaId]) {
+          return {
+            valor: parseFloat(student.regularizacion[materiaId].calificacion),
+            isRegularizacion: true,
+            fecha: student.regularizacion[materiaId].fecha,
+            t1: isNaN(t1) ? '-' : t1,
+            t2: isNaN(t2) ? '-' : t2,
+            t3: isNaN(t3) ? '-' : t3
+          };
+        }
 
-      let sum = 0, c = 0;
-      if (!isNaN(t1)) { sum += t1; c++; }
-      if (!isNaN(t2)) { sum += t2; c++; }
-      if (!isNaN(t3)) { sum += t3; c++; }
-      if (c > 0) {
+        let sum = 0, c = 0;
+        if (!isNaN(t1)) { sum += t1; c++; }
+        if (!isNaN(t2)) { sum += t2; c++; }
+        if (!isNaN(t3)) { sum += t3; c++; }
+        
         const finalMat = Math.floor((sum / c + 0.00001) * 10) / 10;
         return {
           valor: finalMat,
           isRegularizacion: false,
           fecha: null,
           isReprobada: finalMat < 6,
-          t1, t2, t3
+          t1: isNaN(t1) ? '-' : t1,
+          t2: isNaN(t2) ? '-' : t2,
+          t3: isNaN(t3) ? '-' : t3
         };
       }
     }
-    return null;
+    
+    // 2. Fallback to active system grades
+    return getCalificacionFinal(student, materiaId);
   };
 
   const currentGrades = (gradoKey) => {
@@ -133,8 +135,8 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
           </div>
           <div className="w-1/2 text-center">
             <h1 className="font-bold text-lg uppercase leading-tight">Secretaría de Educación Pública</h1>
-            <h2 className="font-bold text-md mt-1">Escuela Secundaria General "Renacimiento"</h2>
-            <p className="text-xs mt-1">C.C.T. 21DES0043U</p>
+            <h2 className="font-bold text-md mt-1">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
+            <p className="text-xs mt-1">C.C.T. 12DST0077B</p>
             <p className="text-xs">Zona Escolar: 011</p>
           </div>
           <div className="w-1/4 flex justify-end">
@@ -216,7 +218,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
         </div>
 
         <div className="mt-16 text-center">
-          <p>A petición del interesado y para los fines legales que a él convengan, se expide la presente en la localidad de Huitzilan de Serdán, Puebla, a los {dateStr}.</p>
+          <p>A petición del interesado y para los fines legales que a él convengan, se expide la presente en Cd. Renacimiento, Acapulco de Juárez, Guerrero, a los {dateStr}.</p>
         </div>
 
         <div className="mt-20 flex justify-center">
