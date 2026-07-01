@@ -178,8 +178,9 @@ export default function Contraloria() {
       toast.loading("Migrando códigos antiguos...", { id: 'migrar' });
       
       const toUpdate = inventario.filter(item => item.codigo && item.codigo.includes('INV-AUTO-'));
+      const toUpdateResg = resguardos.filter(r => r.articulos && r.articulos.some(art => art.codigo && art.codigo.includes('INV-AUTO-')));
       
-      if (toUpdate.length === 0) {
+      if (toUpdate.length === 0 && toUpdateResg.length === 0) {
         toast.success("No hay códigos antiguos para migrar.", { id: 'migrar' });
         setIsSubmitting(false);
         return;
@@ -202,6 +203,7 @@ export default function Contraloria() {
       });
 
       let actualizados = 0;
+      // 1. Migrar inventario
       for (const item of toUpdate) {
         const prefix = generatePrefix(item.articulo);
         if (!prefixCounters[prefix]) prefixCounters[prefix] = 0;
@@ -212,7 +214,25 @@ export default function Contraloria() {
         actualizados++;
       }
       
-      toast.success(`Se actualizaron ${actualizados} códigos exitosamente.`, { id: 'migrar' });
+      // 2. Migrar resguardos (actualizando los códigos en el historial)
+      for (const res of toUpdateResg) {
+        let changed = false;
+        const newArticulos = res.articulos.map(art => {
+           if (art.codigo && art.codigo.includes('INV-AUTO-')) {
+              changed = true;
+              const prefix = generatePrefix(art.descripcion || art.articulo || art.marca);
+              const newCode = art.codigo.replace(/INV-AUTO-/g, `${prefix}-`);
+              return { ...art, codigo: newCode };
+           }
+           return art;
+        });
+        if (changed) {
+           await updateDoc(doc(db, 'resguardos', res.id), { articulos: newArticulos });
+           actualizados++;
+        }
+      }
+      
+      toast.success(`Se actualizaron ${actualizados} registros exitosamente.`, { id: 'migrar' });
     } catch (e) {
       console.error(e);
       toast.error("Error al migrar códigos.", { id: 'migrar' });
@@ -1122,7 +1142,7 @@ export default function Contraloria() {
               </div>
             </div>
             
-            {inventario.some(item => item.codigo && item.codigo.includes('INV-AUTO-')) && (
+            {(inventario.some(item => item.codigo && item.codigo.includes('INV-AUTO-')) || resguardos.some(r => r.articulos && r.articulos.some(art => art.codigo && art.codigo.includes('INV-AUTO-')))) && (
               <div className="w-full md:w-auto">
                 <button 
                   onClick={migrarCodigos}
