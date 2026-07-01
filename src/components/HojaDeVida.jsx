@@ -351,7 +351,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                             <tbody>
                               {materias.map(mat => (
                                 <tr key={mat.id}>
-                                  <td className="border p-2 text-xs">{mat.nombre}</td>
+                                  <td className="border p-2 text-xs">{mat.name}</td>
                                   <td className="border p-1"><input type="number" step="0.1" min="5" max="10" className="w-full p-1 border rounded text-center text-xs" value={historial[gradoKey]?.[mat.id]?.t1 || ''} onChange={(e) => handleHistorialChange(gradoKey, mat.id, 't1', e.target.value)} /></td>
                                   <td className="border p-1"><input type="number" step="0.1" min="5" max="10" className="w-full p-1 border rounded text-center text-xs" value={historial[gradoKey]?.[mat.id]?.t2 || ''} onChange={(e) => handleHistorialChange(gradoKey, mat.id, 't2', e.target.value)} /></td>
                                   <td className="border p-1"><input type="number" step="0.1" min="5" max="10" className="w-full p-1 border rounded text-center text-xs" value={historial[gradoKey]?.[mat.id]?.t3 || ''} onChange={(e) => handleHistorialChange(gradoKey, mat.id, 't3', e.target.value)} /></td>

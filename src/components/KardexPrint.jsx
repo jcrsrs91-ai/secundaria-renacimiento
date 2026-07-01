@@ -129,7 +129,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
         {/* Header */}
         <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
           <div className="w-1/4">
-            <img src="/sep-logo.png" alt="SEP" className="w-32 object-contain" />
+            <img src="/logo-sep.png" alt="SEP" className="w-32 object-contain" />
           </div>
           <div className="w-1/2 text-center">
             <h1 className="font-bold text-lg uppercase leading-tight">Secretaría de Educación Pública</h1>
@@ -138,7 +138,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
             <p className="text-xs">Zona Escolar: 011</p>
           </div>
           <div className="w-1/4 flex justify-end">
-            <img src="/escudo-renacimiento.png" alt="Escuela" className="w-20 object-contain" />
+            <img src="/logo-escuela.png" alt="Escuela" className="w-20 object-contain" />
           </div>
         </div>
 
@@ -183,7 +183,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
                 <tbody>
                   {grado.data.items.map((item, i) => (
                     <tr key={i}>
-                      <td className="border border-slate-400 px-2 py-1">{item.materia.nombre}</td>
+                      <td className="border border-slate-400 px-2 py-1">{item.materia.name}</td>
                       <td className="border border-slate-400 px-2 py-1 text-center">{item.hist ? item.hist.t1 : '-'}</td>
                       <td className="border border-slate-400 px-2 py-1 text-center">{item.hist ? item.hist.t2 : '-'}</td>
                       <td className="border border-slate-400 px-2 py-1 text-center">{item.hist ? item.hist.t3 : '-'}</td>
