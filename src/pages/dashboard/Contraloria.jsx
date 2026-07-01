@@ -157,7 +157,7 @@ export default function Contraloria() {
     return cleaned.substring(0, 3) || 'INV';
   };
 
-  const getNextAutoCodeBase = (name, currentOffset = 0) => {
+  const getNextAutoCodeBase = (name, offsetsObj = {}) => {
     const prefix = generatePrefix(name);
     let maxNum = 0;
     inventario.forEach(item => {
@@ -169,6 +169,7 @@ export default function Contraloria() {
         }
       }
     });
+    const currentOffset = offsetsObj[prefix] || 0;
     return `${prefix}-${String(maxNum + 1 + currentOffset).padStart(4, '0')}`;
   };
 
@@ -339,12 +340,13 @@ export default function Contraloria() {
             fechaRegistro: new Date().toISOString()
           });
 
-          let autoCodeOffset = 0;
+          let autoCodeOffsets = {};
           // 2. Guardar cada artículo en el inventario
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
-            const tempCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffset);
-            autoCodeOffset++;
+            const tempCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffsets);
+            const prefix = generatePrefix(art.descripcion || art.articulo || art.marca);
+            autoCodeOffsets[prefix] = (autoCodeOffsets[prefix] || 0) + 1;
             await addDoc(collection(db, 'inventario'), {
               codigo: tempCode,
               articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
@@ -366,14 +368,15 @@ export default function Contraloria() {
       try {
         const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
         if (validItems.length > 0) {
-          let autoCodeOffset = 0;
+          let autoCodeOffsets = {};
           // 1. Crear artículos consolidados para guardar en el Acta de Resguardo y para imprimir
           const resguardoArticulos = validItems.map((art, idx) => {
             const qty = Number(art.cantidad) || 1;
             let baseCode = art.codigo || art.inventario || '';
             if (!baseCode) {
-              baseCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffset);
-              autoCodeOffset += qty;
+              baseCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffsets);
+              const prefix = generatePrefix(art.descripcion || art.articulo || art.marca);
+              autoCodeOffsets[prefix] = (autoCodeOffsets[prefix] || 0) + qty;
             }
             const { display } = generateCodeRange(baseCode, qty);
             
@@ -668,16 +671,17 @@ export default function Contraloria() {
         !validItems.some(vArt => vArt._uid === idx)
       );
 
-      let autoCodeOffset = 0;
+      let autoCodeOffsets = {};
       // Asegurar que todos tengan un código, auto-generando si es necesario
       const articulosProcesados = validItems.map((art, idx) => {
         const qty = Number(art.cantidad) || 1;
         let finalCode = art.codigo || art.inventario || '';
         if (!finalCode) {
-           const baseCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffset);
+           const baseCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffsets);
            const { display } = generateCodeRange(baseCode, qty);
            finalCode = display;
-           autoCodeOffset += qty;
+           const prefix = generatePrefix(art.descripcion || art.articulo || art.marca);
+           autoCodeOffsets[prefix] = (autoCodeOffsets[prefix] || 0) + qty;
         }
         return {
           id: art.id || '',
