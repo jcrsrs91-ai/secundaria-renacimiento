@@ -93,7 +93,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
       <style>
         {`
           @media print {
-            @page { size: letter portrait; margin: 15mm; }
+            @page { size: letter portrait; margin: 10mm; }
             #root { display: none !important; }
             #print-modal-overlay {
               position: static !important;
@@ -127,10 +127,10 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
         </button>
       </div>
 
-      <div className="bg-white w-[215.9mm] min-h-[279.4mm] shadow-2xl relative my-10 mx-auto p-[15mm] text-sm text-slate-800 font-sans text-left inline-block">
+      <div className="bg-white w-[215.9mm] min-h-[279.4mm] shadow-2xl relative my-10 mx-auto p-[10mm] text-sm text-slate-800 font-sans text-left inline-block">
         
         {/* Header */}
-        <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
+        <div className="flex justify-between items-start border-b-2 border-slate-800 pb-2 mb-3">
           <div className="w-1/4">
             <img src="/logo-sep.png" alt="SEP" className="w-32 object-contain" />
           </div>
@@ -147,7 +147,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
 
         <h3 className="text-center font-bold text-xl mb-6 uppercase tracking-wider">Kárdex de Calificaciones</h3>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <p><span className="font-bold">Alumno:</span> {nombreCompleto}</p>
             <p><span className="font-bold">CURP:</span> {student.curp}</p>
@@ -159,7 +159,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
         </div>
 
         {missingGrades && (
-          <div className="bg-amber-100 border border-amber-400 text-amber-800 px-4 py-2 rounded mb-6 text-xs text-center font-bold no-print">
+          <div className="bg-amber-100 border border-amber-400 text-amber-800 px-4 py-2 rounded mb-4 text-xs text-center font-bold no-print">
             Advertencia: El alumno tiene calificaciones faltantes o reprobadas. El promedio general no puede ser calculado oficialmente.
           </div>
         )}
