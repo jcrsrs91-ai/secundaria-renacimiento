@@ -145,9 +145,9 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
           </div>
         </div>
 
-        <h3 className="text-center font-bold text-xl mb-6 uppercase tracking-wider">Kárdex de Calificaciones</h3>
+        <h3 className="text-center font-bold text-xl mb-1 uppercase tracking-wider">Kárdex de Calificaciones</h3>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-2 mb-1 text-[11px]">
           <div>
             <p><span className="font-bold">Alumno:</span> {nombreCompleto}</p>
             <p><span className="font-bold">CURP:</span> {student.curp}</p>
@@ -164,36 +164,36 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-1">
           {[ 
             { title: 'Primer Grado', data: g1 }, 
             { title: 'Segundo Grado', data: g2 }, 
             { title: 'Tercer Grado', data: g3 } 
           ].map((grado, idx) => (
             <div key={idx} className="break-inside-avoid">
-              <h4 className="font-bold text-sm bg-slate-200 px-2 py-0.5 uppercase">{grado.title}</h4>
-              <table className="w-full text-[10px] mt-1 border-collapse border border-slate-400">
+              <h4 className="font-bold text-xs bg-slate-200 px-1 py-[1px] uppercase">{grado.title}</h4>
+              <table className="w-full text-[9px] mt-0.5 border-collapse border border-slate-400">
                 <thead>
                   <tr className="bg-slate-100">
-                    <th className="border border-slate-400 px-2 py-0.5 text-left w-1/2">Asignatura</th>
-                    <th className="border border-slate-400 px-2 py-0.5 text-center">T1</th>
-                    <th className="border border-slate-400 px-2 py-0.5 text-center">T2</th>
-                    <th className="border border-slate-400 px-2 py-0.5 text-center">T3</th>
-                    <th className="border border-slate-400 px-2 py-0.5 text-center font-bold">Final</th>
-                    <th className="border border-slate-400 px-2 py-0.5 text-center w-1/5">Observaciones</th>
+                    <th className="border border-slate-400 px-1 py-[1px] text-left w-1/2">Asignatura</th>
+                    <th className="border border-slate-400 px-1 py-[1px] text-center">T1</th>
+                    <th className="border border-slate-400 px-1 py-[1px] text-center">T2</th>
+                    <th className="border border-slate-400 px-1 py-[1px] text-center">T3</th>
+                    <th className="border border-slate-400 px-1 py-[1px] text-center font-bold">Final</th>
+                    <th className="border border-slate-400 px-1 py-[1px] text-center w-1/5">Observaciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {grado.data.items.map((item, i) => (
                     <tr key={i} className="break-inside-avoid">
-                      <td className="border border-slate-400 px-2 py-0.5">{item.materia.name}</td>
-                      <td className="border border-slate-400 px-2 py-0.5 text-center">{item.hist ? item.hist.t1 : '-'}</td>
-                      <td className="border border-slate-400 px-2 py-0.5 text-center">{item.hist ? item.hist.t2 : '-'}</td>
-                      <td className="border border-slate-400 px-2 py-0.5 text-center">{item.hist ? item.hist.t3 : '-'}</td>
-                      <td className="border border-slate-400 px-2 py-0.5 text-center font-bold">
+                      <td className="border border-slate-400 px-1 py-[1px] leading-tight">{item.materia.name}</td>
+                      <td className="border border-slate-400 px-1 py-[1px] text-center leading-tight">{item.hist ? item.hist.t1 : '-'}</td>
+                      <td className="border border-slate-400 px-1 py-[1px] text-center leading-tight">{item.hist ? item.hist.t2 : '-'}</td>
+                      <td className="border border-slate-400 px-1 py-[1px] text-center leading-tight">{item.hist ? item.hist.t3 : '-'}</td>
+                      <td className="border border-slate-400 px-1 py-[1px] text-center font-bold leading-tight">
                         {item.hist ? item.hist.valor : '-'}
                       </td>
-                      <td className="border border-slate-400 px-2 py-0.5 text-center text-[9px]">
+                      <td className="border border-slate-400 px-1 py-[1px] text-center text-[8px] leading-tight">
                         {item.hist?.isRegularizacion ? <span className="font-bold text-emerald-700">EXT. ({item.hist.fecha})</span> : ''}
                         {item.hist?.isReprobada ? <span className="font-bold text-red-600">ADEUDA</span> : ''}
                       </td>
@@ -201,28 +201,28 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
                   ))}
                 </tbody>
               </table>
-              <div className="text-right mt-0.5">
-                <span className="font-bold text-xs">Promedio Anual: </span>
-                <span className="font-bold text-sm">{grado.data.avg}</span>
+              <div className="text-right mt-0">
+                <span className="font-bold text-[10px]">Promedio Anual: </span>
+                <span className="font-bold text-xs">{grado.data.avg}</span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-4 border-t-2 border-slate-800 pt-3 flex justify-between items-center">
-          <div className="font-bold text-lg uppercase">
+        <div className="mt-2 border-t-[1.5px] border-slate-800 pt-1 flex justify-between items-center">
+          <div className="font-bold text-sm uppercase">
             Promedio General Nivel Secundaria:
           </div>
-          <div className="font-black text-2xl px-6 py-2 border-2 border-slate-800 rounded bg-slate-50">
+          <div className="font-black text-xl px-4 py-1 border-2 border-slate-800 rounded bg-slate-50">
             {finalAverage}
           </div>
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-2 text-center text-xs">
           <p>A petición del interesado y para los fines legales que a él convengan, se expide la presente en Cd. Renacimiento, Acapulco de Juárez, Guerrero, a los {dateStr}.</p>
         </div>
 
-        <div className="mt-12 flex justify-center">
+        <div className="mt-6 flex justify-center">
           <div className="text-center w-1/2">
             <div className="border-b border-black mb-2 mx-10"></div>
             <p className="font-bold text-sm">Prof. Juan Carlos Taboada Barajas</p>
