@@ -89,7 +89,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
   const dateStr = today.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
 
   return createPortal(
-    <div id="print-modal-overlay" className="fixed inset-0 z-50 bg-slate-900/90 flex justify-center overflow-y-auto">
+    <div id="print-modal-overlay" className="fixed inset-0 z-50 bg-slate-900/90 overflow-y-auto text-center p-4">
       <style>
         {`
           @media print {
@@ -100,6 +100,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
               background: white !important;
               display: block !important;
               overflow: visible !important;
+              padding: 0 !important;
             }
             .no-print { display: none !important; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -126,7 +127,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
         </button>
       </div>
 
-      <div className="bg-white w-[215.9mm] min-h-[279.4mm] shadow-2xl relative mt-10 mb-10 mx-auto p-[15mm] text-sm text-slate-800 font-sans">
+      <div className="bg-white w-[215.9mm] min-h-[279.4mm] shadow-2xl relative my-10 mx-auto p-[15mm] text-sm text-slate-800 font-sans text-left inline-block">
         
         {/* Header */}
         <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
