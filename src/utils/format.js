@@ -14,10 +14,17 @@ export const truncateTo2Dec = (val, fallback = '-') => {
 
 export const getCalificacionFinal = (student, materiaId) => {
   if (student.regularizacion && student.regularizacion[materiaId]) {
+    // Attempt to still provide t1, t2, t3 if they exist, for the kardex display
+    const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
+    const t2 = parseFloat(student.calificaciones?.['t2']?.[materiaId]);
+    const t3 = parseFloat(student.calificaciones?.['t3']?.[materiaId]);
     return {
       valor: parseFloat(student.regularizacion[materiaId].calificacion),
       isRegularizacion: true,
-      fecha: student.regularizacion[materiaId].fecha
+      fecha: student.regularizacion[materiaId].fecha,
+      t1: isNaN(t1) ? '-' : t1,
+      t2: isNaN(t2) ? '-' : t2,
+      t3: isNaN(t3) ? '-' : t3
     };
   }
 
@@ -35,9 +42,13 @@ export const getCalificacionFinal = (student, materiaId) => {
       valor: finalMat,
       isRegularizacion: false,
       fecha: null,
-      isReprobada: finalMat < 6
+      isReprobada: finalMat < 6,
+      t1: isNaN(t1) ? '-' : t1,
+      t2: isNaN(t2) ? '-' : t2,
+      t3: isNaN(t3) ? '-' : t3
     };
   }
+  return null;
   return null;
 };
 

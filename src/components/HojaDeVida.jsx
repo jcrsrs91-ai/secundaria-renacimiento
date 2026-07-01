@@ -4,13 +4,27 @@ import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 
-export default function HojaDeVida({ student, onClose, onSave }) {
+export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, onSave }) {
   const [showPrintMode, setShowPrintMode] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   
   const [grupo, setGrupo] = useState(student.grupo || '');
   const [taller, setTaller] = useState(student.taller || '');
+  const [historial, setHistorial] = useState(student.historial || {});
+
+  const handleHistorialChange = (gradoKey, materiaId, trim, value) => {
+    setHistorial(prev => ({
+      ...prev,
+      [gradoKey]: {
+        ...(prev[gradoKey] || {}),
+        [materiaId]: {
+          ...((prev[gradoKey] || {})[materiaId] || {}),
+          [trim]: value
+        }
+      }
+    }));
+  };
 
   const [isCapturing, setIsCapturing] = useState(false);
   const [fotoPreview, setFotoPreview] = useState(student.fotoUrl || '');
@@ -101,6 +115,8 @@ export default function HojaDeVida({ student, onClose, onSave }) {
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
     
+    data.historial = historial;
+
     try {
       const docRef = doc(db, "students", student.id);
       await updateDoc(docRef, data);
@@ -308,8 +324,45 @@ export default function HojaDeVida({ student, onClose, onSave }) {
                       <div><label className="block text-xs font-medium text-slate-500 mb-1">Teléfono 2</label><input type="text" name="emergenciaTel2" defaultValue={student.emergenciaTel2} className="w-full p-2 border rounded" /></div>
                     </div>
                   </div>
-                </div>
-
+                {/* 5. Historial Académico */}
+                {(student.grado === '2do Grado' || student.grado === '3er Grado') && (
+                  <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Historial Académico (Para Kárdex)</h3>
+                    <p className="text-sm text-slate-500 mb-4">Ingrese las calificaciones de los trimestres (T1, T2, T3) de los años anteriores.</p>
+                    
+                    {['1er Grado', '2do Grado'].map((gradoKey) => {
+                      if (gradoKey === '2do Grado' && student.grado !== '3er Grado') return null;
+                      const materias = materiasPorGrado[gradoKey] || [];
+                      if (materias.length === 0) return null;
+                      
+                      return (
+                        <div key={gradoKey} className="mb-6">
+                          <h4 className="font-bold text-md text-slate-700 bg-slate-100 p-2 rounded">{gradoKey}</h4>
+                          <table className="w-full text-sm text-left mt-2 border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50">
+                                <th className="border p-2">Materia</th>
+                                <th className="border p-2 w-20 text-center">T1</th>
+                                <th className="border p-2 w-20 text-center">T2</th>
+                                <th className="border p-2 w-20 text-center">T3</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {materias.map(mat => (
+                                <tr key={mat.id}>
+                                  <td className="border p-2 text-xs">{mat.nombre}</td>
+                                  <td className="border p-1"><input type="number" step="0.1" min="5" max="10" className="w-full p-1 border rounded text-center text-xs" value={historial[gradoKey]?.[mat.id]?.t1 || ''} onChange={(e) => handleHistorialChange(gradoKey, mat.id, 't1', e.target.value)} /></td>
+                                  <td className="border p-1"><input type="number" step="0.1" min="5" max="10" className="w-full p-1 border rounded text-center text-xs" value={historial[gradoKey]?.[mat.id]?.t2 || ''} onChange={(e) => handleHistorialChange(gradoKey, mat.id, 't2', e.target.value)} /></td>
+                                  <td className="border p-1"><input type="number" step="0.1" min="5" max="10" className="w-full p-1 border rounded text-center text-xs" value={historial[gradoKey]?.[mat.id]?.t3 || ''} onChange={(e) => handleHistorialChange(gradoKey, mat.id, 't3', e.target.value)} /></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
              </form>
           ) : (
             <div className="space-y-8">

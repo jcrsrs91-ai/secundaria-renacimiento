@@ -19,6 +19,7 @@ import EficienciaTerminalPrint from '../../components/EficienciaTerminalPrint';
 import DesempenoAlcanzadoPrint from '../../components/DesempenoAlcanzadoPrint';
 import DesertoresPrint from '../../components/DesertoresPrint';
 import RegularizacionPrint from '../../components/RegularizacionPrint';
+import KardexPrint from '../../components/KardexPrint';
 import AddStudentModal from '../../components/AddStudentModal';
 import { autoAcentuar } from '../../utils/format';
 
@@ -1047,6 +1048,7 @@ export default function ControlEscolar() {
       {modalType === 'hoja' && selectedStudent && (
         <HojaDeVida 
           student={selectedStudent} 
+          materiasPorGrado={materiasPorGrado}
           onClose={closeModal} 
           onSave={(updatedStudent) => {
             // Actualizar localmente si es necesario, o dejar que el onSnapshot lo haga
@@ -1168,6 +1170,16 @@ export default function ControlEscolar() {
                 <div>
                   <h3 className="font-bold text-slate-800">Constancia con Calificaciones</h3>
                   <p className="text-xs text-slate-500 mt-1">Incluye el promedio general acumulado y la tabla de calificaciones.</p>
+                </div>
+              </button>
+
+              <button onClick={() => { setPrintData(selectedStudent); setPrintMode('kardex'); closeModal(); }} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition text-left group">
+                <div className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-4 group-hover:bg-purple-500 group-hover:text-white transition">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Kárdex Completo (Historial)</h3>
+                  <p className="text-xs text-slate-500 mt-1">Documento oficial con calificaciones desglosadas de 1er a 3er grado.</p>
                 </div>
               </button>
 
@@ -1310,6 +1322,7 @@ export default function ControlEscolar() {
       {/* IMPRESIÓN MODALES INDIVIDUALES */}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
+      {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
       {printMode === 'concentrado-final' && <CuadroFinalPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
