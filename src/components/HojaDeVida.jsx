@@ -324,6 +324,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                       <div><label className="block text-xs font-medium text-slate-500 mb-1">Teléfono 2</label><input type="text" name="emergenciaTel2" defaultValue={student.emergenciaTel2} className="w-full p-2 border rounded" /></div>
                     </div>
                   </div>
+                </div>
                 {/* 5. Historial Académico */}
                 {(student.grado === '2do Grado' || student.grado === '3er Grado') && (
                   <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
