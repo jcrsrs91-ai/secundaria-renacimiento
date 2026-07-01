@@ -150,18 +150,26 @@ export default function Contraloria() {
     return () => unsubscribe();
   }, []);
 
-  const getNextAutoCodeBase = (currentOffset = 0) => {
+  const generatePrefix = (name) => {
+    if (!name) return 'INV';
+    const firstWord = name.trim().split(' ')[0].toUpperCase();
+    const cleaned = firstWord.replace(/[^A-Z]/g, '');
+    return cleaned.substring(0, 3) || 'INV';
+  };
+
+  const getNextAutoCodeBase = (name, currentOffset = 0) => {
+    const prefix = generatePrefix(name);
     let maxNum = 0;
     inventario.forEach(item => {
-      if (item.codigo && item.codigo.includes('INV-AUTO-')) {
-        const match = item.codigo.match(/INV-AUTO-(\d+)/);
+      if (item.codigo && item.codigo.startsWith(`${prefix}-`)) {
+        const match = item.codigo.match(new RegExp(`^${prefix}-(\\d+)`));
         if (match) {
           const num = parseInt(match[1], 10);
           if (num > maxNum) maxNum = num;
         }
       }
     });
-    return `INV-AUTO-${String(maxNum + currentOffset + 1).padStart(5, '0')}`;
+    return `${prefix}-${String(maxNum + 1 + currentOffset).padStart(4, '0')}`;
   };
 
   useEffect(() => {
@@ -266,7 +274,7 @@ export default function Contraloria() {
           // 2. Guardar cada artículo en el inventario
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
-            const tempCode = getNextAutoCodeBase(autoCodeOffset);
+            const tempCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffset);
             autoCodeOffset++;
             await addDoc(collection(db, 'inventario'), {
               codigo: tempCode,
@@ -295,7 +303,7 @@ export default function Contraloria() {
             const qty = Number(art.cantidad) || 1;
             let baseCode = art.codigo || art.inventario || '';
             if (!baseCode) {
-              baseCode = getNextAutoCodeBase(autoCodeOffset);
+              baseCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffset);
               autoCodeOffset += qty;
             }
             const { display } = generateCodeRange(baseCode, qty);
@@ -597,7 +605,7 @@ export default function Contraloria() {
         const qty = Number(art.cantidad) || 1;
         let finalCode = art.codigo || art.inventario || '';
         if (!finalCode) {
-           const baseCode = getNextAutoCodeBase(autoCodeOffset);
+           const baseCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffset);
            const { display } = generateCodeRange(baseCode, qty);
            finalCode = display;
            autoCodeOffset += qty;
