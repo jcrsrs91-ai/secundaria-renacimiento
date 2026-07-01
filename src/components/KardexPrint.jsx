@@ -93,7 +93,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
       <style>
         {`
           @media print {
-            @page { size: letter portrait; margin: 10mm; }
+            @page { size: letter portrait; margin-top: 5mm; margin-bottom: 5mm; margin-left: 10mm; margin-right: 10mm; }
             #root { display: none !important; }
             #print-modal-overlay {
               position: static !important;
@@ -127,7 +127,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
         </button>
       </div>
 
-      <div className="bg-white w-[215.9mm] min-h-[279.4mm] shadow-2xl relative my-10 mx-auto p-[10mm] text-sm text-slate-800 font-sans text-left inline-block">
+      <div className="bg-white w-[215.9mm] min-h-[279.4mm] shadow-2xl relative my-10 mx-auto px-[10mm] py-[5mm] text-sm text-slate-800 font-sans text-left inline-block">
         
         {/* Header */}
         <div className="flex justify-between items-start border-b-2 border-slate-800 pb-2 mb-3">
