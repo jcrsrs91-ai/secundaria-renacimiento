@@ -160,8 +160,10 @@ export default function ControlEscolar() {
   }, []);
 
   const filteredDirectorio = directorio.filter(a => {
-    const matchesSearch = searchFilter === '' || 
-      `${a.nombres} ${a.apellidoPaterno} ${a.apellidoMaterno} ${a.matricula}`.toLowerCase().includes(searchFilter.toLowerCase());
+    const removeAccents = (str) => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+    const searchTarget = removeAccents(`${a.nombres} ${a.apellidoPaterno} ${a.apellidoMaterno} ${a.matricula}`).toLowerCase();
+    const searchTerms = removeAccents(searchFilter).toLowerCase();
+    const matchesSearch = searchFilter === '' || searchTarget.includes(searchTerms);
     const matchesGrade = gradeFilter === 'Todos' || a.grado === gradeFilter;
     const matchesGroup = groupFilter === 'Todos' || a.grupo === groupFilter;
     const matchesShift = shiftFilter === 'Todos' || a.turno === shiftFilter;
