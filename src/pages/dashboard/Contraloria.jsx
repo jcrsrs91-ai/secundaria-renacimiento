@@ -1120,7 +1120,6 @@ export default function Contraloria() {
                   onChange={e => setSearchTerm(e.target.value)} 
                 />
               </div>
-              </div>
             </div>
             
             {inventario.some(item => item.codigo && item.codigo.includes('INV-AUTO-')) && (
