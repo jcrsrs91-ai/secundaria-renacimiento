@@ -89,7 +89,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
   return createPortal(
     <div id="print-modal-overlay" className="fixed inset-0 z-50 bg-slate-900/90 flex justify-center overflow-y-auto">
       <style>
-        {\`
+        {`
           @media print {
             @page { size: letter portrait; margin: 15mm; }
             #root { display: none !important; }
@@ -102,7 +102,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
             .no-print { display: none !important; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           }
-        \`}
+        `}
       </style>
 
       <div className="absolute top-4 right-8 flex gap-4 no-print z-50">
