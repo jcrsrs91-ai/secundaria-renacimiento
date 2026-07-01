@@ -228,6 +228,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
