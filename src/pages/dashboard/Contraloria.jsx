@@ -161,7 +161,13 @@ export default function Contraloria() {
     const words = cleanName.split(/\s+/).filter(w => w.length > 0);
     if (words.length === 0) return 'ART';
     
-    return words[0].substring(0, 3).toUpperCase().padEnd(3, 'X');
+    if (words.length >= 3) {
+      return (words[0][0] + words[1][0] + words[2][0]).toUpperCase();
+    } else if (words.length === 2) {
+      return (words[0].substring(0, 2) + words[1][0]).toUpperCase();
+    } else {
+      return (words[0].substring(0, 3)).toUpperCase().padEnd(3, 'X');
+    }
   };
 
   const getNextAutoCodeBase = (name, offsetsObj = {}) => {
@@ -508,6 +514,100 @@ export default function Contraloria() {
   const handleEditClick = (item) => {
     setEditingItem({ ...item });
     setModalOpen('editItem');
+  };
+
+  const migrateToInitials = async () => {
+    const confirm = window.confirm("¿Deseas re-generar los códigos al formato de iniciales (ej. VDT-0001)?");
+    if (!confirm) return;
+
+    try {
+      const counters = {};
+      const codeMapping = {}; 
+      const oldCodeToNewCode = {}; 
+      
+      let updatedInv = 0;
+      let skippedInv = 0;
+      
+      for (const item of inventario) {
+        const currentCode = item.codigo || '';
+        
+        const isSemanticCode = /^[A-Z]{3}-\d+$/.test(currentCode);
+        const isOldAutoCode = currentCode.startsWith('INV-RESG-') || currentCode.startsWith('INV-AUTO-');
+        
+        if (isSemanticCode || isOldAutoCode || currentCode === '') {
+          const prefix = generatePrefix(item.articulo || item.descripcion || '');
+          if (!counters[prefix]) counters[prefix] = 0;
+          
+          counters[prefix]++;
+          const newCode = `${prefix}-${String(counters[prefix]).padStart(4, '0')}`;
+          
+          codeMapping[item.id] = newCode;
+          if (currentCode) {
+            oldCodeToNewCode[currentCode] = newCode;
+          }
+          
+          if (currentCode !== newCode) {
+            await updateDoc(doc(db, 'inventario', item.id), {
+              codigo: newCode
+            });
+            updatedInv++;
+          } else {
+            codeMapping[item.id] = newCode;
+          }
+        } else {
+          // Manual code
+          codeMapping[item.id] = currentCode;
+          oldCodeToNewCode[currentCode] = currentCode;
+          skippedInv++;
+        }
+      }
+      
+      let updatedResg = 0;
+      for (const res of resguardos) {
+        let changed = false;
+        if (res.articulos && Array.isArray(res.articulos)) {
+          const newArticulos = res.articulos.map(art => {
+            let newCode = art.codigo;
+            
+            if (art.id && codeMapping[art.id]) {
+              newCode = codeMapping[art.id];
+            } else if (art.codigo && oldCodeToNewCode[art.codigo]) {
+              newCode = oldCodeToNewCode[art.codigo];
+            } else if (art.codigo) {
+              // Fallback para rangos (ej. "BUT-0001 al BUT-0030") o si el inventario ya se había migrado
+              const isSemanticCode = /^[A-Z]{3}-\d+/.test(art.codigo) || art.codigo.startsWith('INV-RESG-') || art.codigo.startsWith('INV-AUTO-');
+              if (isSemanticCode) {
+                const correctPrefix = generatePrefix(art.descripcion || art.articulo || art.marca || '');
+                if (art.codigo.includes(' al ')) {
+                  const parts = art.codigo.split(' al ');
+                  const newStart = parts[0].replace(/^[A-Z]{3}-|^INV-RESG-|^INV-AUTO-/, `${correctPrefix}-`);
+                  const newEnd = parts[1].replace(/^[A-Z]{3}-|^INV-RESG-|^INV-AUTO-/, `${correctPrefix}-`);
+                  newCode = `${newStart} al ${newEnd}`;
+                } else {
+                  newCode = art.codigo.replace(/^[A-Z]{3}-|^INV-RESG-|^INV-AUTO-/, `${correctPrefix}-`);
+                }
+              }
+            }
+
+            if (newCode && newCode !== art.codigo) {
+              changed = true;
+              return { ...art, codigo: newCode };
+            }
+            return art;
+          });
+          
+          if (changed) {
+            await updateDoc(doc(db, 'resguardos', res.id), { articulos: newArticulos });
+            updatedResg++;
+          }
+        }
+      }
+      
+      toast.success(`Se actualizaron ${updatedInv} artículos y ${updatedResg} resguardos.`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al actualizar códigos.");
+    }
   };
 
   const handleSaveEdit = async (e) => {
@@ -1169,21 +1269,15 @@ export default function Contraloria() {
                 />
               </div>
             </div>
-            
-            {(inventario.some(item => item.codigo && item.codigo.includes('INV-AUTO-')) || resguardos.some(r => r.articulos && r.articulos.some(art => art.codigo && art.codigo.includes('INV-AUTO-')))) && (
-              <div className="w-full md:w-auto">
-                <button 
-                  onClick={migrarCodigos}
-                  disabled={isSubmitting}
-                  title="Actualiza los códigos antiguos 'INV-AUTO' al nuevo formato basado en el nombre."
-                  className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 border border-amber-600 rounded-lg text-sm font-bold shadow-sm transition-colors disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Migrando...' : 'Migrar Códigos Antiguos'}
-                </button>
-              </div>
-            )}
-
-            <div className="w-full md:w-48">
+            <div className="w-full md:w-auto">
+              <button 
+                onClick={migrateToInitials}
+                title="Actualiza los códigos al nuevo formato de Iniciales (VDT-0001)."
+                className="w-full md:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 border border-indigo-600 rounded-lg text-sm font-bold shadow-sm transition-colors"
+              >
+                Regenerar Códigos (VDT-0001)
+              </button>
+            </div>            <div className="w-full md:w-48">
               <label className="block text-xs font-medium text-slate-500 mb-1">Ubicación</label>
               <select 
                 className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
@@ -1586,6 +1680,7 @@ export default function Contraloria() {
                     No hay historial de movimientos para este artículo.
                   </div>
                 )}
+                
                 <div className="flex justify-end pt-4 border-t border-slate-200 mt-4">
                   <button type="button" onClick={() => { setModalOpen(null); setHistoryItem(null); }} className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm">
                     Cerrar Historial
