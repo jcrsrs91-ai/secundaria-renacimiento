@@ -3,7 +3,7 @@ import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
-import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import ActaRecepcionPrint from '../../components/ActaRecepcionPrint';
 import CartaResguardoPrint from '../../components/CartaResguardoPrint';
 import ScannerInventarioModal from '../../components/ScannerInventarioModal';
@@ -521,6 +521,9 @@ export default function Contraloria() {
     if (!confirm) return;
 
     try {
+      setIsSubmitting(true);
+      toast.loading("Migrando códigos...", { id: 'migrar' });
+      
       const counters = {};
       const codeMapping = {}; 
       const oldCodeToNewCode = {}; 
@@ -528,7 +531,16 @@ export default function Contraloria() {
       let updatedInv = 0;
       let skippedInv = 0;
       
-      for (const item of inventario) {
+      const batch = writeBatch(db);
+      
+      // Sort inventario so we process them in consistent order (by old number if possible)
+      const sortedInventario = [...inventario].sort((a, b) => {
+         const numA = parseInt((a.codigo || '').match(/\d+$/)?.[0] || 0);
+         const numB = parseInt((b.codigo || '').match(/\d+$/)?.[0] || 0);
+         return numA - numB;
+      });
+      
+      for (const item of sortedInventario) {
         const currentCode = item.codigo || '';
         
         const isSemanticCode = /^[A-Z]{3}-\d+$/.test(currentCode);
@@ -547,9 +559,7 @@ export default function Contraloria() {
           }
           
           if (currentCode !== newCode) {
-            await updateDoc(doc(db, 'inventario', item.id), {
-              codigo: newCode
-            });
+            batch.update(doc(db, 'inventario', item.id), { codigo: newCode });
             updatedInv++;
           } else {
             codeMapping[item.id] = newCode;
@@ -574,7 +584,6 @@ export default function Contraloria() {
             } else if (art.codigo && oldCodeToNewCode[art.codigo]) {
               newCode = oldCodeToNewCode[art.codigo];
             } else if (art.codigo) {
-              // Fallback para rangos (ej. "BUT-0001 al BUT-0030") o si el inventario ya se había migrado
               const isSemanticCode = /^[A-Z]{3}-\d+/.test(art.codigo) || art.codigo.startsWith('INV-RESG-') || art.codigo.startsWith('INV-AUTO-');
               if (isSemanticCode) {
                 const correctPrefix = generatePrefix(art.descripcion || art.articulo || art.marca || '');
@@ -597,16 +606,20 @@ export default function Contraloria() {
           });
           
           if (changed) {
-            await updateDoc(doc(db, 'resguardos', res.id), { articulos: newArticulos });
+            batch.update(doc(db, 'resguardos', res.id), { articulos: newArticulos });
             updatedResg++;
           }
         }
       }
       
-      toast.success(`Se actualizaron ${updatedInv} artículos y ${updatedResg} resguardos.`);
+      await batch.commit();
+      
+      toast.success(`Se actualizaron ${updatedInv} artículos y ${updatedResg} resguardos.`, { id: 'migrar' });
+      setIsSubmitting(false);
     } catch (err) {
       console.error(err);
-      toast.error("Error al actualizar códigos.");
+      toast.error("Error al actualizar códigos.", { id: 'migrar' });
+      setIsSubmitting(false);
     }
   };
 
