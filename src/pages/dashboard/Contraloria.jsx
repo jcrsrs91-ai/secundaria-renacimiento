@@ -840,6 +840,18 @@ export default function Contraloria() {
       const updatePromise = async () => {
       const validItems = editingResguardo.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
       
+      const originalResguardo = resguardos.find(r => r.id === editingResguardo.id);
+      const originalArticulos = originalResguardo ? originalResguardo.articulos || [] : [];
+      
+      // Expandir códigos que YA pertenecen a este resguardo para no contarlos como duplicados
+      let codesBelongingToThisResguardo = new Set();
+      for (const origArt of originalArticulos) {
+        if (origArt.codigo) {
+           const expanded = expandCodeRange(origArt.codigo);
+           expanded.forEach(c => codesBelongingToThisResguardo.add(c));
+        }
+      }
+
       // Verificar duplicados
       for (const art of validItems) {
         const qty = Number(art.cantidad) || 1;
@@ -847,7 +859,7 @@ export default function Contraloria() {
         if (baseCode) {
            const { codes } = generateCodeRange(baseCode, qty);
            for (const code of codes) {
-             if (inventario.some(i => i.codigo === code && i.id !== art.id)) {
+             if (inventario.some(i => i.codigo === code && i.id !== art.id && !codesBelongingToThisResguardo.has(code))) {
                toast.error(`El código de inventario ${code} ya existe en el sistema. Usa otro folio.`);
                return;
              }
@@ -856,9 +868,6 @@ export default function Contraloria() {
       }
 
       const resRef = doc(db, 'resguardos', editingResguardo.id);
-      
-      const originalResguardo = resguardos.find(r => r.id === editingResguardo.id);
-      const originalArticulos = originalResguardo ? originalResguardo.articulos || [] : [];
       
       const removedItems = originalArticulos.filter((origArt, idx) => 
         !validItems.some(vArt => vArt._uid === idx)
