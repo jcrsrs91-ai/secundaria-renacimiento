@@ -623,6 +623,57 @@ export default function Contraloria() {
     }
   };
 
+  const cleanOrphanedItems = async () => {
+    const confirm = window.confirm("¿Deseas buscar y eliminar del Inventario los bienes auto-generados que ya no tienen Acta de Resguardo (bienes huérfanos)?\n\nEsto es útil si eliminaste un acta pero los bienes se quedaron 'atrapados' en el sistema.");
+    if (!confirm) return;
+
+    try {
+      setIsSubmitting(true);
+      toast.loading("Buscando bienes huérfanos...", { id: 'clean' });
+      const batch = writeBatch(db);
+      let deletedCount = 0;
+
+      for (const item of inventario) {
+        // Solo aplica a códigos automáticos (ej. VDT-0001, INV-AUTO-001)
+        if (!/^[A-Z]{3}-\d+$/.test(item.codigo) && !item.codigo?.startsWith('INV-AUTO-')) continue;
+        // Si están en Bodega, son libres y válidos
+        if (item.ubicacion === 'Bodega Contraloría') continue;
+
+        // Comprobar si su código existe en los rangos de algún resguardo
+        let foundInResguardo = false;
+        for (const res of resguardos) {
+          if (res.articulos) {
+            for (const art of res.articulos) {
+              const expandedCodes = expandCodeRange(art.codigo || '');
+              if (expandedCodes.includes(item.codigo)) {
+                foundInResguardo = true;
+                break;
+              }
+            }
+          }
+          if (foundInResguardo) break;
+        }
+
+        if (!foundInResguardo) {
+          batch.delete(doc(db, 'inventario', item.id));
+          deletedCount++;
+        }
+      }
+
+      if (deletedCount > 0) {
+        await batch.commit();
+        toast.success(`Se eliminaron ${deletedCount} bienes fantasma/huérfanos.`, { id: 'clean' });
+      } else {
+        toast.success("Inventario limpio. No se encontraron bienes fantasma.", { id: 'clean' });
+      }
+      setIsSubmitting(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al limpiar inventario.", { id: 'clean' });
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editingItem) return;
@@ -1282,13 +1333,22 @@ export default function Contraloria() {
                 />
               </div>
             </div>
-            <div className="w-full md:w-auto">
+            <div className="w-full md:w-auto flex flex-col sm:flex-row gap-2">
               <button 
                 onClick={migrateToInitials}
                 title="Actualiza los códigos al nuevo formato de Iniciales (VDT-0001)."
                 className="w-full md:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 border border-indigo-600 rounded-lg text-sm font-bold shadow-sm transition-colors"
               >
                 Regenerar Códigos (VDT-0001)
+              </button>
+              
+              <button 
+                onClick={cleanOrphanedItems}
+                disabled={isSubmitting}
+                title="Elimina bienes que perdieron su resguardo y quedaron atrapados."
+                className="w-full md:w-auto bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 border border-rose-600 rounded-lg text-sm font-bold shadow-sm transition-colors disabled:opacity-50"
+              >
+                Limpiar Fantasmas
               </button>
             </div>            <div className="w-full md:w-48">
               <label className="block text-xs font-medium text-slate-500 mb-1">Ubicación</label>
