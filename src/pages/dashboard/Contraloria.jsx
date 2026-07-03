@@ -293,6 +293,24 @@ export default function Contraloria() {
   const [printMode, setPrintMode] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'etiquetas'
   const [printData, setPrintData] = useState(null);
   
+  
+  const uniqueUbicaciones = useMemo(() => {
+    const ubs = new Set();
+    inventario.forEach(item => {
+      if (item.ubicacion && typeof item.ubicacion === 'string' && item.ubicacion.trim()) {
+        ubs.add(item.ubicacion.trim());
+      }
+    });
+    resguardos.forEach(res => {
+      res.articulos?.forEach(art => {
+         if (art.ubicacion && typeof art.ubicacion === 'string' && art.ubicacion.trim()) {
+            ubs.add(art.ubicacion.trim());
+         }
+      });
+    });
+    return Array.from(ubs).sort();
+  }, [inventario, resguardos]);
+
   const [modalOpen, setModalOpen] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'editItem' | 'history'
   const [editingItem, setEditingItem] = useState(null);
   const [historyItem, setHistoryItem] = useState(null);
