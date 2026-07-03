@@ -1476,6 +1476,8 @@ export default function Contraloria() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Código</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículo</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Marca / Modelo</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">No. Serie</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Ubicación</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Cantidad</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado</th>
@@ -1496,11 +1498,13 @@ export default function Contraloria() {
                   <td className="px-6 py-4 text-sm font-medium text-slate-900">{item.codigo}</td>
                   <td className="px-6 py-4 text-sm text-slate-600">
                         <div className="font-semibold text-slate-800">{item.articulo}</div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          {[item.marca, item.modelo, item.serie && `S/N: ${item.serie}`].filter(Boolean).join(' • ')}
-                        </div>
                         {item.observaciones && <div className="text-[10px] italic text-slate-400 mt-0.5 text-justify leading-tight">{item.observaciones}</div>}
                       </td>
+                  <td className="px-6 py-4 text-sm text-slate-600">
+                        <div className="text-slate-800">{item.marca || '-'}</div>
+                        {item.modelo && <div className="text-[11px] text-slate-500">{item.modelo}</div>}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600 font-mono text-xs">{item.serie || '-'}</td>
                   <td className="px-6 py-4 text-sm text-slate-600">{item.ubicacion}</td>
                   <td className="px-6 py-4 text-sm font-semibold text-slate-800">{item.cantidad}</td>
                   <td className="px-6 py-4 text-sm text-emerald-600 flex items-center">
@@ -1521,7 +1525,7 @@ export default function Contraloria() {
               ))}
               {filteredInventario.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="px-6 py-10 text-center text-slate-500">No hay artículos registrados en el inventario que coincidan con los filtros.</td>
+                  <td colSpan="9" className="px-6 py-10 text-center text-slate-500">No hay artículos registrados en el inventario que coincidan con los filtros.</td>
                 </tr>
               )}
             </tbody>
