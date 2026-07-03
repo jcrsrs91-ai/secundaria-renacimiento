@@ -394,11 +394,15 @@ export default function Contraloria() {
             for (const code of codes) {
               await addDoc(collection(db, 'inventario'), {
                 codigo: code,
-                articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
+                articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || '',
+                descripcion: art.descripcion || art.articulo || '',
+                marca: art.marca || '',
+                modelo: art.modelo || '',
+                serie: art.serie || '',
+                observaciones: art.observaciones || '',
                 ubicacion: 'Bodega Contraloría',
                 cantidad: 1,
                 estado: art.estado || 'Nuevo',
-                serie: art.serie || '',
                 fechaIngreso: new Date().toISOString()
               });
             }
@@ -480,6 +484,11 @@ export default function Contraloria() {
               await updateDoc(itemRef, {
                 ubicacion: formData.areaResguardante || 'En resguardo',
                 estado: art.estado || 'Bueno',
+                descripcion: art.descripcion || art.articulo || invItem?.descripcion || invItem?.articulo || '',
+                marca: art.marca || invItem?.marca || '',
+                modelo: art.modelo || invItem?.modelo || '',
+                serie: art.serie || invItem?.serie || '',
+                observaciones: art.observaciones || invItem?.observaciones || '',
                 historial: [...currentHistorial, {
                   fecha: new Date().toISOString(),
                   accion: "Asignación de Resguardo",
@@ -496,11 +505,15 @@ export default function Contraloria() {
               for (const code of codes) {
                 await addDoc(collection(db, 'inventario'), {
                   codigo: code,
-                  articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
+                  articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || '',
+                  descripcion: art.descripcion || art.articulo || '',
+                  marca: art.marca || '',
+                  modelo: art.modelo || '',
+                  serie: art.serie || '',
+                  observaciones: art.observaciones || '',
                   ubicacion: formData.areaResguardante || 'En resguardo',
                   cantidad: 1, // Guardado individualmente
                   estado: art.estado || 'Bueno',
-                  serie: art.serie || '',
                   fechaIngreso: new Date().toISOString()
                 });
               }
@@ -739,6 +752,11 @@ export default function Contraloria() {
       await updateDoc(itemRef, {
         codigo: editingItem.codigo,
         articulo: editingItem.articulo,
+        descripcion: editingItem.descripcion || editingItem.articulo || '',
+        marca: editingItem.marca || '',
+        modelo: editingItem.modelo || '',
+        serie: editingItem.serie || '',
+        observaciones: editingItem.observaciones || '',
         ubicacion: editingItem.ubicacion,
         cantidad: Number(editingItem.cantidad),
         estado: editingItem.estado,
