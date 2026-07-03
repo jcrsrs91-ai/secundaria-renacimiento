@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
@@ -1458,7 +1458,13 @@ export default function Contraloria() {
                     />
                   </td>
                   <td className="px-6 py-4 text-sm font-medium text-slate-900">{item.codigo}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{item.articulo}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600">
+                        <div className="font-semibold text-slate-800">{item.articulo}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          {[item.marca, item.modelo, item.serie && `S/N: ${item.serie}`].filter(Boolean).join(' • ')}
+                        </div>
+                        {item.observaciones && <div className="text-[10px] italic text-slate-400 mt-0.5 text-justify leading-tight">{item.observaciones}</div>}
+                      </td>
                   <td className="px-6 py-4 text-sm text-slate-600">{item.ubicacion}</td>
                   <td className="px-6 py-4 text-sm font-semibold text-slate-800">{item.cantidad}</td>
                   <td className="px-6 py-4 text-sm text-emerald-600 flex items-center">
@@ -1659,7 +1665,7 @@ export default function Contraloria() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Ubicación Actual</label>
-                      <input type="text" value={editingItem.ubicacion || ''} onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                      <input type="text" list="ubicaciones-list" value={editingItem.ubicacion || ''} onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})} className="w-full p-2 border rounded text-sm" />
                     </div>
                   </div>
 
@@ -1959,11 +1965,7 @@ export default function Contraloria() {
                            </div>
                            {modalOpen === 'baja' ? (
                              <div className="w-1/4">
-                               <input type="text" placeholder="Ubicación" className="w-full rounded-md border-slate-300 text-sm" value={art.ubicacion || ''} onChange={(e) => {
-                                 const newArts = [...formData.articulos];
-                                 newArts[idx].ubicacion = e.target.value;
-                                 setFormData({...formData, articulos: newArts});
-                               }} />
+                               <input type="text" list="ubicaciones-list" placeholder="Ubicación" className="w-full rounded-md border-slate-300 text-sm" value={art.ubicacion || ''} onChange={(e) => { const newArts = [...formData.articulos]; newArts[idx].ubicacion = e.target.value; setFormData({...formData, articulos: newArts}); }} />
                              </div>
                            ) : (
                              <div className="w-32">
