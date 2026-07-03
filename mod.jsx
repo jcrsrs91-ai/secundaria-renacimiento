@@ -297,7 +297,7 @@ export default function Contraloria() {
   const [editingItem, setEditingItem] = useState(null);
   const [historyItem, setHistoryItem] = useState(null);
   
-  const [formData, setFormData] = useState({ articulos: [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }] });
+  const [formData, setFormData] = useState({ articulos: [{ cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: '', inventario: '', observaciones: '' }] });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -309,7 +309,7 @@ export default function Contraloria() {
   const openModal = (type) => {
     setModalOpen(type);
     
-    let articulosIniciales = [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }];
+    let articulosIniciales = [{ cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: '', inventario: '', observaciones: '' }];
     if ((type === 'baja' || type === 'resguardo') && selectedItems.length > 0) {
       articulosIniciales = inventario.filter(i => selectedItems.includes(i.id));
     }
@@ -332,7 +332,7 @@ export default function Contraloria() {
   };
 
   const handleAddRow = () => {
-    setFormData({ ...formData, articulos: [...formData.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }] });
+    setFormData({ ...formData, articulos: [...formData.articulos, { cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: '', inventario: '', observaciones: '' }] });
   };
 
   const handlePrintSubmit = async (e, actionType = 'print') => {
@@ -376,8 +376,10 @@ export default function Contraloria() {
             for (const code of codes) {
               await addDoc(collection(db, 'inventario'), {
                 codigo: code,
-                articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
-                ubicacion: 'Bodega Contraloría',
+                articulo: `${art.descripcion || ''} ${art.marca || ''} ${art.modelo || ''}`.trim(),
+                  modelo: art.modelo || '',
+                  observaciones: art.observaciones || '',
+                  ubicacion: 'Bodega Contraloría',
                 cantidad: 1,
                 estado: art.estado || 'Nuevo',
                 serie: art.serie || '',
@@ -416,7 +418,9 @@ export default function Contraloria() {
               cantidad: qty,
               descripcion: art.descripcion || art.articulo || '',
               marca: art.marca || '',
+              modelo: art.modelo || '',
               serie: art.serie || '',
+              observaciones: art.observaciones || '',
               codigo: display, // Rangos consolidados para la impresión y visualización
               estado: art.estado || 'Bueno'
             };
@@ -478,7 +482,9 @@ export default function Contraloria() {
               for (const code of codes) {
                 await addDoc(collection(db, 'inventario'), {
                   codigo: code,
-                  articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
+                  articulo: `${art.descripcion || ''} ${art.marca || ''} ${art.modelo || ''}`.trim(),
+                  modelo: art.modelo || '',
+                  observaciones: art.observaciones || '',
                   ubicacion: formData.areaResguardante || 'En resguardo',
                   cantidad: 1, // Guardado individualmente
                   estado: art.estado || 'Bueno',
@@ -721,10 +727,6 @@ export default function Contraloria() {
       await updateDoc(itemRef, {
         codigo: editingItem.codigo,
         articulo: editingItem.articulo,
-        marca: editingItem.marca || '',
-        modelo: editingItem.modelo || '',
-        serie: editingItem.serie || '',
-        observaciones: editingItem.observaciones || '',
         ubicacion: editingItem.ubicacion,
         cantidad: Number(editingItem.cantidad),
         estado: editingItem.estado,
@@ -814,7 +816,7 @@ export default function Contraloria() {
       codigo: '',
       inventario: '',
       serie: ''
-    })) : [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: 'Bueno', inventario: '' }];
+    })) : [{ cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Bueno', inventario: '', observaciones: '' }];
 
     setFormData({
       fecha: new Date().toISOString().split('T')[0],
@@ -895,7 +897,9 @@ export default function Contraloria() {
           cantidad: qty,
           descripcion: art.descripcion || art.articulo || '',
           marca: art.marca || '',
-          serie: art.serie || '',
+              modelo: art.modelo || '',
+              serie: art.serie || '',
+              observaciones: art.observaciones || '',
           codigo: finalCode,
           estado: art.estado || 'Bueno'
         };
@@ -970,8 +974,10 @@ export default function Contraloria() {
             // Si el artículo no existe en el catálogo, lo creamos
             await addDoc(collection(db, 'inventario'), {
               codigo: code,
-              articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
-              ubicacion: editingResguardo.areaResguardante || 'En resguardo',
+              articulo: `${art.descripcion || ''} ${art.marca || ''} ${art.modelo || ''}`.trim(),
+                  modelo: art.modelo || '',
+                  observaciones: art.observaciones || '',
+                  ubicacion: editingResguardo.areaResguardante || 'En resguardo',
               cantidad: 1,
               estado: art.estado || 'Bueno',
               serie: art.serie || '',
@@ -1631,30 +1637,6 @@ export default function Contraloria() {
                       <input type="number" value={editingItem.cantidad} onChange={e => setEditingItem({...editingItem, cantidad: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Nombre / Concepto</label>
-                    <input type="text" value={editingItem.articulo || editingItem.descripcion || ''} onChange={e => setEditingItem({...editingItem, articulo: e.target.value})} className="w-full p-2 border rounded" />
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Marca</label>
-                      <input type="text" value={editingItem.marca || ''} onChange={e => setEditingItem({...editingItem, marca: e.target.value})} className="w-full p-2 border rounded" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Modelo</label>
-                      <input type="text" value={editingItem.modelo || ''} onChange={e => setEditingItem({...editingItem, modelo: e.target.value})} className="w-full p-2 border rounded" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">No. Serie</label>
-                      <input type="text" value={editingItem.serie || ''} onChange={e => setEditingItem({...editingItem, serie: e.target.value})} className="w-full p-2 border rounded" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Cantidad</label>
-                      <input type="number" value={editingItem.cantidad || 1} onChange={e => setEditingItem({...editingItem, cantidad: e.target.value})} className="w-full p-2 border rounded" />
-                    </div>
-                    <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Estado Físico</label>
                       <select 
                         value={editingItem.estado || 'Bueno'} 
@@ -1669,13 +1651,19 @@ export default function Contraloria() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
-                    <textarea rows="2" value={editingItem.observaciones || ''} onChange={e => setEditingItem({...editingItem, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, características, etc."></textarea>
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Ubicación Actual</label>
-                    <input type="text" value={editingItem.ubicacion || ''} onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})} className="w-full p-2 border rounded" />
+                    <input type="text" value={editingItem.ubicacion} onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})} className="w-full p-2 border rounded" />
                   </div>
+                </div>
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                  <button type="button" onClick={() => { setModalOpen(null); setEditingItem(null); }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancelar</button>
+                  <button type="submit" className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 shadow-sm">Guardar Cambios</button>
+                </div>
+              </form>
+            ) : modalOpen === 'editResguardo' && editingResguardo ? (
+              <form onSubmit={handleSaveResguardoEdit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Fecha</label>
                     <input type="date" value={editingResguardo.fecha} onChange={e => setEditingResguardo({...editingResguardo, fecha: e.target.value})} className="w-full p-2 border rounded" />
                   </div>
@@ -1700,7 +1688,7 @@ export default function Contraloria() {
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
                   <div className="flex justify-between items-center mb-3">
                     <h4 className="font-semibold text-slate-700">Artículos incluidos</h4>
-                    <button type="button" onClick={() => setEditingResguardo({ ...editingResguardo, articulos: [...editingResguardo.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: 'Bueno', codigo: '' }] })} className="text-sm text-primary-600 hover:text-primary-700 font-medium font-bold">
+                    <button type="button" onClick={() => setEditingResguardo({ ...editingResguardo, articulos: [...editingResguardo.articulos, { cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Bueno', codigo: '', observaciones: '' }] })} className="text-sm text-primary-600 hover:text-primary-700 font-medium font-bold">
                       + Añadir fila
                     </button>
                   </div>
@@ -1715,85 +1703,53 @@ export default function Contraloria() {
                           }} />
                         </div>
                         <div className="flex-1">
-                    {editingResguardo.articulos.map((art, idx) => (
-                      <div key={idx} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                        <div className="flex gap-2 items-center">
-                          <div className="w-16">
-                            <input type="number" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm" value={art.cantidad || ''} onChange={(e) => {
-                              const newArts = [...editingResguardo.articulos];
-                              newArts[idx].cantidad = e.target.value;
-                              setEditingResguardo({...editingResguardo, articulos: newArts});
-                            }} />
-                          </div>
-                          <div className="flex-1">
-                            <input type="text" placeholder="Nombre / Concepto" className="w-full rounded-md border-slate-300 text-sm" value={art.descripcion || art.articulo || ''} onChange={(e) => {
-                              const newArts = [...editingResguardo.articulos];
-                              newArts[idx].descripcion = e.target.value;
-                              setEditingResguardo({...editingResguardo, articulos: newArts});
-                            }} />
-                          </div>
-                          <div className="w-1/4">
-                            <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
-                              const newArts = [...editingResguardo.articulos];
-                              newArts[idx].codigo = e.target.value;
-                              setEditingResguardo({...editingResguardo, articulos: newArts});
-                            }} />
-                          </div>
-                          <div className="w-1/4">
-                              <input type="text" placeholder="Marca" className="w-full rounded-md border-slate-300 text-sm" value={art.marca || ''} onChange={(e) => {
-                                const newArts = [...editingResguardo.articulos];
-                                newArts[idx].marca = e.target.value;
-                                setEditingResguardo({...editingResguardo, articulos: newArts});
-                              }} />
-                           </div>
-                          <button type="button" onClick={() => {
-                            const newArts = editingResguardo.articulos.filter((_, i) => i !== idx);
-                            setEditingResguardo({...editingResguardo, articulos: newArts.length ? newArts : [{}]});
-                          }} className="p-2 text-slate-400 hover:text-red-500 flex-shrink-0">
-                            <X className="w-5 h-5" />
-                          </button>
+                          <input type="text" placeholder="Descripción del artículo" className="w-full rounded-md border-slate-300 text-sm" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                            const newArts = [...editingResguardo.articulos];
+                            newArts[idx].descripcion = e.target.value;
+                            setEditingResguardo({...editingResguardo, articulos: newArts});
+                          }} />
                         </div>
-                        <div className="flex gap-2 items-center">
-                           <div className="w-1/4">
-                              <input type="text" placeholder="Modelo" className="w-full rounded-md border-slate-300 text-sm" value={art.modelo || ''} onChange={(e) => {
-                                const newArts = [...editingResguardo.articulos];
-                                newArts[idx].modelo = e.target.value;
-                                setEditingResguardo({...editingResguardo, articulos: newArts});
-                              }} />
-                           </div>
-                           <div className="w-1/4">
-                              <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm" value={art.serie || ''} onChange={(e) => {
-                                const newArts = [...editingResguardo.articulos];
-                                newArts[idx].serie = e.target.value;
-                                setEditingResguardo({...editingResguardo, articulos: newArts});
-                              }} />
-                           </div>
-                           <div className="w-32">
-                              <select 
-                                className="w-full rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 p-2" 
-                                value={art.estado || 'Bueno'} 
-                                onChange={(e) => {
-                                  const newArts = [...editingResguardo.articulos];
-                                  newArts[idx].estado = e.target.value;
-                                  setEditingResguardo({...editingResguardo, articulos: newArts});
-                                }}
-                              >
-                                <option value="Bueno">Bueno</option>
-                                <option value="Nuevo">Nuevo</option>
-                                <option value="Regular">Regular</option>
-                                <option value="Malo">Malo</option>
-                              </select>
-                           </div>
-                           <div className="flex-1">
-                              <input type="text" placeholder="Observaciones" className="w-full rounded-md border-slate-300 text-sm" value={art.observaciones || ''} onChange={(e) => {
-                                const newArts = [...editingResguardo.articulos];
-                                newArts[idx].observaciones = e.target.value;
-                                setEditingResguardo({...editingResguardo, articulos: newArts});
-                              }} />
-                           </div>
+                        <div className="w-1/4">
+                          <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                            const newArts = [...editingResguardo.articulos];
+                            newArts[idx].codigo = e.target.value;
+                            setEditingResguardo({...editingResguardo, articulos: newArts});
+                          }} />
                         </div>
+                        <div className="w-32">
+                          <select 
+                            className="w-full rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 p-2" 
+                            value={art.estado || 'Bueno'} 
+                            onChange={(e) => {
+                              const newArts = [...editingResguardo.articulos];
+                              newArts[idx].estado = e.target.value;
+                              setEditingResguardo({...editingResguardo, articulos: newArts});
+                            }}
+                          >
+                            <option value="Bueno">Bueno</option>
+                            <option value="Nuevo">Nuevo</option>
+                            <option value="Regular">Regular</option>
+                            <option value="Malo">Malo</option>
+                          </select>
+                        </div>
+                        <button type="button" onClick={() => {
+                          const newArts = editingResguardo.articulos.filter((_, i) => i !== idx);
+                          setEditingResguardo({...editingResguardo, articulos: newArts.length ? newArts : [{}]});
+                        }} className="p-2 text-slate-400 hover:text-red-500">
+                          <X className="w-5 h-5" />
+                        </button>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                  <button type="button" onClick={() => { setModalOpen(null); setEditingResguardo(null); }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancelar</button>
+                  <button type="submit" className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm">
+                    Guardar Cambios
+                  </button>
+                </div>
+              </form>
             ) : modalOpen === 'history' && historyItem ? (
               <div className="space-y-4">
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
@@ -1898,106 +1854,87 @@ export default function Contraloria() {
                           }} />
                         </div>
                         <div className="flex-1">
-                    {formData.articulos.map((art, idx) => (
-                      <div key={idx} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                        <div className="flex gap-2 items-center">
-                          <div className="w-16">
-                            <input type="number" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm" value={art.cantidad || ''} onChange={(e) => {
+                          <input type="text" placeholder="Descripción del artículo" className="w-full rounded-md border-slate-300 text-sm" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                            const newArts = [...formData.articulos];
+                            newArts[idx].descripcion = e.target.value;
+                            setFormData({...formData, articulos: newArts});
+                          }} />
+                        </div>
+                        {modalOpen === 'recepcion' && (
+                          <div className="w-1/5">
+                            <input type="text" placeholder="Código Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600" value={art.codigo || ''} onChange={(e) => {
                               const newArts = [...formData.articulos];
-                              newArts[idx].cantidad = e.target.value;
+                              newArts[idx].codigo = e.target.value;
+                              setFormData({...formData, articulos: newArts});
+                            }} title="El sistema generará los siguientes folios de forma consecutiva automáticamente." />
+                          </div>
+                        )}
+                        <div className="w-1/5">
+                          {modalOpen === 'resguardo' || modalOpen === 'baja' ? (
+                            <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                              const newArts = [...formData.articulos];
+                              newArts[idx].codigo = e.target.value;
                               setFormData({...formData, articulos: newArts});
                             }} />
-                          </div>
-                          <div className="flex-1">
-                            <input type="text" placeholder="Nombre / Concepto" className="w-full rounded-md border-slate-300 text-sm" value={art.descripcion || art.articulo || ''} onChange={(e) => {
-                              const newArts = [...formData.articulos];
-                              newArts[idx].descripcion = e.target.value;
-                              setFormData({...formData, articulos: newArts});
-                            }} />
-                          </div>
-                          {modalOpen === 'recepcion' && (
-                            <div className="w-1/4">
-                              <input type="text" placeholder="Código Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600" value={art.codigo || ''} onChange={(e) => {
-                                const newArts = [...formData.articulos];
-                                newArts[idx].codigo = e.target.value;
-                                setFormData({...formData, articulos: newArts});
-                              }} title="El sistema generará los siguientes folios de forma consecutiva automáticamente." />
-                            </div>
-                          )}
-                          {(modalOpen === 'resguardo' || modalOpen === 'baja') && (
-                            <div className="w-1/4">
-                              <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
-                                const newArts = [...formData.articulos];
-                                newArts[idx].codigo = e.target.value;
-                                setFormData({...formData, articulos: newArts});
-                              }} />
-                            </div>
-                          )}
-                          <div className="w-1/4">
-                            <input type="text" placeholder="Marca" className="w-full rounded-md border-slate-300 text-sm" value={art.marca || ''} onChange={(e) => {
+                          ) : (
+                            <input type="text" placeholder="Marca/Modelo" className="w-full rounded-md border-slate-300 text-sm" value={art.marca || ''} onChange={(e) => {
                               const newArts = [...formData.articulos];
                               newArts[idx].marca = e.target.value;
                               setFormData({...formData, articulos: newArts});
                             }} />
-                          </div>
-                          {modalOpen !== 'baja' && (
-                            <button type="button" onClick={() => {
-                              const newArts = formData.articulos.filter((_, i) => i !== idx);
-                              setFormData({...formData, articulos: newArts.length ? newArts : [{}]});
-                            }} className="p-2 text-slate-400 hover:text-red-500 flex-shrink-0">
-                              <X className="w-5 h-5" />
-                            </button>
                           )}
                         </div>
-                        <div className="flex gap-2 items-center">
-                           <div className="w-1/4">
-                              <input type="text" placeholder="Modelo" className="w-full rounded-md border-slate-300 text-sm" value={art.modelo || ''} onChange={(e) => {
+                        <div className="w-28">
+                          {modalOpen === 'recepcion' ? (
+                            <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm" value={art.serie || ''} onChange={(e) => {
+                              const newArts = [...formData.articulos];
+                              newArts[idx].serie = e.target.value;
+                              setFormData({...formData, articulos: newArts});
+                            }} />
+                          ) : modalOpen === 'baja' ? (
+                            <input type="text" placeholder="Ubicación" className="w-full rounded-md border-slate-300 text-sm" value={art.ubicacion || ''} onChange={(e) => {
+                              const newArts = [...formData.articulos];
+                              newArts[idx].ubicacion = e.target.value;
+                              setFormData({...formData, articulos: newArts});
+                            }} />
+                          ) : (
+                            <select 
+                              className="w-full rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 p-2" 
+                              value={art.estado || 'Bueno'} 
+                              onChange={(e) => {
                                 const newArts = [...formData.articulos];
-                                newArts[idx].modelo = e.target.value;
+                                newArts[idx].estado = e.target.value;
                                 setFormData({...formData, articulos: newArts});
-                              }} />
-                           </div>
-                           <div className="w-1/4">
-                            {modalOpen === 'baja' ? (
-                              <input type="text" placeholder="Ubicación" className="w-full rounded-md border-slate-300 text-sm" value={art.ubicacion || ''} onChange={(e) => {
-                                const newArts = [...formData.articulos];
-                                newArts[idx].ubicacion = e.target.value;
-                                setFormData({...formData, articulos: newArts});
-                              }} />
-                            ) : (
-                              <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm" value={art.serie || ''} onChange={(e) => {
-                                const newArts = [...formData.articulos];
-                                newArts[idx].serie = e.target.value;
-                                setFormData({...formData, articulos: newArts});
-                              }} />
-                            )}
-                           </div>
-                           <div className="w-32">
-                              <select 
-                                className="w-full rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 p-2" 
-                                value={art.estado || 'Bueno'} 
-                                onChange={(e) => {
-                                  const newArts = [...formData.articulos];
-                                  newArts[idx].estado = e.target.value;
-                                  setFormData({...formData, articulos: newArts});
-                                }}
-                              >
-                                <option value="Bueno">Bueno</option>
-                                <option value="Nuevo">Nuevo</option>
-                                <option value="Regular">Regular</option>
-                                <option value="Malo">Malo</option>
-                              </select>
-                           </div>
-                           <div className="flex-1">
-                              <input type="text" placeholder="Observaciones" className="w-full rounded-md border-slate-300 text-sm" value={art.observaciones || ''} onChange={(e) => {
-                                const newArts = [...formData.articulos];
-                                newArts[idx].observaciones = e.target.value;
-                                setFormData({...formData, articulos: newArts});
-                              }} />
-                           </div>
+                              }}
+                            >
+                              <option value="Bueno">Bueno</option>
+                              <option value="Nuevo">Nuevo</option>
+                              <option value="Regular">Regular</option>
+                              <option value="Malo">Malo</option>
+                            </select>
+                          )}
                         </div>
+                        
+                        {modalOpen !== 'baja' && (
+                          <button type="button" onClick={() => {
+                            const newArts = formData.articulos.filter((_, i) => i !== idx);
+                            setFormData({...formData, articulos: newArts.length ? newArts : [{}]});
+                          }} className="p-2 text-slate-400 hover:text-red-500">
+                            <X className="w-5 h-5" />
+                          </button>
+                        )}
                       </div>
                     ))}
+                  </div>
+                </div>
+
+              {modalOpen === 'recepcion' && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
+                  <textarea rows="2" value={formData.observaciones} onChange={e => setFormData({...formData, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, faltantes..."></textarea>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
                 <button type="button" onClick={() => setModalOpen(null)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium" disabled={isSubmitting}>Cancelar</button>
                 {modalOpen === 'resguardo' && (

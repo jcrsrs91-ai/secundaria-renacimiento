@@ -70,8 +70,11 @@ export default function CartaResguardoPrint({ data }) {
                   <tr key={idx} className="hover:bg-slate-50">
                     <td className="p-2 text-center uppercase font-mono text-xs font-bold text-slate-500 border-r border-slate-200">{art.codigo || art.inventario}</td>
                     <td className="p-2 text-center font-bold text-slate-800 border-r border-slate-200">{art.cantidad}</td>
-                    <td className="p-2 text-slate-700 border-r border-slate-200">{art.descripcion || art.articulo}</td>
-                    <td className="p-2 uppercase text-[10px] text-slate-500 border-r border-slate-200">{[art.marca, art.serie && `S/N: ${art.serie}`].filter(Boolean).join(' / ')}</td>
+                    <td className="p-2 text-slate-700 border-r border-slate-200">
+                      <div>{art.descripcion || art.articulo}</div>
+                      {art.observaciones && <div className="text-[9px] text-slate-400 mt-0.5 italic text-justify">Obs: {art.observaciones}</div>}
+                    </td>
+                    <td className="p-2 uppercase text-[10px] text-slate-500 border-r border-slate-200">{[art.marca, art.modelo, art.serie && `S/N: ${art.serie}`].filter(Boolean).join(' / ')}</td>
                     <td className="p-2 text-center text-xs border-slate-200">{art.estado}</td>
                   </tr>
                 ))
