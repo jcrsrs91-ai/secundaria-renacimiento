@@ -1613,18 +1613,36 @@ export default function Contraloria() {
             {modalOpen === 'editItem' && editingItem ? (
               <form onSubmit={handleSaveEdit}>
                 <div className="space-y-4 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Código de Inventario</label>
-                    <input type="text" value={editingItem.codigo} onChange={e => setEditingItem({...editingItem, codigo: e.target.value})} className="w-full p-2 border rounded font-mono text-sm bg-slate-50" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Artículo (Descripción y Marca)</label>
-                    <input type="text" value={editingItem.articulo} onChange={e => setEditingItem({...editingItem, articulo: e.target.value})} className="w-full p-2 border rounded" />
-                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Código de Inventario</label>
+                      <input type="text" value={editingItem.codigo || ''} onChange={e => setEditingItem({...editingItem, codigo: e.target.value})} className="w-full p-2 border rounded font-mono text-sm bg-slate-50" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Nombre / Concepto del artículo</label>
+                      <input type="text" value={editingItem.articulo || editingItem.descripcion || ''} onChange={e => setEditingItem({...editingItem, articulo: e.target.value, descripcion: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Marca</label>
+                      <input type="text" value={editingItem.marca || ''} onChange={e => setEditingItem({...editingItem, marca: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Modelo</label>
+                      <input type="text" value={editingItem.modelo || ''} onChange={e => setEditingItem({...editingItem, modelo: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">No. Serie</label>
+                      <input type="text" value={editingItem.serie || ''} onChange={e => setEditingItem({...editingItem, serie: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Cantidad</label>
-                      <input type="number" value={editingItem.cantidad} onChange={e => setEditingItem({...editingItem, cantidad: e.target.value})} className="w-full p-2 border rounded" />
+                      <input type="number" value={editingItem.cantidad || ''} onChange={e => setEditingItem({...editingItem, cantidad: e.target.value})} className="w-full p-2 border rounded text-sm" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Estado Físico</label>
@@ -1639,10 +1657,15 @@ export default function Contraloria() {
                         <option value="Malo">Malo</option>
                       </select>
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Ubicación Actual</label>
+                      <input type="text" value={editingItem.ubicacion || ''} onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                    </div>
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Ubicación Actual</label>
-                    <input type="text" value={editingItem.ubicacion} onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})} className="w-full p-2 border rounded" />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
+                    <input type="text" value={editingItem.observaciones || ''} onChange={e => setEditingItem({...editingItem, observaciones: e.target.value})} className="w-full p-2 border rounded text-sm" />
                   </div>
                 </div>
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
