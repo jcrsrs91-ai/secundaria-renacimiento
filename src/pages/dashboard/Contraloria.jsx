@@ -1804,7 +1804,35 @@ export default function Contraloria() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Ubicación Actual</label>
-                      <input type="text" list="ubicaciones-list" value={editingItem.ubicacion || ''} onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                      {(() => {
+                        const isKnown = uniqueUbicaciones.includes(editingItem.ubicacion);
+                        const isCustom = !isKnown && editingItem.ubicacion !== '' && editingItem.ubicacion !== undefined && editingItem.ubicacion !== '---NUEVA---';
+                        return (
+                          <div className="space-y-2">
+                            <select 
+                              className="w-full p-2 border rounded text-sm"
+                              value={isKnown ? editingItem.ubicacion : (editingItem.ubicacion === '---NUEVA---' || isCustom ? '---NUEVA---' : '')}
+                              onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})}
+                            >
+                              <option value="">Selecciona una ubicación...</option>
+                              {uniqueUbicaciones.map(ub => (
+                                <option key={ub} value={ub}>{ub}</option>
+                              ))}
+                              <option value="---NUEVA---">➕ Agregar nueva área...</option>
+                            </select>
+                            {(editingItem.ubicacion === '---NUEVA---' || isCustom) && (
+                              <input 
+                                type="text" 
+                                placeholder="Escribe el nombre de la nueva área..." 
+                                value={editingItem.ubicacion === '---NUEVA---' ? '' : (editingItem.ubicacion || '')}
+                                onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})}
+                                className="w-full p-2 border rounded text-sm border-indigo-400 focus:ring-1 focus:ring-indigo-500 bg-indigo-50"
+                                autoFocus
+                              />
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
