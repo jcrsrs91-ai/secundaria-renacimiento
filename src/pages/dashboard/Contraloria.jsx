@@ -296,12 +296,17 @@ export default function Contraloria() {
   
   const uniqueUbicaciones = useMemo(() => {
     const ubs = new Set();
+    // Extraer de ubicaciones de inventario
     inventario.forEach(item => {
       if (item.ubicacion && typeof item.ubicacion === 'string' && item.ubicacion.trim()) {
         ubs.add(item.ubicacion.trim());
       }
     });
+    // Extraer de las áreas de resguardo directamente
     resguardos.forEach(res => {
+      if (res.areaResguardante && typeof res.areaResguardante === 'string' && res.areaResguardante.trim()) {
+         ubs.add(res.areaResguardante.trim());
+      }
       res.articulos?.forEach(art => {
          if (art.ubicacion && typeof art.ubicacion === 'string' && art.ubicacion.trim()) {
             ubs.add(art.ubicacion.trim());
@@ -835,6 +840,19 @@ export default function Contraloria() {
                   }
                   return a;
                 });
+                await updateDoc(doc(db, 'resguardos', currRes.id), { articulos: updatedArts });
+              } else {
+                // Si no lo tiene, lo agregamos (para sincronizar ediciones atrasadas)
+                const newArt = {
+                  id: editingItem.id,
+                  cantidad: 1,
+                  descripcion: editingItem.descripcion || editingItem.articulo || '',
+                  marca: editingItem.marca || '',
+                  serie: editingItem.serie || '',
+                  codigo: editingItem.codigo,
+                  estado: editingItem.estado || 'Bueno'
+                };
+                const updatedArts = [...currRes.articulos, newArt];
                 await updateDoc(doc(db, 'resguardos', currRes.id), { articulos: updatedArts });
               }
             }
