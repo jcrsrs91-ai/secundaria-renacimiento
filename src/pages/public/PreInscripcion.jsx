@@ -18,6 +18,10 @@ export default function PreInscripcion() {
   const [studentData, setStudentData] = useState(null);
 
   const [photoFile, setPhotoFile] = useState(null);
+  const [actaFile, setActaFile] = useState(null);
+  const [curpFile, setCurpFile] = useState(null);
+  const [certificadoFile, setCertificadoFile] = useState(null);
+  const [conductaFile, setConductaFile] = useState(null);
 
   const handleLookup = async (e) => {
     e.preventDefault();
@@ -100,10 +104,33 @@ export default function PreInscripcion() {
         fotoUrl = await getDownloadURL(photoRef);
       }
 
+      let documentos = studentData?.documentos || {};
+      
+      const uploadDoc = async (fileObj, docName) => {
+        if (fileObj) {
+          const docRef = ref(storage, `student_docs/${data.curp}/${docName}_${Date.now()}.pdf`);
+          await uploadBytes(docRef, fileObj);
+          const url = await getDownloadURL(docRef);
+          documentos[docName] = true;
+          return url;
+        }
+        return studentData?.[docName + 'Url'] || null;
+      };
+
+      const actaUrl = await uploadDoc(actaFile, 'acta');
+      const curpUrl = await uploadDoc(curpFile, 'curp');
+      const certificadoUrl = await uploadDoc(certificadoFile, 'certificado');
+      const conductaUrl = await uploadDoc(conductaFile, 'conducta');
+
       const submissionData = {
         ...studentData,
         ...data,
         fotoUrl,
+        actaUrl,
+        curpUrl,
+        certificadoUrl,
+        conductaUrl,
+        documentos,
         curp: data.curp.toUpperCase(),
         tipoTramite: activeTab === 'reinscripcion' ? "Reinscripción" : "Nuevo Ingreso",
         updatedAt: serverTimestamp()
@@ -242,6 +269,20 @@ export default function PreInscripcion() {
                   </div>
                 )}
 
+                {/* Ciclo Escolar */}
+                <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 mb-6">
+                  <h3 className="text-lg font-bold text-slate-800 mb-2">Ciclo Escolar</h3>
+                  <p className="text-sm text-slate-500 mb-4">Selecciona el ciclo escolar para este trámite.</p>
+                  <select name="cicloEscolar" className="block w-full rounded-md shadow-sm p-3 border border-slate-300 font-medium" required defaultValue={studentData?.cicloEscolar || "2026-2027"}>
+                    <option value="">Seleccionar ciclo...</option>
+                    <option value="2024-2025">2024-2025</option>
+                    <option value="2025-2026">2025-2026</option>
+                    <option value="2026-2027">2026-2027</option>
+                    <option value="2027-2028">2027-2028</option>
+                    <option value="2028-2029">2028-2029</option>
+                  </select>
+                </div>
+
                 {/* Fotografía */}
                 <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 text-center">
                   <h3 className="text-lg font-bold text-slate-800 mb-2">Fotografía del Alumno</h3>
@@ -312,10 +353,20 @@ export default function PreInscripcion() {
                       <input id="tallerInput" type="text" name="taller" className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-gray-100" required defaultValue={studentData?.taller} placeholder="Se asigna por grupo..." readOnly />
                     </div>
                     {activeTab === 'nuevo' && (
-                      <div className="md:col-span-4">
-                        <label className="block text-sm font-medium">Escuela de Procedencia</label>
-                        <input type="text" name="escuelaProcedencia" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required />
-                      </div>
+                      <>
+                        <div className="md:col-span-4">
+                          <label className="block text-sm font-medium">Escuela de Procedencia</label>
+                          <input type="text" name="escuelaProcedencia" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.escuelaProcedencia} />
+                        </div>
+                        <div className="md:col-span-3">
+                          <label className="block text-sm font-medium">Domicilio de la Escuela</label>
+                          <input type="text" name="domicilioEscuela" className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.domicilioEscuela} />
+                        </div>
+                        <div className="md:col-span-1">
+                          <label className="block text-sm font-medium">Promedio Obtenido</label>
+                          <input type="text" name="promedioEscuela" className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.promedioEscuela} />
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -462,10 +513,47 @@ export default function PreInscripcion() {
                   </div>
                 </div>
 
+                {/* 5. Documentación Digital */}
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">5. Documentación Digital en PDF</h3>
+                  <p className="text-sm text-slate-500 mb-4">Solo se aceptan archivos en formato PDF.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div className="bg-slate-50 p-4 border rounded-lg">
+                      <label className="block text-sm font-bold mb-1">Acta de Nacimiento <span className="text-red-500">*</span></label>
+                      <input type="file" accept="application/pdf" onChange={e => setActaFile(e.target.files[0])} className="w-full text-sm" required={!studentData?.actaUrl} />
+                      {actaFile && <p className="text-xs text-emerald-600 mt-1">{actaFile.name}</p>}
+                      {studentData?.actaUrl && !actaFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
+                    </div>
+
+                    <div className="bg-slate-50 p-4 border rounded-lg">
+                      <label className="block text-sm font-bold mb-1">CURP (Actualizada) <span className="text-red-500">*</span></label>
+                      <input type="file" accept="application/pdf" onChange={e => setCurpFile(e.target.files[0])} className="w-full text-sm" required={!studentData?.curpUrl} />
+                      {curpFile && <p className="text-xs text-emerald-600 mt-1">{curpFile.name}</p>}
+                      {studentData?.curpUrl && !curpFile && <p className="text-xs text-blue-600 mt-1">Ya cargada previamente.</p>}
+                    </div>
+
+                    <div className="bg-slate-50 p-4 border rounded-lg">
+                      <label className="block text-sm font-bold mb-1">Certificado de Primaria <span className="text-slate-400 font-normal">(Opcional)</span></label>
+                      <input type="file" accept="application/pdf" onChange={e => setCertificadoFile(e.target.files[0])} className="w-full text-sm" />
+                      {certificadoFile && <p className="text-xs text-emerald-600 mt-1">{certificadoFile.name}</p>}
+                      {studentData?.certificadoUrl && !certificadoFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
+                    </div>
+
+                    <div className="bg-slate-50 p-4 border rounded-lg">
+                      <label className="block text-sm font-bold mb-1">Carta de Conducta <span className="text-slate-400 font-normal">(Opcional)</span></label>
+                      <input type="file" accept="application/pdf" onChange={e => setConductaFile(e.target.files[0])} className="w-full text-sm" />
+                      {conductaFile && <p className="text-xs text-emerald-600 mt-1">{conductaFile.name}</p>}
+                      {studentData?.conductaUrl && !conductaFile && <p className="text-xs text-blue-600 mt-1">Ya cargada previamente.</p>}
+                    </div>
+
+                  </div>
+                </div>
+
                 <div className="pt-6 border-t border-slate-200 flex justify-between items-center">
                   <a href="/" className="text-sm text-slate-500 hover:text-slate-700">Cancelar</a>
                   <button type="submit" disabled={isSubmitting} className="inline-flex justify-center rounded-lg border border-transparent bg-primary-600 py-3 px-8 text-sm font-medium text-white shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-colors">
-                    {isSubmitting ? 'Guardando...' : 'Guardar y Generar Ficha'}
+                    {isSubmitting ? 'Guardando archivos...' : 'Guardar y Generar Ficha'}
                   </button>
                 </div>
               </form>

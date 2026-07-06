@@ -58,6 +58,7 @@ export default function ControlEscolar() {
   const [groupFilter, setGroupFilter] = useState('Todos');
   const [shiftFilter, setShiftFilter] = useState('Todos');
   const [statusFilter, setStatusFilter] = useState('Activo');
+  const [cycleFilter, setCycleFilter] = useState('Todos');
 
   // Diccionario de materias por grado (Orden Oficial SEP / NEM)
   const materiasPorGrado = {
@@ -168,7 +169,8 @@ export default function ControlEscolar() {
     const matchesGroup = groupFilter === 'Todos' || a.grupo === groupFilter;
     const matchesShift = shiftFilter === 'Todos' || a.turno === shiftFilter;
     const matchesStatus = statusFilter === 'Todos' || a.status === statusFilter;
-    return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus;
+    const matchesCycle = cycleFilter === 'Todos' || a.cicloEscolar === cycleFilter;
+    return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus && matchesCycle;
   }).sort((a, b) => {
     const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
     const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
@@ -913,6 +915,17 @@ export default function ControlEscolar() {
                 <option value="Baja">Bajas</option>
                 <option value="Egresado">Egresados</option>
                 <option value="Pendiente">Pendientes</option>
+              </select>
+            </div>
+            <div className="w-full md:w-32">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Ciclo Escolar</label>
+              <select className="w-full p-2 border rounded-lg text-sm bg-white" value={cycleFilter} onChange={e => setCycleFilter(e.target.value)}>
+                <option value="Todos">Todos</option>
+                <option value="2024-2025">2024-2025</option>
+                <option value="2025-2026">2025-2026</option>
+                <option value="2026-2027">2026-2027</option>
+                <option value="2027-2028">2027-2028</option>
+                <option value="2028-2029">2028-2029</option>
               </select>
             </div>
             <div className="w-full md:w-auto self-end flex gap-2">

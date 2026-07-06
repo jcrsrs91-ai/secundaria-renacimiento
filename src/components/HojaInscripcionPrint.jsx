@@ -36,6 +36,7 @@ export default function HojaInscripcionPrint({ data }) {
             <h1 className="text-sm font-bold uppercase tracking-wide">Secretaría de Educación Guerrero</h1>
             <h2 className="text-xs font-bold uppercase">Subsecretaría de Educación Básica</h2>
             <h3 className="text-xs font-semibold">Esc. Sec. Téc. N°68 "RENACIMIENTO"</h3>
+            <p className="text-[10px] font-bold mt-0.5 text-slate-700">CICLO ESCOLAR: {data.cicloEscolar || '2024-2025'}</p>
             <p className="text-[10px] font-bold mt-1 bg-gray-200 inline-block px-2 py-0.5 rounded border border-gray-400 uppercase">
               FICHA INDIVIDUAL DE {data.tipoTramite || 'INSCRIPCIÓN'}
             </p>
@@ -125,7 +126,7 @@ export default function HojaInscripcionPrint({ data }) {
               <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('acta')}</span> Acta de Nacimiento</div>
               <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('curp')}</span> CURP</div>
               <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('certificado')}</span> Certificado de Primaria</div>
-              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('comprobante')}</span> Comprobante Domicilio</div>
+              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('conducta')}</span> Carta de Conducta</div>
               <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('ine')}</span> INE del Tutor</div>
               <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('medico')}</span> Certificado Médico</div>
               <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('fotos')}</span> 6 Fotografías T. Infantil</div>
