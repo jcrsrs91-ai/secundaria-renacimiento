@@ -20,6 +20,7 @@ import DesempenoAlcanzadoPrint from '../../components/DesempenoAlcanzadoPrint';
 import DesertoresPrint from '../../components/DesertoresPrint';
 import RegularizacionPrint from '../../components/RegularizacionPrint';
 import KardexPrint from '../../components/KardexPrint';
+import ListaClausuraPrint from '../../components/ListaClausuraPrint';
 import AddStudentModal from '../../components/AddStudentModal';
 import { autoAcentuar } from '../../utils/format';
 
@@ -49,6 +50,7 @@ export default function ControlEscolar() {
   const [asisGrupo, setAsisGrupo] = useState('A');
   const [asisMes, setAsisMes] = useState('Septiembre');
   const [asisPaperSize, setAsisPaperSize] = useState('letter');
+  const [asesorNombre, setAsesorNombre] = useState('');
 
 
 
@@ -832,6 +834,37 @@ export default function ControlEscolar() {
               </button>
             </div>
           </div>
+          {asisGrado === '3er Grado' && (
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end mt-4">
+              <div className="w-full md:flex-1">
+                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Nombre del Asesor (Opcional - Para lista de clausura)</label>
+                <input 
+                  type="text" 
+                  value={asesorNombre} 
+                  onChange={e => setAsesorNombre(autoAcentuar(e.target.value))} 
+                  placeholder="Ej. Profa. María Pérez" 
+                  className="w-full p-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 bg-white"
+                />
+              </div>
+              <div className="w-full md:w-auto">
+                <button 
+                  onClick={() => {
+                    if (asisAlumnos.length === 0) {
+                      alert("No hay alumnos activos en este grado y grupo.");
+                      return;
+                    }
+                    setPrintData({ students: asisAlumnos, grado: asisGrado, grupo: asisGrupo, asesor: asesorNombre });
+                    setPrintMode('listaClausura');
+                    setTimeout(() => window.print(), 500);
+                  }} 
+                  className="flex items-center justify-center w-full md:w-auto px-6 py-2.5 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition shadow-md"
+                >
+                  <Award className="w-5 h-5 mr-2" /> Imprimir Lista Clausura (3ro)
+                </button>
+              </div>
+            </div>
+          )}
+
 
           {/* Listado de Alumnos en la Vista Previa */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -1340,6 +1373,7 @@ export default function ControlEscolar() {
       {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
+      {printMode === 'listaClausura' && <ListaClausuraPrint students={printData.students} grupo={printData.grupo} asesor={printData.asesor} />}
       {printMode === 'concentrado-final' && <CuadroFinalPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
     </div>
