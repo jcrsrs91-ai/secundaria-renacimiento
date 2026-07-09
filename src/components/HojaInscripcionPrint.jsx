@@ -13,7 +13,10 @@ export default function HojaInscripcionPrint({ data }) {
   };
 
   // Check if any digital document is missing to show the commitment legend
-  const hasMissingDocs = !data.documentos?.acta || !data.documentos?.curp || !data.documentos?.certificado || !data.documentos?.conducta;
+  // We check only the strictly required ones or all of them depending on policy.
+  // User asked: "en caso de que no suban todos sus docuemtno en digital...".
+  // Let's assume if they miss any of the documents, we show the legend.
+  const hasMissingDocs = !data.documentos?.acta || !data.documentos?.curp || !data.documentos?.certificado || !data.documentos?.ine || !data.documentos?.domicilio;
 
   return (
     <div>
@@ -125,12 +128,13 @@ export default function HojaInscripcionPrint({ data }) {
           <h4 className="font-bold text-[9px] uppercase bg-gray-800 text-white px-1.5 py-0.5 mb-0.5">6. Acuse de Documentación Recibida</h4>
           <div className="border border-gray-300 p-1.5 text-[8px] leading-tight">
             <p className="mb-1 text-gray-600 font-bold">Marque con una 'X' si el documento fue entregado físicamente para cotejo o si fue detectado en sistema:</p>
-            <div className="grid grid-cols-4 gap-2 mb-2 font-medium">
-              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('acta')}</span> Acta de Nacimiento</div>
-              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('curp')}</span> CURP</div>
-              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('certificado')}</span> Certificado de Primaria</div>
-              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('conducta')}</span> Carta de Conducta</div>
-              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('ine')}</span> INE del Tutor</div>
+            <div className="grid grid-cols-1 gap-1 mb-2 font-medium text-[8px]">
+              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('certificado')}</span> Certificado de educación primaria o constancia de terminación de estudios de 6to grado</div>
+              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('acta')}</span> Acta de nacimiento actualizada</div>
+              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('curp')}</span> CURP formato reciente y legible</div>
+              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('asignacion')}</span> Comprobante de asignación (folio o documento del portal de preinscripción SEP, si aplica)</div>
+              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('ine')}</span> Identificación oficial vigente (INE o Pasaporte)</div>
+              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('domicilio')}</span> Comprobante de domicilio reciente (luz, agua o teléfono no mayor a 3 meses)</div>
             </div>
             <div className="flex border-t border-gray-200 pt-1">
               <span className="font-bold text-gray-600 mr-2">Observaciones / Faltantes:</span> 

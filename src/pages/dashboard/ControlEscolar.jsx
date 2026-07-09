@@ -746,7 +746,14 @@ export default function ControlEscolar() {
                     <td className="px-6 py-4 text-sm font-medium text-slate-900">
                       <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs">{p.tipoTramite || 'Nuevo Ingreso'}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-semibold uppercase">{p.apellidoPaterno} {p.apellidoMaterno} {p.nombres}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 font-semibold uppercase">
+                      {p.apellidoPaterno} {p.apellidoMaterno} {p.nombres}
+                      {(!p.documentos?.acta || !p.documentos?.curp || !p.documentos?.certificado || !p.documentos?.ine || !p.documentos?.domicilio) && (
+                        <span className="mt-1 flex items-center text-[10px] text-red-500 font-bold normal-case">
+                          <AlertTriangle className="w-3 h-3 mr-1" /> Faltan Documentos Digitales
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
                       {p.grado} <br/> <span className="text-xs text-slate-400">{p.escuelaProcedencia}</span>
                     </td>
@@ -1003,7 +1010,14 @@ export default function ControlEscolar() {
                       <input type="checkbox" checked={selectedStudents.includes(a.id)} onChange={() => toggleSelectStudent(a.id)} className="rounded border-slate-300" />
                     </td>
                     <td className="px-6 py-4 text-sm font-bold text-primary-700">{a.matricula}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-medium uppercase">{a.apellidoPaterno} {a.apellidoMaterno} {a.nombres}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 font-medium uppercase">
+                      {a.apellidoPaterno} {a.apellidoMaterno} {a.nombres}
+                      {(!a.documentos?.acta || !a.documentos?.curp || !a.documentos?.certificado || !a.documentos?.ine || !a.documentos?.domicilio) && (
+                        <span className="mt-1 flex items-center text-[10px] text-red-500 font-bold normal-case">
+                          <AlertTriangle className="w-3 h-3 mr-1" /> Faltan Documentos Digitales
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm text-slate-500">
                       <div className="font-semibold text-slate-700">{a.grado} "{a.grupo || '-'}"</div>
                       <div className="text-xs text-slate-500">{a.taller || '-'}</div>
