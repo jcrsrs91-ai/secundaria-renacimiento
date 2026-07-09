@@ -88,6 +88,44 @@ export default function PreInscripcion() {
     }
   };
 
+  const handleCurpInput = (e) => {
+    let val = e.target.value.toUpperCase();
+    e.target.value = val;
+    
+    if (val.length === 18) {
+      const curpRegex = /^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/;
+      if (!curpRegex.test(val)) {
+        e.target.setCustomValidity("El formato de la CURP es incorrecto. Verifique los caracteres.");
+        e.target.reportValidity();
+      } else {
+        e.target.setCustomValidity("");
+        const yearStr = val.substring(4, 6);
+        const monthStr = val.substring(6, 8);
+        const dayStr = val.substring(8, 10);
+        
+        const char17 = val.charAt(16);
+        let yearPrefix = "19";
+        if (/[A-Z]/.test(char17)) {
+          yearPrefix = "20";
+        }
+        
+        const fullYear = yearPrefix + yearStr;
+        const fnac = `${fullYear}-${monthStr}-${dayStr}`;
+        
+        const dateInput = document.querySelector('input[name="fechaNacimiento"]');
+        if (dateInput && !dateInput.value) {
+          dateInput.value = fnac;
+        } else if (dateInput) {
+          dateInput.value = fnac; // Forzar actualización aunque haya algo
+        }
+      }
+    } else if (val.length > 0) {
+      e.target.setCustomValidity("La CURP debe tener exactamente 18 caracteres.");
+    } else {
+      e.target.setCustomValidity("");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -390,7 +428,7 @@ export default function PreInscripcion() {
                     
                     <div>
                       <label className="block text-sm font-medium">CURP</label>
-                      <input type="text" name="curp" required className="mt-1 block w-full rounded-md p-2 border uppercase" defaultValue={studentData?.curp} />
+                      <input type="text" name="curp" required maxLength="18" minLength="18" onChange={handleCurpInput} className="mt-1 block w-full rounded-md p-2 border uppercase" defaultValue={studentData?.curp} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium">Género</label>
@@ -428,7 +466,17 @@ export default function PreInscripcion() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium">Tipo de Sangre</label>
-                      <input type="text" name="tipoSangre" placeholder="Ej. O+" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.tipoSangre} />
+                      <select name="tipoSangre" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.tipoSangre}>
+                        <option value="">Seleccionar</option>
+                        <option>O+</option>
+                        <option>O-</option>
+                        <option>A+</option>
+                        <option>A-</option>
+                        <option>B+</option>
+                        <option>B-</option>
+                        <option>AB+</option>
+                        <option>AB-</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium">¿Usa lentes?</label>

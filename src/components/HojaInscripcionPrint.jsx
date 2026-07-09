@@ -7,10 +7,13 @@ export default function HojaInscripcionPrint({ data }) {
     window.print();
   };
 
-  // Helper to determine if a document is present digitally
+  // Helper to determine if a document is present digitally (El usuario solicitó dejarlos en blanco para llenado manual)
   const hasDoc = (docKey) => {
-    return data.documentos && data.documentos[docKey] ? '☑' : '☐';
+    return '☐';
   };
+
+  // Check if any digital document is missing to show the commitment legend
+  const hasMissingDocs = !data.documentos?.acta || !data.documentos?.curp || !data.documentos?.certificado || !data.documentos?.conducta;
 
   return (
     <div>
@@ -128,8 +131,6 @@ export default function HojaInscripcionPrint({ data }) {
               <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('certificado')}</span> Certificado de Primaria</div>
               <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('conducta')}</span> Carta de Conducta</div>
               <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('ine')}</span> INE del Tutor</div>
-              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('medico')}</span> Certificado Médico</div>
-              <div><span className="text-lg leading-none align-middle mr-1">{hasDoc('fotos')}</span> 6 Fotografías T. Infantil</div>
             </div>
             <div className="flex border-t border-gray-200 pt-1">
               <span className="font-bold text-gray-600 mr-2">Observaciones / Faltantes:</span> 
@@ -137,6 +138,13 @@ export default function HojaInscripcionPrint({ data }) {
             </div>
           </div>
         </div>
+
+        {/* Leyenda de Carta Compromiso si faltan documentos */}
+        {hasMissingDocs && (
+          <div className="mb-2 mt-2 px-2 text-[8px] border border-gray-400 p-1.5 bg-gray-50 text-justify leading-tight">
+            <span className="font-bold">CARTA COMPROMISO DE ENTREGA DE DOCUMENTACIÓN:</span> El que suscribe, en su carácter de Padre, Madre o Tutor del alumno(a), al no contar con la totalidad de los requisitos en este momento, se compromete formalmente a entregar en la Dirección de la escuela la documentación faltante o pendiente indicada en el presente acuse, a más tardar el último día hábil del mes de septiembre del ciclo escolar en curso.
+          </div>
+        )}
 
         {/* Firmas */}
         <div className="mt-8 grid grid-cols-3 gap-6 text-center text-[9px] px-4">
