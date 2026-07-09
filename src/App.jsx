@@ -13,6 +13,7 @@ import Asistencia from './pages/dashboard/Asistencia';
 import Biblioteca from './pages/dashboard/Biblioteca';
 import PortalTutores from './pages/dashboard/PortalTutores';
 import ImpresionDocumentos from './pages/dashboard/ImpresionDocumentos';
+import AvisosEscolares from './pages/dashboard/AvisosEscolares';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="portal-familiar" element={<PortalTutores />} />
           <Route path="impresion-documentos" element={<ImpresionDocumentos />} />
+          <Route path="avisos" element={<AvisosEscolares />} />
         </Route>
       </Route>
     </Routes>

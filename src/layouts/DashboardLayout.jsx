@@ -10,7 +10,8 @@ import {
   Library,
   LogOut,
   UsersRound,
-  Printer
+  Printer,
+  Megaphone
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -26,6 +27,7 @@ export default function DashboardLayout() {
     { name: 'Prefectura / Asistencia', path: '/panel/asistencia', icon: ClipboardCheck },
     { name: 'Biblioteca', path: '/panel/biblioteca', icon: Library },
     { name: 'Impresión Documentos', path: '/panel/impresion-documentos', icon: Printer },
+    { name: 'Avisos Escolares', path: '/panel/avisos', icon: Megaphone },
   ] : [
     { name: 'Mi Portal Familiar', path: '/panel/portal-familiar', icon: UsersRound },
   ];

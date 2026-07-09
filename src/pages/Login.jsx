@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { Megaphone, Info, AlertTriangle, CheckCircle } from 'lucide-react';
+import InscripcionBanner from '../components/InscripcionBanner';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -19,6 +21,33 @@ export default function Login() {
   // Estados para Tutores
   const [matricula, setMatricula] = useState('');
   const [curp, setCurp] = useState('');
+
+  // Estados para Avisos
+  const [avisos, setAvisos] = useState([]);
+  const [avisosLoading, setAvisosLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAvisos();
+  }, []);
+
+  const fetchAvisos = async () => {
+    setAvisosLoading(true);
+    try {
+      const q = query(
+        collection(db, 'avisos'),
+        where('isActive', '==', true),
+        orderBy('createdAt', 'desc'),
+        limit(5)
+      );
+      const snapshot = await getDocs(q);
+      const avisosData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAvisos(avisosData);
+    } catch (error) {
+      console.error("Error fetching avisos:", error);
+    } finally {
+      setAvisosLoading(false);
+    }
+  };
 
   const handleStaffLogin = async (e) => {
     e.preventDefault();
@@ -61,80 +90,136 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop')" }}>
-      <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm"></div>
+    <div className="min-h-screen bg-slate-900 flex py-12 sm:px-6 lg:px-8 bg-cover bg-center relative" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop')" }}>
+      <div className="absolute inset-0 bg-slate-900/85 backdrop-blur-sm"></div>
       
-      <div className="relative sm:mx-auto sm:w-full sm:max-w-md z-10">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
-          Esc. Sec. Téc. N°68 <br/><span className="text-primary-400">"RENACIMIENTO"</span>
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-300">
-          Sistema Integral de Gestión Escolar
-        </p>
-      </div>
-
-      <div className="relative mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10">
-        <div className="glass shadow sm:rounded-2xl overflow-hidden bg-white/95">
-          {/* Tabs */}
-          <div className="flex border-b border-slate-200">
-            <button 
-              className={`flex-1 py-4 text-sm font-medium ${isStaffTab ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:bg-slate-50'}`}
-              onClick={() => setIsStaffTab(true)}
-            >
-              Personal Escolar
-            </button>
-            <button 
-              className={`flex-1 py-4 text-sm font-medium ${!isStaffTab ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:bg-slate-50'}`}
-              onClick={() => setIsStaffTab(false)}
-            >
-              Tutores y Alumnos
-            </button>
+      <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-center gap-12 px-4">
+        
+        {/* Left Panel: Avisos */}
+        <div className="flex-1 w-full lg:max-w-xl text-white">
+          <div className="mb-10 text-center lg:text-left">
+            <h2 className="text-4xl lg:text-5xl font-extrabold drop-shadow-md">
+              Esc. Sec. Téc. N°68 <br/><span className="text-primary-400">"RENACIMIENTO"</span>
+            </h2>
+            <p className="mt-3 text-lg lg:text-xl text-slate-300 font-light mb-8">
+              Sistema Integral de Gestión Escolar
+            </p>
           </div>
 
-          <div className="p-8">
-            {errorMsg && (
-              <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-sm rounded-lg border border-rose-200">
-                {errorMsg}
-              </div>
-            )}
+          <InscripcionBanner />
 
-            {isStaffTab ? (
-              <form className="space-y-6" onSubmit={handleStaffLogin}>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Correo Institucional</label>
-                  <input type="email" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-primary-500" value={email} onChange={e => setEmail(e.target.value)} />
+          <div className="bg-slate-800/40 backdrop-blur-md rounded-2xl border border-slate-700/50 p-6 shadow-2xl">
+            <h3 className="text-2xl font-bold flex items-center mb-6 text-white border-b border-slate-700/50 pb-4">
+              <Megaphone className="mr-3 text-primary-400 h-6 w-6"/> Muro de Avisos
+            </h3>
+            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+              {avisosLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-primary-400 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Contraseña</label>
-                  <input type="password" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-primary-500" value={password} onChange={e => setPassword(e.target.value)} />
+              ) : avisos.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-xl border border-slate-700/50 border-dashed">
+                  <p>No hay avisos recientes en este momento.</p>
                 </div>
-                <button type="submit" disabled={loading} className="w-full flex justify-center py-2.5 px-4 rounded-lg text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50">
-                  {loading ? 'Entrando...' : 'Ingresar al Panel'}
-                </button>
-              </form>
-            ) : (
-              <form className="space-y-6" onSubmit={handleStudentLogin}>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Matrícula Escolar</label>
-                  <input type="text" placeholder="Ej. 2024EST68001" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-primary-500" value={matricula} onChange={e => setMatricula(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">CURP</label>
-                  <input type="text" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-primary-500 uppercase" value={curp} onChange={e => setCurp(e.target.value.toUpperCase())} />
-                </div>
-                <button type="submit" disabled={loading} className="w-full flex justify-center py-2.5 px-4 rounded-lg text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 disabled:opacity-50">
-                  {loading ? 'Buscando...' : 'Entrar a Mi Portal'}
-                </button>
-              </form>
-            )}
-            
-            <div className="mt-6 text-center border-t pt-4">
-              <a href="/pre-inscripcion" className="text-sm font-medium text-primary-600 hover:text-primary-500">
-                ¿Aspirante de nuevo ingreso? Ir al portal
-              </a>
+              ) : (
+                avisos.map(aviso => (
+                  <div key={aviso.id} className="bg-slate-800/60 hover:bg-slate-800/80 transition-colors backdrop-blur border border-slate-700 p-5 rounded-xl shadow-lg">
+                    <div className="flex items-center space-x-2 mb-3">
+                      {aviso.type === 'warning' && <AlertTriangle className="h-4 w-4 text-amber-400" />}
+                      {aviso.type === 'success' && <CheckCircle className="h-4 w-4 text-emerald-400" />}
+                      {aviso.type === 'info' && <Info className="h-4 w-4 text-blue-400" />}
+                      
+                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                        aviso.type === 'warning' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 
+                        aviso.type === 'success' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                        'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                      }`}>
+                        {aviso.type === 'warning' ? 'Importante' : aviso.type === 'success' ? 'Éxito' : 'Información'}
+                      </span>
+                      {aviso.createdAt && (
+                        <span className="text-xs text-slate-400 font-medium">
+                          {new Date(aviso.createdAt.seconds * 1000).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-bold text-lg text-white mb-2 leading-tight">{aviso.title}</h4>
+                    {aviso.content.trim().startsWith('<') ? (
+                      <div className="text-slate-300 text-sm leading-relaxed aviso-html-content" dangerouslySetInnerHTML={{ __html: aviso.content }} />
+                    ) : (
+                      <p className="text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">{aviso.content}</p>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
+
+        {/* Right Panel: Login Form */}
+        <div className="w-full lg:max-w-md">
+          <div className="glass shadow-2xl sm:rounded-2xl overflow-hidden bg-white/95 ring-1 ring-slate-900/5">
+            {/* Tabs */}
+            <div className="flex border-b border-slate-200">
+              <button 
+                className={`flex-1 py-4 text-sm font-medium transition-colors ${isStaffTab ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:bg-slate-50'}`}
+                onClick={() => setIsStaffTab(true)}
+              >
+                Personal Escolar
+              </button>
+              <button 
+                className={`flex-1 py-4 text-sm font-medium transition-colors ${!isStaffTab ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:bg-slate-50'}`}
+                onClick={() => setIsStaffTab(false)}
+              >
+                Tutores y Alumnos
+              </button>
+            </div>
+
+            <div className="p-8">
+              {errorMsg && (
+                <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-sm rounded-lg border border-rose-200 animate-in fade-in slide-in-from-top-1">
+                  {errorMsg}
+                </div>
+              )}
+
+              {isStaffTab ? (
+                <form className="space-y-6 animate-in fade-in" onSubmit={handleStaffLogin}>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Correo Institucional</label>
+                    <input type="email" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-shadow" value={email} onChange={e => setEmail(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Contraseña</label>
+                    <input type="password" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-shadow" value={password} onChange={e => setPassword(e.target.value)} />
+                  </div>
+                  <button type="submit" disabled={loading} className="w-full flex justify-center py-2.5 px-4 rounded-lg text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 transition-colors shadow-md">
+                    {loading ? 'Entrando...' : 'Ingresar al Panel'}
+                  </button>
+                </form>
+              ) : (
+                <form className="space-y-6 animate-in fade-in" onSubmit={handleStudentLogin}>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Matrícula Escolar</label>
+                    <input type="text" placeholder="Ej. 2024EST68001" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-primary-500 focus:border-primary-500 transition-shadow" value={matricula} onChange={e => setMatricula(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">CURP</label>
+                    <input type="text" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-primary-500 focus:border-primary-500 uppercase transition-shadow" value={curp} onChange={e => setCurp(e.target.value.toUpperCase())} />
+                  </div>
+                  <button type="submit" disabled={loading} className="w-full flex justify-center py-2.5 px-4 rounded-lg text-sm font-bold text-white bg-slate-800 hover:bg-slate-900 disabled:opacity-50 transition-colors shadow-md">
+                    {loading ? 'Buscando...' : 'Entrar a Mi Portal'}
+                  </button>
+                </form>
+              )}
+              
+              <div className="mt-6 text-center border-t pt-5">
+                <a href="/pre-inscripcion" className="text-sm font-bold text-primary-600 hover:text-primary-700 transition-colors">
+                  ¿Aspirante de nuevo ingreso? Ir al portal
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
