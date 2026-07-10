@@ -1378,6 +1378,173 @@ export default function Contraloria() {
         </div>
       )}
 
+      
+      {activeTab === 'gastos' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+              <h2 className="text-lg font-bold text-slate-800">Control de Gastos (Egresos)</h2>
+              <button onClick={() => setShowGastoModal(true)} className="flex items-center px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-medium hover:bg-rose-700">
+                <Plus className="w-4 h-4 mr-1" /> Registrar Gasto
+              </button>
+            </div>
+            <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Folio</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Concepto</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Monto</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Responsable</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Turno</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Fecha</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {gastos.length === 0 ? (
+                    <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">No hay gastos registrados.</td></tr>
+                  ) : (
+                    gastos.map(g => (
+                      <tr key={g.id}>
+                        <td className="px-6 py-4 text-sm font-medium text-slate-900">{g.folio}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">{g.concepto}</td>
+                        <td className="px-6 py-4 text-sm font-bold text-rose-600">${(Number(g.monto)||0).toFixed(2)}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600">{g.responsable}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600 uppercase">{g.turno}</td>
+                        <td className="px-6 py-4 text-sm text-slate-500">{new Date(g.fechaRegistro).toLocaleDateString()}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+      )}
+
+      {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mr-4">
+                  <TrendingUp className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 font-medium">Total Ingresos</p>
+                  <p className="text-2xl font-bold text-slate-800">
+                    ${pagosRecientes.reduce((acc, p) => acc + (Number(p.monto) || 0), 0).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center">
+                <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mr-4">
+                  <TrendingDown className="w-6 h-6 text-rose-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 font-medium">Total Egresos</p>
+                  <p className="text-2xl font-bold text-slate-800">
+                    ${gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                  <Wallet className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 font-medium">Saldo en Caja</p>
+                  <p className="text-2xl font-bold text-slate-800">
+                    ${(pagosRecientes.reduce((acc, p) => acc + (Number(p.monto) || 0), 0) - gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0)).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                  <BarChartIcon className="w-5 h-5 mr-2 text-slate-500" /> Balance General
+                </h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={[{ name: 'Total Histórico', Ingresos: pagosRecientes.reduce((acc, p) => acc + (Number(p.monto) || 0), 0), Egresos: gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0) }]}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(value) => `${value}`} />
+                      <RechartsTooltip cursor={{fill: 'transparent'}} formatter={(value) => [`${Number(value).toFixed(2)}`, '']} />
+                      <Legend />
+                      <Bar dataKey="Ingresos" fill="#10B981" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                      <Bar dataKey="Egresos" fill="#F43F5E" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                  <PieChartIcon className="w-5 h-5 mr-2 text-slate-500" /> Distribución de Egresos
+                </h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={Object.values(gastos.reduce((acc, g) => {
+                          const cat = g.concepto || 'Otro';
+                          if(!acc[cat]) acc[cat] = { name: cat, value: 0 };
+                          acc[cat].value += Number(g.monto) || 0;
+                          return acc;
+                        }, {}))} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                        {Object.values(gastos.reduce((acc, g) => {
+                          const cat = g.concepto || 'Otro';
+                          if(!acc[cat]) acc[cat] = { name: cat, value: 0 };
+                          acc[cat].value += Number(g.monto) || 0;
+                          return acc;
+                        }, {})).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={['#F43F5E', '#F59E0B', '#3B82F6', '#8B5CF6', '#10B981'][index % 5]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip formatter={(value) => `${Number(value).toFixed(2)}`} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </div>
+      )}
+
+      {activeTab === 'corte' && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 max-w-2xl mx-auto">
+              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
+                <FileSpreadsheet className="w-6 h-6 mr-2 text-indigo-600" /> Generar Corte de Caja
+              </h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha Inicio</label>
+                    <input type="date" value={corteConfig.fechaInicio} onChange={e => setCorteConfig(prev => ({...prev, fechaInicio: e.target.value}))} className="w-full px-4 py-2 border rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha Fin</label>
+                    <input type="date" value={corteConfig.fechaFin} onChange={e => setCorteConfig(prev => ({...prev, fechaFin: e.target.value}))} className="w-full px-4 py-2 border rounded-lg" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Turno</label>
+                  <select value={corteConfig.turno} onChange={e => setCorteConfig(prev => ({...prev, turno: e.target.value}))} className="w-full px-4 py-2 border rounded-lg bg-white">
+                    <option value="Todos">Ambos Turnos (General)</option>
+                    <option value="Matutino">Matutino</option>
+                    <option value="Vespertino">Vespertino</option>
+                  </select>
+                </div>
+                <div className="pt-6">
+                  <button onClick={() => { setPrintData(corteConfig); setPrintMode('corte'); setTimeout(() => window.print(), 500); }} className="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700">
+                    <Printer className="w-5 h-5 mr-2" /> Imprimir Reporte de Corte
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+      )}
+
+
       {activeTab === 'inventario' && (
         <div className="space-y-6">
           {/* Desglose de Bienes Nuevos */}

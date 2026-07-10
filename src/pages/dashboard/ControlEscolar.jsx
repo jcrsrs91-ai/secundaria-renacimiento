@@ -37,6 +37,7 @@ export default function ControlEscolar() {
   const [extraData, setExtraData] = useState({});
 
   const [pendientes, setPendientes] = useState([]);
+  const [tramitesPagados, setTramitesPagados] = useState([]);
   const [activos, setActivos] = useState([]);
   const [directorio, setDirectorio] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -192,6 +193,16 @@ export default function ControlEscolar() {
   const openModal = (type, student) => {
     setModalType(type);
     setSelectedStudent(student);
+  };
+
+  
+  const handleMarcarTramiteEntregado = async (id) => {
+    try {
+      await updateDoc(doc(db, 'tramites_pendientes', id), { estado: 'Entregado', fechaEntrega: new Date().toISOString() });
+      toast.success('Trámite marcado como entregado');
+    } catch (error) {
+      toast.error('Error al actualizar trámite');
+    }
   };
 
   const closeModal = () => {
@@ -666,6 +677,11 @@ export default function ControlEscolar() {
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Módulos de Control Escolar</h3>
         <div className="flex flex-wrap gap-2">
+          
+          {/* Trámites Pagados */}
+          <button onClick={() => setActiveTab('pagados')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'pagados' ? 'bg-emerald-600 text-white shadow-emerald-200 ring-2 ring-emerald-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Trámites Pagados <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${activeTab === 'pagados' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{tramitesPagados.filter(t => t.estado === 'Pendiente').length}</span>
+          </button>
           {/* Pendientes */}
           <button onClick={() => setActiveTab('pendientes')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'pendientes' ? 'bg-primary-600 text-white shadow-primary-200 ring-2 ring-primary-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Solicitudes Pendientes <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${activeTab === 'pendientes' ? 'bg-primary-500 text-white' : 'bg-amber-100 text-amber-700'}`}>{pendientes.length}</span>
@@ -724,6 +740,53 @@ export default function ControlEscolar() {
       </div>
 
       {loading && <p className="text-center py-8 text-slate-500 animate-pulse">Cargando base de datos...</p>}
+
+      
+      {/* Tabla Trámites Pagados */}
+      {!loading && activeTab === 'pagados' && (
+        <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-x-auto mt-4">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Trámite</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Alumno</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Turno</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Fecha Pago</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {tramitesPagados.length === 0 ? (
+                <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">No hay trámites pagados en cola.</td></tr>
+              ) : (
+                tramitesPagados.map(t => (
+                  <tr key={t.id} className={t.estado === 'Entregado' ? 'bg-slate-50 opacity-60' : 'bg-white hover:bg-slate-50'}>
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${t.estado === 'Pendiente' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                        {t.estado}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-800">{t.conceptoPago}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-primary-700">{t.nombreAlumno}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 uppercase">{t.turno || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{new Date(t.fechaSolicitud).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-right space-x-2">
+                      {t.estado === 'Pendiente' ? (
+                        <button onClick={() => handleMarcarTramiteEntregado(t.id)} className="px-3 py-1.5 bg-emerald-600 text-white rounded font-medium text-xs hover:bg-emerald-700 transition">
+                          Marcar Entregado
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-400">Entregado el {new Date(t.fechaEntrega).toLocaleDateString()}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Tabla Pendientes */}
       {!loading && activeTab === 'pendientes' && (
