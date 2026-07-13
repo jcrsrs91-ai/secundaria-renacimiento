@@ -225,8 +225,8 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
                 </div>
 
                 {/* Fecha */}
-                <div className="w-full flex justify-end px-12 mt-2 mb-2">
-                  <p className="text-[10px] text-slate-500 font-medium text-right">
+                <div className="w-full flex justify-end px-12 mt-0 mb-6 relative z-20">
+                  <p className="text-[10px] text-slate-500 font-medium text-right relative -top-4">
                     Acapulco de Juárez, Gro., a 15 de julio de 2026
                   </p>
                 </div>
