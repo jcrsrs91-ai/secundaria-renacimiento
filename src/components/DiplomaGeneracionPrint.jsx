@@ -202,11 +202,11 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
                 <p className="text-[10px] font-medium text-slate-400 tracking-[0.2em] uppercase mt-2">A:</p>
 
                 {/* Nombre del Alumno */}
-                <div className="my-1 w-full max-w-4xl border-b-[1px] border-gold pb-2 flex flex-col items-center">
+                <div className="my-1 w-full max-w-4xl border-b-[1px] border-gold pb-2 flex flex-col items-center justify-center">
                   <h2 className="text-4xl font-cinzel font-black text-navy tracking-widest text-center leading-none" style={{ wordSpacing: '0.4em' }}>{nombreCompleto}</h2>
-                  <p className="text-[14px] font-bold text-slate-500 tracking-[0.3em] font-montserrat mt-2">
-                    GRUPO "{student.grupo}"
-                  </p>
+                  <h3 className="text-xl font-cinzel font-bold text-slate-500 tracking-widest mt-2 uppercase">
+                    GRUPO "{student.grupo || "A"}"
+                  </h3>
                 </div>
 
                 {/* Razón */}
@@ -225,9 +225,11 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
                 </div>
 
                 {/* Fecha */}
-                <p className="text-[10px] text-slate-500 font-medium mt-3 mb-2">
-                  Acapulco de Juárez, Gro., a {getFormattedDate()}
-                </p>
+                <div className="w-full flex justify-end px-12 mt-2 mb-2">
+                  <p className="text-[10px] text-slate-500 font-medium text-right">
+                    Acapulco de Juárez, Gro., a 15 de julio de 2026
+                  </p>
+                </div>
 
                 {/* Firmas */}
                 <div className="w-full flex justify-between px-8 mt-2">
