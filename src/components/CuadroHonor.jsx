@@ -7,6 +7,9 @@ import DiplomaPrint from './DiplomaPrint';
 import CuadroHonorListaPrint from './CuadroHonorListaPrint';
 import ManualDiplomaModal from './ManualDiplomaModal';
 import DiplomaGeneracionPrint from './DiplomaGeneracionPrint';
+import ArtesDiplomaModal from './ArtesDiplomaModal';
+import DiplomaArtesPrint from './DiplomaArtesPrint';
+import { Palette } from 'lucide-react';
 
 const materiasPorGrado = {
   '1er Grado': [
@@ -42,6 +45,10 @@ export default function CuadroHonor() {
   // Generación
   const [showGeneracionModal, setShowGeneracionModal] = useState(false);
   const [generacionPrintData, setGeneracionPrintData] = useState(null);
+  
+  // Artes
+  const [showArtesDiplomaModal, setShowArtesDiplomaModal] = useState(false);
+  const [artesPrintData, setArtesPrintData] = useState(null);
   
   const [genStudentId, setGenStudentId] = useState('');
   const [genPromedio, setGenPromedio] = useState('');
@@ -249,6 +256,26 @@ export default function CuadroHonor() {
         />
       )}
 
+      {/* Diploma Artes Modal y Print */}
+      {artesPrintData && (
+        <DiplomaArtesPrint
+          student={artesPrintData.student}
+          turno={artesPrintData.turno}
+          onClose={() => setArtesPrintData(null)}
+        />
+      )}
+
+      {showArtesDiplomaModal && (
+        <ArtesDiplomaModal
+          activos={activos}
+          onClose={() => setShowArtesDiplomaModal(false)}
+          onGenerate={(data, manualTurno) => {
+            setShowArtesDiplomaModal(false);
+            setArtesPrintData({ student: data.student, turno: manualTurno });
+          }}
+        />
+      )}
+
       {generacionPrintData && (
         <DiplomaGeneracionPrint
           student={generacionPrintData.student}
@@ -343,6 +370,12 @@ export default function CuadroHonor() {
               className="bg-slate-900 hover:bg-black text-amber-500 px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-slate-300 transition flex items-center"
             >
               <Trophy className="w-5 h-5 mr-2" /> Diploma Generación
+            </button>
+            <button 
+              onClick={() => setShowArtesDiplomaModal(true)}
+              className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-rose-200 transition flex items-center"
+            >
+              <Palette className="w-5 h-5 mr-2" /> Diploma Artes
             </button>
             <button 
               onClick={() => setShowManualDiploma(true)}
