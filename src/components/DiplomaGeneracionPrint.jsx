@@ -222,9 +222,11 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
                 </div>
 
                 {/* Fecha */}
-                <p className="text-[10px] text-slate-500 font-medium mt-3 mb-2">
-                  Acapulco de Juárez, Gro., a {getFormattedDate()}
-                </p>
+                <div className="w-full text-right px-12 mt-2 mb-2">
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Acapulco de Juárez, Gro., a {getFormattedDate()}
+                  </p>
+                </div>
 
                 {/* Firmas */}
                 <div className="w-full flex justify-between px-8 mt-2">
