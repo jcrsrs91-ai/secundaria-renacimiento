@@ -202,14 +202,17 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
                 <p className="text-[10px] font-medium text-slate-400 tracking-[0.2em] uppercase mt-2">A:</p>
 
                 {/* Nombre del Alumno */}
-                <div className="my-1 w-full max-w-4xl border-b-[1px] border-gold pb-1 flex justify-center">
+                <div className="my-1 w-full max-w-4xl border-b-[1px] border-gold pb-1 flex flex-col items-center justify-center">
                   <h2 className="text-4xl font-cinzel font-black text-navy tracking-widest" style={{ wordSpacing: '0.4em' }}>{nombreCompleto}</h2>
+                  <h3 className="text-xl font-cinzel font-bold text-slate-500 tracking-widest mt-2 uppercase">
+                    GRUPO "{student.grupo || "A"}"
+                  </h3>
                 </div>
 
                 {/* Razón */}
                 <div className="max-w-4xl text-center px-4 mt-2">
                   <p className="text-[12pt] text-navy leading-normal font-medium font-montserrat">
-                    En reconocimiento a su brillante desempeño, dedicación y esfuerzo constante durante los tres años de su educación secundaria (Generación <strong className="font-bold">{generacion}</strong>). 
+                    En reconocimiento a su brillante desempeño académico, dedicación y esfuerzo constante durante los tres años de su educación secundaria (Generación <strong className="font-bold">{generacion}</strong>). 
                     Su resiliencia ante los desafíos y su conducta ejemplar le han hecho merecedor del más alto reconocimiento de nuestra institución.
                   </p>
                   
@@ -224,7 +227,7 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
                 {/* Fecha */}
                 <div className="w-full text-right px-12 mt-2 mb-2">
                   <p className="text-[10px] text-slate-500 font-medium">
-                    Acapulco de Juárez, Gro., a {getFormattedDate()}
+                    Acapulco de Juárez, Gro., a 15 de julio de 2026
                   </p>
                 </div>
 
