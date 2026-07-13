@@ -206,8 +206,8 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
                   <h2 className="text-4xl font-cinzel font-black text-navy tracking-widest" style={{ wordSpacing: '0.4em' }}>{nombreCompleto}</h2>
                 </div>
 
-                {/* Razón */}
-                <div className="max-w-4xl text-center px-4 mt-2">
+                {/* Razón y Fecha */}
+                <div className="w-full text-center px-12 mt-2 relative">
                   <p className="text-[12pt] text-navy leading-normal font-medium font-montserrat">
                     En reconocimiento a su brillante desempeño, dedicación y esfuerzo constante durante los tres años de su educación secundaria (Generación <strong className="font-bold">{generacion}</strong>). 
                     Su resiliencia ante los desafíos y su conducta ejemplar le han hecho merecedor del más alto reconocimiento de nuestra institución.
@@ -219,13 +219,13 @@ export default function DiplomaGeneracionPrint({ student, promedio, generacion, 
                       {promedio}
                     </div>
                   </div>
-                </div>
 
-                {/* Fecha */}
-                <div className="w-full text-right px-12 mt-2 mb-2">
-                  <p className="text-[10px] text-slate-500 font-medium">
-                    Acapulco de Juárez, Gro., a {getFormattedDate()}
-                  </p>
+                  {/* Fecha (Flotando a un costado) */}
+                  <div className="absolute right-12 bottom-2">
+                    <p className="text-[10px] text-slate-500 font-medium text-right leading-tight">
+                      Acapulco de Juárez, Gro.,<br/>a {getFormattedDate()}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Firmas */}
