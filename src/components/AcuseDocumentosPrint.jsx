@@ -46,7 +46,7 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
         {`
           @page {
             size: Letter;
-            margin: 15mm 20mm;
+            margin: 10mm 15mm;
           }
           body {
             -webkit-print-color-adjust: exact !important;
@@ -59,7 +59,7 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
             padding: 0 !important;
             width: 100% !important;
             height: auto !important;
-            min-height: 100vh;
+            min-height: auto !important;
             page-break-after: always;
             overflow: hidden;
             background-color: white !important;
@@ -71,11 +71,11 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
       <div className="w-full flex justify-center pb-8 pt-4 print:pt-0 print:pb-0" style={{ minHeight: '100vh' }}>
         <div 
           className="print-page bg-white relative mx-auto shadow-2xl p-10 print:p-0" 
-          style={{ width: '215.9mm', minHeight: '279.4mm', fontFamily: "Arial, sans-serif", fontSize: '11pt', color: '#000' }}
+          style={{ width: '215.9mm', fontFamily: "Arial, sans-serif", fontSize: '11pt', color: '#000' }}
         >
           
           {/* Header Oficial con Logos */}
-          <div className="w-full flex items-center justify-between border-b-[3px] border-[#621132] pb-4 mb-5">
+          <div className="w-full flex items-center justify-between border-b-[3px] border-[#621132] pb-2 mb-3">
             <div className="w-40 flex justify-start items-center">
               <img src="/logo-sep.png" alt="SEP" className="w-40 object-contain" />
             </div>
@@ -98,12 +98,12 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
           </div>
 
           {/* Título */}
-          <div className="text-center text-[12pt] font-bold mb-5 bg-[#f4f4f4] p-1.5 border border-[#ccc]">
+          <div className="text-center text-[11pt] font-bold mb-3 bg-[#f4f4f4] p-1.5 border border-[#ccc]">
             ACUSE DE RECIBO DE DEVOLUCIÓN DE DOCUMENTOS ORIGINALES
           </div>
 
           {/* Tabla de Datos Genéricos */}
-          <table className="w-full border-collapse mb-5 text-[10pt]">
+          <table className="w-full border-collapse mb-3 text-[9pt]">
             <tbody>
               <tr>
                 <td className="font-bold w-[140px] py-1 align-bottom">Motivo de entrega:</td>
@@ -127,8 +127,8 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
           </table>
 
           {/* Caja Documentos */}
-          <div className="border border-[#ccc] p-3 mb-5 text-[10pt]">
-            <h3 className="m-0 mb-3 text-[11pt] font-bold border-b border-[#eee] pb-1.5">
+          <div className="border border-[#ccc] p-2 mb-3 text-[9pt]">
+            <h3 className="m-0 mb-2 text-[10pt] font-bold border-b border-[#eee] pb-1">
               Documentación original y observaciones por documento:
             </h3>
             
@@ -149,13 +149,13 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
           </div>
 
           {/* Legal */}
-          <div className="text-[8pt] text-justify p-3 border border-[#ddd] bg-[#fcfcfc] mt-3 leading-[1.4]">
+          <div className="text-[7.5pt] text-justify p-2 border border-[#ddd] bg-[#fcfcfc] mt-2 leading-[1.3]">
             <strong>AVISO DE DEVOLUCIÓN Y LIBERACIÓN DE RESPONSABILIDAD:</strong><br/>
             Por medio del presente documento, el padre, madre o tutor legal firma de entera conformidad la recepción de los documentos originales marcados en la lista superior (salvo aquellos donde se indique expresamente el motivo de su retención o inexistencia en el expediente). Dichos documentos se encontraban bajo el resguardo de la institución educativa para fines de control escolar. A partir de la firma de este acuse, la Escuela Secundaria Técnica N°68 se libera de toda responsabilidad sobre el resguardo, cuidado y estado físico de dicha documentación. Cualquier extravío, deterioro o mal uso de los mismos será responsabilidad absoluta del titular o su tutor. En caso de préstamo temporal, el tutor asume la responsabilidad de devolverlos a la brevedad.
           </div>
 
           {/* Firmas */}
-          <div className="w-full flex mt-10 pt-4">
+          <div className="w-full flex mt-6 pt-2">
             <div className="w-1/3 text-center flex flex-col justify-end pb-2">
               <div className="border-t border-black w-[85%] mx-auto pt-1 text-[9pt] font-bold uppercase truncate px-1">
                 {autoAcentuar(quienEntrega)}
