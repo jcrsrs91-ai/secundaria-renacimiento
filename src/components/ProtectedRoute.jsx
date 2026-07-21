@@ -7,7 +7,7 @@ export default function ProtectedRoute() {
 
   // Si no hay ningún tipo de sesión
   if (!currentUser && !studentSession) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   // Si es un tutor/alumno y trata de entrar a algo que no es su portal, lo redirigimos a su portal
