@@ -178,6 +178,18 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
                 Documentos a entregar (Desmarque si NO se entrega y escriba el motivo)
               </h3>
               
+              <datalist id="motivos-faltantes">
+                <option value="Retraso en la emisión por escuela de procedencia" />
+                <option value="Retención por adeudos en colegio particular" />
+                <option value="Trámite foráneo en proceso" />
+                <option value="Corrección de Acta en el Registro Civil" />
+                <option value="Inconsistencias de CURP en RENAPO" />
+                <option value="Falta de Apostille o Traducción" />
+                <option value="Pérdida por desastres naturales o siniestros" />
+                <option value="Conflictos de custodia" />
+                <option value="Extravío por mudanza" />
+              </datalist>
+
               <div className="space-y-3">
                 {Object.keys(docs).map(key => (
                   <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
@@ -193,11 +205,12 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
                     <div className="flex-1">
                       <input 
                         type="text"
+                        list="motivos-faltantes"
                         disabled={docs[key].checked}
                         required={!docs[key].checked}
                         value={docs[key].checked ? '' : docs[key].motivo}
                         onChange={(e) => handleDocChange(key, 'motivo', e.target.value)}
-                        placeholder={docs[key].checked ? "Se entrega (Desmarque para escribir motivo)" : "Escriba el motivo..."}
+                        placeholder={docs[key].checked ? "Se entrega (Desmarque para escribir motivo)" : "Escriba o seleccione un motivo..."}
                         className={`w-full p-2 text-sm border rounded-md transition-colors uppercase ${docs[key].checked ? 'bg-slate-100 border-transparent text-slate-400 placeholder-slate-400 cursor-not-allowed' : 'bg-white border-rose-300 focus:ring-2 focus:ring-rose-500 focus:border-rose-500'}`}
                       />
                     </div>
