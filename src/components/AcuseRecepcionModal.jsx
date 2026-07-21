@@ -75,6 +75,16 @@ export default function AcuseRecepcionModal({ student, onClose, onGenerate }) {
     certsec: 'Certificado Secundaria'
   };
 
+  const getDocsByGrado = () => {
+    const baseDocs = ['curp', 'acta', 'certprim'];
+    const grado = parseInt(student.grado, 10);
+    if (grado === 2) return [...baseDocs, 'bol1'];
+    if (grado === 3) return [...baseDocs, 'bol1', 'bol2'];
+    return baseDocs; // Default para 1er grado
+  };
+
+  const docsToRender = getDocsByGrado();
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
@@ -197,7 +207,7 @@ export default function AcuseRecepcionModal({ student, onClose, onGenerate }) {
               </datalist>
 
               <div className="space-y-3">
-                {Object.keys(docs).map(key => (
+                {docsToRender.map(key => (
                   <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
                     <label className="flex items-center gap-3 sm:w-2/5 cursor-pointer">
                       <input 

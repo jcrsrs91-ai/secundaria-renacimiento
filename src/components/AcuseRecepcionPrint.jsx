@@ -130,13 +130,13 @@ export default function AcuseRecepcionPrint({ data, onClose }) {
             
             <table className="w-full border-collapse">
               <tbody>
-                {Object.keys(docs).map((key) => (
+                {['curp', 'acta', 'certprim', ...(parseInt(student.grado, 10) >= 2 ? ['bol1'] : []), ...(parseInt(student.grado, 10) === 3 ? ['bol2'] : [])].map((key) => (
                   <tr key={key}>
                     <td className="w-1/2 py-1.5 font-medium">
-                      [{docs[key].checked ? ' X ' : '   '}] {docLabels[key]}
+                      [{docs[key]?.checked ? ' X ' : '   '}] {docLabels[key]}
                     </td>
                     <td className="w-1/2 py-1.5 border-b border-[#666] text-[#333] italic">
-                      Motivo de falta: <span className="uppercase">{docs[key].checked ? '' : docs[key].motivo}</span>
+                      Motivo de falta: <span className="uppercase">{docs[key]?.checked ? '' : docs[key]?.motivo}</span>
                     </td>
                   </tr>
                 ))}
@@ -147,7 +147,7 @@ export default function AcuseRecepcionPrint({ data, onClose }) {
           {/* Legal */}
           <div className="text-[7.5pt] text-justify p-2 border border-[#ddd] bg-[#fcfcfc] mt-2 leading-[1.3]">
             <strong>AVISO DE RECEPCIÓN Y RESGUARDO DE DOCUMENTACIÓN:</strong><br/>
-            De conformidad con la Ley General de Educación y la Ley General de Protección de Datos Personales en Posesión de Sujetos Obligados, por medio del presente documento la institución hace constar la recepción y resguardo de los documentos originales marcados en la lista superior, con fines estrictamente académicos y de control escolar. La escuela se compromete a su cuidado y resguardo en el archivo general del plantel durante la permanencia del alumno(a). Se notifica al tutor que es su responsabilidad subsanar a la brevedad cualquier documento que no haya sido entregado en el momento de la inscripción para garantizar el debido proceso de certificación al egreso del alumno(a).
+            De conformidad con la Ley General de Educación y la Ley General de Protección de Datos Personales en Posesión de Sujetos Obligados, por medio del presente documento la institución hace constar la recepción y resguardo de los documentos originales marcados en la lista superior, con fines estrictamente académicos y de control escolar. La escuela se compromete a su cuidado y resguardo en el archivo general del plantel durante la permanencia del alumno(a). Se notifica al tutor que es su estricta responsabilidad entregar en original cualquier documento faltante indicado en este acuse a más tardar el <strong>30 de septiembre</strong> del presente año (fecha de cierre de inscripciones oficiales ante la SEP). De no cumplir con esta disposición, el proceso de inscripción quedará inconcluso, deslindando a la escuela de cualquier retraso en la certificación.
           </div>
 
           {/* Firmas */}

@@ -19,7 +19,9 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
     bol1: 'Boleta 1er Grado',
     bol2: 'Boleta 2do Grado',
     bol3: 'Boleta 3er Grado',
-    certsec: 'Cert. Secundaria'
+    certsec: 'Cert. Secundaria',
+    doc_traslado: 'Doc. Traslado / Baja',
+    constancia: 'Constancia de Estudios'
   };
 
   return (
@@ -137,7 +139,7 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
                 {Object.keys(docs).map((key) => (
                   <tr key={key}>
                     <td className="w-1/2 py-1.5 font-medium">
-                      [{docs[key].checked ? ' X ' : '   '}] {docLabels[key]}
+                      [{docs[key].checked ? ' X ' : '   '}] {docLabels[key] || key}
                     </td>
                     <td className="w-1/2 py-1.5 border-b border-[#666] text-[#333] italic">
                       Motivo: <span className="uppercase">{docs[key].checked ? '' : docs[key].motivo}</span>

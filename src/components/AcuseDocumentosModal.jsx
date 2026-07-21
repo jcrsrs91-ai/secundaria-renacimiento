@@ -12,18 +12,65 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
     "Lic. Erick Buenrostro Hernandez",
     "Lic. Ismael Mendoza Parra"
   ];
+
   const [quienEntregaSelect, setQuienEntregaSelect] = useState(secretarios[0]);
   const [quienEntregaManual, setQuienEntregaManual] = useState('');
 
-  const [docs, setDocs] = useState(student.docs || {
-    curp: { checked: true, motivo: '' },
-    acta: { checked: true, motivo: '' },
-    certprim: { checked: true, motivo: '' },
-    bol1: { checked: true, motivo: '' },
-    bol2: { checked: true, motivo: '' },
-    bol3: { checked: true, motivo: '' },
-    certsec: { checked: true, motivo: '' }
+  const [docs, setDocs] = useState(() => {
+    // Solo cargamos la base (curp, acta, certprim) del historial recibido
+    const sDocs = student.docs || {};
+    return {
+      curp: sDocs.curp || { checked: true, motivo: '' },
+      acta: sDocs.acta || { checked: true, motivo: '' },
+      certprim: sDocs.certprim || { checked: true, motivo: '' }
+    };
   });
+
+  const [extraDocs, setExtraDocs] = useState([]);
+  const [extraDocSelect, setExtraDocSelect] = useState('');
+
+  const docLabels = {
+    curp: 'C.U.R.P.',
+    acta: 'Acta de Nacimiento',
+    certprim: 'Certificado de Primaria',
+    certsec: 'Certificado Secundaria',
+    bol3: 'Boleta 3er Grado Sec.',
+    doc_traslado: 'Documento de Traslado / Baja',
+    bol1: 'Boleta 1er Grado Sec.',
+    bol2: 'Boleta 2do Grado Sec.',
+    constancia: 'Constancia de Estudios'
+  };
+
+  const getDynamicDocs = () => {
+    const list = ['curp', 'acta', 'certprim'];
+    if (motivo === 'Egreso') {
+      list.push('certsec', 'bol3');
+    } else if (motivo === 'Baja del ciclo escolar' || motivo === 'Traslado a otra institución') {
+      list.push('doc_traslado');
+    }
+    return [...list, ...extraDocs];
+  };
+
+  const handleExtraDocChange = (key, field, value) => {
+    setDocs(prev => ({
+      ...prev,
+      [key]: {
+        ...(prev[key] || { checked: true, motivo: '' }),
+        [field]: value
+      }
+    }));
+  };
+
+  const addExtraDoc = () => {
+    if (extraDocSelect && !extraDocs.includes(extraDocSelect)) {
+      setExtraDocs([...extraDocs, extraDocSelect]);
+      setDocs(prev => ({
+        ...prev,
+        [extraDocSelect]: { checked: true, motivo: '' }
+      }));
+      setExtraDocSelect('');
+    }
+  };
 
   const handleDocChange = (key, field, value) => {
     setDocs(prev => ({
@@ -41,23 +88,20 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
     const finalTutor = tutorSelect === 'Otro' ? tutorManual : tutorSelect;
     const finalQuienEntrega = quienEntregaSelect === 'Otro' ? quienEntregaManual : quienEntregaSelect;
 
+    // Solo enviamos los documentos que realmente estamos mostrando/devolviendo
+    const activeDocsKeys = getDynamicDocs();
+    const activeDocs = {};
+    activeDocsKeys.forEach(key => {
+      activeDocs[key] = docs[key] || { checked: true, motivo: '' };
+    });
+
     onGenerate({
       student,
       motivo,
       tutor: finalTutor,
       quienEntrega: finalQuienEntrega,
-      docs
+      docs: activeDocs
     });
-  };
-
-  const docLabels = {
-    curp: 'C.U.R.P.',
-    acta: 'Acta de Nacimiento',
-    certprim: 'Certificado de Primaria',
-    bol1: 'Boleta 1er Grado Sec.',
-    bol2: 'Boleta 2do Grado Sec.',
-    bol3: 'Boleta 3er Grado Sec.',
-    certsec: 'Certificado Secundaria'
   };
 
   return (
@@ -199,31 +243,56 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
               </datalist>
 
               <div className="space-y-3">
-                {Object.keys(docs).map(key => (
+                {getDynamicDocs().map(key => {
+                  const docState = docs[key] || { checked: true, motivo: '' };
+                  return (
                   <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
                     <label className="flex items-center gap-3 sm:w-2/5 cursor-pointer">
                       <input 
                         type="checkbox"
-                        checked={docs[key].checked}
-                        onChange={(e) => handleDocChange(key, 'checked', e.target.checked)}
+                        checked={docState.checked}
+                        onChange={(e) => handleExtraDocChange(key, 'checked', e.target.checked)}
                         className="w-5 h-5 text-rose-600 border-slate-300 rounded focus:ring-rose-500"
                       />
-                      <span className="text-sm font-semibold text-slate-700">{docLabels[key]}</span>
+                      <span className="text-sm font-semibold text-slate-700">{docLabels[key] || key}</span>
                     </label>
                     <div className="flex-1">
                       <input 
                         type="text"
                         list="motivos-faltantes"
-                        disabled={docs[key].checked}
-                        required={!docs[key].checked}
-                        value={docs[key].checked ? '' : docs[key].motivo}
-                        onChange={(e) => handleDocChange(key, 'motivo', e.target.value)}
-                        placeholder={docs[key].checked ? "Se entrega (Desmarque para escribir motivo)" : "Escriba o seleccione un motivo..."}
-                        className={`w-full p-2 text-sm border rounded-md transition-colors uppercase ${docs[key].checked ? 'bg-slate-100 border-transparent text-slate-400 placeholder-slate-400 cursor-not-allowed' : 'bg-white border-rose-300 focus:ring-2 focus:ring-rose-500 focus:border-rose-500'}`}
+                        disabled={docState.checked}
+                        required={!docState.checked}
+                        value={docState.checked ? '' : docState.motivo}
+                        onChange={(e) => handleExtraDocChange(key, 'motivo', e.target.value)}
+                        placeholder={docState.checked ? "Se entrega (Desmarque para escribir motivo)" : "Escriba o seleccione un motivo..."}
+                        className={`w-full p-2 text-sm border rounded-md transition-colors uppercase ${docState.checked ? 'bg-slate-100 border-transparent text-slate-400 placeholder-slate-400 cursor-not-allowed' : 'bg-white border-rose-300 focus:ring-2 focus:ring-rose-500 focus:border-rose-500'}`}
                       />
                     </div>
                   </div>
-                ))}
+                )})}
+              </div>
+
+              {/* Agregar Documento Extra */}
+              <div className="mt-4 p-4 bg-rose-50 border border-rose-100 rounded-lg flex items-center gap-3">
+                <select 
+                  value={extraDocSelect}
+                  onChange={(e) => setExtraDocSelect(e.target.value)}
+                  className="flex-1 p-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-rose-500"
+                >
+                  <option value="">-- Añadir documento extra al expediente --</option>
+                  {!getDynamicDocs().includes('bol1') && <option value="bol1">Boleta 1er Grado Sec.</option>}
+                  {!getDynamicDocs().includes('bol2') && <option value="bol2">Boleta 2do Grado Sec.</option>}
+                  {!getDynamicDocs().includes('bol3') && <option value="bol3">Boleta 3er Grado Sec.</option>}
+                  {!getDynamicDocs().includes('constancia') && <option value="constancia">Constancia de Estudios</option>}
+                </select>
+                <button
+                  type="button"
+                  onClick={addExtraDoc}
+                  disabled={!extraDocSelect}
+                  className="px-4 py-2 bg-rose-600 text-white text-sm font-bold rounded hover:bg-rose-700 disabled:opacity-50 transition-colors"
+                >
+                  Agregar
+                </button>
               </div>
             </div>
 
