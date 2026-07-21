@@ -24,6 +24,8 @@ import ListaClausuraPrint from '../../components/ListaClausuraPrint';
 import AddStudentModal from '../../components/AddStudentModal';
 import AcuseDocumentosModal from '../../components/AcuseDocumentosModal';
 import AcuseDocumentosPrint from '../../components/AcuseDocumentosPrint';
+import AcuseRecepcionModal from '../../components/AcuseRecepcionModal';
+import AcuseRecepcionPrint from '../../components/AcuseRecepcionPrint';
 import { autoAcentuar } from '../../utils/format';
 
 export default function ControlEscolar() {
@@ -1098,8 +1100,11 @@ export default function ControlEscolar() {
                       <button onClick={() => handlePrintConstancia(a)} className="text-amber-600 hover:text-amber-800 font-medium text-sm inline-flex items-center">
                         <FileText className="w-4 h-4 mr-1" /> Constancia
                       </button>
+                      <button onClick={() => openModal('acuseRec', a)} className="text-sky-600 hover:text-sky-800 font-medium text-sm inline-flex items-center">
+                        <FileText className="w-4 h-4 mr-1" /> Acuse Recibir
+                      </button>
                       <button onClick={() => openModal('acuse', a)} className="text-rose-600 hover:text-rose-800 font-medium text-sm inline-flex items-center">
-                        <FileText className="w-4 h-4 mr-1" /> Acuse Docs
+                        <FileText className="w-4 h-4 mr-1" /> Acuse Devolver
                       </button>
                       <button onClick={() => handlePrintSingle(a)} className="text-slate-500 hover:text-slate-800 font-medium text-sm inline-flex items-center">
                         <QrCode className="w-4 h-4 mr-1" /> Credencial
@@ -1193,6 +1198,18 @@ export default function ControlEscolar() {
           onGenerate={(data) => {
             setPrintData(data);
             setPrintMode('acuse');
+            closeModal();
+          }}
+        />
+      )}
+
+      {modalType === 'acuseRec' && selectedStudent && (
+        <AcuseRecepcionModal 
+          student={selectedStudent} 
+          onClose={closeModal} 
+          onGenerate={(data) => {
+            setPrintData(data);
+            setPrintMode('acuseRec');
             closeModal();
           }}
         />
@@ -1462,6 +1479,7 @@ export default function ControlEscolar() {
       )}
 
       {/* IMPRESIÓN MODALES INDIVIDUALES */}
+      {printMode === 'acuseRec' && printData && <AcuseRecepcionPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'acuse' && printData && <AcuseDocumentosPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
