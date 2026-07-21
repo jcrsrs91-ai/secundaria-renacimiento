@@ -77,7 +77,7 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
           {/* Header Oficial con Logos */}
           <div className="w-full flex items-center justify-between border-b-[3px] border-[#621132] pb-4 mb-5">
             <div className="w-40 flex justify-start items-center">
-              <img src="/logo-sep.png" alt="SEP" className="w-40 object-contain grayscale" />
+              <img src="/logo-sep.png" alt="SEP" className="w-40 object-contain" />
             </div>
             
             <div className="text-center flex-1 px-2">
@@ -86,11 +86,11 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
               <p className="text-[9px] font-bold text-slate-600 tracking-widest mt-1">
                 C.C.T. 12DST0077B <span className="mx-2 text-rose-300">•</span> Zona Escolar 24
               </p>
-              <h2 className="mt-1 mb-0 text-[10pt] font-semibold text-slate-700">Acapulco de Juárez, Guerrero</h2>
+              <h2 className="mt-1 mb-0 text-[10pt] font-semibold text-slate-700">Acapulco de Juárez, Guerrero | Tel. 744 441 5678</h2>
             </div>
             
             <div className="w-40 flex flex-col items-end justify-between">
-              <img src="/logo-escuela.png" alt="Escudo" className="w-16 h-16 object-contain grayscale mb-2" />
+              <img src="/logo-escuela.png" alt="Escudo" className="w-16 h-16 object-contain mb-2" />
               <div className="text-right text-[9pt] font-bold text-slate-700">
                 <div>Folio: _______</div>
                 <div className="mt-1">Fecha: <span>{fecha}</span></div>
