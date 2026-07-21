@@ -74,20 +74,27 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
           style={{ width: '215.9mm', minHeight: '279.4mm', fontFamily: "Arial, sans-serif", fontSize: '11pt', color: '#000' }}
         >
           
-          {/* Header */}
-          <div className="flex w-full border-b-[3px] border-[#621132] pb-4 mb-5">
-            <div className="w-1/5 flex items-center">
-              <div className="w-[70px] h-[70px] border-2 border-[#621132] rounded-md text-center font-bold text-[#621132] flex items-center justify-center text-[8pt]">
-                <span>LOGO<br/>EST N°68</span>
+          {/* Header Oficial con Logos */}
+          <div className="w-full flex items-center justify-between border-b-[3px] border-[#621132] pb-4 mb-5">
+            <div className="w-40 flex justify-start items-center">
+              <img src="/logo-sep.png" alt="SEP" className="w-40 object-contain grayscale" />
+            </div>
+            
+            <div className="text-center flex-1 px-2">
+              <p className="text-[9px] font-bold text-slate-700 uppercase tracking-widest mb-1">Secretaría de Educación Pública</p>
+              <h1 className="m-0 text-[13pt] text-[#621132] uppercase font-black tracking-wider">Escuela Secundaria Técnica No. 68 "Renacimiento"</h1>
+              <p className="text-[9px] font-bold text-slate-600 tracking-widest mt-1">
+                C.C.T. 12DST0077B <span className="mx-2 text-rose-300">•</span> Zona Escolar 24
+              </p>
+              <h2 className="mt-1 mb-0 text-[10pt] font-semibold text-slate-700">Acapulco de Juárez, Guerrero</h2>
+            </div>
+            
+            <div className="w-40 flex flex-col items-end justify-between">
+              <img src="/logo-escuela.png" alt="Escudo" className="w-16 h-16 object-contain grayscale mb-2" />
+              <div className="text-right text-[9pt] font-bold text-slate-700">
+                <div>Folio: _______</div>
+                <div className="mt-1">Fecha: <span>{fecha}</span></div>
               </div>
-            </div>
-            <div className="w-3/5 text-center flex flex-col justify-center">
-              <h1 className="m-0 text-[14pt] uppercase font-bold">Escuela Secundaria Técnica N°68 "Renacimiento"</h1>
-              <h2 className="mt-1 mb-0 text-[11pt] font-normal">Acapulco, Guerrero</h2>
-            </div>
-            <div className="w-1/5 text-right flex flex-col justify-end text-[10pt] font-bold">
-              <div>Folio: _______</div>
-              <div className="mt-2">Fecha: <span>{fecha}</span></div>
             </div>
           </div>
 

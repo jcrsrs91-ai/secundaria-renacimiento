@@ -4,7 +4,7 @@ import { autoAcentuar } from '../utils/format';
 
 export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
   const [motivo, setMotivo] = useState('Egreso');
-  const [tutorSelect, setTutorSelect] = useState('Registrado');
+  const [tutorSelect, setTutorSelect] = useState(student.tutorNombre || student.emergenciaNombre1 || 'Otro');
   const [tutorManual, setTutorManual] = useState('');
   
   const secretarios = [
@@ -38,7 +38,7 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const finalTutor = tutorSelect === 'Registrado' ? (student.tutor || 'Tutor No Registrado') : tutorManual;
+    const finalTutor = tutorSelect === 'Otro' ? tutorManual : tutorSelect;
     const finalQuienEntrega = quienEntregaSelect === 'Otro' ? quienEntregaManual : quienEntregaSelect;
 
     onGenerate({
@@ -125,14 +125,22 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
 
               {/* Persona que Recibe */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Persona que Recibe (Tutor)</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Persona que Recibe (Tutor/Referencia)</label>
                 <select 
                   value={tutorSelect}
                   onChange={(e) => setTutorSelect(e.target.value)}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 uppercase"
                 >
-                  <option value="Registrado">{autoAcentuar(student.tutor)} (Registrado)</option>
-                  <option value="Otro">Otra persona (Ingresar manual)</option>
+                  {student.tutorNombre && (
+                    <option value={student.tutorNombre}>{autoAcentuar(student.tutorNombre)} (Tutor Principal)</option>
+                  )}
+                  {student.emergenciaNombre1 && (
+                    <option value={student.emergenciaNombre1}>{autoAcentuar(student.emergenciaNombre1)} (Referencia)</option>
+                  )}
+                  {student.emergenciaNombre2 && (
+                    <option value={student.emergenciaNombre2}>{autoAcentuar(student.emergenciaNombre2)} (Referencia 2)</option>
+                  )}
+                  <option value="Otro">OTRA PERSONA (Ingresar manual)</option>
                 </select>
                 {tutorSelect === 'Otro' && (
                   <input 
