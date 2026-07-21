@@ -136,7 +136,11 @@ export default function AcuseRecepcionPrint({ data, onClose }) {
                       [{docs[key]?.checked ? ' X ' : '   '}] {docLabels[key]}
                     </td>
                     <td className="w-1/2 py-1.5 border-b border-[#666] text-[#333] italic">
-                      Motivo de falta: <span className="uppercase">{docs[key]?.checked ? '' : docs[key]?.motivo}</span>
+                      {docs[key]?.checked ? (
+                        <span className="text-[#15803d] font-bold">Documento entregado</span>
+                      ) : (
+                        <span>Motivo de falta: <span className="uppercase font-bold text-rose-700">{docs[key]?.motivo}</span></span>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -142,7 +142,11 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
                       [{docs[key].checked ? ' X ' : '   '}] {docLabels[key] || key}
                     </td>
                     <td className="w-1/2 py-1.5 border-b border-[#666] text-[#333] italic">
-                      Motivo: <span className="uppercase">{docs[key].checked ? '' : docs[key].motivo}</span>
+                      {docs[key].checked ? (
+                        <span className="text-[#15803d] font-bold">Documento devuelto</span>
+                      ) : (
+                        <span>Motivo de retención/falta: <span className="uppercase font-bold text-rose-700">{docs[key].motivo}</span></span>
+                      )}
                     </td>
                   </tr>
                 ))}
