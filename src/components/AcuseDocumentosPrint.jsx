@@ -92,7 +92,6 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
             <div className="w-40 flex flex-col items-end justify-between">
               <img src="/logo-escuela.png" alt="Escudo" className="w-16 h-16 object-contain mb-2" />
               <div className="text-right text-[9pt] font-bold text-slate-700">
-                <div>Folio: _______</div>
                 <div className="mt-1">Fecha: <span>{fecha}</span></div>
               </div>
             </div>
