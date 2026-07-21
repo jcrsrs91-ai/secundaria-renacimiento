@@ -7,6 +7,9 @@ export default function ProtectedRoute() {
 
   // Si no hay ningún tipo de sesión
   if (!currentUser && !studentSession) {
+    if (location.pathname === '/panel/portal-familiar') {
+      return <Navigate to="/acceso-padres" replace />;
+    }
     return <Navigate to="/admin" replace />;
   }
 

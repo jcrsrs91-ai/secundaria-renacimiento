@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
+import TutorLogin from './pages/public/TutorLogin';
 import Landing from './pages/public/Landing';
 import DashboardLayout from './layouts/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -23,6 +24,7 @@ function App() {
       {/* Rutas Públicas */}
       <Route path="/" element={<Landing />} />
       <Route path="/admin" element={<Login />} />
+      <Route path="/acceso-padres" element={<TutorLogin />} />
       <Route path="/pre-inscripcion" element={<PreInscripcion />} />
 
       {/* Rutas Privadas / Dashboard */}

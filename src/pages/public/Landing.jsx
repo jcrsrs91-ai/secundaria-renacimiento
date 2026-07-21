@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, UsersRound, Bell, ArrowRight, ShieldCheck } from 'lucide-react';
-import heroImg from '../../assets/hero.png';
 
 export default function Landing() {
+  const [bgIndex, setBgIndex] = useState(1);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBgIndex(prev => prev >= 9 ? 1 : prev + 1);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-900 font-sans selection:bg-blue-600 selection:text-white">
       {/* Navbar Glassmorphism */}
@@ -20,7 +28,7 @@ export default function Landing() {
             
             <div className="hidden md:flex items-center gap-6">
               <Link to="/pre-inscripcion" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Admisiones</Link>
-              <Link to="/panel/portal-familiar" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Portal de Padres</Link>
+              <Link to="/acceso-padres" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Portal de Padres</Link>
               <Link to="/admin" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium transition-all hover:scale-105 active:scale-95">
                 <ShieldCheck className="w-4 h-4" />
                 Acceso Personal
@@ -33,8 +41,13 @@ export default function Landing() {
       {/* Hero Section */}
       <div className="relative pt-32 pb-20 sm:pt-40 sm:pb-24 overflow-hidden min-h-[90vh] flex items-center">
         {/* Background Image & Overlay */}
-        <div className="absolute inset-0 z-0">
-          <img src={heroImg} alt="Estudiantes" className="w-full h-full object-cover opacity-30 mix-blend-luminosity" />
+        <div className="absolute inset-0 z-0 bg-slate-950">
+          <img 
+            key={bgIndex}
+            src={`/carousel/foto${bgIndex}.jpeg`} 
+            alt="Fondo Instalaciones" 
+            className="w-full h-full object-cover opacity-30 mix-blend-luminosity animate-in fade-in duration-1000" 
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-slate-900/30"></div>
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-transparent"></div>
         </div>
@@ -77,7 +90,7 @@ export default function Landing() {
             </Link>
 
             {/* Card 2 */}
-            <Link to="/panel/portal-familiar" className="group relative p-1 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 hover:from-blue-500 hover:to-blue-600 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20">
+            <Link to="/acceso-padres" className="group relative p-1 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 hover:from-blue-500 hover:to-blue-600 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20">
               <div className="absolute inset-0 bg-slate-900/40 rounded-2xl backdrop-blur-xl group-hover:bg-slate-900/10 transition-colors"></div>
               <div className="relative p-6 h-full flex flex-col items-start text-left">
                 <div className="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mb-6 group-hover:bg-white/20 group-hover:border-white/30 transition-colors">
@@ -109,30 +122,6 @@ export default function Landing() {
                 </div>
               </div>
             </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Galería de Instalaciones */}
-      <div className="py-24 bg-slate-950 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Nuestras Instalaciones</h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">Conoce los espacios donde nuestros alumnos aprenden, conviven y se desarrollan integralmente todos los días.</p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px]">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-              <div key={num} className={`relative group overflow-hidden rounded-2xl bg-slate-900 ${num === 1 || num === 8 ? 'md:col-span-2' : ''} ${num === 4 ? 'row-span-2' : ''}`}>
-                <img 
-                  src={`/carousel/foto${num}.jpeg`} 
-                  alt={`Instalación ${num}`} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-            ))}
           </div>
         </div>
       </div>
