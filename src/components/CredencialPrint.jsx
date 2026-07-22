@@ -121,8 +121,8 @@ export default function CredencialPrint({ students = [] }) {
               </div>
 
               {/* Leyenda Oficial SEP */}
-              <div className="px-1.5 mt-[2px] text-center">
-                 <p className="text-[3.5px] font-medium text-slate-400 leading-[1.2] text-justify">
+              <div className="px-1.5 mt-[3px] text-center">
+                 <p className="text-[4.5px] font-medium text-slate-400 leading-[1.2] text-justify">
                    Esta credencial acredita al portador como alumno(a) regular de esta Institución incorporada a la SEP. Es personal e intransferible.
                  </p>
               </div>
@@ -141,14 +141,14 @@ export default function CredencialPrint({ students = [] }) {
               </div>
 
               {/* Firma Director */}
-              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[2px] relative ml-2">
+              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[1px] relative ml-2">
                 {/* Imagen Firma Real Digitalizada */}
-                <div className="absolute bottom-[8px] w-full flex justify-center h-[14mm]">
+                <div className="absolute bottom-[12px] w-full flex justify-center h-[14mm]">
                   <img src="/firma-director.png" alt="Firma Director" className="h-full object-contain mix-blend-multiply opacity-100" />
                 </div>
-                <div className="w-full border-b-[1px] border-slate-800 mb-[2px] z-10"></div>
-                <p className="text-[4.5px] font-bold text-slate-700 uppercase text-center leading-tight">Director del Plantel</p>
-                <p className="text-[4px] font-bold text-slate-500 uppercase text-center tracking-[0.2em] mt-[1px]">Ciclo Escolar 2025-2026</p>
+                <div className="w-full border-b-[1px] border-slate-800 mb-[1px] z-10"></div>
+                <p className="text-[4.5px] font-black text-slate-900 uppercase text-center leading-[1.1] tracking-tight">Profr. Juan Carlos Taboada Barajas</p>
+                <p className="text-[4px] font-bold text-slate-600 uppercase text-center leading-tight">Director del Plantel</p>
               </div>
             </div>
             
