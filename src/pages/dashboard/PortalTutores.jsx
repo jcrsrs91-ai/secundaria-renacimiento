@@ -131,7 +131,7 @@ export default function PortalTutores() {
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
             <h3 className="font-bold text-blue-800 mb-2">Directorio de Dependencias de Apoyo</h3>
             <p className="text-sm text-blue-600 mb-4">¿Necesitas ayuda médica, familiar o legal? Consulta las instituciones disponibles para ti.</p>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Ver Directorio (Módulo 9)</button>
+            <a href="https://www.gob.mx/sep/acciones-y-programas/directorio-de-dependencias-de-apoyo" target="_blank" rel="noreferrer" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Ver Directorio</a>
           </div>
         </div>
       )}
@@ -144,10 +144,46 @@ export default function PortalTutores() {
             <div className="p-4 border-b border-slate-200 bg-slate-50">
               <h3 className="font-bold text-slate-800 flex items-center"><FileText className="w-4 h-4 mr-2" /> Boleta de Calificaciones</h3>
             </div>
-            <div className="p-12 text-center text-slate-500 flex flex-col items-center">
-              <FileText className="w-12 h-12 text-slate-300 mb-4" />
-              <p className="font-medium text-lg text-slate-600">Sin calificaciones registradas</p>
-              <p className="text-sm mt-2 max-w-sm">Las boletas del periodo actual estarán disponibles para descarga en esta sección una vez que Control Escolar finalice la captura.</p>
+            <table className="min-w-full divide-y divide-slate-200 overflow-x-auto block md:table">
+              <thead className="bg-white">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Campo Formativo / Disciplina</th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Trimestre 1</th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Trimestre 2</th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Promedio</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                <tr className="bg-slate-50 font-semibold"><td colSpan="4" className="px-6 py-2 text-xs text-slate-600">Lenguajes</td></tr>
+                <tr>
+                  <td className="px-6 py-3 text-sm text-slate-600 pl-10">Español</td>
+                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
+                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
+                  <td className="px-6 py-3 text-sm font-bold text-slate-900 text-center">-</td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-3 text-sm text-slate-600 pl-10">Inglés</td>
+                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
+                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
+                  <td className="px-6 py-3 text-sm font-bold text-slate-900 text-center">-</td>
+                </tr>
+                <tr className="bg-slate-50 font-semibold"><td colSpan="4" className="px-6 py-2 text-xs text-slate-600">Saberes y Pensamiento Científico</td></tr>
+                <tr>
+                  <td className="px-6 py-3 text-sm text-slate-600 pl-10">Matemáticas</td>
+                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
+                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
+                  <td className="px-6 py-3 text-sm font-bold text-slate-900 text-center">-</td>
+                </tr>
+                <tr>
+                  <td className="px-6 py-3 text-sm text-slate-600 pl-10">Tecnologías</td>
+                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
+                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
+                  <td className="px-6 py-3 text-sm font-bold text-slate-900 text-center">-</td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="p-4 bg-slate-50 border-t border-slate-200 text-center">
+              <p className="text-xs text-slate-500 italic">Las boletas oficiales se llenarán automáticamente en cuanto los docentes finalicen la captura.</p>
             </div>
           </div>
           
@@ -168,8 +204,9 @@ export default function PortalTutores() {
                 <span className="text-sm font-bold text-emerald-600">Entregado</span>
               </div>
             </div>
-            <div className="mt-4">
-              <button className="w-full text-center py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-sm font-bold hover:bg-blue-100 transition">Contactar Control Escolar</button>
+            <div className="mt-6 space-y-3">
+              <a href="mailto:controlescolar@est68.edu.mx" className="w-full block text-center py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-sm font-bold hover:bg-blue-100 transition">Enviar Correo a Control Escolar</a>
+              <a href="tel:7444415678" className="w-full block text-center py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-sm font-bold hover:bg-emerald-100 transition">Llamar a Control Escolar (744 441 5678)</a>
             </div>
           </div>
         </div>
