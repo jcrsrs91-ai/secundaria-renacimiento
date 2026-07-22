@@ -49,13 +49,15 @@ export default function CredencialPrint({ students = [] }) {
           <div className="credencial-page bg-white flex flex-col justify-between overflow-hidden relative border-r border-b border-slate-100 print:border-none">
             
             {/* Header */}
-            <div className={`${getGradeColor(student.grado)} text-white px-1 py-1.5 shadow-md relative z-10 rounded-b flex items-center h-[13mm]`}>
-              <img src="/logo.png" alt="Logo" className="h-[9mm] w-[9mm] object-contain mr-1 bg-white rounded-full p-[1px]" />
-              <div className="flex-1 text-center pr-1 flex flex-col justify-center">
-                <h1 className="text-[5.5px] font-extrabold uppercase leading-[1.1] tracking-wide">Secretaría de Educación Pública</h1>
-                <h2 className="text-[7.5px] font-black leading-tight mt-[1px] tracking-tight">Esc. Sec. Téc. N°68</h2>
-                <p className="text-[4.5px] font-semibold tracking-wider mt-[1px] opacity-90">C.C.T. 12DST0068Z</p>
+            <div className={`${getGradeColor(student.grado)} text-white px-1 py-1.5 shadow-md relative z-10 rounded-b flex items-center h-[16mm]`}>
+              <img src="/logo-sep.png" alt="SEP" className="h-[11mm] w-[11mm] object-contain mr-1" />
+              <div className="flex-1 text-center px-0.5 flex flex-col justify-center">
+                <h1 className="text-[6px] font-extrabold uppercase leading-[1.1] tracking-wide">Secretaría de Educación Pública</h1>
+                <h2 className="text-[8px] font-black leading-tight mt-[1px] tracking-tight">Esc. Sec. Téc. N°68</h2>
+                <h3 className="text-[9px] font-black leading-tight mt-[1px] tracking-[0.2em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
+                <p className="text-[5px] font-semibold tracking-wider mt-[1px] opacity-90">C.C.T. 12DST0077B</p>
               </div>
+              <img src="/logo-escuela.png" alt="Escuela" className="h-[11mm] w-[11mm] object-contain ml-1 drop-shadow-md" />
             </div>
 
             {/* Body */}
@@ -76,91 +78,83 @@ export default function CredencialPrint({ students = [] }) {
                 
                 {/* Nombres y Matrícula */}
                 <div className="flex-1 flex flex-col justify-center leading-none mt-1">
-                  <p className={`text-[8px] font-black uppercase leading-[1.1] tracking-tight ${getTextColor(student.grado)}`}>
+                  <p className={`text-[9.5px] font-black uppercase leading-[1.1] tracking-tight ${getTextColor(student.grado)}`}>
                     {student.apellidoPaterno} <br/> {student.apellidoMaterno}
                   </p>
-                  <p className="text-[7px] font-bold text-slate-700 uppercase leading-tight mt-[2px]">
+                  <p className="text-[8px] font-bold text-slate-700 uppercase leading-tight mt-[3px]">
                     {student.nombres}
                   </p>
-                  <p className="text-[5.5px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">
+                  <p className="text-[6.5px] font-bold text-slate-500 uppercase tracking-widest mt-2">
                     MAT: {student.matricula}
                   </p>
-                  <p className="text-[5px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                  <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
                     CURP: {student.curp || 'NO REGISTRADA'}
                   </p>
                 </div>
               </div>
 
               {/* Datos Académicos y Sangre */}
-              <div className="grid grid-cols-2 gap-x-1 px-1.5 w-full z-10">
+              <div className="grid grid-cols-2 gap-x-1 px-1.5 w-full z-10 mt-1">
                 <div>
-                  <p className="text-[4px] font-bold text-slate-400 uppercase tracking-widest">Grado / Grupo / Turno</p>
-                  <p className="text-[7.5px] font-black text-slate-800 leading-tight">
-                    {student.grado?.substring(0,1)}° "{student.grupo || '-'}" <span className="text-[6px] font-bold text-slate-500">{student.turno?.substring(0,4) || 'MATU'}</span>
+                  <p className="text-[4.5px] font-bold text-slate-400 uppercase tracking-widest">Grado / Grupo / Turno</p>
+                  <p className="text-[8.5px] font-black text-slate-800 leading-tight">
+                    {student.grado?.substring(0,1)}° "{student.grupo || '-'}" <span className="text-[7px] font-bold text-slate-500">{student.turno?.substring(0,4) || 'MATU'}</span>
                   </p>
                 </div>
                 <div>
-                  <p className="text-[4px] font-bold text-slate-400 uppercase tracking-widest">T. Sangre</p>
-                  <p className="text-[7.5px] font-black text-red-600 leading-tight">{student.tipoSangre || 'No Esp.'}</p>
+                  <p className="text-[4.5px] font-bold text-slate-400 uppercase tracking-widest">T. Sangre</p>
+                  <p className="text-[8.5px] font-black text-red-600 leading-tight">{student.tipoSangre || 'No Esp.'}</p>
                 </div>
                 <div className="col-span-2 mt-[3px]">
-                  <p className="text-[4px] font-bold text-slate-400 uppercase tracking-widest">Taller</p>
-                  <p className="text-[6px] font-bold text-slate-800 leading-tight truncate">{student.taller || 'Sin Asignar'}</p>
+                  <p className="text-[4.5px] font-bold text-slate-400 uppercase tracking-widest">Taller</p>
+                  <p className="text-[7px] font-bold text-slate-800 leading-tight truncate">{student.taller || 'Sin Asignar'}</p>
                 </div>
               </div>
 
               {/* Contacto de Emergencia y Leyenda */}
-              <div className="px-1.5 mt-[2px] border-t-[0.5px] border-slate-200 pt-[2px] bg-red-50/40">
-                <p className="text-[4px] font-bold text-red-500 uppercase tracking-widest">En caso de emergencia avisar a:</p>
-                <div className="flex justify-between items-end mt-[1px]">
-                  <p className="text-[5.5px] font-bold text-slate-700 leading-tight truncate flex-1 pr-1">{student.nombreTutor || 'No registrado'}</p>
-                  <p className="text-[6px] font-black text-slate-900 leading-tight flex-shrink-0">Tel: {student.telefonoTutor || 'N/A'}</p>
+              <div className="px-1.5 mt-[3px] border-t-[0.5px] border-slate-200 pt-[3px] bg-red-50/40">
+                <p className="text-[4.5px] font-bold text-red-500 uppercase tracking-widest">En caso de emergencia avisar a:</p>
+                <div className="flex justify-between items-end mt-[2px]">
+                  <p className="text-[6.5px] font-bold text-slate-700 leading-tight truncate flex-1 pr-1">{student.nombreTutor || 'No registrado'}</p>
+                  <p className="text-[7px] font-black text-slate-900 leading-tight flex-shrink-0">Tel: {student.telefonoTutor || 'N/A'}</p>
                 </div>
               </div>
 
               {/* Leyenda Oficial SEP */}
               <div className="px-1.5 mt-[2px] text-center">
                  <p className="text-[3.5px] font-medium text-slate-400 leading-[1.2] text-justify">
-                   Esta credencial es un documento oficial que acredita al portador como alumno(a) regular de esta Institución incorporada al Sistema Educativo Nacional (SEP). Es personal e intransferible.
+                   Esta credencial acredita al portador como alumno(a) regular de esta Institución incorporada a la SEP. Es personal e intransferible.
                  </p>
               </div>
             </div>
 
             {/* Footer: QR y Firmas */}
-            <div className="px-1.5 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[17mm] bg-slate-50/50 mt-[2px]">
+            <div className="px-2 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[19mm] bg-slate-50/50 mt-[2px]">
               {/* Código QR para Escáner */}
               <div className="flex-shrink-0 bg-white p-[1px] rounded border shadow-sm self-center">
                 <QRCodeSVG 
                   value={JSON.stringify({ m: student.matricula, id: student.id, c: "25-26" })} 
-                  size={30} 
+                  size={42} 
                   level="M"
                   includeMargin={false}
                 />
               </div>
 
-              {/* Firma Alumno */}
-              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[2px] px-1">
-                <div className="w-[15mm] border-b-[0.5px] border-slate-300 mb-[2px]"></div>
-                <p className="text-[3.5px] font-bold text-slate-400 uppercase text-center leading-tight">Firma del Alumno</p>
-              </div>
-
               {/* Firma Director */}
-              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[2px] relative">
-                {/* Imagen Firma Ficticia/Digitalizada */}
-                <div className="absolute bottom-[6px] w-full flex justify-center opacity-70">
-                  <span className="font-['Brush_Script_MT',cursive,serif] text-[16px] text-blue-900 leading-none" style={{ transform: 'rotate(-4deg)' }}>
-                    F. Director
-                  </span>
+              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[2px] relative ml-2">
+                {/* Imagen Firma Real Digitalizada */}
+                <div className="absolute bottom-[8px] w-full flex justify-center h-[14mm]">
+                  <img src="/firma-director.png" alt="Firma Director" className="h-full object-contain mix-blend-multiply opacity-100" />
                 </div>
-                <div className="w-[18mm] border-b-[0.5px] border-slate-400 mb-[2px] z-10"></div>
-                <p className="text-[4px] font-bold text-slate-500 uppercase text-center leading-tight">Firma Autorizada</p>
-                <p className="text-[3.5px] font-bold text-slate-400 uppercase text-center tracking-[0.2em] mt-[1px]">Ciclo 25-26</p>
+                <div className="w-full border-b-[1px] border-slate-800 mb-[2px] z-10"></div>
+                <p className="text-[4.5px] font-bold text-slate-700 uppercase text-center leading-tight">Director del Plantel</p>
+                <p className="text-[4px] font-bold text-slate-500 uppercase text-center tracking-[0.2em] mt-[1px]">Ciclo Escolar 2025-2026</p>
               </div>
             </div>
             
             {/* Fondo de agua tenue (Logo) */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none z-[-1] overflow-hidden">
-               <img src="/logo.png" alt="" className="w-48 h-48 object-contain scale-150 grayscale" />
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-[-1] overflow-hidden">
+               <img src="/logo-escuela.png" alt="" className="w-48 h-48 object-contain scale-150 grayscale" />
             </div>
 
           </div>
