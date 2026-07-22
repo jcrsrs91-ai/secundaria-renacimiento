@@ -12,8 +12,7 @@ export default function TutorLogin() {
   const [loading, setLoading] = useState(false);
 
   // Estados para Tutores
-  const [matricula, setMatricula] = useState('');
-  const [curp, setCurp] = useState('');
+  const [identifier, setIdentifier] = useState('');
 
   // Estados para Avisos
   const [avisos, setAvisos] = useState([]);
@@ -46,13 +45,17 @@ export default function TutorLogin() {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
+    const searchVal = identifier.trim().toUpperCase();
     try {
-      const q = query(
-        collection(db, "students"), 
-        where("matricula", "==", matricula),
-        where("curp", "==", curp)
-      );
-      const querySnapshot = await getDocs(q);
+      // 1. Intentar buscar por Matrícula
+      let q = query(collection(db, "students"), where("matricula", "==", searchVal));
+      let querySnapshot = await getDocs(q);
+      
+      // 2. Si no encuentra, intentar buscar por CURP
+      if (querySnapshot.empty) {
+        q = query(collection(db, "students"), where("curp", "==", searchVal));
+        querySnapshot = await getDocs(q);
+      }
       
       if (querySnapshot.empty) {
         setErrorMsg('Matrícula o CURP incorrectos, o el alumno aún no está activo.');
@@ -152,12 +155,8 @@ export default function TutorLogin() {
 
               <form className="space-y-6 animate-in fade-in" onSubmit={handleStudentLogin}>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Matrícula Escolar</label>
-                  <input type="text" placeholder="Ej. 2024EST68001" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500 transition-shadow" value={matricula} onChange={e => setMatricula(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">CURP</label>
-                  <input type="text" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500 uppercase transition-shadow" value={curp} onChange={e => setCurp(e.target.value.toUpperCase())} />
+                  <label className="block text-sm font-medium text-slate-700">Matrícula Escolar o CURP</label>
+                  <input type="text" placeholder="Ej. 2024EST68001 o CURP" required className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500 uppercase transition-shadow" value={identifier} onChange={e => setIdentifier(e.target.value.toUpperCase())} />
                 </div>
                 <button type="submit" disabled={loading} className="w-full flex justify-center py-2.5 px-4 rounded-lg text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 transition-colors shadow-md">
                   {loading ? 'Buscando...' : 'Entrar a Mi Portal'}
