@@ -4,6 +4,27 @@ import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 
+const materiasPorGrado = {
+  '1er Grado': [
+    { id: 'espanol1', name: 'Español I' }, { id: 'ingles1', name: 'Inglés I' }, { id: 'artes1', name: 'Artes I' },
+    { id: 'matematicas1', name: 'Matemáticas I' }, { id: 'biologia', name: 'Ciencias I (Biología)' },
+    { id: 'geografia', name: 'Geografía' }, { id: 'historia1', name: 'Historia I' }, { id: 'fce1', name: 'Formación Cívica y Ética I' },
+    { id: 'tecnologia1', name: 'Tecnología I' }, { id: 'educfisica1', name: 'Educación Física I' }
+  ],
+  '2do Grado': [
+    { id: 'espanol2', name: 'Español II' }, { id: 'ingles2', name: 'Inglés II' }, { id: 'artes2', name: 'Artes II' },
+    { id: 'matematicas2', name: 'Matemáticas II' }, { id: 'fisica', name: 'Ciencias II (Física)' },
+    { id: 'historia2', name: 'Historia II' }, { id: 'fce2', name: 'Formación Cívica y Ética II' },
+    { id: 'tecnologia2', name: 'Tecnología II' }, { id: 'educfisica2', name: 'Educación Física II' }
+  ],
+  '3er Grado': [
+    { id: 'espanol3', name: 'Español III' }, { id: 'ingles3', name: 'Inglés III' }, { id: 'artes3', name: 'Artes III' },
+    { id: 'matematicas3', name: 'Matemáticas III' }, { id: 'quimica', name: 'Ciencias III (Química)' },
+    { id: 'historia3', name: 'Historia III' }, { id: 'fce3', name: 'Formación Cívica y Ética III' },
+    { id: 'tecnologia3', name: 'Tecnología III' }, { id: 'educfisica3', name: 'Educación Física III' }
+  ]
+};
+
 export default function PortalTutores() {
   const [activeTab, setActiveTab] = useState('muro');
   const { studentSession, logout } = useAuth();
@@ -154,36 +175,42 @@ export default function PortalTutores() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                <tr className="bg-slate-50 font-semibold"><td colSpan="4" className="px-6 py-2 text-xs text-slate-600">Lenguajes</td></tr>
-                <tr>
-                  <td className="px-6 py-3 text-sm text-slate-600 pl-10">Español</td>
-                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
-                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
-                  <td className="px-6 py-3 text-sm font-bold text-slate-900 text-center">-</td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-3 text-sm text-slate-600 pl-10">Inglés</td>
-                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
-                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
-                  <td className="px-6 py-3 text-sm font-bold text-slate-900 text-center">-</td>
-                </tr>
-                <tr className="bg-slate-50 font-semibold"><td colSpan="4" className="px-6 py-2 text-xs text-slate-600">Saberes y Pensamiento Científico</td></tr>
-                <tr>
-                  <td className="px-6 py-3 text-sm text-slate-600 pl-10">Matemáticas</td>
-                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
-                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
-                  <td className="px-6 py-3 text-sm font-bold text-slate-900 text-center">-</td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-3 text-sm text-slate-600 pl-10">Tecnologías</td>
-                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
-                  <td className="px-6 py-3 text-sm text-slate-900 text-center">-</td>
-                  <td className="px-6 py-3 text-sm font-bold text-slate-900 text-center">-</td>
-                </tr>
+                {materiasPorGrado[studentSession.grado]?.map((materia) => {
+                  const calif = studentSession.calificaciones || {};
+                  const t1 = calif.t1?.[materia.id];
+                  const t2 = calif.t2?.[materia.id];
+                  const t3 = calif.t3?.[materia.id];
+                  
+                  let sum = 0;
+                  let count = 0;
+                  if (t1) { sum += Number(t1); count++; }
+                  if (t2) { sum += Number(t2); count++; }
+                  if (t3) { sum += Number(t3); count++; }
+                  
+                  const promedio = count > 0 ? (sum / count).toFixed(1) : '-';
+                  
+                  return (
+                    <tr key={materia.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-3 text-sm text-slate-700 font-medium">{materia.name}</td>
+                      <td className="px-6 py-3 text-sm text-center font-semibold text-slate-900">{t1 || '-'}</td>
+                      <td className="px-6 py-3 text-sm text-center font-semibold text-slate-900">{t2 || '-'}</td>
+                      <td className={`px-6 py-3 text-sm text-center font-bold ${promedio !== '-' && Number(promedio) < 6 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                        {promedio}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {(!materiasPorGrado[studentSession.grado] || materiasPorGrado[studentSession.grado].length === 0) && (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-4 text-center text-slate-500 text-sm">
+                      No hay materias registradas para este grado.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
             <div className="p-4 bg-slate-50 border-t border-slate-200 text-center">
-              <p className="text-xs text-slate-500 italic">Las boletas oficiales se llenarán automáticamente en cuanto los docentes finalicen la captura.</p>
+              <p className="text-xs text-slate-500 italic">Las boletas oficiales se llenarán automáticamente en cuanto los docentes finalicen la captura de calificaciones en el sistema central.</p>
             </div>
           </div>
           
