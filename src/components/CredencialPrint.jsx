@@ -54,7 +54,7 @@ export default function CredencialPrint({ students = [] }) {
               <div className="flex-1 text-center pr-1 flex flex-col justify-center">
                 <h1 className="text-[5.5px] font-extrabold uppercase leading-[1.1] tracking-wide">Secretaría de Educación Pública</h1>
                 <h2 className="text-[7.5px] font-black leading-tight mt-[1px] tracking-tight">Esc. Sec. Téc. N°68</h2>
-                <p className="text-[5px] uppercase opacity-90 font-bold tracking-[0.2em] mt-[1px]">Renacimiento</p>
+                <p className="text-[4.5px] font-semibold tracking-wider mt-[1px] opacity-90">C.C.T. 12DST0068Z</p>
               </div>
             </div>
 
@@ -82,8 +82,11 @@ export default function CredencialPrint({ students = [] }) {
                   <p className="text-[7px] font-bold text-slate-700 uppercase leading-tight mt-[2px]">
                     {student.nombres}
                   </p>
-                  <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">
-                    {student.matricula}
+                  <p className="text-[5.5px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">
+                    MAT: {student.matricula}
+                  </p>
+                  <p className="text-[5px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                    CURP: {student.curp || 'NO REGISTRADA'}
                   </p>
                 </div>
               </div>
@@ -106,39 +109,52 @@ export default function CredencialPrint({ students = [] }) {
                 </div>
               </div>
 
-              {/* Contacto de Emergencia */}
-              <div className="px-1.5 mt-[4px] border-t-[0.5px] border-slate-200 pt-[2px] bg-red-50/40">
+              {/* Contacto de Emergencia y Leyenda */}
+              <div className="px-1.5 mt-[2px] border-t-[0.5px] border-slate-200 pt-[2px] bg-red-50/40">
                 <p className="text-[4px] font-bold text-red-500 uppercase tracking-widest">En caso de emergencia avisar a:</p>
                 <div className="flex justify-between items-end mt-[1px]">
-                  <p className="text-[6px] font-bold text-slate-700 leading-tight truncate flex-1 pr-1">{student.nombreTutor || 'No registrado'}</p>
-                  <p className="text-[6.5px] font-black text-slate-900 leading-tight flex-shrink-0">Tel: {student.telefonoTutor || 'N/A'}</p>
+                  <p className="text-[5.5px] font-bold text-slate-700 leading-tight truncate flex-1 pr-1">{student.nombreTutor || 'No registrado'}</p>
+                  <p className="text-[6px] font-black text-slate-900 leading-tight flex-shrink-0">Tel: {student.telefonoTutor || 'N/A'}</p>
                 </div>
+              </div>
+
+              {/* Leyenda Oficial SEP */}
+              <div className="px-1.5 mt-[2px] text-center">
+                 <p className="text-[3.5px] font-medium text-slate-400 leading-[1.2] text-justify">
+                   Esta credencial es un documento oficial que acredita al portador como alumno(a) regular de esta Institución incorporada al Sistema Educativo Nacional (SEP). Es personal e intransferible.
+                 </p>
               </div>
             </div>
 
-            {/* Footer: QR y Firma */}
-            <div className="px-1.5 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[17mm] bg-slate-50/50">
+            {/* Footer: QR y Firmas */}
+            <div className="px-1.5 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[17mm] bg-slate-50/50 mt-[2px]">
               {/* Código QR para Escáner */}
               <div className="flex-shrink-0 bg-white p-[1px] rounded border shadow-sm self-center">
                 <QRCodeSVG 
                   value={JSON.stringify({ m: student.matricula, id: student.id, c: "25-26" })} 
-                  size={32} 
+                  size={30} 
                   level="M"
                   includeMargin={false}
                 />
               </div>
 
+              {/* Firma Alumno */}
+              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[2px] px-1">
+                <div className="w-[15mm] border-b-[0.5px] border-slate-300 mb-[2px]"></div>
+                <p className="text-[3.5px] font-bold text-slate-400 uppercase text-center leading-tight">Firma del Alumno</p>
+              </div>
+
               {/* Firma Director */}
-              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[2px] pl-1 relative">
+              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[2px] relative">
                 {/* Imagen Firma Ficticia/Digitalizada */}
                 <div className="absolute bottom-[6px] w-full flex justify-center opacity-70">
-                  <span className="font-['Brush_Script_MT',cursive,serif] text-[18px] text-blue-900 leading-none" style={{ transform: 'rotate(-4deg)' }}>
+                  <span className="font-['Brush_Script_MT',cursive,serif] text-[16px] text-blue-900 leading-none" style={{ transform: 'rotate(-4deg)' }}>
                     F. Director
                   </span>
                 </div>
                 <div className="w-[18mm] border-b-[0.5px] border-slate-400 mb-[2px] z-10"></div>
                 <p className="text-[4px] font-bold text-slate-500 uppercase text-center leading-tight">Firma Autorizada</p>
-                <p className="text-[3.5px] font-bold text-slate-400 uppercase text-center tracking-[0.2em] mt-[1px]">Válida Ciclo 25-26</p>
+                <p className="text-[3.5px] font-bold text-slate-400 uppercase text-center tracking-[0.2em] mt-[1px]">Ciclo 25-26</p>
               </div>
             </div>
             
