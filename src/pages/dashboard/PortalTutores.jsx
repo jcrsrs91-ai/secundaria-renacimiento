@@ -148,10 +148,10 @@ export default function PortalTutores() {
             <button onClick={logout} className="mb-4 flex items-center text-rose-400 hover:text-rose-300 transition-colors text-sm font-semibold">
               <LogOut className="w-4 h-4 mr-1" /> Cerrar Sesión
             </button>
-            <p className="text-sm text-slate-400 mb-1">Último acceso al portal:</p>
-            <p className="font-semibold flex items-center justify-center md:justify-end text-emerald-400">
-              <Clock className="w-4 h-4 mr-2" /> Hoy, 06:55 AM
-            </p>
+            <div className="px-3 py-1 bg-slate-800/50 rounded-full text-xs text-emerald-400 font-medium flex items-center">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
+              Sesión Activa
+            </div>
           </div>
         </div>
       </div>
