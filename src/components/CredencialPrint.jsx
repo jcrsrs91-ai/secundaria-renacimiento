@@ -78,10 +78,10 @@ export default function CredencialPrint({ students = [] }) {
                 
                 {/* Nombres y Matrícula */}
                 <div className="flex-1 flex flex-col justify-center leading-none mt-1">
-                  <p className={`text-[9.5px] font-black uppercase leading-[1.1] tracking-tight ${getTextColor(student.grado)}`}>
+                  <p className={`text-[11px] font-black uppercase leading-[1.0] tracking-tight ${getTextColor(student.grado)}`}>
                     {student.apellidoPaterno} <br/> {student.apellidoMaterno}
                   </p>
-                  <p className="text-[8px] font-bold text-slate-700 uppercase leading-tight mt-[3px]">
+                  <p className="text-[9.5px] font-bold text-slate-700 uppercase leading-tight mt-[2px]">
                     {student.nombres}
                   </p>
                   <p className="text-[6.5px] font-bold text-slate-500 uppercase tracking-widest mt-2">
