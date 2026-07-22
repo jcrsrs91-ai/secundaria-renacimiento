@@ -144,7 +144,7 @@ export default function CredencialPrint({ students = [] }) {
               <div className="flex-1 flex flex-col items-center justify-end h-full pb-[1px] ml-2">
                 {/* Imagen Firma Real Digitalizada */}
                 <div className="w-full flex justify-center h-[12mm] mb-[1px] z-20">
-                  <img src="/firma-director.png" alt="Firma" className="max-h-full max-w-full object-contain mix-blend-multiply" />
+                  <img src="/firma-director.png" alt="Firma" className="max-h-full max-w-full object-contain " />
                 </div>
                 <div className="w-full border-b-[1px] border-slate-800 mb-[1px] z-10"></div>
                 <p className="text-[4.5px] font-black text-slate-900 uppercase text-center leading-[1.1] tracking-tight">Profr. Juan Carlos Taboada Barajas</p>
