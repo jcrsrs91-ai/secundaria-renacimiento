@@ -118,14 +118,21 @@ export default function BuzonTutores() {
                   <div className="absolute top-4 right-4 w-3 h-3 bg-rose-500 rounded-full shadow-sm"></div>
                 )}
                 <div className="flex justify-between items-start mb-1">
-                  <h3 className={`font-semibold text-sm ${chat.unreadAdmin ? 'text-slate-900' : 'text-slate-700'}`}>
+                  <h3 className={`font-semibold text-sm truncate pr-2 ${chat.unreadAdmin ? 'text-slate-900' : 'text-slate-700'}`}>
                     {chat.studentName || 'Alumno'}
                   </h3>
-                  <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
+                  <span className="text-[10px] text-slate-400 whitespace-nowrap">
                     {chat.updatedAt ? new Date(chat.updatedAt.seconds * 1000).toLocaleDateString() : ''}
                   </span>
                 </div>
-                <p className="text-xs text-primary-600 font-medium mb-1">Matrícula: {chat.id}</p>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[11px] text-primary-600 font-medium">Matrícula: {chat.id}</p>
+                  {(chat.grado || chat.grupo) && (
+                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded uppercase">
+                      {chat.grado?.split(' ')[0]} {chat.grupo ? `"${chat.grupo}"` : ''}
+                    </span>
+                  )}
+                </div>
                 <p className={`text-xs truncate ${chat.unreadAdmin ? 'font-semibold text-slate-800' : 'text-slate-500'}`}>
                   {chat.lastMessage}
                 </p>
@@ -145,8 +152,12 @@ export default function BuzonTutores() {
                   <User className="w-5 h-5 text-primary-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800">{activeChat.studentName}</h3>
-                  <p className="text-xs text-slate-500">Matrícula: {activeChat.id} {activeChat.grado ? `| ${activeChat.grado}` : ''}</p>
+                  <h3 className="font-bold text-slate-800">{activeChat.studentName || 'Alumno no identificado'}</h3>
+                  <p className="text-xs text-slate-500">
+                    Matrícula: {activeChat.id} 
+                    {activeChat.grado ? ` | ${activeChat.grado}` : ''}
+                    {activeChat.grupo ? ` "${activeChat.grupo}"` : ''}
+                  </p>
                 </div>
               </div>
               <div className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded font-medium flex items-center">

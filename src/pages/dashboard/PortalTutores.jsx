@@ -73,8 +73,9 @@ export default function PortalTutores() {
       
       // Update or create chat document
       await setDoc(chatRef, {
-        studentName: `${studentSession.nombre} ${studentSession.apellidos}`,
+        studentName: `${studentSession.nombres} ${studentSession.apellidoPaterno} ${studentSession.apellidoMaterno}`,
         grado: studentSession.grado || '',
+        grupo: studentSession.grupo || '',
         lastMessage: textToSend,
         updatedAt: serverTimestamp(),
         unreadAdmin: true,
