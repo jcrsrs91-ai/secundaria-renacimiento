@@ -143,8 +143,8 @@ export default function CredencialPrint({ students = [] }) {
               {/* Firma Director */}
               <div className="flex-1 flex flex-col items-center justify-end h-full pb-[1px] ml-2">
                 {/* Imagen Firma Real Digitalizada */}
-                <div className="w-full flex justify-center h-[12mm] mb-[1px] z-20">
-                  <img src="/firma-director.png" alt="Firma" className="max-h-full max-w-full object-contain " />
+                <div className="w-full flex justify-center h-[12mm] mb-[1px] relative z-20">
+                  <img src="/firma-director.png" alt="Firma" className="h-full w-auto object-contain" />
                 </div>
                 <div className="w-full border-b-[1px] border-slate-800 mb-[1px] z-10"></div>
                 <p className="text-[4.5px] font-black text-slate-900 uppercase text-center leading-[1.1] tracking-tight">Profr. Juan Carlos Taboada Barajas</p>
@@ -153,7 +153,7 @@ export default function CredencialPrint({ students = [] }) {
             </div>
             
             {/* Fondo de agua tenue (Logo) */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-[-1] overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none z-0 overflow-hidden mix-blend-multiply">
                <img src="/logo-escuela.png" alt="" className="w-48 h-48 object-contain scale-150 grayscale" />
             </div>
 
