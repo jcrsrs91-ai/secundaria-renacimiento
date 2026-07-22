@@ -4,16 +4,17 @@ import { QRCodeSVG } from 'qrcode.react';
 // Tamaño CR80 (54mm x 85.6mm)
 export default function CredencialPrint({ students = [] }) {
   const getGradeColor = (grado) => {
-    if (grado?.includes('1')) return 'bg-blue-600 border-blue-600';
-    if (grado?.includes('2')) return 'bg-emerald-600 border-emerald-600';
-    if (grado?.includes('3')) return 'bg-rose-600 border-rose-600';
+    // 1ro Guinda, 2do Azul, 3ro Verde
+    if (grado?.includes('1')) return 'bg-rose-900 border-rose-900';
+    if (grado?.includes('2')) return 'bg-blue-700 border-blue-700';
+    if (grado?.includes('3')) return 'bg-emerald-700 border-emerald-700';
     return 'bg-slate-800 border-slate-800'; // Default
   };
 
   const getTextColor = (grado) => {
-    if (grado?.includes('1')) return 'text-blue-600';
-    if (grado?.includes('2')) return 'text-emerald-600';
-    if (grado?.includes('3')) return 'text-rose-600';
+    if (grado?.includes('1')) return 'text-rose-900';
+    if (grado?.includes('2')) return 'text-blue-700';
+    if (grado?.includes('3')) return 'text-emerald-700';
     return 'text-slate-800';
   };
 
@@ -27,7 +28,15 @@ export default function CredencialPrint({ students = [] }) {
           aside, header { display: none !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; background: white; }
           .print-only { display: block !important; }
-          .credencial-page { page-break-after: always; width: 54mm; height: 85.6mm; overflow: hidden !important; position: relative; font-family: sans-serif; box-sizing: border-box; }
+          .credencial-page { 
+            page-break-after: always; 
+            width: 54mm; 
+            height: 85.6mm; 
+            overflow: hidden !important; 
+            position: relative; 
+            font-family: sans-serif; 
+            box-sizing: border-box; 
+          }
         }
         @media screen {
           .print-only { display: none !important; }
@@ -37,68 +46,107 @@ export default function CredencialPrint({ students = [] }) {
       {students.map(student => (
         <React.Fragment key={student.id}>
           {/* FRENTE DE LA TARJETA */}
-          <div className="credencial-page bg-white flex flex-col justify-between overflow-hidden">
+          <div className="credencial-page bg-white flex flex-col justify-between overflow-hidden relative border-r border-b border-slate-100 print:border-none">
+            
             {/* Header */}
-            <div className={`${getGradeColor(student.grado)} text-white p-1 text-center shadow-md relative z-10 rounded-b-md`}>
-              <h1 className="text-[7px] font-bold uppercase leading-tight tracking-wider">Secretaría de Educación Pública</h1>
-              <h2 className="text-[10px] font-black leading-tight mt-0.5 tracking-tight">Esc. Sec. Téc. N°68</h2>
-              <p className="text-[6px] uppercase opacity-90 font-bold tracking-widest">Renacimiento</p>
+            <div className={`${getGradeColor(student.grado)} text-white px-1 py-1.5 shadow-md relative z-10 rounded-b flex items-center h-[13mm]`}>
+              <img src="/logo.png" alt="Logo" className="h-[9mm] w-[9mm] object-contain mr-1 bg-white rounded-full p-[1px]" />
+              <div className="flex-1 text-center pr-1 flex flex-col justify-center">
+                <h1 className="text-[5.5px] font-extrabold uppercase leading-[1.1] tracking-wide">Secretaría de Educación Pública</h1>
+                <h2 className="text-[7.5px] font-black leading-tight mt-[1px] tracking-tight">Esc. Sec. Téc. N°68</h2>
+                <p className="text-[5px] uppercase opacity-90 font-bold tracking-[0.2em] mt-[1px]">Renacimiento</p>
+              </div>
             </div>
 
             {/* Body */}
-            <div className="flex-1 flex flex-col items-center pt-1 px-2 pb-0.5 text-center relative z-0">
-              {/* Foto */}
-              <div className={`w-16 h-20 mt-0.5 border-2 rounded-md overflow-hidden bg-slate-100 ${getGradeColor(student.grado)} shadow-sm z-10 flex-shrink-0`}>
-                {student.fotoUrl ? (
-                  <img src={student.fotoUrl} alt="Foto" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100">
-                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                  </div>
-                )}
+            <div className="flex-1 flex flex-col w-full relative z-0">
+              
+              {/* Contenedor Foto + Nombres */}
+              <div className="flex px-1.5 pt-1.5 pb-1 gap-1.5 items-center">
+                {/* Foto */}
+                <div className={`w-[18mm] h-[23mm] border-[1.5px] rounded-sm overflow-hidden bg-slate-50 ${getGradeColor(student.grado)} shadow-sm z-10 flex-shrink-0`}>
+                  {student.fotoUrl ? (
+                    <img src={student.fotoUrl} alt="Foto" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-300">
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Nombres y Matrícula */}
+                <div className="flex-1 flex flex-col justify-center leading-none mt-1">
+                  <p className={`text-[8px] font-black uppercase leading-[1.1] tracking-tight ${getTextColor(student.grado)}`}>
+                    {student.apellidoPaterno} <br/> {student.apellidoMaterno}
+                  </p>
+                  <p className="text-[7px] font-bold text-slate-700 uppercase leading-tight mt-[2px]">
+                    {student.nombres}
+                  </p>
+                  <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">
+                    {student.matricula}
+                  </p>
+                </div>
               </div>
 
-              {/* Datos Personales */}
-              <div className="mt-1 w-full z-10 leading-none">
-                <p className={`text-[10px] font-black uppercase leading-tight tracking-tight ${getTextColor(student.grado)}`}>
-                  {student.apellidoPaterno} {student.apellidoMaterno}
-                </p>
-                <p className="text-[8px] font-bold text-slate-700 uppercase leading-tight mt-0.5">
-                  {student.nombres}
-                </p>
-                <p className="text-[7px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-                  {student.matricula}
-                </p>
+              {/* Datos Académicos y Sangre */}
+              <div className="grid grid-cols-2 gap-x-1 px-1.5 w-full z-10">
+                <div>
+                  <p className="text-[4px] font-bold text-slate-400 uppercase tracking-widest">Grado / Grupo / Turno</p>
+                  <p className="text-[7.5px] font-black text-slate-800 leading-tight">
+                    {student.grado?.substring(0,1)}° "{student.grupo || '-'}" <span className="text-[6px] font-bold text-slate-500">{student.turno?.substring(0,4) || 'MATU'}</span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[4px] font-bold text-slate-400 uppercase tracking-widest">T. Sangre</p>
+                  <p className="text-[7.5px] font-black text-red-600 leading-tight">{student.tipoSangre || 'No Esp.'}</p>
+                </div>
+                <div className="col-span-2 mt-[3px]">
+                  <p className="text-[4px] font-bold text-slate-400 uppercase tracking-widest">Taller</p>
+                  <p className="text-[6px] font-bold text-slate-800 leading-tight truncate">{student.taller || 'Sin Asignar'}</p>
+                </div>
               </div>
 
-              {/* Datos Académicos */}
-              <div className="grid grid-cols-2 gap-x-1 w-full mt-1.5 z-10 border-t border-slate-200 pt-1">
-                <div>
-                  <p className="text-[4.5px] font-bold text-slate-400 uppercase tracking-widest">Grado/Grupo</p>
-                  <p className="text-[8px] font-black text-slate-800">{student.grado?.substring(0,1)}° "{student.grupo || '-'}"</p>
-                </div>
-                <div>
-                  <p className="text-[4.5px] font-bold text-slate-400 uppercase tracking-widest">Turno</p>
-                  <p className="text-[8px] font-black text-slate-800 uppercase">{student.turno?.substring(0,4) || 'MATU'}.</p>
-                </div>
-                <div className="col-span-2 mt-0.5">
-                  <p className="text-[4.5px] font-bold text-slate-400 uppercase tracking-widest">Taller</p>
-                  <p className="text-[7px] font-bold text-slate-800 leading-tight truncate">{student.taller || 'Sin Asignar'}</p>
+              {/* Contacto de Emergencia */}
+              <div className="px-1.5 mt-[4px] border-t-[0.5px] border-slate-200 pt-[2px] bg-red-50/40">
+                <p className="text-[4px] font-bold text-red-500 uppercase tracking-widest">En caso de emergencia avisar a:</p>
+                <div className="flex justify-between items-end mt-[1px]">
+                  <p className="text-[6px] font-bold text-slate-700 leading-tight truncate flex-1 pr-1">{student.nombreTutor || 'No registrado'}</p>
+                  <p className="text-[6.5px] font-black text-slate-900 leading-tight flex-shrink-0">Tel: {student.telefonoTutor || 'N/A'}</p>
                 </div>
               </div>
             </div>
 
-            {/* Footer (QR) */}
-            <div className="p-1 border-t border-slate-200 bg-slate-50 flex flex-col items-center justify-center z-10 h-14">
-              <div className="bg-white p-0.5 rounded border shadow-sm">
+            {/* Footer: QR y Firma */}
+            <div className="px-1.5 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[17mm] bg-slate-50/50">
+              {/* Código QR para Escáner */}
+              <div className="flex-shrink-0 bg-white p-[1px] rounded border shadow-sm self-center">
                 <QRCodeSVG 
                   value={JSON.stringify({ m: student.matricula, id: student.id, c: "25-26" })} 
                   size={32} 
                   level="M"
+                  includeMargin={false}
                 />
               </div>
-              <p className="text-[4px] font-bold text-slate-400 mt-0.5 uppercase text-center tracking-widest">Válida Ciclo 25-26</p>
+
+              {/* Firma Director */}
+              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[2px] pl-1 relative">
+                {/* Imagen Firma Ficticia/Digitalizada */}
+                <div className="absolute bottom-[6px] w-full flex justify-center opacity-70">
+                  <span className="font-['Brush_Script_MT',cursive,serif] text-[18px] text-blue-900 leading-none" style={{ transform: 'rotate(-4deg)' }}>
+                    F. Director
+                  </span>
+                </div>
+                <div className="w-[18mm] border-b-[0.5px] border-slate-400 mb-[2px] z-10"></div>
+                <p className="text-[4px] font-bold text-slate-500 uppercase text-center leading-tight">Firma Autorizada</p>
+                <p className="text-[3.5px] font-bold text-slate-400 uppercase text-center tracking-[0.2em] mt-[1px]">Válida Ciclo 25-26</p>
+              </div>
             </div>
+            
+            {/* Fondo de agua tenue (Logo) */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none z-[-1] overflow-hidden">
+               <img src="/logo.png" alt="" className="w-48 h-48 object-contain scale-150 grayscale" />
+            </div>
+
           </div>
         </React.Fragment>
       ))}
