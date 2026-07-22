@@ -19,21 +19,24 @@ export default function BuzonTutores() {
       setChats(chatsData);
       setLoading(false);
       
-      // Actualizar chat activo si cambia
-      if (activeChat) {
-        const updatedActive = chatsData.find(c => c.id === activeChat.id);
-        if (updatedActive) {
-          setActiveChat(updatedActive);
+      // Actualizar chat activo si cambia, sin crear loop
+      setActiveChat(prevActive => {
+        if (!prevActive) return null;
+        const updatedActive = chatsData.find(c => c.id === prevActive.id);
+        // Sólo actualizar si realmente cambiaron los datos relevantes para no gatillar renders innecesarios
+        if (updatedActive && (updatedActive.unreadAdmin !== prevActive.unreadAdmin || updatedActive.lastMessage !== prevActive.lastMessage || updatedActive.updatedAt?.seconds !== prevActive.updatedAt?.seconds)) {
+          return updatedActive;
         }
-      }
+        return prevActive;
+      });
     });
 
     return () => unsubscribe();
-  }, [activeChat]);
+  }, []);
 
-  // Cargar mensajes del chat activo
+  // Cargar mensajes del chat activo (solo reacciona a cambios de ID)
   useEffect(() => {
-    if (!activeChat) return;
+    if (!activeChat?.id) return;
 
     const msgsRef = collection(db, 'chats', activeChat.id, 'messages');
     const unsubscribe = onSnapshot(msgsRef, (snapshot) => {
@@ -52,12 +55,14 @@ export default function BuzonTutores() {
       console.error("Error fetching messages: ", error);
     });
 
-    // Marcar como leído por admin
-    if (activeChat.unreadAdmin) {
+    return () => unsubscribe();
+  }, [activeChat?.id]);
+
+  // Marcar como leído por admin si llega un mensaje nuevo mientras está abierto
+  useEffect(() => {
+    if (activeChat?.unreadAdmin) {
       updateDoc(doc(db, 'chats', activeChat.id), { unreadAdmin: false }).catch(console.error);
     }
-
-    return () => unsubscribe();
   }, [activeChat]);
 
   const scrollToBottom = () => {
