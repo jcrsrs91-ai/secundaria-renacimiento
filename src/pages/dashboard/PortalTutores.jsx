@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Newspaper, User, BellRing, FileText, CheckCircle2, Clock, LogOut } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Newspaper, User, BellRing, FileText, CheckCircle2, Clock, LogOut, MessageSquare, Send, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const materiasPorGrado = {
   '1er Grado': [
@@ -30,6 +30,67 @@ export default function PortalTutores() {
   const { studentSession, logout } = useAuth();
   const [noticias, setNoticias] = useState([]);
   const [loadingAvisos, setLoadingAvisos] = useState(true);
+  
+  // Chat States
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef(null);
+
+  // Escuchar mensajes del chat
+  useEffect(() => {
+    if (!studentSession) return;
+    
+    const chatRef = doc(db, 'chats', studentSession.id);
+    const msgsQuery = query(collection(chatRef, 'messages'), orderBy('createdAt', 'asc'));
+    
+    const unsubscribe = onSnapshot(msgsQuery, (snapshot) => {
+      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMessages(msgs);
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    });
+
+    return () => unsubscribe();
+  }, [studentSession]);
+
+  // Marcar como leídos cuando abre la pestaña
+  useEffect(() => {
+    if (activeTab === 'mensajes' && studentSession) {
+      updateDoc(doc(db, 'chats', studentSession.id), { unreadTutor: false }).catch(() => {});
+    }
+  }, [activeTab, studentSession]);
+
+  const sendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !studentSession) return;
+
+    const textToSend = newMessage.trim();
+    setNewMessage('');
+
+    try {
+      const chatRef = doc(db, 'chats', studentSession.id);
+      
+      // Update or create chat document
+      await setDoc(chatRef, {
+        studentName: `${studentSession.nombre} ${studentSession.apellidos}`,
+        grado: studentSession.grado || '',
+        lastMessage: textToSend,
+        updatedAt: serverTimestamp(),
+        unreadAdmin: true,
+        unreadTutor: false
+      }, { merge: true });
+
+      // Add message
+      await setDoc(doc(collection(chatRef, 'messages')), {
+        text: textToSend,
+        sender: 'tutor',
+        createdAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error("Error enviando mensaje:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchAvisos = async () => {
@@ -109,6 +170,12 @@ export default function PortalTutores() {
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'expediente' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
             <User className="w-4 h-4 mr-2" /> Mi Expediente / Calificaciones
+          </button>
+          <button
+            onClick={() => setActiveTab('mensajes')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'mensajes' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            <MessageSquare className="w-4 h-4 mr-2" /> Mensajes Directos
           </button>
         </nav>
       </div>
@@ -232,9 +299,75 @@ export default function PortalTutores() {
               </div>
             </div>
             <div className="mt-6 space-y-3">
-              <a href="mailto:controlescolar@est68.edu.mx" className="w-full block text-center py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-sm font-bold hover:bg-blue-100 transition">Enviar Correo a Control Escolar</a>
-              <a href="tel:7444415678" className="w-full block text-center py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-sm font-bold hover:bg-emerald-100 transition">Llamar a Control Escolar (744 441 5678)</a>
+              <button onClick={() => setActiveTab('mensajes')} className="w-full flex items-center justify-center py-2 bg-primary-50 text-primary-600 border border-primary-200 rounded-lg text-sm font-bold hover:bg-primary-100 transition">
+                <MessageSquare className="w-4 h-4 mr-2" /> Chatear con Control Escolar
+              </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chat / Mensajes Directos */}
+      {activeTab === 'mensajes' && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+          <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center mr-3">
+                <User className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-50">Control Escolar</h3>
+                <p className="text-xs text-emerald-400 font-medium">EST N°68</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
+            <div className="text-center">
+              <span className="text-xs bg-slate-200 text-slate-600 px-3 py-1 rounded-full font-medium">Inicio de la conversación</span>
+            </div>
+            {messages.length === 0 ? (
+              <div className="text-center mt-10">
+                <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500 font-medium">Escribe tu primer mensaje</p>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Control Escolar responderá tus dudas por este medio en horario hábil.</p>
+              </div>
+            ) : (
+              messages.map(msg => {
+                const isTutor = msg.sender === 'tutor';
+                return (
+                  <div key={msg.id} className={`flex flex-col ${isTutor ? 'items-end' : 'items-start'}`}>
+                    <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl ${isTutor ? 'bg-primary-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-sm'}`}>
+                      <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-1 flex items-center">
+                      {msg.createdAt && new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {isTutor && <Check className="w-3 h-3 ml-1 text-slate-400" />}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="p-4 bg-white border-t border-slate-200">
+            <form onSubmit={sendMessage} className="flex items-center gap-2">
+              <input 
+                type="text" 
+                value={newMessage}
+                onChange={e => setNewMessage(e.target.value)}
+                placeholder="Escribe tu duda aquí..." 
+                className="flex-1 px-4 py-3 bg-slate-100 border-transparent focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 rounded-xl text-sm transition-all"
+              />
+              <button 
+                type="submit" 
+                disabled={!newMessage.trim()}
+                className="p-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </form>
           </div>
         </div>
       )}

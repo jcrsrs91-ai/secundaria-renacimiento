@@ -11,7 +11,8 @@ import {
   LogOut,
   UsersRound,
   Printer,
-  Megaphone
+  Megaphone,
+  MessageSquare
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -28,6 +29,7 @@ export default function DashboardLayout() {
     { name: 'Biblioteca', path: '/panel/biblioteca', icon: Library },
     { name: 'Impresión Documentos', path: '/panel/impresion-documentos', icon: Printer },
     { name: 'Avisos Escolares', path: '/panel/avisos', icon: Megaphone },
+    { name: 'Buzón de Tutores', path: '/panel/buzon', icon: MessageSquare },
   ] : [
     { name: 'Mi Portal Familiar', path: '/panel/portal-familiar', icon: UsersRound },
   ];

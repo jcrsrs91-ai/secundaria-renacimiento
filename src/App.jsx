@@ -16,6 +16,7 @@ import Biblioteca from './pages/dashboard/Biblioteca';
 import PortalTutores from './pages/dashboard/PortalTutores';
 import ImpresionDocumentos from './pages/dashboard/ImpresionDocumentos';
 import AvisosEscolares from './pages/dashboard/AvisosEscolares';
+import BuzonTutores from './pages/dashboard/BuzonTutores';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="portal-familiar" element={<PortalTutores />} />
           <Route path="impresion-documentos" element={<ImpresionDocumentos />} />
           <Route path="avisos" element={<AvisosEscolares />} />
+          <Route path="buzon" element={<BuzonTutores />} />
         </Route>
       </Route>
     </Routes>
