@@ -17,6 +17,7 @@ import PortalTutores from './pages/dashboard/PortalTutores';
 import ImpresionDocumentos from './pages/dashboard/ImpresionDocumentos';
 import AvisosEscolares from './pages/dashboard/AvisosEscolares';
 import BuzonTutores from './pages/dashboard/BuzonTutores';
+import VerificacionCredencial from './pages/public/VerificacionCredencial';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
       <Route path="/admin" element={<Login />} />
       <Route path="/acceso-padres" element={<TutorLogin />} />
       <Route path="/pre-inscripcion" element={<PreInscripcion />} />
+      <Route path="/verificar/:matricula" element={<VerificacionCredencial />} />
 
       {/* Rutas Privadas / Dashboard */}
       <Route path="/panel" element={<ProtectedRoute />}>

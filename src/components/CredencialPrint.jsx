@@ -133,7 +133,7 @@ export default function CredencialPrint({ students = [] }) {
               {/* Código QR para Escáner */}
               <div className="flex-shrink-0 bg-white p-[1px] rounded border shadow-sm self-center">
                 <QRCodeSVG 
-                  value={JSON.stringify({ m: student.matricula, id: student.id, c: "25-26" })} 
+                  value={`https://web-tec-68.web.app/verificar/${student.matricula}`} 
                   size={42} 
                   level="M"
                   includeMargin={false}
