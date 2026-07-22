@@ -35,11 +35,21 @@ export default function BuzonTutores() {
   useEffect(() => {
     if (!activeChat) return;
 
-    const q = query(collection(db, `chats/${activeChat.id}/messages`), orderBy('createdAt', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const msgsRef = collection(db, 'chats', activeChat.id, 'messages');
+    const unsubscribe = onSnapshot(msgsRef, (snapshot) => {
+      let msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Sort in JS to avoid index or null serverTimestamp issues
+      msgs.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeA - timeB;
+      });
+
       setMessages(msgs);
       scrollToBottom();
+    }, (error) => {
+      console.error("Error fetching messages: ", error);
     });
 
     // Marcar como leído por admin
@@ -65,7 +75,7 @@ export default function BuzonTutores() {
 
     try {
       // 1. Guardar mensaje en subcolección
-      const msgRef = doc(collection(db, `chats/${activeChat.id}/messages`));
+      const msgRef = doc(collection(db, 'chats', activeChat.id, 'messages'));
       await setDoc(msgRef, {
         text: textToSend,
         sender: 'admin',
@@ -177,7 +187,7 @@ export default function BuzonTutores() {
                         <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
                       </div>
                       <span className="text-[10px] text-slate-400 mt-1 flex items-center">
-                        {msg.createdAt && new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {msg.createdAt?.seconds && new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         {isAdmin && <Check className="w-3 h-3 ml-1" />}
                       </span>
                     </div>

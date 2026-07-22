@@ -41,10 +41,18 @@ export default function PortalTutores() {
     if (!studentSession) return;
     
     const chatRef = doc(db, 'chats', studentSession.id);
-    const msgsQuery = query(collection(chatRef, 'messages'), orderBy('createdAt', 'asc'));
+    const msgsRef = collection(chatRef, 'messages');
     
-    const unsubscribe = onSnapshot(msgsQuery, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const unsubscribe = onSnapshot(msgsRef, (snapshot) => {
+      let msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Sort in JS to avoid index or null serverTimestamp issues
+      msgs.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeA - timeB;
+      });
+
       setMessages(msgs);
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -342,7 +350,7 @@ export default function PortalTutores() {
                       <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
                     </div>
                     <span className="text-[10px] text-slate-400 mt-1 flex items-center">
-                      {msg.createdAt && new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {msg.createdAt?.seconds && new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       {isTutor && <Check className="w-3 h-3 ml-1 text-slate-400" />}
                     </span>
                   </div>
