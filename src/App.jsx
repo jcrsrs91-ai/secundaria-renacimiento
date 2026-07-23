@@ -17,6 +17,7 @@ import PortalTutores from './pages/dashboard/PortalTutores';
 import ImpresionDocumentos from './pages/dashboard/ImpresionDocumentos';
 import AvisosEscolares from './pages/dashboard/AvisosEscolares';
 import BuzonTutores from './pages/dashboard/BuzonTutores';
+import GenerarCredenciales from './pages/dashboard/GenerarCredenciales';
 import VerificacionCredencial from './pages/public/VerificacionCredencial';
 
 function App() {
@@ -35,10 +36,11 @@ function App() {
         <Route element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="control-escolar" element={<ControlEscolar />} />
+          <Route path="asistencia" element={<Asistencia />} />
+          <Route path="credenciales" element={<GenerarCredenciales />} />
           <Route path="contraloria" element={<Contraloria />} />
           <Route path="trabajo-social" element={<TrabajoSocial />} />
           <Route path="coordinacion" element={<Coordinacion />} />
-          <Route path="asistencia" element={<Asistencia />} />
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="portal-familiar" element={<PortalTutores />} />
           <Route path="impresion-documentos" element={<ImpresionDocumentos />} />

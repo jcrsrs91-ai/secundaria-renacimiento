@@ -1,163 +1,235 @@
-import { useState, useEffect } from 'react';
-import { Scan, CheckCircle, XCircle, Clock, MessageCircle, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebase';
-import { doc, getDoc, collection, addDoc, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { ScanFace, LogIn, LogOut, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-export default function EscanerAccesos() {
-  const [scanResult, setScanResult] = useState({ status: 'idle', student: null, msg: '', type: '' });
-  const [buffer, setBuffer] = useState('');
-  
-  // Capturar el input del escáner USB (teclado rápido)
+export default function Asistencia() {
+  const [modo, setModo] = useState('ENTRADA'); // 'ENTRADA' o 'SALIDA'
+  const [inputValue, setInputValue] = useState('');
+  const [ultimosRegistros, setUltimosRegistros] = useState([]);
+  const [procesando, setProcesando] = useState(false);
+  const inputRef = useRef(null);
+
+  // Mantener el foco en el input oculto para el escáner
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Ignorar si el usuario está escribiendo en algún input real (por si acaso)
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-      if (e.key === 'Enter') {
-        if (buffer.trim() !== '') {
-          processQR(buffer.trim());
-          setBuffer('');
-        }
-      } else if (e.key.length === 1) {
-        setBuffer(prev => prev + e.key);
+    const focusInterval = setInterval(() => {
+      if (inputRef.current && document.activeElement !== inputRef.current) {
+        inputRef.current.focus();
       }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [buffer]);
+    }, 1000);
+    return () => clearInterval(focusInterval);
+  }, []);
 
-  const processQR = async (qrString) => {
+  // Seleccionar modo por defecto según la hora
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 12) setModo('SALIDA');
+  }, []);
+
+  const reproducirSonido = (tipo) => {
     try {
-      setScanResult({ status: 'loading', student: null, msg: 'Consultando base de datos...', type: '' });
-      let data;
-      try {
-        data = JSON.parse(qrString);
-      } catch(e) {
-        throw new Error("Código no pertenece a esta escuela.");
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      if (tipo === 'exito') {
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // Beep agudo
+        oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.3);
+      } else {
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(300, audioCtx.currentTime); // Bop grave (error)
+        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.4);
       }
-      
-      if (!data.id || !data.c) throw new Error("Formato de credencial inválido.");
-      if (data.c !== "25-26") throw new Error("¡Credencial de un ciclo caducado! Debe renovar.");
-
-      const studentRef = doc(db, 'students', data.id);
-      const studentSnap = await getDoc(studentRef);
-
-      if (!studentSnap.exists()) throw new Error("Alumno no encontrado en la base de datos.");
-      
-      const student = { id: studentSnap.id, ...studentSnap.data() };
-      if (student.status !== 'Activo') throw new Error("Alumno dado de baja o inactivo.");
-
-      // Determinar si es Entrada o Salida
-      const hoy = new Date();
-      hoy.setHours(0,0,0,0);
-      
-      const asistenciasRef = collection(db, 'asistencias');
-      const q = query(asistenciasRef, where('studentId', '==', student.id), where('timestamp', '>=', hoy), orderBy('timestamp', 'desc'), limit(1));
-      const asisSnap = await getDocs(q);
-      
-      let tipoRegistro = 'Entrada';
-      if (!asisSnap.empty) {
-        const lastAsis = asisSnap.docs[0].data();
-        if (lastAsis.type === 'Entrada') tipoRegistro = 'Salida';
-        if (lastAsis.type === 'Salida') throw new Error("El alumno ya registró su salida oficial hoy.");
-      }
-
-      await addDoc(asistenciasRef, {
-        studentId: student.id,
-        timestamp: new Date(),
-        type: tipoRegistro
-      });
-
-      setScanResult({ status: 'success', student, msg: 'Acceso Registrado Exitosamente', type: tipoRegistro });
-      
-      // Auto-limpiar despues de 6 segundos
-      setTimeout(() => {
-        setScanResult(prev => prev.status === 'success' ? { status: 'idle', student: null, msg: '', type: '' } : prev);
-      }, 6000);
-
-    } catch (err) {
-      console.error(err);
-      setScanResult({ status: 'error', student: null, msg: err.message, type: '' });
-      setTimeout(() => setScanResult(prev => prev.status === 'error' ? { status: 'idle', student: null, msg: '', type: '' } : prev), 4000);
+    } catch (e) {
+      console.log("Audio no soportado");
     }
   };
 
-  const getWhatsAppLink = () => {
-    if (!scanResult.student || !scanResult.student.telefono) return '#';
-    const tel = scanResult.student.telefono.replace(/\D/g,'');
-    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    const msg = `*Aviso Escolar - EST N°68:* El alumno ${scanResult.student.nombres} ${scanResult.student.apellidoPaterno} acaba de registrar su *${scanResult.type}* a la escuela a las ${time}.`;
-    return `https://wa.me/52${tel}?text=${encodeURIComponent(msg)}`;
+  const procesarEscaneo = async (codigoLeido) => {
+    if (procesando || !codigoLeido) return;
+    setProcesando(true);
+    
+    // Extraer la matrícula del URL escaneado.
+    // Ejemplo de escaneo: https://web-tec-68.web.app/verificar/12345678
+    let matriculaEscaneada = codigoLeido.trim();
+    if (matriculaEscaneada.includes('/verificar/')) {
+      matriculaEscaneada = matriculaEscaneada.split('/verificar/')[1];
+    }
+
+    if (!matriculaEscaneada) {
+      toast.error("Código no válido");
+      reproducirSonido('error');
+      setInputValue('');
+      setProcesando(false);
+      return;
+    }
+
+    try {
+      // 1. Buscar al alumno en Firebase
+      const q = query(collection(db, 'students'), where('matricula', '==', matriculaEscaneada));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        toast.error(`Matrícula no encontrada: ${matriculaEscaneada}`);
+        reproducirSonido('error');
+        setInputValue('');
+        setProcesando(false);
+        return;
+      }
+
+      const alumnoData = snapshot.docs[0].data();
+      const nombreCompleto = `${alumnoData.nombres} ${alumnoData.apellidoPaterno} ${alumnoData.apellidoMaterno}`;
+
+      // 2. Registrar la asistencia
+      const asistenciaData = {
+        matricula: matriculaEscaneada,
+        nombre: nombreCompleto,
+        grado: alumnoData.grado,
+        grupo: alumnoData.grupo,
+        turno: alumnoData.turno,
+        tipo: modo,
+        timestamp: serverTimestamp(),
+        // Guardamos el chat_id si existe, para facilidad del bot local después
+        telegramChatId: alumnoData.telegramChatId || null 
+      };
+
+      await addDoc(collection(db, 'asistencias'), asistenciaData);
+
+      // 3. Éxito visual y sonoro
+      reproducirSonido('exito');
+      
+      // Añadir a la lista de registros recientes (en memoria)
+      setUltimosRegistros(prev => [
+        { id: Date.now(), ...asistenciaData, hora: new Date().toLocaleTimeString() },
+        ...prev
+      ].slice(0, 10)); // Mostrar solo los últimos 10
+
+    } catch (error) {
+      console.error("Error al registrar:", error);
+      toast.error("Error de conexión al registrar asistencia");
+      reproducirSonido('error');
+    }
+
+    // Limpiar para el siguiente escaneo
+    setInputValue('');
+    setProcesando(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      procesarEscaneo(inputValue);
+    }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[85vh] p-4">
-       
-       {scanResult.status === 'idle' && (
-         <div className="text-center animate-pulse">
-            <div className="w-32 h-32 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-               <Scan className="w-16 h-16 text-slate-400" />
-            </div>
-            <h2 className="text-3xl font-black text-slate-800 tracking-tight">Escáner de Accesos Activo</h2>
-            <p className="text-slate-500 mt-2 text-lg font-medium">Pase la credencial por el lector óptico USB.</p>
-         </div>
-       )}
+    <div className="p-6 max-w-6xl mx-auto min-h-[85vh] flex flex-col items-center">
+      
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-black text-slate-800 flex items-center justify-center gap-3">
+          <ScanFace className="h-10 w-10 text-emerald-600" />
+          Terminal de Control de Acceso
+        </h1>
+        <p className="text-slate-500 mt-2 font-medium">Escanea el Código QR de la credencial del alumno para registrar su {modo.toLowerCase()}.</p>
+      </div>
 
-       {scanResult.status === 'loading' && (
-         <div className="text-center">
-            <div className="w-32 h-32 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-6"></div>
-            <h2 className="text-2xl font-bold text-slate-800">{scanResult.msg}</h2>
-         </div>
-       )}
+      {/* Selectores de Modo */}
+      <div className="flex bg-slate-200 p-1.5 rounded-2xl mb-8 shadow-inner w-full max-w-md">
+        <button 
+          onClick={() => setModo('ENTRADA')}
+          className={`flex-1 py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-bold text-lg transition-all ${modo === 'ENTRADA' ? 'bg-white text-emerald-600 shadow-md transform scale-[1.02]' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          <LogIn className="h-6 w-6" /> ENTRADA
+        </button>
+        <button 
+          onClick={() => setModo('SALIDA')}
+          className={`flex-1 py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-bold text-lg transition-all ${modo === 'SALIDA' ? 'bg-white text-rose-600 shadow-md transform scale-[1.02]' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          <LogOut className="h-6 w-6" /> SALIDA
+        </button>
+      </div>
 
-       {scanResult.status === 'error' && (
-         <div className="text-center bg-rose-50 p-12 rounded-3xl border-2 border-rose-200 shadow-xl w-full max-w-2xl transform transition-all scale-100 animate-in zoom-in-95">
-            <XCircle className="w-24 h-24 text-rose-500 mx-auto mb-6 drop-shadow-md" />
-            <h2 className="text-4xl font-black text-rose-700 tracking-tight uppercase">Acceso Denegado</h2>
-            <p className="text-rose-600 mt-4 text-xl font-medium">{scanResult.msg}</p>
-         </div>
-       )}
+      {/* Input Oculto / Foco del Escáner */}
+      <div className="relative w-full max-w-md mb-12">
+        <div className={`absolute inset-0 bg-${modo === 'ENTRADA' ? 'emerald' : 'rose'}-500 blur-2xl opacity-20 rounded-full animate-pulse`}></div>
+        <input 
+          ref={inputRef}
+          type="text" 
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          autoFocus
+          placeholder="Esperando escáner..."
+          className={`relative w-full text-center bg-white border-4 ${modo === 'ENTRADA' ? 'border-emerald-400 focus:border-emerald-500 text-emerald-700' : 'border-rose-400 focus:border-rose-500 text-rose-700'} rounded-3xl py-6 text-2xl font-bold shadow-xl outline-none placeholder:text-slate-300 transition-all`}
+          disabled={procesando}
+        />
+        {procesando && (
+          <div className="absolute right-6 top-1/2 -translate-y-1/2">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-4 border-slate-800"></div>
+          </div>
+        )}
+      </div>
 
-       {scanResult.status === 'success' && scanResult.student && (
-         <div className="bg-emerald-50 rounded-3xl border-2 border-emerald-400 shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col md:flex-row transform transition-all scale-100 animate-in zoom-in-95">
-            <div className="w-full md:w-1/3 bg-emerald-600 p-8 flex flex-col items-center justify-center text-white relative">
-                <CheckCircle className="w-20 h-20 mb-4 drop-shadow-lg" />
-                <h2 className="text-3xl font-black tracking-tight uppercase">{scanResult.type}</h2>
-                <div className="flex items-center mt-2 opacity-90 font-medium">
-                  <Clock className="w-5 h-5 mr-1" /> {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+      {/* Historial Reciente */}
+      <div className="w-full bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden flex-1">
+        <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+          <Clock className="h-5 w-5 text-slate-400" />
+          <h2 className="text-lg font-bold text-slate-700">Registros Recientes</h2>
+        </div>
+        
+        {ultimosRegistros.length === 0 ? (
+          <div className="p-12 text-center text-slate-400 font-medium flex flex-col items-center gap-3">
+            <ScanFace className="h-12 w-12 opacity-20" />
+            No hay registros en esta sesión. Comienza a escanear credenciales.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-50">
+            {ultimosRegistros.map((registro, idx) => (
+              <div key={registro.id} className="p-4 px-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className={`h-12 w-12 rounded-full flex items-center justify-center shadow-sm ${registro.tipo === 'ENTRADA' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                    {registro.tipo === 'ENTRADA' ? <LogIn className="h-6 w-6" /> : <LogOut className="h-6 w-6" />}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-lg">{registro.nombre}</h3>
+                    <div className="flex gap-3 text-sm text-slate-500 font-medium">
+                      <span>MAT: {registro.matricula}</span>
+                      <span>•</span>
+                      <span>{registro.grado?.substring(0,1)}° "{registro.grupo}"</span>
+                      <span>•</span>
+                      <span className="uppercase">{registro.turno?.substring(0,4)}</span>
+                    </div>
+                  </div>
                 </div>
-            </div>
-            <div className="w-full md:w-2/3 p-8 bg-white flex flex-col justify-center relative">
-                {scanResult.student.fotoUrl && (
-                  <img src={scanResult.student.fotoUrl} alt="Foto" className="absolute top-8 right-8 w-24 h-24 rounded-lg object-cover shadow-md border-2 border-slate-100" />
-                )}
-                <p className="text-sm font-bold text-emerald-600 uppercase tracking-widest mb-1">Acceso Autorizado</p>
-                <h3 className="text-3xl font-black text-slate-800 uppercase leading-tight w-3/4 mb-1">
-                  {scanResult.student.nombres} <br/>
-                  {scanResult.student.apellidoPaterno} {scanResult.student.apellidoMaterno}
-                </h3>
-                <div className="mt-4 flex gap-4 text-slate-600 font-medium">
-                   <span className="bg-slate-100 px-3 py-1 rounded-full text-sm">{scanResult.student.grado}</span>
-                   <span className="bg-slate-100 px-3 py-1 rounded-full text-sm">Grupo "{scanResult.student.grupo}"</span>
+                <div className="flex items-center gap-3">
+                  {registro.telegramChatId ? (
+                    <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold flex items-center gap-1 border border-blue-100">
+                      Telegram ✔
+                    </span>
+                  ) : null}
+                  <div className="text-right">
+                    <p className={`font-black text-xl ${registro.tipo === 'ENTRADA' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {registro.hora}
+                    </p>
+                  </div>
                 </div>
-                
-                {/* Whatsapp action */}
-                <div className="mt-8 pt-6 border-t border-slate-100">
-                  <p className="text-xs text-slate-400 font-medium mb-3">SISTEMA DE NOTIFICACIONES</p>
-                  <a href={getWhatsAppLink()} target="_blank" rel="noreferrer" className="inline-flex items-center px-5 py-2.5 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 shadow-md transition-colors">
-                     <MessageCircle className="w-5 h-5 mr-2" /> Enviar Aviso a Tutor por WhatsApp Web
-                  </a>
-                </div>
-            </div>
-         </div>
-       )}
-       
-       <div className="fixed bottom-4 left-0 right-0 text-center pointer-events-none">
-          <p className="text-xs font-medium text-slate-400 bg-white/80 inline-block px-3 py-1 rounded-full shadow-sm">
-             Escuchando puerto USB del Escáner. No es necesario hacer clic en nada.
-          </p>
-       </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
