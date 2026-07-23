@@ -1,5 +1,5 @@
 require('dotenv').config();
-const TelegramBot = require('node-telegram-bot-api');
+const TelegramBot = require('node-telegram-bot-api').default || require('node-telegram-bot-api');
 const cron = require('node-cron');
 const { initializeApp } = require('firebase/app');
 const { 

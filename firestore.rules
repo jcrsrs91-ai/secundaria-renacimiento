@@ -4,6 +4,9 @@ service cloud.firestore {
     match /students/{document=**} {
       allow read, write: if true;
     }
+    match /asistencias/{document=**} {
+      allow read, write: if true;
+    }
     match /chats/{document=**} {
       allow read, write: if true;
     }

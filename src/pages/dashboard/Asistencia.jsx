@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebase';
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
-import { ScanFace, LogIn, LogOut, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { ScanFace, LogIn, LogOut, Clock, BarChart3, QrCode } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ReportesAsistencia from '../../components/ReportesAsistencia';
 
 export default function Asistencia() {
+  const [activeTab, setActiveTab] = useState('ESCANER'); // 'ESCANER' o 'REPORTES'
   const [modo, setModo] = useState('ENTRADA'); // 'ENTRADA' o 'SALIDA'
   const [inputValue, setInputValue] = useState('');
   const [ultimosRegistros, setUltimosRegistros] = useState([]);
@@ -14,12 +16,12 @@ export default function Asistencia() {
   // Mantener el foco en el input oculto para el escáner
   useEffect(() => {
     const focusInterval = setInterval(() => {
-      if (inputRef.current && document.activeElement !== inputRef.current) {
+      if (activeTab === 'ESCANER' && inputRef.current && document.activeElement !== inputRef.current) {
         inputRef.current.focus();
       }
     }, 1000);
     return () => clearInterval(focusInterval);
-  }, []);
+  }, [activeTab]);
 
   // Seleccionar modo por defecto según la hora
   useEffect(() => {
@@ -136,13 +138,32 @@ export default function Asistencia() {
   return (
     <div className="p-6 max-w-6xl mx-auto min-h-[85vh] flex flex-col items-center">
       
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-black text-slate-800 flex items-center justify-center gap-3">
-          <ScanFace className="h-10 w-10 text-emerald-600" />
-          Terminal de Control de Acceso
-        </h1>
-        <p className="text-slate-500 mt-2 font-medium">Escanea el Código QR de la credencial del alumno para registrar su {modo.toLowerCase()}.</p>
+      <div className="w-full flex justify-center mb-8 print:hidden">
+        <div className="bg-slate-200 p-1.5 rounded-2xl flex gap-2 w-full max-w-sm">
+          <button 
+            onClick={() => setActiveTab('ESCANER')}
+            className={`flex-1 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${activeTab === 'ESCANER' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            <QrCode className="w-5 h-5" /> Escáner
+          </button>
+          <button 
+            onClick={() => setActiveTab('REPORTES')}
+            className={`flex-1 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${activeTab === 'REPORTES' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            <BarChart3 className="w-5 h-5" /> Reportes
+          </button>
+        </div>
       </div>
+
+      {activeTab === 'ESCANER' ? (
+        <div className="w-full flex flex-col items-center">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-black text-slate-800 flex items-center justify-center gap-3">
+              <ScanFace className="h-10 w-10 text-emerald-600" />
+              Terminal de Control de Acceso
+            </h1>
+            <p className="text-slate-500 mt-2 font-medium">Escanea el Código QR de la credencial del alumno para registrar su {modo.toLowerCase()}.</p>
+          </div>
 
       {/* Selectores de Modo */}
       <div className="flex bg-slate-200 p-1.5 rounded-2xl mb-8 shadow-inner w-full max-w-md">
@@ -229,7 +250,12 @@ export default function Asistencia() {
           </div>
         )}
       </div>
-
+      </div>
+      ) : (
+        <div className="w-full">
+          <ReportesAsistencia />
+        </div>
+      )}
     </div>
   );
 }
