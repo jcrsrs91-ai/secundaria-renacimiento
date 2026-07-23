@@ -10,6 +10,13 @@ export default function VerificacionCredencial() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const getSchoolCycle = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-indexed, 7 is August
+    return month >= 7 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+  };
+
   useEffect(() => {
     const fetchStudent = async () => {
       try {
@@ -98,9 +105,14 @@ export default function VerificacionCredencial() {
                {student.nombres} <br/> {student.apellidoPaterno} {student.apellidoMaterno}
              </h1>
              
-             <p className="text-slate-500 font-medium tracking-widest text-sm mb-4">
+             <p className="text-slate-500 font-medium tracking-widest text-sm mb-1">
                MATRÍCULA: {student.matricula}
              </p>
+             <div className="bg-slate-800 rounded px-2 py-0.5 mb-4">
+                <p className="text-[10px] font-black text-white uppercase tracking-widest">
+                  VIGENCIA: {getSchoolCycle()}
+                </p>
+             </div>
              
              <div className="grid grid-cols-2 gap-3 w-full mb-6">
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col items-center">

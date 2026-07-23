@@ -12,6 +12,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "firebase": "^12.14.0",
+    "jimp": "^1.6.1",
     "lucide-react": "^1.17.0",
     "papaparse": "^5.5.3",
     "pdfjs-dist": "^6.0.227",
@@ -20,7 +21,8 @@
     "react-dom": "^19.2.6",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.16.0",
-    "recharts": "^3.9.0"
+    "recharts": "^3.9.0",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

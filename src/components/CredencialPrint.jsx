@@ -18,6 +18,13 @@ export default function CredencialPrint({ students = [] }) {
     return 'text-slate-800';
   };
 
+  const getSchoolCycle = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-indexed, 7 is August
+    return month >= 7 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+  };
+
   return (
     <div className="print-only">
       <style>{`
@@ -90,6 +97,11 @@ export default function CredencialPrint({ students = [] }) {
                   <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
                     CURP: {student.curp || 'NO REGISTRADA'}
                   </p>
+                  <div className="mt-1.5 inline-block bg-slate-800 rounded px-1 py-0.5 self-start">
+                    <p className="text-[5.5px] font-black text-white uppercase tracking-widest leading-none">
+                      VIGENCIA: {getSchoolCycle()}
+                    </p>
+                  </div>
                 </div>
               </div>
 
