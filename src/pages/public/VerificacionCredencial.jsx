@@ -139,9 +139,9 @@ export default function VerificacionCredencial() {
                    <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-bold text-red-800 uppercase">Avisar en emergencia a:</span>
                       <span className="font-semibold text-slate-800 text-sm leading-tight">{student.tutorNombre || student.tutor || student.nombreTutor || 'No Registrado'}</span>
-                      <a href={`tel:${student.telefono || student.celularTutor || student.telefonoTutor}`} className="flex items-center gap-1.5 mt-1 text-slate-600 font-medium text-sm">
+                      <a href={`tel:${student.telefono || student.celularTutor || student.telefonoTutor || student.emergenciaTel1}`} className="flex items-center gap-1.5 mt-1 text-slate-600 font-medium text-sm">
                         <Phone className="h-3.5 w-3.5 text-slate-400" /> 
-                        {student.telefono || student.celularTutor || student.telefonoTutor || 'N/A'}
+                        {student.telefono || student.celularTutor || student.telefonoTutor || student.emergenciaTel1 || 'N/A'}
                       </a>
                    </div>
                 </div>
