@@ -138,10 +138,10 @@ export default function VerificacionCredencial() {
                    </div>
                    <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-bold text-red-800 uppercase">Avisar en emergencia a:</span>
-                      <span className="font-semibold text-slate-800 text-sm leading-tight">{student.nombreTutor || 'No Registrado'}</span>
-                      <a href={`tel:${student.telefonoTutor}`} className="flex items-center gap-1.5 mt-1 text-slate-600 font-medium text-sm">
+                      <span className="font-semibold text-slate-800 text-sm leading-tight">{student.tutorNombre || 'No Registrado'}</span>
+                      <a href={`tel:${student.telefono}`} className="flex items-center gap-1.5 mt-1 text-slate-600 font-medium text-sm">
                         <Phone className="h-3.5 w-3.5 text-slate-400" /> 
-                        {student.telefonoTutor || 'N/A'}
+                        {student.telefono || 'N/A'}
                       </a>
                    </div>
                 </div>
