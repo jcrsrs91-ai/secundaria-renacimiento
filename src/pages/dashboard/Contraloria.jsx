@@ -121,10 +121,60 @@ const getIconForArticulo = (nombre) => {
 export default function Contraloria() {
   const [activeTab, setActiveTab] = useState('pagos');
 
-  const pagosRecientes = [
-    { folio: 'P-001', alumno: 'Álvarez Gómez Ana', concepto: 'Reposición de Credencial', monto: '$50.00', fecha: '04/06/2026', estado: 'Pagado' },
-    { folio: 'P-002', alumno: 'Ruiz Díaz Luis', concepto: 'Constancia de Estudios', monto: '$30.00', fecha: '04/06/2026', estado: 'Pagado' },
-  ];
+  
+  const [pagosRecientes, setPagosRecientes] = useState([]);
+
+  useEffect(() => {
+    const q = query(collection(db, 'students'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const items = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        // Generar un folio falso si no tiene
+        const folio = `P-${docSnap.id.substring(0, 4).toUpperCase()}`;
+        const alumno = `${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''} ${data.nombres || ''}`.trim();
+        const esNuevo = data.grado === '1er Grado' || data.grado === '1ero' || data.tipoTramite === 'Nuevo Ingreso';
+        const concepto = esNuevo ? 'Credencial Escolar y Paquete de Folders' : 'Renovación de Credencial Escolar';
+        const montoNum = esNuevo ? 130 : 100;
+        const monto = `$${montoNum}.00`;
+        
+        let fecha = 'Pendiente';
+        if (data.pagoFecha) {
+          const dateObj = data.pagoFecha.toDate ? data.pagoFecha.toDate() : new Date();
+          fecha = dateObj.toLocaleDateString();
+        }
+
+        items.push({
+          id: docSnap.id,
+          folio,
+          alumno,
+          concepto,
+          monto,
+          montoNum,
+          fecha,
+          estado: data.pagoInscripcion ? 'Pagado' : 'Pendiente'
+        });
+      });
+      // Sort by date or id
+      setPagosRecientes(items.reverse());
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const registrarCobro = async (studentId) => {
+    try {
+      const docRef = doc(db, 'students', studentId);
+      await updateDoc(docRef, { 
+        pagoInscripcion: true, 
+        pagoFecha: serverTimestamp() 
+      });
+      toast.success("Pago de inscripción registrado exitosamente");
+    } catch (e) {
+      console.error(e);
+      toast.error("Error al registrar el pago");
+    }
+  };
+
 
   const [inventario, setInventario] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]); // Array de IDs seleccionados
@@ -1361,19 +1411,32 @@ export default function Contraloria() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estatus</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
-              {pagosRecientes.map(p => (
-                <tr key={p.folio}>
-                  <td className="px-6 py-4 text-sm font-medium text-slate-900">{p.folio}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{p.alumno}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{p.concepto}</td>
-                  <td className="px-6 py-4 text-sm font-semibold text-slate-800">{p.monto}</td>
-                  <td className="px-6 py-4 text-sm text-emerald-600 flex items-center">
-                    <CheckCircle2 className="w-4 h-4 mr-1" /> {p.estado}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+            
+              <tbody className="divide-y divide-slate-200">
+                {pagosRecientes.map(p => (
+                  <tr key={p.id}>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{p.folio}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{p.alumno}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{p.concepto}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-800">{p.monto}</td>
+                    <td className="px-6 py-4 text-sm">
+                      {p.estado === 'Pagado' ? (
+                        <span className="text-emerald-600 flex items-center font-bold">
+                          <CheckCircle2 className="w-4 h-4 mr-1" /> Pagado el {p.fecha}
+                        </span>
+                      ) : (
+                        <button 
+                          onClick={() => registrarCobro(p.id)}
+                          className="px-3 py-1 bg-primary-600 text-white rounded-md text-xs font-bold hover:bg-primary-700 shadow-sm"
+                        >
+                          Registrar Cobro
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+
           </table>
         </div>
       )}
@@ -1399,22 +1462,32 @@ export default function Contraloria() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Fecha</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {gastos.length === 0 ? (
-                    <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">No hay gastos registrados.</td></tr>
-                  ) : (
-                    gastos.map(g => (
-                      <tr key={g.id}>
-                        <td className="px-6 py-4 text-sm font-medium text-slate-900">{g.folio}</td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{g.concepto}</td>
-                        <td className="px-6 py-4 text-sm font-bold text-rose-600">${(Number(g.monto)||0).toFixed(2)}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{g.responsable}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600 uppercase">{g.turno}</td>
-                        <td className="px-6 py-4 text-sm text-slate-500">{new Date(g.fechaRegistro).toLocaleDateString()}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
+                
+              <tbody className="divide-y divide-slate-200">
+                {pagosRecientes.map(p => (
+                  <tr key={p.id}>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{p.folio}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{p.alumno}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{p.concepto}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-800">{p.monto}</td>
+                    <td className="px-6 py-4 text-sm">
+                      {p.estado === 'Pagado' ? (
+                        <span className="text-emerald-600 flex items-center font-bold">
+                          <CheckCircle2 className="w-4 h-4 mr-1" /> Pagado el {p.fecha}
+                        </span>
+                      ) : (
+                        <button 
+                          onClick={() => registrarCobro(p.id)}
+                          className="px-3 py-1 bg-primary-600 text-white rounded-md text-xs font-bold hover:bg-primary-700 shadow-sm"
+                        >
+                          Registrar Cobro
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+
               </table>
             </div>
           </div>
@@ -1430,7 +1503,7 @@ export default function Contraloria() {
                 <div>
                   <p className="text-sm text-slate-500 font-medium">Total Ingresos</p>
                   <p className="text-2xl font-bold text-slate-800">
-                    ${pagosRecientes.reduce((acc, p) => acc + (Number(p.monto) || 0), 0).toFixed(2)}
+                    ${pagosRecientes.reduce((acc, p) => acc + (Number(p.montoNum) || 0), 0).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -1452,7 +1525,7 @@ export default function Contraloria() {
                 <div>
                   <p className="text-sm text-slate-500 font-medium">Saldo en Caja</p>
                   <p className="text-2xl font-bold text-slate-800">
-                    ${(pagosRecientes.reduce((acc, p) => acc + (Number(p.monto) || 0), 0) - gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0)).toFixed(2)}
+                    ${(pagosRecientes.reduce((acc, p) => acc + (Number(p.montoNum) || 0), 0) - gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0)).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -1465,7 +1538,7 @@ export default function Contraloria() {
                 </h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[{ name: 'Total Histórico', Ingresos: pagosRecientes.reduce((acc, p) => acc + (Number(p.monto) || 0), 0), Egresos: gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0) }]}>
+                    <BarChart data={[{ name: 'Total Histórico', Ingresos: pagosRecientes.reduce((acc, p) => acc + (Number(p.montoNum) || 0), 0), Egresos: gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0) }]}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
                       <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(value) => `${value}`} />
@@ -1750,51 +1823,32 @@ export default function Contraloria() {
                 <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
-              {filteredInventario.map(item => (
-                <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-indigo-50/50' : ''}>
-                  <td className="px-6 py-4">
-                    <input 
-                      type="checkbox" 
-                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                      checked={selectedItems.includes(item.id)}
-                      onChange={() => toggleSelectItem(item.id)}
-                    />
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-slate-900">{item.codigo}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                        <div className="font-semibold text-slate-800">{item.articulo}</div>
-                        {item.observaciones && <div className="text-[10px] italic text-slate-400 mt-0.5 text-justify leading-tight">{item.observaciones}</div>}
-                      </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                        <div className="text-slate-800">{item.marca || '-'}</div>
-                        {item.modelo && <div className="text-[11px] text-slate-500">{item.modelo}</div>}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 font-mono text-xs">{item.serie || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{item.ubicacion}</td>
-                  <td className="px-6 py-4 text-sm font-semibold text-slate-800">{item.cantidad}</td>
-                  <td className="px-6 py-4 text-sm text-emerald-600 flex items-center">
-                    <CheckCircle2 className="w-4 h-4 mr-1" /> {item.estado}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-right">
-                    <button onClick={() => handleEditClick(item)} className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors mr-1">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleDeleteClick(item.id)} className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors mr-1">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => { setHistoryItem(item); setModalOpen('history'); }} className="text-amber-600 hover:text-amber-800 p-2 hover:bg-amber-50 rounded-lg transition-colors">
-                      <History className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredInventario.length === 0 && (
-                <tr>
-                  <td colSpan="9" className="px-6 py-10 text-center text-slate-500">No hay artículos registrados en el inventario que coincidan con los filtros.</td>
-                </tr>
-              )}
-            </tbody>
+            
+              <tbody className="divide-y divide-slate-200">
+                {pagosRecientes.map(p => (
+                  <tr key={p.id}>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{p.folio}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{p.alumno}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{p.concepto}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-800">{p.monto}</td>
+                    <td className="px-6 py-4 text-sm">
+                      {p.estado === 'Pagado' ? (
+                        <span className="text-emerald-600 flex items-center font-bold">
+                          <CheckCircle2 className="w-4 h-4 mr-1" /> Pagado el {p.fecha}
+                        </span>
+                      ) : (
+                        <button 
+                          onClick={() => registrarCobro(p.id)}
+                          className="px-3 py-1 bg-primary-600 text-white rounded-md text-xs font-bold hover:bg-primary-700 shadow-sm"
+                        >
+                          Registrar Cobro
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+
           </table>
           </div>
 
@@ -1831,75 +1885,32 @@ export default function Contraloria() {
                   <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
                 </tr>
               </thead>
+              
               <tbody className="divide-y divide-slate-200">
-                {resguardos
-                  .filter(res => {
-                    if (!resguardoSearch) return true;
-                    const query = resguardoSearch.toLowerCase();
-                    return (
-                      (res.folio || '').toLowerCase().includes(query) ||
-                      (res.nombreResguardante || '').toLowerCase().includes(query) ||
-                      (res.areaResguardante || '').toLowerCase().includes(query)
-                    );
-                  })
-                  .map(res => {
-                    const totalArticulos = res.articulos ? res.articulos.reduce((sum, a) => sum + (Number(a.cantidad) || 0), 0) : 0;
-                    return (
-                      <tr key={res.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 text-sm font-bold text-red-600">{res.folio || 'S/F'}</td>
-                        <td className="px-6 py-4 text-sm text-slate-500">
-                          {res.fecha ? new Date(res.fecha + 'T00:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
-                        </td>
-                        <td className="px-6 py-4 text-sm font-medium text-slate-900 uppercase">{res.nombreResguardante}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{res.areaResguardante || '-'}</td>
-                        <td className="px-6 py-4 text-sm font-semibold text-slate-700">
-                          {totalArticulos} {totalArticulos === 1 ? 'artículo' : 'artículos'}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-right space-x-2">
-                          <button 
-                            onClick={() => {
-                              setPrintData(res);
-                              setPrintMode('resguardo');
-                              setTimeout(() => window.print(), 500);
-                            }}
-                            className="text-slate-600 hover:text-slate-800 p-2 hover:bg-slate-100 rounded-lg transition-colors inline-flex items-center text-xs font-medium"
-                            title="Reimprimir Carta de Resguardo"
-                          >
-                            <Printer className="w-4 h-4 mr-1" /> Reimprimir
-                          </button>
-                          <button 
-                            onClick={() => handleEditResguardoClick(res)}
-                            className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center text-xs font-medium"
-                            title="Editar Datos del Resguardo"
-                          >
-                            <Edit2 className="w-4 h-4 mr-1" /> Editar
-                          </button>
-                          <button 
-                            onClick={() => handleDuplicateResguardo(res)}
-                            className="text-emerald-600 hover:text-emerald-800 p-2 hover:bg-emerald-50 rounded-lg transition-colors inline-flex items-center text-xs font-medium"
-                            title="Duplicar artículos para una nueva acta"
-                          >
-                            <Plus className="w-4 h-4 mr-1" /> Duplicar
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteResguardoClick(res)}
-                            className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors inline-flex items-center text-xs font-medium"
-                            title="Eliminar Resguardo"
-                          >
-                            <Trash2 className="w-4 h-4 mr-1" /> Eliminar
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                {resguardos.length === 0 && (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-slate-500 bg-slate-50">
-                      No se han emitido Cartas de Resguardo todavía.
+                {pagosRecientes.map(p => (
+                  <tr key={p.id}>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{p.folio}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{p.alumno}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{p.concepto}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-800">{p.monto}</td>
+                    <td className="px-6 py-4 text-sm">
+                      {p.estado === 'Pagado' ? (
+                        <span className="text-emerald-600 flex items-center font-bold">
+                          <CheckCircle2 className="w-4 h-4 mr-1" /> Pagado el {p.fecha}
+                        </span>
+                      ) : (
+                        <button 
+                          onClick={() => registrarCobro(p.id)}
+                          className="px-3 py-1 bg-primary-600 text-white rounded-md text-xs font-bold hover:bg-primary-700 shadow-sm"
+                        >
+                          Registrar Cobro
+                        </button>
+                      )}
                     </td>
                   </tr>
-                )}
+                ))}
               </tbody>
+
             </table>
           </div>
         </div>

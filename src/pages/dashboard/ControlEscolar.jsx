@@ -1106,7 +1106,7 @@ export default function ControlEscolar() {
                       <button onClick={() => openModal('acuse', a)} className="text-rose-600 hover:text-rose-800 font-medium text-sm inline-flex items-center">
                         <FileText className="w-4 h-4 mr-1" /> Acuse Devolver
                       </button>
-                      <button onClick={() => handlePrintSingle(a)} className="text-slate-500 hover:text-slate-800 font-medium text-sm inline-flex items-center">
+                      <button onClick={() => handlePrintSingle(a)} title={!a.pagoInscripcion ? 'Bloqueada por falta de pago' : ''} className={`font-medium text-sm inline-flex items-center ${a.pagoInscripcion ? 'text-slate-500 hover:text-slate-800' : 'text-slate-300 hover:text-slate-400 cursor-not-allowed'}`}>
                         <QrCode className="w-4 h-4 mr-1" /> Credencial
                       </button>
                       <button onClick={() => handleDeleteStudent(a)} className="text-red-500 hover:text-red-700 font-medium text-sm inline-flex items-center">
