@@ -143,12 +143,12 @@ export default function CredencialPrint({ students = [] }) {
             {/* Footer: QR y Firmas */}
             <div className="px-2 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[22mm] bg-slate-50/50 mt-0">
               {/* CÃ³digo QR para EscÃ¡ner */}
-              <div className="flex-shrink-0 bg-white p-[1px] rounded border shadow-sm self-center">
+              <div className="flex-shrink-0 bg-white p-0 rounded border shadow-sm self-center">
                 <QRCodeSVG 
                   value={`https://web-tec-68.web.app/verificar/${student.matricula}`} 
                   size={76} 
-                  level="M"
-                  includeMargin={false} className="w-[20mm] h-[20mm]"
+                  level="L"
+                  includeMargin={true} className="w-[20mm] h-[20mm]"
                 />
               </div>
 
