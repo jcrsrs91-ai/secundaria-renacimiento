@@ -56,7 +56,7 @@ export default function CredencialPrint({ students = [] }) {
           <div className="credencial-page bg-white flex flex-col justify-between overflow-hidden relative border-r border-b border-slate-100 print:border-none">
             
             {/* Header */}
-            <div className={`${getGradeColor(student.grado)} text-white px-1 py-1.5 shadow-md relative z-10 rounded-b flex items-center h-[14mm]`}>
+            <div className={`${getGradeColor(student.grado)} text-white px-1 py-1.5 shadow-md relative z-10 rounded-b flex items-center h-[10mm]`}>
               <img src="/logo-sep.png" alt="SEP" className="h-[11mm] w-[11mm] object-contain mr-1" />
               <div className="flex-1 text-center px-0.5 flex flex-col justify-center">
                 <h1 className="text-[6px] font-extrabold uppercase leading-[1.1] tracking-wide">SecretarÃ­a de EducaciÃ³n PÃºblica</h1>
@@ -71,9 +71,9 @@ export default function CredencialPrint({ students = [] }) {
             <div className="flex-1 flex flex-col w-full relative z-0">
               
               {/* Contenedor Foto + Nombres */}
-              <div className="flex px-1.5 pt-1 pb-0 gap-1.5 items-center">
+              <div className="flex px-1.5 pt-1 pb-0 gap-1 items-center">
                 {/* Foto */}
-                <div className={`w-[21mm] h-[26mm] border-[1.5px] rounded-sm overflow-hidden bg-slate-50 ${getGradeColor(student.grado)} shadow-sm z-10 flex-shrink-0`}>
+                <div className={`w-[19mm] h-[24mm] border-[1.5px] rounded-sm overflow-hidden bg-slate-50 ${getGradeColor(student.grado)} shadow-sm z-10 flex-shrink-0`}>
                   {student.fotoUrl ? (
                     <img src={student.fotoUrl} alt="Foto" className="w-full h-full object-cover" />
                   ) : (
@@ -84,11 +84,11 @@ export default function CredencialPrint({ students = [] }) {
                 </div>
                 
                 {/* Nombres y MatrÃ­cula */}
-                <div className="flex-1 flex flex-col justify-center leading-none mt-1">
-                  <p className={`text-[15px] font-black uppercase leading-[1.0] tracking-tight ${getTextColor(student.grado)}`}>
+                <div className="flex-1 flex flex-col justify-center leading-none mt-0">
+                  <p className={`text-[12.5px] font-black uppercase leading-[1.0] tracking-tight ${getTextColor(student.grado)}`}>
                     {student.apellidoPaterno} <br/> {student.apellidoMaterno}
                   </p>
-                  <p className="text-[13px] font-bold text-slate-700 uppercase leading-tight mt-[1px]">
+                  <p className="text-[11px] font-bold text-slate-700 uppercase leading-tight mt-[1px]">
                     {student.nombres}
                   </p>
                   <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-2">
@@ -98,7 +98,7 @@ export default function CredencialPrint({ students = [] }) {
                     CURP: {student.curp || 'NO REGISTRADA'}
                   </p>
                   <div className="mt-1.5 inline-block bg-slate-800 rounded px-1 py-0.5 self-start">
-                    <p className="text-[7.5px] font-black text-white uppercase tracking-widest leading-none">
+                    <p className="text-[6px] font-black text-white uppercase tracking-widest leading-none">
                       VIGENCIA: {getSchoolCycle()}
                     </p>
                   </div>
@@ -106,16 +106,16 @@ export default function CredencialPrint({ students = [] }) {
               </div>
 
               {/* Datos AcadÃ©micos y Sangre */}
-              <div className="grid grid-cols-3 gap-x-1 px-1 w-full z-10 mt-[2px]">
+              <div className="grid grid-cols-3 gap-x-1 px-1 w-full z-10 mt-0">
                 <div>
                   <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">Grado / Grupo / Turno</p>
-                  <p className="text-[12px] font-black text-slate-900 leading-tight">
+                  <p className="text-[11px] font-black text-slate-900 leading-tight">
                     {student.grado?.substring(0,1)}Â° "{student.grupo || '-'}" <span className="text-[7px] font-bold text-slate-500">{student.turno?.substring(0,4) || 'MATU'}</span>
                   </p>
                 </div>
                 <div>
                   <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">T. Sangre</p>
-                  <p className="text-[12px] font-black text-red-600 leading-tight">{student.tipoSangre || 'No Esp.'}</p>
+                  <p className="text-[11px] font-black text-red-600 leading-tight">{student.tipoSangre || 'No Esp.'}</p>
                 </div>
                 <div>
                   <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">Taller</p>
@@ -124,24 +124,24 @@ export default function CredencialPrint({ students = [] }) {
               </div>
 
               {/* Contacto de Emergencia y Leyenda */}
-              <div className="px-1 mt-[2px] border-t-[0.5px] border-slate-200 pt-[1px] bg-red-50/40">
+              <div className="px-1 mt-0 border-t-[0.5px] border-slate-200 pt-[1px] bg-red-50/40">
                 <p className="text-[6px] font-bold text-red-600 uppercase tracking-widest">En caso de emergencia avisar a:</p>
-                <div className="flex justify-between items-end mt-[1px]">
+                <div className="flex justify-between items-end mt-0">
                   <p className="text-[8px] font-black text-slate-800 leading-tight truncate flex-1 pr-1">{student.tutorNombre || student.tutor || student.nombreTutor || 'No registrado'}</p>
                   <p className="text-[8px] font-black text-slate-900 leading-tight flex-shrink-0">Tel: {student.telefono || student.celularTutor || student.telefonoTutor || 'N/A'}</p>
                 </div>
               </div>
 
               {/* Leyenda Oficial SEP */}
-              <div className="px-1 mt-[1px] text-center">
-                 <p className="text-[7.5px] font-bold text-slate-700 leading-tight text-center px-1">
+              <div className="px-1 mt-0 text-center">
+                 <p className="text-[6px] font-bold text-slate-700 leading-tight text-center px-1">
                    Esta credencial acredita al portador como alumno(a) regular de esta InstituciÃ³n incorporada a la SEP. Es personal e intransferible.
                  </p>
               </div>
             </div>
 
             {/* Footer: QR y Firmas */}
-            <div className="px-2 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[22mm] bg-slate-50/50 mt-[2px]">
+            <div className="px-2 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[22mm] bg-slate-50/50 mt-0">
               {/* CÃ³digo QR para EscÃ¡ner */}
               <div className="flex-shrink-0 bg-white p-[1px] rounded border shadow-sm self-center">
                 <QRCodeSVG 
@@ -155,7 +155,7 @@ export default function CredencialPrint({ students = [] }) {
               {/* Firma Director */}
               <div className="flex-1 flex flex-col items-center justify-end h-full pb-[1px] ml-2">
                 {/* Imagen Firma Real Digitalizada */}
-                <div className="w-full flex justify-center h-[12mm] mb-[1px] relative z-20">
+                <div className="w-full flex justify-center h-[10mm] mb-[1px] relative z-20">
                   <img src="/firma-director.png" alt="Firma" className="h-full w-auto object-contain" />
                 </div>
                 <div className="w-full border-b-[1px] border-slate-800 mb-[1px] z-10"></div>
