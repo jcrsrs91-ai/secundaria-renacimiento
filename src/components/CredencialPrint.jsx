@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
 // TamaÃ±o CR80 (54mm x 85.6mm)
@@ -59,7 +59,7 @@ export default function CredencialPrint({ students = [] }) {
             <div className={`${getGradeColor(student.grado)} text-white px-1 py-0.5 shadow-md relative z-10 rounded-b flex items-center h-[10mm]`}>
               <img src="/logo-sep.png" alt="SEP" className="h-[11mm] w-[11mm] object-contain mr-1" />
               <div className="flex-1 text-center px-0.5 flex flex-col justify-center">
-                <h1 className="text-[6px] font-extrabold uppercase leading-[1.1] tracking-wide">Secretaría de Educación Pública</h1>
+                <h1 className="text-[5px] font-extrabold uppercase leading-[1.1] tracking-wide">Secretaría de Educación Pública</h1>
                 <h2 className="text-[8px] font-black leading-tight mt-0 tracking-tight">Esc. Sec. Téc. N°68</h2>
                 <h3 className="text-[9px] font-black leading-tight mt-0 tracking-[0.2em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
                 <p className="text-[5px] font-semibold tracking-wider mt-0 opacity-90">C.C.T. 12DST0077B</p>
