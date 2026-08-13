@@ -59,8 +59,8 @@ export default function CredencialPrint({ students = [] }) {
             <div className={`${getGradeColor(student.grado)} text-white px-1 py-0.5 shadow-md relative z-10 rounded-b flex items-center h-[10mm]`}>
               <img src="/logo-sep.png" alt="SEP" className="h-[11mm] w-[11mm] object-contain mr-1" />
               <div className="flex-1 text-center px-0.5 flex flex-col justify-center">
-                <h1 className="text-[6px] font-extrabold uppercase leading-[1.1] tracking-wide">SecretarÃ­a de EducaciÃ³n PÃºblica</h1>
-                <h2 className="text-[8px] font-black leading-tight mt-0 tracking-tight">Esc. Sec. TÃ©c. NÂ°68</h2>
+                <h1 className="text-[6px] font-extrabold uppercase leading-[1.1] tracking-wide">Secretaría de Educación Pública</h1>
+                <h2 className="text-[8px] font-black leading-tight mt-0 tracking-tight">Esc. Sec. Téc. N°68</h2>
                 <h3 className="text-[9px] font-black leading-tight mt-0 tracking-[0.2em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
                 <p className="text-[5px] font-semibold tracking-wider mt-0 opacity-90">C.C.T. 12DST0077B</p>
               </div>
@@ -83,7 +83,7 @@ export default function CredencialPrint({ students = [] }) {
                   )}
                 </div>
                 
-                {/* Nombres y MatrÃ­cula */}
+                {/* Nombres y Matrícula */}
                 <div className="flex-1 flex flex-col justify-center leading-none mt-0">
                   <p className={`text-[12.5px] font-black uppercase leading-[1.0] tracking-tight ${getTextColor(student.grado)}`}>
                     {student.apellidoPaterno} <br/> {student.apellidoMaterno}
@@ -105,12 +105,12 @@ export default function CredencialPrint({ students = [] }) {
                 </div>
               </div>
 
-              {/* Datos AcadÃ©micos y Sangre */}
+              {/* Datos Académicos y Sangre */}
               <div className="grid grid-cols-3 gap-x-1 px-1 w-full z-10 mt-0">
                 <div>
                   <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">Grado / Grupo / Turno</p>
                   <p className="text-[11px] font-black text-slate-900 leading-tight">
-                    {student.grado?.substring(0,1)}Â° "{student.grupo || '-'}" <span className="text-[7px] font-bold text-slate-500">{student.turno?.substring(0,4) || 'MATU'}</span>
+                    {student.grado?.substring(0,1)}° "{student.grupo || '-'}" <span className="text-[7px] font-bold text-slate-500">{student.turno?.substring(0,4) || 'MATU'}</span>
                   </p>
                 </div>
                 <div>
@@ -135,20 +135,20 @@ export default function CredencialPrint({ students = [] }) {
               {/* Leyenda Oficial SEP */}
               <div className="px-1 mt-0 text-center">
                  <p className="text-[6px] font-bold text-slate-700 leading-tight text-center px-1">
-                   Esta credencial acredita al portador como alumno(a) regular de esta InstituciÃ³n incorporada a la SEP. Es personal e intransferible.
+                   Esta credencial acredita al portador como alumno(a) regular de esta Institución incorporada a la SEP. Es personal e intransferible.
                  </p>
               </div>
             </div>
 
             {/* Footer: QR y Firmas */}
             <div className="px-2 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[22mm] bg-slate-50/50 mt-0">
-              {/* CÃ³digo QR para EscÃ¡ner */}
+              {/* Código QR para Escáner */}
               <div className="flex-shrink-0 bg-white p-0 rounded border shadow-sm self-center">
                 <QRCodeSVG 
                   value={`https://web-tec-68.web.app/verificar/${student.matricula}`} 
                   size={76} 
                   level="L"
-                  includeMargin={true} className="w-[20mm] h-[20mm]"
+                  includeMargin={true} className="w-[22mm] h-[22mm]"
                 />
               </div>
 
