@@ -67,15 +67,27 @@ bot.onText(/\/start$/, (msg) => {
 });
 
 // --- FUNCION 2: Notificar Asistencias en Tiempo Real ---
-// Solo escuchar registros nuevos (desde que inició el script)
-const startTime = Timestamp.fromDate(new Date());
+// 1. Obtener el inicio de HOY (00:00:00) para no descargar toda la base de datos histórica.
+// 2. Usar un flag para ignorar la carga inicial masiva y solo reaccionar a los NUEVOS a partir de que arranca el bot.
+const hoy = new Date();
+hoy.setHours(0,0,0,0);
+const startTime = Timestamp.fromDate(hoy);
 
 const asistenciasQuery = query(
   collection(db, 'asistencias'),
   where('timestamp', '>=', startTime)
 );
 
+let isInitialLoad = true;
+
 onSnapshot(asistenciasQuery, (snapshot) => {
+  if (isInitialLoad) {
+    // La primera vez que se conecta, Firestore manda TODOS los registros del día. Los ignoramos.
+    isInitialLoad = false;
+    console.log("✅ Bot sincronizado y escuchando nuevos escaneos...");
+    return;
+  }
+
   snapshot.docChanges().forEach((change) => {
     if (change.type === 'added') {
       const data = change.doc.data();

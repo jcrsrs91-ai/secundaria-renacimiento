@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebase';
-import { collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { ScanFace, LogIn, LogOut, Clock, BarChart3, QrCode } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ReportesAsistencia from '../../components/ReportesAsistencia';
@@ -86,6 +86,30 @@ export default function Asistencia() {
       if (snapshot.empty) {
         toast.error(`Matrícula no encontrada: ${matriculaEscaneada}`);
         reproducirSonido('error');
+        setInputValue('');
+        setProcesando(false);
+        return;
+      }
+
+      // Evitar registros duplicados de ENTRADA o SALIDA en el mismo día
+      const inicioDia = new Date();
+      inicioDia.setHours(0, 0, 0, 0);
+      const finDia = new Date();
+      finDia.setHours(23, 59, 59, 999);
+
+      const qAsistenciaHoy = query(
+        collection(db, 'asistencias'),
+        where('matricula', '==', matriculaEscaneada),
+        where('tipo', '==', modo),
+        where('timestamp', '>=', Timestamp.fromDate(inicioDia)),
+        where('timestamp', '<=', Timestamp.fromDate(finDia))
+      );
+      
+      const asistenciaHoySnapshot = await getDocs(qAsistenciaHoy);
+
+      if (!asistenciaHoySnapshot.empty) {
+        toast.error(`El alumno ya registró su ${modo} el día de hoy`);
+        reproducirSonido('error'); // Sonido de error porque ya estaba registrado
         setInputValue('');
         setProcesando(false);
         return;
