@@ -140,30 +140,49 @@ export default function CredencialPrint({ students = [] }) {
               </div>
             </div>
 
-            {/* Footer: QR y Firmas */}
-            <div className="px-2 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[22mm] bg-slate-50/50 mt-0">
-              {/* Código QR para Escáner */}
-              <div className="flex-shrink-0 bg-white border border-slate-300 shadow-sm self-center flex items-center justify-center overflow-hidden" style={{ width: '22mm', height: '22mm' }}>
-                <QRCodeSVG 
-                  value={`https://web-tec-68.web.app/verificar/${student.matricula}`} 
-                  size={120} 
-                  style={{ width: '100%', height: '100%', display: 'block' }}
-                  level="L"
-                  includeMargin={false}
-                  fgColor="#000000"
-                  bgColor="#FFFFFF"
-                />
+            {/* Footer: 2 QR Codes y Firma */}
+            <div className="px-1 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[22mm] bg-slate-50/50 mt-0">
+              
+              {/* QR 1: Para Celulares (URL) */}
+              <div className="flex flex-col items-center justify-end">
+                <div className="flex-shrink-0 bg-white border border-slate-300 shadow-sm self-center flex items-center justify-center overflow-hidden" style={{ width: '17mm', height: '17mm' }}>
+                  <QRCodeSVG 
+                    value={`https://web-tec-68.web.app/verificar/${student.matricula}`} 
+                    size={80} 
+                    style={{ width: '100%', height: '100%', display: 'block' }}
+                    level="L"
+                    includeMargin={false}
+                    fgColor="#000000"
+                    bgColor="#FFFFFF"
+                  />
+                </div>
+                <p className="text-[4px] font-bold text-slate-500 mt-[1px]">CELULARES</p>
               </div>
 
-              {/* Firma Director */}
-              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[1px] ml-2">
-                {/* Imagen Firma Real Digitalizada */}
-                <div className="w-full flex justify-center h-[10mm] mb-[1px] relative z-20">
+              {/* Firma Director (Centro) */}
+              <div className="flex-1 flex flex-col items-center justify-end h-full pb-[1px] px-1">
+                <div className="w-full flex justify-center h-[9mm] mb-[1px] relative z-20">
                   <img src="/firma-director.png" alt="Firma" className="h-full w-auto object-contain" />
                 </div>
                 <div className="w-full border-b-[1px] border-slate-800 mb-[1px] z-10"></div>
-                <p className="text-[4.5px] font-black text-slate-900 uppercase text-center leading-[1.1] tracking-tight">Profr. Juan Carlos Taboada Barajas</p>
-                <p className="text-[4px] font-bold text-slate-600 uppercase text-center leading-tight">Director del Plantel</p>
+                <p className="text-[4px] font-black text-slate-900 uppercase text-center leading-[1.1] tracking-tight">Profr. J. C. Taboada B.</p>
+                <p className="text-[3.5px] font-bold text-slate-600 uppercase text-center leading-tight">Director</p>
+              </div>
+
+              {/* QR 2: Para Escáner (Matrícula) */}
+              <div className="flex flex-col items-center justify-end">
+                <div className="flex-shrink-0 bg-white border border-slate-300 shadow-sm self-center flex items-center justify-center overflow-hidden" style={{ width: '17mm', height: '17mm' }}>
+                  <QRCodeSVG 
+                    value={student.matricula} 
+                    size={80} 
+                    style={{ width: '100%', height: '100%', display: 'block' }}
+                    level="L"
+                    includeMargin={false}
+                    fgColor="#000000"
+                    bgColor="#FFFFFF"
+                  />
+                </div>
+                <p className="text-[4px] font-bold text-blue-600 mt-[1px]">ASISTENCIA</p>
               </div>
             </div>
             
