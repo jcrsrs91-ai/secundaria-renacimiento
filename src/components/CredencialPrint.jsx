@@ -1,7 +1,7 @@
-import React from 'react';
+﻿import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
-// Tamaño CR80 (54mm x 85.6mm)
+// TamaÃ±o CR80 (54mm x 85.6mm)
 export default function CredencialPrint({ students = [] }) {
   const getGradeColor = (grado) => {
     // 1ro Guinda, 2do Azul, 3ro Verde
@@ -59,8 +59,8 @@ export default function CredencialPrint({ students = [] }) {
             <div className={`${getGradeColor(student.grado)} text-white px-1 py-1.5 shadow-md relative z-10 rounded-b flex items-center h-[16mm]`}>
               <img src="/logo-sep.png" alt="SEP" className="h-[11mm] w-[11mm] object-contain mr-1" />
               <div className="flex-1 text-center px-0.5 flex flex-col justify-center">
-                <h1 className="text-[6px] font-extrabold uppercase leading-[1.1] tracking-wide">Secretaría de Educación Pública</h1>
-                <h2 className="text-[8px] font-black leading-tight mt-[1px] tracking-tight">Esc. Sec. Téc. N°68</h2>
+                <h1 className="text-[6px] font-extrabold uppercase leading-[1.1] tracking-wide">SecretarÃ­a de EducaciÃ³n PÃºblica</h1>
+                <h2 className="text-[8px] font-black leading-tight mt-[1px] tracking-tight">Esc. Sec. TÃ©c. NÂ°68</h2>
                 <h3 className="text-[9px] font-black leading-tight mt-[1px] tracking-[0.2em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
                 <p className="text-[5px] font-semibold tracking-wider mt-[1px] opacity-90">C.C.T. 12DST0077B</p>
               </div>
@@ -73,7 +73,7 @@ export default function CredencialPrint({ students = [] }) {
               {/* Contenedor Foto + Nombres */}
               <div className="flex px-1.5 pt-1.5 pb-1 gap-1.5 items-center">
                 {/* Foto */}
-                <div className={`w-[18mm] h-[23mm] border-[1.5px] rounded-sm overflow-hidden bg-slate-50 ${getGradeColor(student.grado)} shadow-sm z-10 flex-shrink-0`}>
+                <div className={`w-[21mm] h-[26mm] border-[1.5px] rounded-sm overflow-hidden bg-slate-50 ${getGradeColor(student.grado)} shadow-sm z-10 flex-shrink-0`}>
                   {student.fotoUrl ? (
                     <img src={student.fotoUrl} alt="Foto" className="w-full h-full object-cover" />
                   ) : (
@@ -83,72 +83,72 @@ export default function CredencialPrint({ students = [] }) {
                   )}
                 </div>
                 
-                {/* Nombres y Matrícula */}
+                {/* Nombres y MatrÃ­cula */}
                 <div className="flex-1 flex flex-col justify-center leading-none mt-1">
-                  <p className={`text-[12.5px] font-black uppercase leading-[1.0] tracking-tight ${getTextColor(student.grado)}`}>
+                  <p className={`text-[15px] font-black uppercase leading-[1.0] tracking-tight ${getTextColor(student.grado)}`}>
                     {student.apellidoPaterno} <br/> {student.apellidoMaterno}
                   </p>
-                  <p className="text-[11px] font-bold text-slate-700 uppercase leading-tight mt-[1px]">
+                  <p className="text-[13px] font-bold text-slate-700 uppercase leading-tight mt-[1px]">
                     {student.nombres}
                   </p>
-                  <p className="text-[6.5px] font-bold text-slate-500 uppercase tracking-widest mt-2">
+                  <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-2">
                     MAT: {student.matricula}
                   </p>
-                  <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
                     CURP: {student.curp || 'NO REGISTRADA'}
                   </p>
                   <div className="mt-1.5 inline-block bg-slate-800 rounded px-1 py-0.5 self-start">
-                    <p className="text-[5.5px] font-black text-white uppercase tracking-widest leading-none">
+                    <p className="text-[7.5px] font-black text-white uppercase tracking-widest leading-none">
                       VIGENCIA: {getSchoolCycle()}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Datos Académicos y Sangre */}
+              {/* Datos AcadÃ©micos y Sangre */}
               <div className="grid grid-cols-2 gap-x-1 px-1.5 w-full z-10 mt-1">
                 <div>
-                  <p className="text-[4.5px] font-bold text-slate-400 uppercase tracking-widest">Grado / Grupo / Turno</p>
-                  <p className="text-[8.5px] font-black text-slate-800 leading-tight">
-                    {student.grado?.substring(0,1)}° "{student.grupo || '-'}" <span className="text-[7px] font-bold text-slate-500">{student.turno?.substring(0,4) || 'MATU'}</span>
+                  <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">Grado / Grupo / Turno</p>
+                  <p className="text-[12px] font-black text-slate-900 leading-tight">
+                    {student.grado?.substring(0,1)}Â° "{student.grupo || '-'}" <span className="text-[7px] font-bold text-slate-500">{student.turno?.substring(0,4) || 'MATU'}</span>
                   </p>
                 </div>
                 <div>
-                  <p className="text-[4.5px] font-bold text-slate-400 uppercase tracking-widest">T. Sangre</p>
-                  <p className="text-[8.5px] font-black text-red-600 leading-tight">{student.tipoSangre || 'No Esp.'}</p>
+                  <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">T. Sangre</p>
+                  <p className="text-[12px] font-black text-red-600 leading-tight">{student.tipoSangre || 'No Esp.'}</p>
                 </div>
                 <div className="col-span-2 mt-[3px]">
-                  <p className="text-[4.5px] font-bold text-slate-400 uppercase tracking-widest">Taller</p>
-                  <p className="text-[7px] font-bold text-slate-800 leading-tight truncate">{student.taller || 'Sin Asignar'}</p>
+                  <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">Taller</p>
+                  <p className="text-[10px] font-bold text-slate-900 leading-tight truncate">{student.taller || 'Sin Asignar'}</p>
                 </div>
               </div>
 
               {/* Contacto de Emergencia y Leyenda */}
               <div className="px-1.5 mt-[3px] border-t-[0.5px] border-slate-200 pt-[3px] bg-red-50/40">
-                <p className="text-[4.5px] font-bold text-red-500 uppercase tracking-widest">En caso de emergencia avisar a:</p>
+                <p className="text-[6px] font-bold text-red-600 uppercase tracking-widest">En caso de emergencia avisar a:</p>
                 <div className="flex justify-between items-end mt-[2px]">
-                  <p className="text-[6.5px] font-bold text-slate-700 leading-tight truncate flex-1 pr-1">{student.tutorNombre || student.tutor || student.nombreTutor || 'No registrado'}</p>
-                  <p className="text-[7px] font-black text-slate-900 leading-tight flex-shrink-0">Tel: {student.telefono || student.celularTutor || student.telefonoTutor || 'N/A'}</p>
+                  <p className="text-[8px] font-black text-slate-800 leading-tight truncate flex-1 pr-1">{student.tutorNombre || student.tutor || student.nombreTutor || 'No registrado'}</p>
+                  <p className="text-[8px] font-black text-slate-900 leading-tight flex-shrink-0">Tel: {student.telefono || student.celularTutor || student.telefonoTutor || 'N/A'}</p>
                 </div>
               </div>
 
               {/* Leyenda Oficial SEP */}
               <div className="px-1.5 mt-[3px] text-center">
-                 <p className="text-[4.5px] font-medium text-slate-400 leading-[1.2] text-justify">
-                   Esta credencial acredita al portador como alumno(a) regular de esta Institución incorporada a la SEP. Es personal e intransferible.
+                 <p className="text-[7.5px] font-bold text-slate-700 leading-tight text-center px-1">
+                   Esta credencial acredita al portador como alumno(a) regular de esta InstituciÃ³n incorporada a la SEP. Es personal e intransferible.
                  </p>
               </div>
             </div>
 
             {/* Footer: QR y Firmas */}
-            <div className="px-2 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[19mm] bg-slate-50/50 mt-[2px]">
-              {/* Código QR para Escáner */}
+            <div className="px-2 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[22mm] bg-slate-50/50 mt-[2px]">
+              {/* CÃ³digo QR para EscÃ¡ner */}
               <div className="flex-shrink-0 bg-white p-[1px] rounded border shadow-sm self-center">
                 <QRCodeSVG 
                   value={`https://web-tec-68.web.app/verificar/${student.matricula}`} 
-                  size={42} 
+                  size={76} 
                   level="M"
-                  includeMargin={false}
+                  includeMargin={false} className="w-[20mm] h-[20mm]"
                 />
               </div>
 
