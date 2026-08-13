@@ -56,7 +56,7 @@ export default function CredencialPrint({ students = [] }) {
           <div className="credencial-page bg-white flex flex-col justify-between overflow-hidden relative border-r border-b border-slate-100 print:border-none">
             
             {/* Header */}
-            <div className={`${getGradeColor(student.grado)} text-white px-1 py-1.5 shadow-md relative z-10 rounded-b flex items-center h-[16mm]`}>
+            <div className={`${getGradeColor(student.grado)} text-white px-1 py-1.5 shadow-md relative z-10 rounded-b flex items-center h-[14mm]`}>
               <img src="/logo-sep.png" alt="SEP" className="h-[11mm] w-[11mm] object-contain mr-1" />
               <div className="flex-1 text-center px-0.5 flex flex-col justify-center">
                 <h1 className="text-[6px] font-extrabold uppercase leading-[1.1] tracking-wide">SecretarÃ­a de EducaciÃ³n PÃºblica</h1>
@@ -71,7 +71,7 @@ export default function CredencialPrint({ students = [] }) {
             <div className="flex-1 flex flex-col w-full relative z-0">
               
               {/* Contenedor Foto + Nombres */}
-              <div className="flex px-1.5 pt-1.5 pb-1 gap-1.5 items-center">
+              <div className="flex px-1.5 pt-1 pb-0 gap-1.5 items-center">
                 {/* Foto */}
                 <div className={`w-[21mm] h-[26mm] border-[1.5px] rounded-sm overflow-hidden bg-slate-50 ${getGradeColor(student.grado)} shadow-sm z-10 flex-shrink-0`}>
                   {student.fotoUrl ? (
@@ -106,7 +106,7 @@ export default function CredencialPrint({ students = [] }) {
               </div>
 
               {/* Datos AcadÃ©micos y Sangre */}
-              <div className="grid grid-cols-2 gap-x-1 px-1.5 w-full z-10 mt-1">
+              <div className="grid grid-cols-3 gap-x-1 px-1 w-full z-10 mt-[2px]">
                 <div>
                   <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">Grado / Grupo / Turno</p>
                   <p className="text-[12px] font-black text-slate-900 leading-tight">
@@ -117,23 +117,23 @@ export default function CredencialPrint({ students = [] }) {
                   <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">T. Sangre</p>
                   <p className="text-[12px] font-black text-red-600 leading-tight">{student.tipoSangre || 'No Esp.'}</p>
                 </div>
-                <div className="col-span-2 mt-[3px]">
+                <div>
                   <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">Taller</p>
                   <p className="text-[10px] font-bold text-slate-900 leading-tight truncate">{student.taller || 'Sin Asignar'}</p>
                 </div>
               </div>
 
               {/* Contacto de Emergencia y Leyenda */}
-              <div className="px-1.5 mt-[3px] border-t-[0.5px] border-slate-200 pt-[3px] bg-red-50/40">
+              <div className="px-1 mt-[2px] border-t-[0.5px] border-slate-200 pt-[1px] bg-red-50/40">
                 <p className="text-[6px] font-bold text-red-600 uppercase tracking-widest">En caso de emergencia avisar a:</p>
-                <div className="flex justify-between items-end mt-[2px]">
+                <div className="flex justify-between items-end mt-[1px]">
                   <p className="text-[8px] font-black text-slate-800 leading-tight truncate flex-1 pr-1">{student.tutorNombre || student.tutor || student.nombreTutor || 'No registrado'}</p>
                   <p className="text-[8px] font-black text-slate-900 leading-tight flex-shrink-0">Tel: {student.telefono || student.celularTutor || student.telefonoTutor || 'N/A'}</p>
                 </div>
               </div>
 
               {/* Leyenda Oficial SEP */}
-              <div className="px-1.5 mt-[3px] text-center">
+              <div className="px-1 mt-[1px] text-center">
                  <p className="text-[7.5px] font-bold text-slate-700 leading-tight text-center px-1">
                    Esta credencial acredita al portador como alumno(a) regular de esta InstituciÃ³n incorporada a la SEP. Es personal e intransferible.
                  </p>
