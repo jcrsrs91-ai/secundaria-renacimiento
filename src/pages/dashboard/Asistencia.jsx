@@ -97,17 +97,29 @@ export default function Asistencia() {
       const finDia = new Date();
       finDia.setHours(23, 59, 59, 999);
 
-      const qAsistenciaHoy = query(
+      // Usamos solo 'matricula' en la query de Firebase para evitar el error de "Missing Index".
+      // El resto del filtrado (tipo y fecha) lo hacemos en memoria.
+      const qAsistencia = query(
         collection(db, 'asistencias'),
-        where('matricula', '==', matriculaEscaneada),
-        where('tipo', '==', modo),
-        where('timestamp', '>=', Timestamp.fromDate(inicioDia)),
-        where('timestamp', '<=', Timestamp.fromDate(finDia))
+        where('matricula', '==', matriculaEscaneada)
       );
       
-      const asistenciaHoySnapshot = await getDocs(qAsistenciaHoy);
+      const asistenciaSnapshot = await getDocs(qAsistencia);
 
-      if (!asistenciaHoySnapshot.empty) {
+      let yaRegistrado = false;
+      asistenciaSnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.tipo !== modo) return;
+        
+        if (data.timestamp) {
+          const docDate = data.timestamp.toDate();
+          if (docDate >= inicioDia && docDate <= finDia) {
+            yaRegistrado = true;
+          }
+        }
+      });
+
+      if (yaRegistrado) {
         toast.error(`El alumno ya registró su ${modo} el día de hoy`);
         reproducirSonido('error'); // Sonido de error porque ya estaba registrado
         setInputValue('');
