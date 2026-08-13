@@ -56,13 +56,13 @@ export default function CredencialPrint({ students = [] }) {
           <div className="credencial-page bg-white flex flex-col justify-between overflow-hidden relative border-r border-b border-slate-100 print:border-none">
             
             {/* Header */}
-            <div className={`${getGradeColor(student.grado)} text-white px-1 py-1.5 shadow-md relative z-10 rounded-b flex items-center h-[10mm]`}>
+            <div className={`${getGradeColor(student.grado)} text-white px-1 py-0.5 shadow-md relative z-10 rounded-b flex items-center h-[10mm]`}>
               <img src="/logo-sep.png" alt="SEP" className="h-[11mm] w-[11mm] object-contain mr-1" />
               <div className="flex-1 text-center px-0.5 flex flex-col justify-center">
                 <h1 className="text-[6px] font-extrabold uppercase leading-[1.1] tracking-wide">SecretarÃ­a de EducaciÃ³n PÃºblica</h1>
-                <h2 className="text-[8px] font-black leading-tight mt-[1px] tracking-tight">Esc. Sec. TÃ©c. NÂ°68</h2>
-                <h3 className="text-[9px] font-black leading-tight mt-[1px] tracking-[0.2em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
-                <p className="text-[5px] font-semibold tracking-wider mt-[1px] opacity-90">C.C.T. 12DST0077B</p>
+                <h2 className="text-[8px] font-black leading-tight mt-0 tracking-tight">Esc. Sec. TÃ©c. NÂ°68</h2>
+                <h3 className="text-[9px] font-black leading-tight mt-0 tracking-[0.2em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
+                <p className="text-[5px] font-semibold tracking-wider mt-0 opacity-90">C.C.T. 12DST0077B</p>
               </div>
               <img src="/logo-escuela.png" alt="Escuela" className="h-[11mm] w-[11mm] object-contain ml-1 drop-shadow-md" />
             </div>
@@ -88,7 +88,7 @@ export default function CredencialPrint({ students = [] }) {
                   <p className={`text-[12.5px] font-black uppercase leading-[1.0] tracking-tight ${getTextColor(student.grado)}`}>
                     {student.apellidoPaterno} <br/> {student.apellidoMaterno}
                   </p>
-                  <p className="text-[11px] font-bold text-slate-700 uppercase leading-tight mt-[1px]">
+                  <p className="text-[11px] font-bold text-slate-700 uppercase leading-tight mt-0">
                     {student.nombres}
                   </p>
                   <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-2">
@@ -119,7 +119,7 @@ export default function CredencialPrint({ students = [] }) {
                 </div>
                 <div>
                   <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">Taller</p>
-                  <p className="text-[10px] font-bold text-slate-900 leading-tight truncate">{student.taller || 'Sin Asignar'}</p>
+                  <p className="text-[8.5px] font-bold text-slate-900 leading-[1.1]">{student.taller || 'Sin Asignar'}</p>
                 </div>
               </div>
 
@@ -127,8 +127,8 @@ export default function CredencialPrint({ students = [] }) {
               <div className="px-1 mt-0 border-t-[0.5px] border-slate-200 pt-[1px] bg-red-50/40">
                 <p className="text-[6px] font-bold text-red-600 uppercase tracking-widest">En caso de emergencia avisar a:</p>
                 <div className="flex justify-between items-end mt-0">
-                  <p className="text-[8px] font-black text-slate-800 leading-tight truncate flex-1 pr-1">{student.tutorNombre || student.tutor || student.nombreTutor || 'No registrado'}</p>
-                  <p className="text-[8px] font-black text-slate-900 leading-tight flex-shrink-0">Tel: {student.telefono || student.celularTutor || student.telefonoTutor || 'N/A'}</p>
+                  <p className="text-[7.5px] font-black text-slate-800 leading-[1.1] flex-1 pr-1">{student.tutorNombre || student.tutor || student.nombreTutor || 'No registrado'}</p>
+                  <p className="text-[7.5px] font-black text-slate-900 leading-[1.1] flex-shrink-0">Tel: {student.telefono || student.celularTutor || student.telefonoTutor || 'N/A'}</p>
                 </div>
               </div>
 
