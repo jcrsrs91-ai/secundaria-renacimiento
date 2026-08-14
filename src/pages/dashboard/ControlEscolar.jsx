@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2, UserPlus, Award, UserMinus, AlertTriangle } from 'lucide-react';
+import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2, UserPlus, Award, UserMinus, AlertTriangle, GraduationCap } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
@@ -49,6 +49,12 @@ export default function ControlEscolar() {
   const [printMode, setPrintMode] = useState(null); // 'credencial', 'constancia', 'boleta', 'listaAsistencia'
   const [printData, setPrintData] = useState(null); // array for credencial, object for constancia
   const [constanciaType, setConstanciaType] = useState('simple'); // 'simple', 'calificaciones'
+
+  // Estados para Generaciones
+  const [generacionFilter, setGeneracionFilter] = useState('Todos');
+  const [generacionList, setGeneracionList] = useState([]);
+  const [cicloEgreso, setCicloEgreso] = useState('2023-2026'); // Para el modal de cierre
+ // 'simple', 'calificaciones'
 
   // Estados para listas de asistencia
   const [asisGrado, setAsisGrado] = useState('1er Grado');
@@ -155,6 +161,11 @@ export default function ControlEscolar() {
       setPendientes(allData.filter(s => s.status === 'Pendiente'));
       setActivos(allData.filter(s => s.status === 'Activo'));
       setDirectorio(allData.filter(s => s.status !== 'Pendiente'));
+      
+      // Extraer lista única de generaciones
+      const egresados = allData.filter(s => s.status === 'Egresado');
+      const gens = [...new Set(egresados.map(e => e.generacionEgreso).filter(Boolean))].sort().reverse();
+      setGeneracionList(gens);
       setLoading(false);
     });
 
@@ -175,7 +186,7 @@ export default function ControlEscolar() {
     const matchesGrade = gradeFilter === 'Todos' || a.grado === gradeFilter;
     const matchesGroup = groupFilter === 'Todos' || a.grupo === groupFilter;
     const matchesShift = shiftFilter === 'Todos' || a.turno === shiftFilter;
-    const matchesStatus = statusFilter === 'Todos' || a.status === statusFilter;
+    const matchesStatus = (statusFilter === 'Todos' && a.status !== 'Egresado') || a.status === statusFilter;
     const matchesCycle = cycleFilter === 'Todos' || a.cicloEscolar === cycleFilter;
     return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus && matchesCycle;
   }).sort((a, b) => {
@@ -193,6 +204,75 @@ export default function ControlEscolar() {
         return nameA.localeCompare(nameB);
       });
   }, [activos, asisGrado, asisGrupo]);
+
+  const checkIfFailed = (student, materiasPorGradoObj) => {
+    if (!materiasPorGradoObj[student.grado]) return false;
+    const materias = materiasPorGradoObj[student.grado];
+    for (let mat of materias) {
+      const t1 = parseFloat(student.calificaciones?.['t1']?.[mat.id]);
+      const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
+      const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
+      
+      const extraScore = student.regularizacion?.[mat.id]?.calificacion;
+      if (extraScore !== undefined && parseFloat(extraScore) >= 6) {
+          continue; 
+      }
+
+      let sum = 0; let count = 0;
+      if (!isNaN(t1)) { sum += t1; count++; }
+      if (!isNaN(t2)) { sum += t2; count++; }
+      if (!isNaN(t3)) { sum += t3; count++; }
+      if (count > 0) {
+        const finalMat = Math.floor((sum / count + 0.00001) * 10) / 10;
+        if (finalMat < 6) return true;
+      }
+    }
+    return false;
+  };
+
+  const handleCerrarCiclo = async () => {
+    if(!cicloEgreso) { alert('Ingresa la generación de egreso'); return; }
+    
+    const confirm1 = window.confirm('⚠ ADVERTENCIA: Estás a punto de Cerrar el Ciclo Escolar.\n\nEsto modificará los grados de tódos los alumnos de 1ro, 2do y 3ro masivamente.\n\n¿Deseas continuar?');
+    if(!confirm1) return;
+    const confirm2 = window.confirm('¿Estás COMPLETAMENTE SEGURO? Esta acción no se puede deshacer. Los alumnos de 3ro serán movidos a Egresados y los demás avanzarán de grado.');
+    if(!confirm2) return;
+
+    try {
+      let countUpdated = 0;
+      for (const student of activos) {
+        const studentRef = doc(db, 'students', student.id);
+        const failed = checkIfFailed(student, materiasPorGrado);
+        let updates = {};
+
+        if (student.grado === '3er Grado' || student.grado?.includes('3er Grado (Irregular)')) {
+           updates = {
+             status: 'Egresado',
+             generacionEgreso: cicloEgreso,
+             grado: failed ? 'Egresado con materias reprobadas' : 'Egresado'
+           };
+        } else if (student.grado === '2do Grado' || student.grado?.includes('2do Grado (Irregular)')) {
+           updates = {
+             grado: failed ? '3er Grado (Irregular)' : '3er Grado'
+           };
+        } else if (student.grado === '1er Grado' || student.grado?.includes('1er Grado (Irregular)')) {
+           updates = {
+             grado: failed ? '2do Grado (Irregular)' : '2do Grado'
+           };
+        }
+        
+        if (Object.keys(updates).length > 0) {
+           await updateDoc(studentRef, updates);
+           countUpdated++;
+        }
+      }
+      toast.success(`¡Ciclo Cerrado! Se promovieron ${countUpdated} alumnos.`);
+      closeModal();
+    } catch (error) {
+      console.error(error);
+      toast.error('Hubo un error al cerrar el ciclo escolar.');
+    }
+  };
 
   const openModal = (type, student) => {
     setModalType(type);
@@ -693,6 +773,15 @@ export default function ControlEscolar() {
           
           {/* Activos */}
           <button onClick={() => setActiveTab('activos')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'activos' ? 'bg-primary-600 text-white shadow-primary-200 ring-2 ring-primary-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Directorio / Expedientes <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${activeTab === 'activos' ? 'bg-primary-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{activos.length}</span>
+          </button>
+          
+          {/* Generaciones */}
+          <button onClick={() => setActiveTab('generaciones')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'generaciones' ? 'bg-slate-800 text-white shadow-slate-200 ring-2 ring-slate-800 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Generaciones Egresadas <GraduationCap className={`w-3.5 h-3.5 ml-2 ${activeTab === 'generaciones' ? 'text-slate-100' : 'text-slate-500'}`} />
+          </button>
+          
+          <button style={{display: 'none'}} onClick={() => setActiveTab('fake')}  className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'activos' ? 'bg-primary-600 text-white shadow-primary-200 ring-2 ring-primary-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Directorio / Expedientes <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${activeTab === 'activos' ? 'bg-primary-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{directorio.length}</span>
           </button>
           
@@ -1036,6 +1125,9 @@ export default function ControlEscolar() {
               </select>
             </div>
             <div className="w-full md:w-auto self-end flex gap-2">
+              <button onClick={() => setModalType('cierreCiclo')} className="w-full md:w-auto px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm flex items-center justify-center mr-2">
+                <GraduationCap className="w-4 h-4 mr-2" /> Cerrar Ciclo
+              </button>
               <button onClick={handlePrintBatch} className="w-full md:w-auto px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 transition-colors shadow-sm flex items-center justify-center">
                 <QrCode className="w-4 h-4 mr-2" /> Imprimir Grupo
               </button>
@@ -1124,7 +1216,123 @@ export default function ControlEscolar() {
 
 
 
+      
+      {/* Tabla Generaciones Egresadas */}
+      {!loading && activeTab === 'generaciones' && (
+        <div className="space-y-4">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Generación</label>
+              <select className="w-full p-2 border rounded-lg text-sm bg-white font-bold text-slate-700" value={generacionFilter} onChange={e => setGeneracionFilter(e.target.value)}>
+                <option value="Todos">Todas las Generaciones</option>
+                {generacionList.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Buscar Alumno</label>
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input type="text" className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm bg-white" placeholder="Ej. Juan Pérez" value={searchFilter} onChange={e => setSearchFilter(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Matrícula</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Alumno</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Generación</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado Final</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {directorio.filter(s => s.status === 'Egresado' && (generacionFilter === 'Todos' || s.generacionEgreso === generacionFilter) && 
+                 (searchFilter === '' || `${s.nombres} ${s.apellidoPaterno} ${s.apellidoMaterno}`.toLowerCase().includes(searchFilter.toLowerCase()))
+              ).length === 0 ? (
+                <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">No hay egresados que coincidan.</td></tr>
+              ) : (
+                directorio.filter(s => s.status === 'Egresado' && (generacionFilter === 'Todos' || s.generacionEgreso === generacionFilter) && 
+                 (searchFilter === '' || `${s.nombres} ${s.apellidoPaterno} ${s.apellidoMaterno}`.toLowerCase().includes(searchFilter.toLowerCase()))
+                ).map(a => (
+                  <tr key={a.id} className="hover:bg-slate-50">
+                    <td className="px-6 py-4 text-sm font-bold text-primary-700">{a.matricula}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 font-medium uppercase">
+                      {a.apellidoPaterno} {a.apellidoMaterno} {a.nombres}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-500 font-bold">
+                      {a.generacionEgreso || 'Sin registrar'}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`px-2 py-1 rounded-md text-xs font-bold ${a.grado?.includes('reprobadas') ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                        {a.grado}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-4">
+                      <button onClick={() => openModal('hoja', a)} className="text-blue-600 hover:text-blue-800 font-medium text-sm inline-flex items-center">
+                        <User className="w-4 h-4 mr-1" /> Expediente
+                      </button>
+                      <button onClick={() => { setPrintData(a); setPrintMode('kardex'); }} className="text-purple-600 hover:text-purple-800 font-medium text-sm inline-flex items-center">
+                        <FileText className="w-4 h-4 mr-1" /> Kárdex
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CIERRE DE CICLO */}
+      {modalType === 'cierreCiclo' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto print:hidden">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden my-8">
+            <div className="px-6 py-4 border-b border-red-200 flex justify-between items-center bg-red-50">
+              <h3 className="font-bold text-red-800 flex items-center">
+                <AlertTriangle className="w-5 h-5 mr-2" />
+                Cierre de Ciclo Escolar Masivo
+              </h3>
+              <button onClick={closeModal} className="text-red-400 hover:text-red-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-sm text-slate-600 mb-4">
+                Este proceso ejecutará el cambio de grado para <strong>todos los alumnos activos ({activos.length})</strong> automáticamente:
+              </p>
+              <ul className="text-sm text-slate-600 list-disc pl-5 space-y-2 mb-6">
+                <li>Los alumnos de <strong>1ro</strong> pasarán a 2do (o 2do Irregular).</li>
+                <li>Los alumnos de <strong>2do</strong> pasarán a 3ro (o 3ro Irregular).</li>
+                <li>Los alumnos de <strong>3ro</strong> se convertirán en <strong>Egresados</strong> y se almacenarán en la pestaña de Generaciones.</li>
+                <li><strong>Todos conservarán su grupo (A, B, C...) y su taller.</strong></li>
+              </ul>
+
+              <div className="mb-6 bg-slate-50 p-4 border border-slate-200 rounded-lg">
+                <label className="block text-sm font-bold text-slate-700 mb-2">Generación de Egreso para alumnos de 3ro:</label>
+                <input 
+                  type="text" 
+                  value={cicloEgreso} 
+                  onChange={e => setCicloEgreso(e.target.value)} 
+                  className="w-full p-2 border border-slate-300 rounded font-medium focus:border-red-500 focus:ring-red-500" 
+                  placeholder="Ej. 2023-2026"
+                />
+              </div>
+
+              <button onClick={handleCerrarCiclo} className="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 flex justify-center items-center shadow-lg transition-colors">
+                <GraduationCap className="w-5 h-5 mr-2" /> Ejecutar Cierre de Ciclo Escolar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODALES LOCALES (Grade) */}
+
       {modalType === 'grade' && selectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden my-8">

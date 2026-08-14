@@ -56,15 +56,19 @@ export default function CredencialPrint({ students = [] }) {
           <div className="credencial-page bg-white flex flex-col justify-between overflow-hidden relative border-r border-b border-slate-100 print:border-none">
             
             {/* Header */}
-            <div className={`${getGradeColor(student.grado)} text-white px-1 py-0.5 shadow-md relative z-10 rounded-b flex items-center h-[10mm]`}>
-              <img src="/logo-sep.png" alt="SEP" className="h-[11mm] w-[11mm] object-contain mr-1" />
-              <div className="flex-1 text-center px-0.5 flex flex-col justify-center">
-                <h1 className="text-[5px] font-extrabold uppercase leading-[1.1] tracking-wide">Secretaría de Educación Pública</h1>
-                <h2 className="text-[8px] font-black leading-tight mt-0 tracking-tight">Esc. Sec. Téc. N°68</h2>
-                <h3 className="text-[9px] font-black leading-tight mt-0 tracking-[0.2em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
-                <p className="text-[5px] font-semibold tracking-wider mt-0 opacity-90">C.C.T. 12DST0077B</p>
+            <div className={`${getGradeColor(student.grado)} text-white px-1 shadow-md relative z-10 rounded-b flex items-center justify-between h-[11.5mm] pt-0.5`}>
+              <img src="/logo-sep.png" alt="SEP" className="h-[11mm] w-[11mm] object-contain flex-shrink-0" />
+              <div className="flex-1 flex flex-col justify-center items-center px-0.5 mt-0.5">
+                <h1 className="text-[6px] font-extrabold uppercase leading-[1.0] tracking-wide text-center" style={{ transform: 'scale(0.85)', transformOrigin: 'center top', whiteSpace: 'nowrap' }}>
+                  Secretaría de Educación Pública
+                </h1>
+                <h2 className="text-[8px] font-black leading-none tracking-tight -mt-0.5">Esc. Sec. Téc. N°68</h2>
+                <h3 className="text-[9px] font-black leading-none mt-0.5 tracking-[0.2em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
+                <p className="text-[5px] font-semibold tracking-wider mt-0.5 opacity-90" style={{ transform: 'scale(0.9)', transformOrigin: 'center top' }}>
+                  C.C.T. 12DST0077B
+                </p>
               </div>
-              <img src="/logo-escuela.png" alt="Escuela" className="h-[11mm] w-[11mm] object-contain ml-1 drop-shadow-md" />
+              <img src="/logo-escuela.png" alt="Escuela" className="h-[11mm] w-[11mm] object-contain flex-shrink-0 drop-shadow-md" />
             </div>
 
             {/* Body */}
