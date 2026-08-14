@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { truncateTo1Dec } from '../utils/format';
 
 export default function AprovechamientoPrint({ activos, onClose }) {
+  const { config } = useGlobalConfig();
   // Configuración de los campos formativos por grado
   const campos = {
     '1er Grado': [
@@ -260,7 +262,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
           <div className="text-center flex-1 px-4">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-sm print:leading-tight">REPORTE GLOBAL DE APROVECHAMIENTO</h1>
             <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-[10px] print:mt-0 print:leading-tight">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
-            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[9px] print:mt-0 print:leading-tight">Ciclo Escolar 2025-2026 • Evaluación hasta el 3er Periodo</p>
+            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[9px] print:mt-0 print:leading-tight">Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'} • Evaluación hasta el 3er Periodo</p>
           </div>
           <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-10" />
         </div>

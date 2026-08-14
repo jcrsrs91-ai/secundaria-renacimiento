@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        /* Modales a pantalla completa en celulares */
+        @media (max-width: 767px) {
+            #modalOverlay > div:not(#checkoutModal):not(.hidden) {
+                height: 100% !important;
+                max-height: 100% !important;
+                border-radius: 0 !important;
+                display: flex;
+                flex-direction: column;
+            }
+            #modalOverlay > div:not(.hidden) > form, #modalOverlay > div:not(.hidden) > div.p-6, #modalOverlay > div:not(.hidden) > div.p-4 {
+                flex: 1;
+                overflow-y: auto;
+            }
+            #cartSidebar {
+                position: fixed;
+                inset: 0;
+                width: 100%;
+                z-index: 50;
+            }
+        }
+    </style>
+    <title>Punto de Venta - Papelería</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f0fdfa">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#a5f3fc', // cyan-200
+                            DEFAULT: '#06b6d4', // cyan-500
+                            dark: '#0891b2', // cyan-600
+                        },
+                        paper: '#f0fdfa', // teal-50
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- JsBarcode -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans h-[100dvh] flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Mobile Header -->
+    <header class="md:hidden bg-brand text-white p-4 flex justify-between items-center shadow-md z-10">
+        <h1 class="font-bold text-xl"><i class="fa-solid fa-store mr-2"></i>Mi Papelería</h1>
+        <div class="flex items-center gap-4">
+            <button onclick="ui.openModal('lowStockModal')" class="relative text-xl">
+                <i class="fa-solid fa-triangle-exclamation text-yellow-300"></i>
+                <span id="mobile-alert-badge" class="hidden absolute -top-1 -right-2 bg-red-500 text-[10px] text-white font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">!</span>
+            </button>
+            <button id="mobile-cart-btn" class="relative text-2xl">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span id="mobile-cart-badge" class="absolute -top-2 -right-2 bg-yellow-400 text-xs text-black font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Sidebar / Menú (Desktop) -->
+    <aside class="hidden md:flex w-24 flex-col items-center py-6 bg-brand text-white shadow-2xl z-10">
+        <div class="text-4xl mb-8"><i class="fa-solid fa-pencil"></i></div>
+        <nav class="flex-1 w-full space-y-4">
+            <button class="w-full py-4 hover:bg-brand-dark transition-all hover:scale-105 active-nav relative" title="Punto de Venta">
+                <i class="fa-solid fa-cash-register text-3xl"></i>
+            </button>
+            <button onclick="ui.openModal('addProductModal')" class="w-full py-4 hover:bg-brand-dark transition-all hover:scale-105 relative" title="Agregar Producto">
+                <i class="fa-solid fa-box-open text-3xl"></i>
+                <span class="absolute bottom-1 right-2 bg-white text-brand font-black text-[10px] px-1.5 rounded shadow-sm opacity-90">P</span>
+            </button>
+            <button onclick="ui.openModal('registerCutModal')" class="w-full py-4 hover:bg-brand-dark transition-all hover:scale-105 relative" title="Corte de Caja">
+                <i class="fa-solid fa-chart-line text-3xl"></i>
+                <span class="absolute bottom-1 right-2 bg-white text-brand font-black text-[10px] px-1.5 rounded shadow-sm opacity-90">C</span>
+            </button>
+            <button onclick="ui.openModal('historyModal')" class="w-full py-4 hover:bg-brand-dark transition-all hover:scale-105 relative" title="Reportes Históricos">
+                <i class="fa-solid fa-calendar-days text-3xl"></i>
+                <span class="absolute bottom-1 right-2 bg-white text-brand font-black text-[10px] px-1.5 rounded shadow-sm opacity-90">H</span>
+            </button>
+            <button onclick="ui.openModal('pausedSalesModal')" class="w-full py-4 hover:bg-brand-dark transition-all hover:scale-105 relative" title="Ventas en Espera">
+                <i class="fa-solid fa-pause text-3xl"></i>
+                <span id="pausedSalesBadgeDesktop" class="absolute top-1 right-1 bg-yellow-400 text-sm text-black font-bold rounded-full w-6 h-6 flex items-center justify-center hidden shadow-md">0</span>
+                <span class="absolute bottom-1 right-2 bg-white text-brand font-black text-[10px] px-1.5 rounded shadow-sm opacity-90">E</span>
+            </button>
+            <button onclick="app.openKitsModal()" class="w-full py-4 hover:bg-brand-dark transition-all hover:scale-105 relative" title="Listas Escolares - Kits">
+                <i class="fa-solid fa-layer-group text-3xl"></i>
+                <span class="absolute bottom-1 right-2 bg-white text-brand font-black text-[10px] px-1.5 rounded shadow-sm opacity-90">K</span>
+            </button>
+            <button onclick="ui.openModal('labelsModal')" class="w-full py-4 hover:bg-brand-dark transition-all hover:scale-105 relative" title="Imprimir Etiquetas">
+                <i class="fa-solid fa-barcode text-3xl"></i>
+                <span class="absolute bottom-1 right-2 bg-white text-brand font-black text-[10px] px-1.5 rounded shadow-sm opacity-90">T</span>
+            </button>
+            <button onclick="ui.openModal('lowStockModal')" class="w-full py-4 hover:bg-brand-dark transition-all hover:scale-105 relative" title="Alertas de Inventario">
+                <i class="fa-solid fa-triangle-exclamation text-3xl text-yellow-300"></i>
+                <span id="desktop-alert-badge" class="hidden absolute top-1 right-1 bg-red-500 text-[10px] text-white font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">!</span>
+            </button>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        
+        <!-- Left Column: Products -->
+        <div class="flex-1 flex flex-col h-full relative z-0">
+            <!-- Search Bar -->
+            <div class="p-4 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm sticky top-0 z-10">
+                <div class="relative max-w-3xl mx-auto flex gap-2">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar producto o escanear código (B)" class="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-100 bg-gray-50 focus:bg-white focus:border-brand focus:ring-4 focus:ring-brand-light/30 transition-all text-sm outline-none font-medium">
+                    </div>
+                    <button class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 rounded-2xl border-2 border-gray-100 transition-colors" title="Filtros">
+                        <i class="fa-solid fa-sliders"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Botones de Acción Rápida (Flotantes o fijos) -->
+            <div class="px-4 py-3 bg-white/50 border-b border-gray-100 flex gap-2 overflow-x-auto no-scrollbar">
+                <button onclick="ui.openModal('addProductModal')" class="whitespace-nowrap bg-brand/10 text-brand hover:bg-brand hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center relative">
+                    <i class="fa-solid fa-plus mr-1"></i> Nuevo Producto (P)
+                    <span class="absolute bottom-1 right-2 bg-white/60 font-black text-[10px] px-1.5 rounded">P</span>
+                </button>
+                <button onclick="ui.openModal('quickSaleModal')" class="whitespace-nowrap bg-purple-100 text-purple-700 hover:bg-purple-600 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center relative">
+                    <i class="fa-solid fa-bolt mr-1"></i> Venta Rápida (V)
+                    <span class="absolute bottom-1 right-2 bg-white/60 font-black text-[10px] px-1.5 rounded">V</span>
+                </button>
+            </div>
+        
+        <!-- Main Scrollable Area -->
+        <div class="flex-1 overflow-y-auto pb-24 md:pb-4 flex flex-col">
+            <!-- Favorites Grid -->
+            <div id="favoritesContainer" class="hidden flex-col p-3 border-b border-gray-100 bg-gray-50/50">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"><i class="fa-solid fa-star text-yellow-400 mr-1"></i> Acceso Rápido</h3>
+                <div id="favoritesGrid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 content-start">
+                    <!-- Favoritos se inyectarán aquí -->
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="productsGrid" class="flex-1 p-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 content-start">
+                <!-- Los productos se inyectarán aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile FAB (Venta Rapida) -->
+    <button onclick="ui.openModal('quickSaleModal')" class="md:hidden fixed bottom-20 right-4 bg-yellow-400 text-yellow-900 rounded-full w-14 h-14 shadow-[0_4px_15px_rgba(250,204,21,0.6)] flex items-center justify-center z-[40] hover:scale-105 active:scale-95 transition-transform border-2 border-white">
+        <i class="fa-solid fa-bolt text-2xl"></i>
+    </button>
+
+    <!-- Sleek Mobile Bottom Nav -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around p-1 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] z-[40]">
+        <button onclick="document.getElementById('searchInput').focus()" class="flex-1 flex flex-col items-center pt-2 pb-1 text-gray-400 hover:text-brand transition-colors"><i class="fa-solid fa-home text-[22px] mb-1"></i><span class="text-[10px] font-bold">Inicio</span></button>
+        
+        <button onclick="ui.openModal('addProductModal')" class="flex-1 flex flex-col items-center pt-2 pb-1 text-gray-400 hover:text-brand transition-colors"><i class="fa-solid fa-plus-circle text-[22px] mb-1"></i><span class="text-[10px] font-bold">Agregar</span></button>
+        
+        <button onclick="ui.toggleMobileCart()" class="flex-1 flex flex-col items-center justify-end pb-1 text-brand relative">
+            <div class="bg-brand text-white rounded-full w-14 h-14 flex items-center justify-center absolute -top-5 shadow-[0_4px_10px_rgba(0,150,136,0.4)] border-4 border-white transition-transform active:scale-95">
+                <i class="fa-solid fa-receipt text-2xl"></i>
+                <span id="mobile-cart-badge-nav" class="absolute top-[-5px] right-[-5px] bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">0</span>
+            </div>
+            <span class="text-[10px] font-bold mt-[26px]">Ticket</span>
+        </button>
+        
+        <button onclick="document.getElementById('moreMenuModal').classList.remove('hidden'); document.getElementById('moreMenuModal').classList.add('flex');" class="flex-1 flex flex-col items-center pt-2 pb-1 text-gray-400 hover:text-brand transition-colors relative">
+            <i class="fa-solid fa-bars text-[22px] mb-1"></i><span class="text-[10px] font-bold">Menú</span>
+            <span id="pausedSalesBadgeMobile" class="absolute top-1 right-3 bg-yellow-400 text-[9px] text-black font-bold rounded-full w-4 h-4 flex items-center justify-center hidden">0</span>
+        </button>
+    </div>
+
+    <!-- Menú Más (Mobile Only Bottom Sheet) -->
+    <div id="moreMenuModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex-col justify-end backdrop-blur-sm transition-opacity md:hidden" onclick="this.classList.add('hidden'); this.classList.remove('flex');">
+        <div class="bg-white rounded-t-3xl p-6 w-full max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Menú Principal</h3>
+                <button onclick="document.getElementById('moreMenuModal').classList.add('hidden'); document.getElementById('moreMenuModal').classList.remove('flex');" class="bg-gray-100 text-gray-500 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200 transition-colors"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="document.getElementById('moreMenuModal').classList.add('hidden'); document.getElementById('moreMenuModal').classList.remove('flex'); ui.openModal('registerCutModal')" class="bg-cyan-50 p-4 rounded-3xl flex flex-col items-center gap-3 text-cyan-800 shadow-sm border border-cyan-100 active:scale-95 transition-transform">
+                    <i class="fa-solid fa-chart-line text-4xl"></i>
+                    <span class="font-bold">Corte de Caja</span>
+                </button>
+                <button onclick="document.getElementById('moreMenuModal').classList.add('hidden'); document.getElementById('moreMenuModal').classList.remove('flex'); ui.openModal('pausedSalesModal')" class="bg-yellow-50 p-4 rounded-3xl flex flex-col items-center gap-3 text-yellow-800 shadow-sm border border-yellow-100 relative active:scale-95 transition-transform">
+                    <i class="fa-solid fa-pause text-4xl"></i>
+                    <span class="font-bold">Espera</span>
+                    <span id="pausedSalesBadgeMobileMenu" class="absolute top-2 right-2 bg-yellow-400 text-black text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center hidden shadow-sm">0</span>
+                </button>
+                <button onclick="document.getElementById('moreMenuModal').classList.add('hidden'); document.getElementById('moreMenuModal').classList.remove('flex'); app.openKitsModal()" class="bg-purple-50 p-4 rounded-3xl flex flex-col items-center gap-3 text-purple-800 shadow-sm border border-purple-100 active:scale-95 transition-transform">
+                    <i class="fa-solid fa-layer-group text-4xl"></i>
+                    <span class="font-bold">Kits / Listas</span>
+                </button>
+                <button onclick="document.getElementById('moreMenuModal').classList.add('hidden'); document.getElementById('moreMenuModal').classList.remove('flex'); ui.openModal('labelsModal')" class="bg-gray-50 p-4 rounded-3xl flex flex-col items-center gap-3 text-gray-700 shadow-sm border border-gray-200 active:scale-95 transition-transform">
+                    <i class="fa-solid fa-tags text-4xl"></i>
+                    <span class="font-bold">Etiquetas</span>
+                </button>
+                <button onclick="document.getElementById('moreMenuModal').classList.add('hidden'); document.getElementById('moreMenuModal').classList.remove('flex'); ui.openModal('historyModal')" class="bg-blue-50 p-4 rounded-3xl flex flex-col items-center gap-3 text-blue-800 shadow-sm border border-blue-100 col-span-2 active:scale-95 transition-transform">
+                    <i class="fa-solid fa-calendar-days text-4xl"></i>
+                    <span class="font-bold">Reportes Históricos</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket / Cart Sidebar -->
+    <aside id="cartSidebar" class="w-full md:w-96 bg-white shadow-[-5px_0_20px_rgba(0,0,0,0.05)] flex flex-col absolute md:relative right-0 h-full transform translate-x-full md:translate-x-0 transition-transform duration-300 z-20">
+        <div class="p-4 bg-brand-light/30 border-b border-brand-light flex justify-between items-center">
+            <h2 class="text-xl font-bold text-brand-dark"><i class="fa-solid fa-receipt mr-2"></i>Ticket</h2>
+            <button id="closeCartBtn" class="md:hidden text-gray-500 text-2xl"><i class="fa-solid fa-times"></i></button>
+        </div>
+        
+        <div id="cartItems" class="flex-1 overflow-y-auto p-2 space-y-2">
+            <!-- Items del carrito -->
+            <div class="text-center text-gray-400 mt-10">
+                <i class="fa-solid fa-basket-shopping text-4xl mb-2"></i>
+                <p>El carrito está vacío</p>
+            </div>
+        </div>
+        
+        <div class="p-4 bg-gray-50 border-t border-gray-200 space-y-3">
+            <div class="flex justify-between text-lg font-bold">
+                <span>Total:</span>
+                <span id="cartTotal" class="text-brand-dark">$0.00</span>
+            </div>
+            <button onclick="app.openCheckoutModal()" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-4 rounded-2xl shadow-lg mt-4 transition-transform active:scale-95 text-xl flex items-center justify-center gap-2">
+                <i class="fa-solid fa-hand-holding-dollar"></i> Cobrar <span class="bg-white/30 text-xs px-2 py-1 rounded ml-2 hidden lg:inline">Enter</span>
+            </button>
+            <div class="flex gap-2">
+                <button onclick="app.pauseSale()" class="flex-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-2 rounded-xl transition-colors text-sm font-semibold flex items-center justify-center">
+                    <i class="fa-solid fa-pause mr-1"></i> Pausar
+                </button>
+                <button onclick="app.clearCart()" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-xl transition-colors text-sm font-semibold flex items-center justify-center">
+                    <i class="fa-solid fa-trash mr-1"></i> Vaciar
+                </button>
+            </div>
+        </div>
+    </aside>
+    </main>
+
+    <!-- Modals Overlay -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
+        
+        <!-- Add Product Modal -->
+        <div id="addProductModal" class="bg-white rounded-3xl shadow-2xl w-full max-w-lg hidden transform scale-95 transition-transform overflow-hidden">
+            <div class="bg-brand p-4 text-white flex justify-between items-center">
+                <h3 id="addProductModalTitle" class="text-xl font-bold"><i class="fa-solid fa-plus-circle mr-2"></i>Nuevo Producto</h3>
+                <button onclick="ui.closeModal()" class="text-white hover:text-gray-200"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <form id="productForm" onsubmit="app.saveProduct(event)" class="p-6 space-y-4">
+                <div class="flex gap-4">
+                    <!-- Image Upload/Camera -->
+                    <div class="w-1/3 flex flex-col items-center gap-2">
+                        <div id="imagePreview" class="w-24 h-24 bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                            <i class="fa-solid fa-camera text-3xl text-gray-400"></i>
+                        </div>
+                        <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="ui.handleImageUpload(event)">
+                        <input type="hidden" id="imageBase64">
+                        <span class="text-xs text-center text-gray-500">Toca para foto</span>
+                    </div>
+                    <!-- Name & Barcode -->
+                    <div class="w-2/3 space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+                            <div class="flex gap-2 items-center">
+                                <input type="text" id="p_name" required class="mt-1 w-full rounded-xl border-gray-300 bg-gray-50 p-2 focus:ring-brand focus:border-brand">
+                                <button type="button" onclick="document.getElementById('aiFileInput').click()" id="aiWandBtn" class="mt-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-2 rounded-xl shadow hover:scale-105 transition-transform" title="Auto-completar con foto (IA)">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                </button>
+                                <input type="file" id="aiFileInput" accept="image/*" capture="environment" class="hidden" onchange="app.recognizeProduct(event)">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Código de Barras</label>
+                            <div class="flex">
+                                <input type="text" id="p_barcode" class="mt-1 w-full rounded-l-xl border-gray-300 bg-gray-50 p-2 focus:ring-brand focus:border-brand">
+                                <button type="button" onclick="scanner.start('scanAreaModal', 'product')" class="mt-1 bg-blue-500 text-white px-3 rounded-r-xl"><i class="fa-solid fa-barcode"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Scanner Area for Modal -->
+                <div id="scanAreaModal" class="hidden w-full h-48 bg-black rounded-xl overflow-hidden relative">
+                    <button type="button" onclick="scanner.stop()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 z-10"><i class="fa-solid fa-times"></i></button>
+                </div>
+
+                <!-- Pricing Area -->
+                <div class="bg-cyan-50 p-4 rounded-xl space-y-3 border border-cyan-100">
+                    <div class="flex justify-between items-center text-sm font-semibold text-brand-dark mb-2">
+                        <span>Cálculo de Precio</span>
+                        <span class="text-xs bg-white px-2 py-1 rounded shadow-sm">+16% IVA Automático</span>
+                    </div>
+                    <div class="mb-3 p-3 bg-white rounded-lg border border-cyan-200">
+                        <label class="flex items-center space-x-2 text-sm text-gray-700 font-semibold cursor-pointer">
+                            <input type="checkbox" id="p_is_package" onchange="app.togglePackageMode()" class="rounded text-brand focus:ring-brand">
+                            <span>¿Compraste esto en Paquete? (Calculadora)</span>
+                        </label>
+                        <div id="package_calc_area" class="hidden mt-3 space-y-3">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600">Costo Total del Paquete</label>
+                                    <div class="relative mt-1">
+                                        <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                                        <input type="number" step="0.01" id="p_package_cost" oninput="app.calculatePrice()" class="w-full pl-6 rounded border-gray-300 p-1.5 text-sm bg-gray-50 focus:bg-white">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600">Unidades que trae</label>
+                                    <input type="number" id="p_package_units" oninput="app.calculatePrice()" class="mt-1 w-full rounded border-gray-300 p-1.5 text-sm bg-gray-50 focus:bg-white">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-brand-dark">Precio Final del Paquete (Público)</label>
+                                <div class="relative mt-1">
+                                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-brand-dark font-bold text-sm">$</span>
+                                    <input type="number" step="0.5" id="p_package_total_price" oninput="app.calculateWholesaleFromTotal()" class="w-full pl-6 rounded border-brand-light bg-brand-light/10 border p-1.5 text-sm font-bold text-brand-dark focus:bg-white" placeholder="Calculado automáticamente">
+                                    <input type="hidden" id="p_wholesale_price" value="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600">Costo Unitario (Sin IVA)</label>
+                            <div class="relative mt-1">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                                <input type="number" step="0.01" id="p_cost" required oninput="app.calculatePrice()" class="w-full pl-6 rounded-lg border-gray-300 p-2 text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600">Margen de Ganancia (%)</label>
+                            <div class="relative mt-1">
+                                <input type="number" id="p_margin" value="52" required oninput="app.calculatePrice()" class="w-full pr-6 rounded-lg border-gray-300 p-2 text-sm">
+                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-cyan-200 flex justify-between items-end">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600">Stock Inicial</label>
+                            <input type="number" id="p_stock" value="10" required class="mt-1 w-20 rounded-lg border-gray-300 p-2 text-sm">
+                        </div>
+                        <div class="text-right flex flex-col items-end">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Precio Final (1 Pieza)</label>
+                            <div class="relative w-32">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-dark font-bold text-lg">$</span>
+                                <input type="number" step="0.5" id="p_final_price" required class="w-full pl-7 rounded-lg border-brand-light bg-brand-light/10 border-2 p-2 text-lg font-bold text-brand-dark text-right transition-colors focus:bg-white">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Opciones Extra -->
+                <div class="mt-4 pt-3 border-t border-gray-100 flex items-center">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-bold text-gray-700">
+                        <input type="checkbox" id="p_is_favorite" class="w-4 h-4 text-brand bg-gray-100 border-gray-300 rounded focus:ring-brand">
+                        <i class="fa-solid fa-star text-yellow-400"></i> Agregar a Acceso Rápido
+                    </label>
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="button" id="btnDeleteProduct" onclick="app.deleteProduct()" class="hidden bg-red-100 hover:bg-red-200 text-red-600 font-bold py-3 px-4 rounded-xl transition-colors" title="Eliminar Producto"><i class="fa-solid fa-trash-alt"></i></button>
+                    <button type="submit" class="flex-1 bg-brand hover:bg-brand-dark text-white font-bold py-3 rounded-xl shadow-md transition-transform active:scale-95">Guardar Producto</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sale Detail Modal -->
+        <div id="saleDetailModal" class="bg-white md:rounded-3xl shadow-2xl w-full max-w-lg hidden transform scale-95 transition-transform overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-100 p-4 md:p-6 flex justify-between items-center sticky top-0 z-10">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-gray-800" id="saleDetailTitle">Ticket #...</h2>
+                    <p class="text-xs md:text-sm text-gray-500" id="saleDetailDate">Fecha...</p>
+                </div>
+                <button onclick="ui.closeModal()" class="bg-white border-2 border-gray-100 text-gray-400 hover:text-brand hover:border-brand-light rounded-full w-10 h-10 flex items-center justify-center transition-all shadow-sm"><i class="fa-solid fa-times text-lg"></i></button>
+            </div>
+            <div class="p-4 md:p-6 flex-1 overflow-y-auto">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-brand-light/30 text-gray-600 text-[10px] md:text-xs uppercase font-bold">
+                            <tr>
+                                <th class="p-2 md:p-3">Artículo</th>
+                                <th class="p-2 md:p-3 text-center">Cant</th>
+                                <th class="p-2 md:p-3 text-right">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="saleDetailItems" class="divide-y divide-gray-100 text-xs md:text-sm">
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-between items-center p-4 bg-brand-light/20 rounded-2xl mb-6 border border-brand-light/50">
+                    <span class="text-gray-600 font-bold">Total:</span>
+                    <span class="text-2xl font-black text-brand" id="saleDetailTotal">$0.00</span>
+                </div>
+                
+                <button id="printTicketBtn" onclick="app.printTicket()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 rounded-2xl text-lg flex justify-center items-center gap-2 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 active:translate-y-0">
+                    <i class="fa-solid fa-print text-xl"></i> Imprimir Ticket
+                </button>
+            </div>
+        </div>
+
+        <!-- Register Cut Modal (Corte de Caja) -->
+        <div id="registerCutModal" class="bg-white rounded-3xl shadow-2xl w-full max-w-md hidden transform scale-95 transition-transform overflow-hidden">
+            <div class="bg-blue-500 p-4 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold"><i class="fa-solid fa-chart-line mr-2"></i>Corte de Caja (SAT)</h3>
+                <button onclick="ui.closeModal()" class="text-white hover:text-gray-200"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="text-center border-b border-gray-100 pb-4">
+                    <p class="text-gray-500 text-sm font-semibold mb-1">Total Cobrado (Con IVA)</p>
+                    <div class="text-5xl font-black text-blue-600" id="cutTotalDisplay">$0.00</div>
+                    <p class="text-xs text-gray-400 mt-2">Transacciones de hoy: <span id="cutCountDisplay" class="font-bold text-gray-600">0</span></p>
+                </div>
+                
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
+                        <span class="text-gray-600">Subtotal (Ingresos p/SAT)</span>
+                        <span id="cutSubtotalDisplay" class="font-bold text-gray-800">$0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
+                        <span class="text-gray-600">IVA Trasladado (16%)</span>
+                        <span id="cutIvaDisplay" class="font-bold text-gray-800">$0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-red-50 p-2 rounded">
+                        <span class="text-red-700">Costo de lo Vendido</span>
+                        <span id="cutCostDisplay" class="font-bold text-red-700">-$0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-green-50 p-2 rounded border border-green-200 mt-2">
+                        <span class="text-green-700 font-bold">Ganancia Bruta</span>
+                        <span id="cutProfitDisplay" class="font-bold text-green-700">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 mt-4">
+                    <p class="text-xs font-bold text-blue-800 mb-1"><i class="fa-solid fa-calculator mr-1"></i> Estimación ISR (RESICO 1%)</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-blue-600">Calculado sobre Subtotal</span>
+                        <span id="cutIsrDisplay" class="font-black text-lg text-blue-700">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 border-t border-gray-100 pt-4">
+                    <h4 class="font-bold text-gray-700 mb-2">Desglose de Tickets</h4>
+                    <div id="cutSalesList" class="space-y-2 max-h-48 overflow-y-auto">
+                        <!-- JS inyecta tickets aquí -->
+                    </div>
+                </div>
+
+                <button onclick="app.loadRegisterCut()" class="w-full mt-4 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold transition-colors"><i class="fa-solid fa-sync mr-2"></i>Actualizar Datos</button>
+            </div>
+        </div>
+
+        <!-- History Report Modal -->
+        <div id="historyModal" class="bg-white rounded-3xl shadow-2xl w-full max-w-md hidden transform scale-95 transition-transform overflow-hidden">
+            <div class="bg-purple-600 p-4 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold"><i class="fa-solid fa-calendar-days mr-2"></i>Reporte Histórico</h3>
+                <button onclick="ui.closeModal()" class="text-white hover:text-gray-200"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <form id="historyForm" onsubmit="app.loadReport(event)" class="flex gap-2 mb-4">
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-gray-600">Desde</label>
+                        <input type="date" id="rep_start" required class="mt-1 w-full rounded-lg border-gray-300 p-2 text-sm bg-gray-50 focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-gray-600">Hasta</label>
+                        <input type="date" id="rep_end" required class="mt-1 w-full rounded-lg border-gray-300 p-2 text-sm bg-gray-50 focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 h-[38px] w-[38px] flex items-center justify-center"><i class="fa-solid fa-search"></i></button>
+                    </div>
+                </form>
+
+                <div class="text-center border-b border-gray-100 pb-4">
+                    <p class="text-gray-500 text-sm font-semibold mb-1">Total Cobrado (Con IVA)</p>
+                    <div class="text-5xl font-black text-purple-600" id="repTotalDisplay">$0.00</div>
+                    <p class="text-xs text-gray-400 mt-2">Transacciones: <span id="repCountDisplay" class="font-bold text-gray-600">0</span></p>
+                </div>
+                
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
+                        <span class="text-gray-600">Subtotal (Ingresos p/SAT)</span>
+                        <span id="repSubtotalDisplay" class="font-bold text-gray-800">$0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
+                        <span class="text-gray-600">IVA Trasladado (16%)</span>
+                        <span id="repIvaDisplay" class="font-bold text-gray-800">$0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-red-50 p-2 rounded">
+                        <span class="text-red-700">Costo de lo Vendido</span>
+                        <span id="repCostDisplay" class="font-bold text-red-700">-$0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-green-50 p-2 rounded border border-green-200 mt-2">
+                        <span class="text-green-700 font-bold">Ganancia Bruta</span>
+                        <span id="repProfitDisplay" class="font-bold text-green-700">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="bg-purple-50 p-3 rounded-xl border border-purple-100 mt-4">
+                    <p class="text-xs font-bold text-purple-800 mb-1"><i class="fa-solid fa-calculator mr-1"></i> Estimación ISR (RESICO 1%)</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-purple-600">Calculado sobre Subtotal</span>
+                        <span id="repIsrDisplay" class="font-black text-lg text-purple-700">$0.00</span>
+                    </div>
+                </div>
+                
+                <div class="mt-6 border-t border-gray-100 pt-4">
+                    <h4 class="font-bold text-gray-700 mb-2">Desglose de Tickets</h4>
+                    <div id="repSalesList" class="space-y-2 max-h-48 overflow-y-auto">
+                        <!-- JS inyecta tickets aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paused Sales Modal -->
+        <div id="pausedSalesModal" class="bg-white rounded-3xl shadow-2xl w-full max-w-md hidden transform scale-95 transition-transform overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="bg-yellow-500 p-4 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold"><i class="fa-solid fa-pause mr-2"></i>Ventas en Espera</h3>
+                <button onclick="ui.closeModal()" class="text-white hover:text-gray-200"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <div id="pausedSalesList" class="p-4 space-y-3 overflow-y-auto flex-1 bg-gray-50">
+                <!-- Los tickets pausados se inyectarán aquí -->
+            </div>
+        </div>
+        <!-- Kits Modal -->
+        <div id="kitsModal" class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl hidden transform scale-95 transition-transform overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-purple-600 p-4 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold"><i class="fa-solid fa-layer-group mr-2"></i>Listas Escolares (Kits)</h3>
+                <button onclick="ui.closeModal()" class="text-white hover:text-gray-200"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            
+            <div class="flex border-b border-gray-200">
+                <button id="tabVenderKit" onclick="app.switchKitTab('vender')" class="flex-1 py-3 font-bold text-brand border-b-2 border-brand transition-colors">Vender Lista</button>
+                <button id="tabCrearKit" onclick="app.switchKitTab('crear')" class="flex-1 py-3 font-semibold text-gray-500 hover:text-brand transition-colors">Crear Nueva Lista</button>
+            </div>
+
+            <!-- Tab: Vender Kit -->
+            <div id="kitsListArea" class="p-4 space-y-3 overflow-y-auto flex-1 bg-gray-50">
+                <div class="text-center text-gray-400 mt-10" id="emptyKitsMsg">
+                    <i class="fa-solid fa-boxes-stacked text-4xl mb-2"></i>
+                    <p>No has creado ninguna lista escolar.</p>
+                </div>
+                <div id="kitsGridContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 hidden">
+                    <!-- Kits inyectados aquí -->
+                </div>
+            </div>
+
+            <!-- Tab: Crear Kit -->
+            <div id="kitsCreateArea" class="hidden flex-1 overflow-y-auto bg-white flex flex-col">
+                <form id="kitForm" onsubmit="app.saveKit(event)" class="p-4 flex-1 flex flex-col space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nombre de la Lista / Kit</label>
+                        <input type="text" id="k_name" required class="mt-1 w-full rounded-xl border-gray-300 bg-gray-50 p-2 focus:ring-brand focus:border-brand" placeholder="Ej: Lista 1er Grado">
+                    </div>
+                    
+                    <div class="flex-1 border border-gray-200 rounded-xl overflow-hidden flex flex-col">
+                        <div class="bg-gray-100 p-2 border-b border-gray-200 text-sm font-bold text-gray-700 flex justify-between">
+                            <span>Artículos en la lista</span>
+                            <span class="text-brand cursor-pointer hover:underline" onclick="app.openProductSelectorForKit()">+ Añadir Artículo</span>
+                        </div>
+                        <div id="kitItemsList" class="flex-1 p-2 overflow-y-auto space-y-2 bg-gray-50 min-h-[150px]">
+                            <!-- Items agregados al kit -->
+                            <div class="text-center text-gray-400 mt-4 text-sm" id="emptyKitItemsMsg">Agrega productos a esta lista</div>
+                        </div>
+                        <div class="bg-gray-100 p-3 border-t border-gray-200 flex justify-between items-center font-bold">
+                            <span class="text-gray-700">Precio Sugerido:</span>
+                            <span class="text-xl text-brand-dark" id="kitSuggestedPrice">$0.00</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Precio Final de Venta del Kit (Cerrado)</label>
+                        <div class="relative mt-1">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                            <input type="number" step="0.01" id="k_price" required class="w-full pl-6 rounded-lg border-gray-300 p-2 text-lg font-bold text-brand-dark bg-cyan-50">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-md transition-transform active:scale-95">Guardar Lista Escolar</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Product Selector Modal (para armar kits) -->
+        <div id="productSelectorModal" class="bg-white rounded-3xl shadow-2xl w-full max-w-md hidden transform scale-95 transition-transform overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="bg-gray-800 p-4 text-white flex justify-between items-center">
+                <h3 class="text-lg font-bold">Seleccionar Producto</h3>
+                <button onclick="ui.closeModal(); ui.openModal('kitsModal')" class="text-white hover:text-gray-300"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="p-4 border-b border-gray-200 relative">
+                <i class="fa-solid fa-search absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" id="kitProductSearch" oninput="app.filterProductSelector()" placeholder="Buscar producto..." class="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 focus:border-brand outline-none text-sm">
+            </div>
+            <div id="productSelectorList" class="p-2 space-y-1 overflow-y-auto flex-1">
+                <!-- Lista de productos -->
+            </div>
+        </div>
+
+        <!-- Labels Modal -->
+        <div id="labelsModal" class="bg-white rounded-3xl shadow-2xl w-full max-w-xl hidden transform scale-95 transition-transform overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-gray-800 p-4 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold"><i class="fa-solid fa-tags mr-2"></i>Impresión de Etiquetas</h3>
+                <button onclick="ui.closeModal()" class="text-white hover:text-gray-200"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <div class="p-4 flex flex-col sm:flex-row gap-4 h-full overflow-hidden">
+                <div class="w-full sm:w-1/2 flex flex-col">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">1. Buscar producto</label>
+                    <div class="relative mb-2">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="labelProductSearch" oninput="app.filterLabelSelector()" placeholder="Escribe el nombre..." class="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 focus:border-brand outline-none text-sm">
+                    </div>
+                    <div id="labelSelectorList" class="flex-1 overflow-y-auto border border-gray-200 rounded-xl p-1 bg-gray-50 max-h-48 sm:max-h-full">
+                        <!-- Lista de búsqueda -->
+                    </div>
+                </div>
+                <div class="w-full sm:w-1/2 flex flex-col border-t sm:border-t-0 sm:border-l border-gray-200 pt-4 sm:pt-0 sm:pl-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">2. Etiquetas a imprimir</label>
+                    <div id="labelsQueue" class="flex-1 overflow-y-auto bg-gray-50 border border-gray-200 rounded-xl p-2 mb-3 min-h-[150px]">
+                        <div class="text-center text-gray-400 mt-4 text-sm" id="emptyLabelsMsg">No has seleccionado productos</div>
+                    </div>
+                    <button onclick="app.printLabels()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition-transform active:scale-95"><i class="fa-solid fa-print mr-2"></i>Imprimir Etiquetas</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Sale Modal -->
+        <div id="quickSaleModal" class="bg-white rounded-3xl shadow-2xl w-full max-w-sm hidden transform scale-95 transition-transform overflow-hidden">
+            <div class="bg-yellow-400 p-4 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold text-yellow-900"><i class="fa-solid fa-bolt mr-2"></i>Venta Rápida</h3>
+                <button onclick="ui.closeModal()" class="text-yellow-900 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <form onsubmit="app.addQuickSale(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Descripción (Opcional)</label>
+                    <input type="text" id="qs_name" placeholder="Ej. Copias, Dulces..." class="mt-1 w-full rounded-xl border-gray-300 bg-gray-50 p-2 focus:ring-yellow-400 focus:border-yellow-400">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Cantidad</label>
+                        <input type="number" id="qs_qty" value="1" min="1" required class="mt-1 w-full rounded-xl border-gray-300 bg-gray-50 p-2 focus:ring-yellow-400 focus:border-yellow-400 text-center">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Precio Unitario</label>
+                        <div class="relative mt-1">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                            <input type="number" step="0.01" id="qs_amount" required class="w-full pl-6 rounded-xl border-gray-300 bg-gray-50 p-2 focus:ring-yellow-400 focus:border-yellow-400">
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold py-3 rounded-xl shadow-md transition-transform active:scale-95">Agregar al Ticket</button>
+            </form>
+        </div>
+
+        <!-- Checkout Modal -->
+        <div id="checkoutModal" class="bg-white rounded-3xl shadow-2xl w-full max-w-sm hidden transform scale-95 transition-transform overflow-hidden">
+            <div class="bg-brand p-4 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold"><i class="fa-solid fa-money-bill-wave mr-2"></i>Cobrar Venta</h3>
+                <button type="button" onclick="ui.closeModal()" class="text-white hover:text-gray-200"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <form onsubmit="app.confirmCheckout(event)" class="p-6 space-y-4">
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Total a Cobrar</p>
+                    <div id="checkoutTotalDisplay" class="text-4xl font-black text-brand-dark my-2">$0.00</div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Efectivo Recibido</label>
+                    <div class="relative mt-1">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xl">$</span>
+                        <input type="number" step="0.01" id="checkoutCash" required oninput="app.calculateChange()" class="w-full pl-8 rounded-xl border-gray-300 bg-gray-50 p-3 focus:ring-brand focus:border-brand text-2xl font-bold">
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center">
+                    <span class="font-bold text-gray-600">Cambio:</span>
+                    <span id="checkoutChangeDisplay" class="text-2xl font-bold text-gray-400">$0.00</span>
+                </div>
+                
+                <button type="submit" id="confirmCheckoutBtn" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-4 rounded-xl shadow-md transition-transform active:scale-95 text-lg">Confirmar Venta <span class="bg-white/30 text-xs px-2 py-1 rounded ml-2 hidden lg:inline">Enter</span></button>
+            </form>
+        </div>
+        
+        <!-- Low Stock Modal -->
+        <div id="lowStockModal" class="bg-white md:rounded-3xl shadow-2xl w-full max-w-lg hidden transform scale-95 transition-transform overflow-hidden flex-col max-h-[90vh]">
+            <div class="bg-red-500 text-white p-4 md:p-6 flex justify-between items-center sticky top-0 z-10">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Alertas de Inventario</h2>
+                    <p class="text-xs md:text-sm text-red-100">Productos con 5 piezas o menos</p>
+                </div>
+                <button onclick="ui.closeModal()" class="bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center transition-all shadow-sm"><i class="fa-solid fa-times text-lg"></i></button>
+            </div>
+            <div class="p-4 md:p-6 overflow-y-auto flex-1 bg-gray-50">
+                <div id="lowStockList" class="space-y-3">
+                    <!-- Products will be injected here -->
+                </div>
+                <div id="lowStockEmpty" class="hidden text-center py-10 text-gray-400">
+                    <i class="fa-solid fa-check-circle text-4xl mb-3 text-green-400"></i>
+                    <p>Todo está en orden. Tienes buen inventario.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner overlay -->
+    <div id="scanAreaModal" class="hidden absolute inset-0 z-50 bg-black flex flex-col">
+        <div class="flex-1 relative" id="scanArea"></div>
+        <div class="p-4 bg-gray-900 flex justify-center">
+            <button onclick="scanner.stop()" class="bg-red-500 text-white px-6 py-3 rounded-full font-bold shadow-lg">Cancelar Escáner</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="js/api.js?v=2"></script>
+    
+    <!-- Fallback para lectura de códigos en dispositivos móviles sin HTTPS -->
+    <input type="file" id="fallbackBarcodeFile" accept="image/*" capture="environment" class="hidden" onchange="scanner.handleFallback(event)">
+
+    <script src="js/scanner.js?v=2"></script>
+    <script src="js/app.js?v=14"></script>
+    <script>
+        // PWA Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js');
+            });
+        }
+    </script>
+</body>
+</html>

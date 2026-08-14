@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2, UserPlus, Award, UserMinus, AlertTriangle, GraduationCap } from 'lucide-react';
+import { useGlobalConfig } from '../../hooks/useGlobalConfig';
+import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2, UserPlus, Award, UserMinus, AlertTriangle, GraduationCap, Settings } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
@@ -29,6 +30,8 @@ import AcuseRecepcionPrint from '../../components/AcuseRecepcionPrint';
 import { autoAcentuar } from '../../utils/format';
 
 export default function ControlEscolar() {
+  const { config, updateConfig } = useGlobalConfig();
+  const [leyendaOficial, setLeyendaOficial] = useState('"2026, Año de Margarita Maza"');
   const [activeTab, setActiveTab] = useState('pendientes');
   const [modalType, setModalType] = useState(null); // 'hoja', 'grade', 'asignacionMasiva'
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -266,7 +269,8 @@ export default function ControlEscolar() {
            countUpdated++;
         }
       }
-      toast.success(`¡Ciclo Cerrado! Se promovieron ${countUpdated} alumnos.`);
+      await updateConfig({ cicloEscolarActual: cicloEgreso, leyendaOficial: leyendaOficial });
+      toast.success(`¡Ciclo Cerrado! Se promovieron ${countUpdated} alumnos y el ciclo escolar actual ahora es ${cicloEgreso}.`);
       closeModal();
     } catch (error) {
       console.error(error);
@@ -1117,15 +1121,18 @@ export default function ControlEscolar() {
               <label className="block text-xs font-medium text-slate-500 mb-1">Ciclo Escolar</label>
               <select className="w-full p-2 border rounded-lg text-sm bg-white" value={cycleFilter} onChange={e => setCycleFilter(e.target.value)}>
                 <option value="Todos">Todos</option>
-                <option value="2024-2025">2024-2025</option>
-                <option value="2025-2026">2025-2026</option>
+                
+                <option value={config?.cicloEscolarActual || "2025-2026"}>{config?.cicloEscolarActual || "2025-2026"}</option>
                 <option value="2026-2027">2026-2027</option>
                 <option value="2027-2028">2027-2028</option>
                 <option value="2028-2029">2028-2029</option>
               </select>
             </div>
             <div className="w-full md:w-auto self-end flex gap-2">
-              <button onClick={() => setModalType('cierreCiclo')} className="w-full md:w-auto px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm flex items-center justify-center mr-2">
+              <button onClick={() => setModalType('ajustes')} className="w-full md:w-auto px-4 py-2 bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-sm font-bold hover:bg-slate-300 transition-colors shadow-sm flex items-center justify-center mr-2">
+                  <Settings className="w-4 h-4 mr-2" /> Configuración Global
+                </button>
+                <button onClick={() => setModalType('cierreCiclo')} className="w-full md:w-auto px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm flex items-center justify-center mr-2">
                 <GraduationCap className="w-4 h-4 mr-2" /> Cerrar Ciclo
               </button>
               <button onClick={handlePrintBatch} className="w-full md:w-auto px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 transition-colors shadow-sm flex items-center justify-center">
@@ -1323,9 +1330,77 @@ export default function ControlEscolar() {
                 />
               </div>
 
+              <div className="mb-6 bg-slate-50 p-4 border border-slate-200 rounded-lg">
+                <label className="block text-sm font-bold text-slate-700 mb-2">Nueva Leyenda Oficial del Año:</label>
+                <input 
+                  type="text" 
+                  value={leyendaOficial} 
+                  onChange={e => setLeyendaOficial(e.target.value)} 
+                  className="w-full p-2 border border-slate-300 rounded font-medium focus:border-red-500 focus:ring-red-500" 
+                  placeholder="Ej. '2027, Año de...'"
+                />
+                <p className="text-xs text-slate-500 mt-1">Este texto aparecerá en todas las constancias de estudio a partir de hoy.</p>
+              </div>
+
               <button onClick={handleCerrarCiclo} className="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 flex justify-center items-center shadow-lg transition-colors">
                 <GraduationCap className="w-5 h-5 mr-2" /> Ejecutar Cierre de Ciclo Escolar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AJUSTES GLOBALES */}
+      {modalType === 'ajustes' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm print:hidden">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-800 flex items-center">
+                <Settings className="w-5 h-5 mr-2 text-slate-600" />
+                Configuración Global del Sistema
+              </h3>
+              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-sm text-slate-600 mb-6">
+                Estos ajustes afectan las fechas y leyendas de <strong>todas</strong> las constancias, boletas y credenciales impresas en el sistema.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Ciclo Escolar Vigente:</label>
+                  <input 
+                    type="text" 
+                    defaultValue={config?.cicloEscolarActual || '2025-2026'}
+                    id="input-ciclo"
+                    className="w-full p-2 border border-slate-300 rounded focus:border-primary-500 focus:ring-primary-500" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Leyenda Oficial del Año:</label>
+                  <input 
+                    type="text" 
+                    defaultValue={config?.leyendaOficial || '"2026, Año de Margarita Maza"'}
+                    id="input-leyenda"
+                    className="w-full p-2 border border-slate-300 rounded focus:border-primary-500 focus:ring-primary-500" 
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <button onClick={() => {
+                  const c = document.getElementById('input-ciclo').value;
+                  const l = document.getElementById('input-leyenda').value;
+                  updateConfig({ cicloEscolarActual: c, leyendaOficial: l });
+                  toast.success('Configuración Global actualizada con éxito');
+                  closeModal();
+                }} className="w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 flex justify-center items-center shadow-lg transition-colors">
+                  <Save className="w-5 h-5 mr-2" /> Guardar Configuración
+                </button>
+              </div>
             </div>
           </div>
         </div>

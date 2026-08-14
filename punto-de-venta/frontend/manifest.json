@@ -1,0 +1,22 @@
+{
+  "name": "Mi Papelería - Punto de Venta",
+  "short_name": "POS Papelería",
+  "description": "Sistema de Punto de Venta para Papelería",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#fdf2f8",
+  "theme_color": "#ec4899",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

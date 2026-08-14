@@ -1,8 +1,10 @@
 import React from 'react';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { QRCodeSVG } from 'qrcode.react';
 
 // TamaÃ±o CR80 (54mm x 85.6mm)
 export default function CredencialPrint({ students = [] }) {
+  const { config } = useGlobalConfig();
   const getGradeColor = (grado) => {
     // 1ro Guinda, 2do Azul, 3ro Verde
     if (grado?.includes('1')) return 'bg-rose-900 border-rose-900';
@@ -18,7 +20,7 @@ export default function CredencialPrint({ students = [] }) {
     return 'text-slate-800';
   };
 
-  const getSchoolCycle = () => {
+  const getSchoolCycle = () => { return config?.cicloEscolarActual || "2025-2026"; // Fallback 
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth(); // 0-indexed, 7 is August

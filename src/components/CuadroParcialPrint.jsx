@@ -1,7 +1,9 @@
 import React from 'react';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
 
 export default function CuadroParcialPrint({ alumnos = [], materias = [], grado = '', grupo = '' }) {
+  const { config } = useGlobalConfig();
   if (!alumnos || alumnos.length === 0) return null;
 
   const getPromedioFinalObj = (student, materiaId) => {
@@ -45,7 +47,7 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
           <div className="text-center">
             <h1 className="font-black text-lg tracking-wider uppercase">Cuadro de Concentración (Calificaciones Parciales)</h1>
             <h2 className="font-bold text-xs text-slate-700 uppercase">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
-            <p className="text-[10px] font-bold text-slate-600 mt-1 uppercase">Grado: {grado} | Grupo: "{grupo}" | Ciclo Escolar 2025-2026</p>
+            <p className="text-[10px] font-bold text-slate-600 mt-1 uppercase">Grado: {grado} | Grupo: "{grupo}" | Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}</p>
           </div>
           <img src="/logo-escuela.png" alt="Escuela" className="h-12 object-contain" />
         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { truncateTo1Dec, getCalificacionFinal, autoAcentuar } from '../utils/format';
 
 const extraerFechaDeCurp = (curp) => {
@@ -53,6 +54,7 @@ const promedioALetras = (promedioNum) => {
 };
 
 export default function ConstanciaPrint({ student, type = 'simple', materiasPorGrado = {} }) {
+  const { config } = useGlobalConfig();
   if (!student) return null;
 
   const materias = materiasPorGrado[student.grado] || [];
@@ -163,7 +165,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
             
             {/* LEYENDA OFICIAL DEL AÑO */}
             <p className="mt-4 text-center font-bold text-[9pt] uppercase tracking-widest text-slate-500">
-               "2026, Año de Margarita Maza"
+               {config?.leyendaOficial || '"2026, Año de Margarita Maza"'}
             </p>
 
             <p className="mt-4 text-[12pt] normal-case font-normal text-left">A quien corresponda:</p>
@@ -179,7 +181,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
 
          {type === 'terminacion' ? (
            <p className="mb-6 indent-12">
-             Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios correspondientes a la Educación Secundaria en el ciclo escolar 2025-2026 en esta Institución Educativa.
+             Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios correspondientes a la Educación Secundaria en el ciclo escolar {config?.cicloEscolarActual || '2025-2026'} en esta Institución Educativa.
            </p>
          ) : type === 'promedio_generacion' ? (
            <p className="mb-6 indent-12">
@@ -187,7 +189,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
            </p>
          ) : (
            <p className="mb-6 indent-12">
-             Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente 2025-2026.
+             Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente {config?.cicloEscolarActual || '2025-2026'}.
            </p>
          )}
 

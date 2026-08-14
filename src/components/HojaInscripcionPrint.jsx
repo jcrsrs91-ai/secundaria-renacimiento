@@ -1,6 +1,8 @@
 ﻿import React from 'react';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 
 export default function HojaInscripcionPrint({ data }) {
+  const { config } = useGlobalConfig();
   const logoSEG = "https://upload.wikimedia.org/wikipedia/commons/e/ea/Logo_Secretar%C3%ADa_de_Educaci%C3%B3n_Guerrero.png"; 
 
   const handlePrint = () => {
@@ -52,7 +54,7 @@ export default function HojaInscripcionPrint({ data }) {
             <h1 className="text-sm font-bold uppercase tracking-wide">SecretarÃ­a de EducaciÃ³n Guerrero</h1>
             <h2 className="text-xs font-bold uppercase">SubsecretarÃ­a de EducaciÃ³n BÃ¡sica</h2>
             <h3 className="text-xs font-semibold">Esc. Sec. TÃ©c. NÂ°68 "RENACIMIENTO"</h3>
-            <p className="text-[10px] font-bold mt-0.5 text-slate-700">CICLO ESCOLAR: {data.cicloEscolar || '2024-2025'}</p>
+            <p className="text-[10px] font-bold mt-0.5 text-slate-700">CICLO ESCOLAR: {data.cicloEscolar || config?.cicloEscolarActual || '2025-2026'}</p>
             <p className="text-[10px] font-bold mt-1 bg-gray-200 inline-block px-2 py-0.5 rounded border border-gray-400 uppercase">
               FICHA INDIVIDUAL DE {data.tipoTramite || 'INSCRIPCIÃ"N'}
             </p>
@@ -209,7 +211,7 @@ export default function HojaInscripcionPrint({ data }) {
           <div className="w-20 flex flex-col items-center justify-center">
              <div className="text-center border-2 border-gray-800 p-2 rounded-lg">
                 <p className="text-[10px] font-bold text-gray-600 uppercase">Ciclo Escolar</p>
-                <p className="text-sm font-black">{data.cicloEscolar || '2024-2025'}</p>
+                <p className="text-sm font-black">{data.cicloEscolar || config?.cicloEscolarActual || '2025-2026'}</p>
              </div>
           </div>
         </div>

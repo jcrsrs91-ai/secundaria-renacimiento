@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import { UserPlus, ClipboardList, Search, Upload, Printer } from 'lucide-react';
 import { db, storage } from '../../firebase';
 import { collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
@@ -6,6 +7,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import HojaInscripcionPrint from '../../components/HojaInscripcionPrint';
 
 export default function PreInscripcion() {
+  const { config } = useGlobalConfig();
   const [activeTab, setActiveTab] = useState('nuevo'); // 'nuevo', 'reinscripcion', 'reimprimir', 'completar'
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -456,7 +458,7 @@ export default function PreInscripcion() {
                   <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 mb-6">
                     <h3 className="text-lg font-bold text-slate-800 mb-2">Ciclo Escolar</h3>
                     <p className="text-sm text-slate-500 mb-4">Selecciona el ciclo escolar para este trámite.</p>
-                    <select name="cicloEscolar" className="block w-full rounded-md shadow-sm p-3 border border-slate-300 font-medium" required defaultValue={studentData?.cicloEscolar || "2026-2027"}>
+                    <select name="cicloEscolar" className="block w-full rounded-md shadow-sm p-3 border border-slate-300 font-medium" required defaultValue={studentData?.cicloEscolar || config?.cicloEscolarActual || "2026-2027"}>
                       <option value="">Seleccionar ciclo...</option>
                       <option value="2024-2025">2024-2025</option>
                       <option value="2025-2026">2025-2026</option>

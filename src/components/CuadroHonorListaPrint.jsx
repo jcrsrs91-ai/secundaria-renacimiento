@@ -1,7 +1,9 @@
 import React from 'react';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { Printer, X, Trophy } from 'lucide-react';
 
 export default function CuadroHonorListaPrint({ ganadores = [], grado, turno, periodoName, onClose }) {
+  const { config } = useGlobalConfig();
   return (
     <div className="print-honor-only fixed inset-0 z-50 overflow-y-auto print:relative print:inset-auto print:overflow-visible bg-slate-100 min-h-screen py-8 print:py-0 print:bg-white font-sans text-slate-800">
       <style>
@@ -41,7 +43,7 @@ export default function CuadroHonorListaPrint({ ganadores = [], grado, turno, pe
             <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-xl print:leading-tight">CUADRO DE HONOR</h1>
             <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-sm print:mt-0 print:leading-tight">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
             <p className="text-sm font-medium text-slate-500 mt-1 print:text-[11px] print:mt-0 print:leading-tight">
-              {grado} • Turno {turno} • {periodoName} • Ciclo Escolar 2025-2026
+              {grado} • Turno {turno} • {periodoName} • Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}
             </p>
           </div>
           <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-14" />

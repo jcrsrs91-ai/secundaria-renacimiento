@@ -1,8 +1,10 @@
 import React from 'react';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { X, Printer, Music, Sparkles, Star, Palette } from 'lucide-react';
 import { autoAcentuar } from '../utils/format';
 
 export default function DiplomaArtesPrint({ student, turno, onClose }) {
+  const { config } = useGlobalConfig();
   const isVespertino = turno === 'Vespertino';
   
   const directorMatutino = "PROF. JUAN CARLOS TABOADA BARAJAS";
@@ -165,7 +167,7 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
                     className="text-[1.1rem] leading-loose text-slate-700 italic font-medium"
                     style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                   >
-                    Por su destacado compromiso, disciplina y pasión artística demostrada como integrante activo del <strong className="text-rose-800 font-black text-[1.2rem] px-1">Taller de Danza Xochipilli</strong>, enriqueciendo el acervo cultural de nuestra institución durante el ciclo escolar 2025-2026.
+                    Por su destacado compromiso, disciplina y pasión artística demostrada como integrante activo del <strong className="text-rose-800 font-black text-[1.2rem] px-1">Taller de Danza Xochipilli</strong>, enriqueciendo el acervo cultural de nuestra institución durante el ciclo escolar {config?.cicloEscolarActual || '2025-2026'}.
                   </p>
                 </div>
 

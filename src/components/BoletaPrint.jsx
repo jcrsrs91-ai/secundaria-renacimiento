@@ -1,7 +1,9 @@
 import React from 'react';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
 
 export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
+  const { config } = useGlobalConfig();
   if (!students || students.length === 0) return null;
 
   return (
@@ -95,7 +97,7 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                 <div className="text-center flex-1 px-4">
               <h1 className="font-black text-lg tracking-widest text-slate-900 uppercase">Boleta de Evaluación</h1>
               <h2 className="font-bold text-xs text-slate-700 mt-1 uppercase">Educación Secundaria Técnica</h2>
-              <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase">Ciclo Escolar 2025-2026</p>
+              <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase">Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}</p>
                 </div>
                 <img src="/logo-escuela.png" alt="Escuela" className="w-24 object-contain" />
               </div>

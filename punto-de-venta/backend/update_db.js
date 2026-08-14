@@ -1,0 +1,1 @@
+const db = require('./database.js'); db.run('ALTER TABLE products ADD COLUMN is_favorite INTEGER DEFAULT 0', (err) => { if (err) console.error(err.message); else console.log('Column added'); process.exit(0); });
