@@ -12,7 +12,8 @@ import {
   UsersRound,
   Printer,
   Megaphone,
-  MessageSquare
+  MessageSquare,
+  Key
 } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -20,17 +21,22 @@ export default function DashboardLayout() {
   const location = useLocation();
 
   const menu = currentUser ? [
-    { name: 'Panel Principal', path: '/panel', icon: LayoutDashboard },
-    { name: 'Control Escolar', path: '/panel/control-escolar', icon: Users },
-    { name: 'Contraloría', path: '/panel/contraloria', icon: Calculator },
-    { name: 'Trabajo Social', path: '/panel/trabajo-social', icon: HeartHandshake },
-    { name: 'Coordinación Académica', path: '/panel/coordinacion', icon: GraduationCap },
-    { name: 'Prefectura / Asistencia', path: '/panel/asistencia', icon: ClipboardCheck },
-    { name: 'Biblioteca', path: '/panel/biblioteca', icon: Library },
-    { name: 'Impresión Documentos', path: '/panel/impresion-documentos', icon: Printer },
-    { name: 'Avisos Escolares', path: '/panel/avisos', icon: Megaphone },
-    { name: 'Buzón de Tutores', path: '/panel/buzon', icon: MessageSquare },
-  ] : [
+    { name: 'Panel Principal', path: '/panel', icon: LayoutDashboard, id: 'home' },
+    { name: 'Control Escolar', path: '/panel/control-escolar', icon: Users, id: 'control-escolar' },
+    { name: 'Contraloría', path: '/panel/contraloria', icon: Calculator, id: 'contraloria' },
+    { name: 'Trabajo Social', path: '/panel/trabajo-social', icon: HeartHandshake, id: 'trabajo-social' },
+    { name: 'Coordinación Académica', path: '/panel/coordinacion', icon: GraduationCap, id: 'coordinacion' },
+    { name: 'Prefectura / Asistencia', path: '/panel/asistencia', icon: ClipboardCheck, id: 'asistencia' },
+    { name: 'Biblioteca', path: '/panel/biblioteca', icon: Library, id: 'biblioteca' },
+    { name: 'Impresión Documentos', path: '/panel/impresion-documentos', icon: Printer, id: 'impresion-documentos' },
+    { name: 'Avisos Escolares', path: '/panel/avisos', icon: Megaphone, id: 'avisos' },
+    { name: 'Buzón de Tutores', path: '/panel/buzon', icon: MessageSquare, id: 'buzon' },
+    { name: 'Accesos (Admin)', path: '/panel/accesos', icon: Key, id: 'accesos' }
+  ].filter(item => {
+    if (item.id === 'home') return true;
+    if (userPermissions?.includes('all')) return true;
+    return userPermissions?.includes(item.id);
+  }) : [
     { name: 'Mi Portal Familiar', path: '/panel/portal-familiar', icon: UsersRound },
   ];
 

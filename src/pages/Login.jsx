@@ -73,10 +73,13 @@ export default function Login() {
                 </button>
               </form>
               
-              <div className="mt-6 text-center border-t pt-5">
+              <div className="mt-6 text-center border-t pt-5 flex flex-col gap-3">
                 <a href="/" className="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors">
                   Volver a la página principal
                 </a>
+                <Link to="/registro-staff" className="text-sm font-bold text-primary-600 hover:text-primary-700 transition-colors">
+                  ¿Fuiste invitado? Crea tu contraseña aquí
+                </Link>
               </div>
             </div>
           </div>
