@@ -192,6 +192,21 @@ export default function Landing() {
                 </Link>
               </div>
             </div>
+
+            {/* Calendario SEP Button */}
+            <a href="https://calendarioescolar.sep.gob.mx/" target="_blank" rel="noreferrer" className="w-full mt-4 flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-emerald-600/80 to-emerald-800/80 hover:from-emerald-500 hover:to-emerald-700 transition-colors border border-emerald-500/30 shadow-lg group backdrop-blur-md">
+               <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                   <Calendar className="w-5 h-5 text-white" />
+                 </div>
+                 <div className="text-left">
+                   <p className="text-xs text-emerald-100 font-medium leading-none mb-1">Sitio Oficial</p>
+                   <p className="text-sm font-bold text-white leading-none">Calendario SEP</p>
+                 </div>
+               </div>
+               <ArrowRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform" />
+            </a>
+
           </div>
         </div>
       </div>
