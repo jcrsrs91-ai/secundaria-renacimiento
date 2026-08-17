@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
+import RegistroStaff from './pages/public/RegistroStaff';
+import GestionAccesos from './pages/dashboard/GestionAccesos';
 import TutorLogin from './pages/public/TutorLogin';
 import Landing from './pages/public/Landing';
 import PublicAvisos from './pages/public/PublicAvisos';
@@ -28,6 +30,7 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/avisos" element={<PublicAvisos />} />
       <Route path="/admin" element={<Login />} />
+      <Route path="/registro-staff" element={<RegistroStaff />} />
       <Route path="/acceso-padres" element={<TutorLogin />} />
       <Route path="/pre-inscripcion" element={<PreInscripcion />} />
       <Route path="/verificar/:matricula" element={<VerificacionCredencial />} />
@@ -46,6 +49,7 @@ function App() {
           <Route path="impresion-documentos" element={<ImpresionDocumentos />} />
           <Route path="avisos" element={<AvisosEscolares />} />
           <Route path="buzon" element={<BuzonTutores />} />
+          <Route path="accesos" element={<GestionAccesos />} />
         </Route>
       </Route>
     </Routes>

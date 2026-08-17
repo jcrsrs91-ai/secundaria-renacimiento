@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export default function DashboardLayout() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, userPermissions, userRole, logout } = useAuth();
   const location = useLocation();
 
   const menu = currentUser ? [
