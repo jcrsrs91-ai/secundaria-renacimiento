@@ -35,7 +35,15 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-slate-900 font-sans selection:bg-sky-700 selection:text-white">
       {/* Navbar Glassmorphism */}
-      <nav className="fixed w-full z-50 top-0 left-0 border-b border-white/10 bg-slate-900/40 backdrop-blur-md">
+      <nav className="fixed w-full z-50 top-0 left-0 border-b border-white/10 bg-slate-900/40 backdrop-blur-md flex flex-col">
+      {noticias.length > 0 && (
+        <div className="bg-indigo-600 px-4 py-2 text-center text-sm font-medium text-white shadow-sm flex items-center justify-center gap-2">
+          <span className="bg-indigo-800 text-xs px-2 py-0.5 rounded font-bold uppercase shrink-0">Último Aviso</span>
+          <span className="truncate max-w-[250px] sm:max-w-xl">{noticias[0].title}</span>
+          <a href="#avisos" onClick={(e) => { e.preventDefault(); document.getElementById('seccion-avisos')?.scrollIntoView({ behavior: 'smooth' }); }} className="underline font-bold hover:text-indigo-200 ml-2 shrink-0">Ver detalles</a>
+        </div>
+      )}
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center">
             <div className="flex items-center gap-3">
@@ -146,6 +154,7 @@ export default function Landing() {
       </div>
 
       
+      <div id="seccion-avisos"></div>
       {/* SECCIÓN DE NOTICIAS Y AVISOS */}
       <div className="bg-slate-50 py-20 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
