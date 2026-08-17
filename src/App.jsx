@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import TutorLogin from './pages/public/TutorLogin';
 import Landing from './pages/public/Landing';
+import PublicAvisos from './pages/public/PublicAvisos';
 import DashboardLayout from './layouts/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import PreInscripcion from './pages/public/PreInscripcion';
@@ -25,6 +26,7 @@ function App() {
     <Routes>
       {/* Rutas Públicas */}
       <Route path="/" element={<Landing />} />
+      <Route path="/avisos" element={<PublicAvisos />} />
       <Route path="/admin" element={<Login />} />
       <Route path="/acceso-padres" element={<TutorLogin />} />
       <Route path="/pre-inscripcion" element={<PreInscripcion />} />
