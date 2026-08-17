@@ -8,6 +8,7 @@ export default function Landing() {
     const [bgIndex, setBgIndex] = useState(1);
   const [noticias, setNoticias] = useState([]);
   const [loadingNews, setLoadingNews] = useState(true);
+  const [activeTab, setActiveTab] = useState('matutino');
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -162,10 +163,24 @@ export default function Landing() {
               <span className="text-sm font-bold text-white uppercase tracking-widest drop-shadow-md">Ciclo Escolar 2026-2027</span>
             </div>
             <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-[600px] flex flex-col overflow-hidden shadow-2xl w-full">
-              <div className="bg-sky-600/90 px-6 py-4 flex items-center justify-between border-b border-white/10 shrink-0">
+              <div className="bg-sky-600/90 px-6 py-4 flex flex-col gap-4 border-b border-white/10 shrink-0">
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <Megaphone className="w-5 h-5" /> Muro de Avisos
                 </h2>
+                <div className="flex bg-slate-900/40 p-1 rounded-lg">
+                  <button 
+                    onClick={() => setActiveTab('matutino')}
+                    className={`flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-md transition-all duration-300 ${activeTab === 'matutino' ? 'bg-sky-500 text-white shadow-md' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
+                  >
+                    ☀️ Matutino
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('vespertino')}
+                    className={`flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-md transition-all duration-300 ${activeTab === 'vespertino' ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
+                  >
+                    🌙 Vespertino
+                  </button>
+                </div>
               </div>
               
               <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
@@ -178,7 +193,7 @@ export default function Landing() {
                     No hay avisos recientes por el momento.
                   </div>
                 ) : (
-                  noticias.map((aviso) => (
+                  noticias.filter(a => !a.turno || a.turno === 'ambos' || a.turno === activeTab).map((aviso) => (
                     <div key={aviso.id} className="bg-white/10 border border-white/10 rounded-2xl p-5 hover:bg-white/15 transition-colors group">
                       <div className="flex items-start justify-between mb-3 border-b border-white/10 pb-3">
                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${aviso.type === 'warning' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'}`}>

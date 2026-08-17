@@ -7,6 +7,7 @@ import { Megaphone, Calendar, ArrowLeft } from 'lucide-react';
 export default function PublicAvisos() {
   const [avisos, setAvisos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('matutino');
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -65,7 +66,7 @@ export default function PublicAvisos() {
           </div>
         ) : (
           <div className="space-y-6">
-            {avisos.map((aviso) => (
+            {avisos.filter(a => !a.turno || a.turno === 'ambos' || a.turno === activeTab).map((aviso) => (
               <div key={aviso.id} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-6 border-b border-slate-100 pb-4">
                   <span className={`text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider ${aviso.type === 'warning' ? 'bg-indigo-100 text-indigo-700' : 'bg-sky-100 text-sky-700'}`}>

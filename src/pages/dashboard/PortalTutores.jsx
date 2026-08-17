@@ -30,6 +30,7 @@ export default function PortalTutores() {
   const { studentSession, logout } = useAuth();
   const [noticias, setNoticias] = useState([]);
   const [loadingAvisos, setLoadingAvisos] = useState(true);
+  const [activeShiftTab, setActiveShiftTab] = useState('matutino');
   
   // Chat States
   const [messages, setMessages] = useState([]);
@@ -201,7 +202,7 @@ export default function PortalTutores() {
               No hay avisos recientes por el momento.
             </div>
           ) : (
-            noticias.map(n => (
+            noticias.filter(a => !a.turno || a.turno === 'ambos' || a.turno === activeShiftTab).map(n => (
               <div key={n.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-2">
