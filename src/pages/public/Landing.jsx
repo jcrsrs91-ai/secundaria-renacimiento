@@ -12,7 +12,7 @@ export default function Landing() {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const q = query(collection(db, 'avisos'), orderBy('createdAt', 'desc'), limit(3));
+        const q = query(collection(db, 'avisos'), orderBy('createdAt', 'desc'), limit(10));
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(a => a.isActive !== false);
         setNoticias(data);
@@ -83,8 +83,10 @@ export default function Landing() {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sky-700/30 rounded-full blur-[120px] pointer-events-none"></div>
         <div className="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="text-center max-w-3xl mx-auto">
+        <div className="relative z-10 max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col xl:flex-row gap-12 items-center xl:items-start">
+          
+          {/* Left Column: Text and Cards */}
+          <div className="flex-1 text-center xl:text-left w-full">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6">
               <span className="flex h-2 w-2 rounded-full bg-sky-500 animate-pulse"></span>
               <span className="text-xs font-medium text-slate-200 uppercase tracking-wider shadow-sm">Ciclo Escolar 2026-2027</span>
@@ -92,13 +94,12 @@ export default function Landing() {
             <h1 className="text-5xl sm:text-7xl font-extrabold text-white tracking-tight mb-6 leading-[1.1] drop-shadow-lg">
               Por la superación <br className="hidden sm:block"/> de <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-sky-600">México.</span>
             </h1>
-            <p className="text-lg sm:text-xl text-slate-200 mb-10 font-medium leading-relaxed drop-shadow-md">
+            <p className="text-lg sm:text-xl text-slate-200 mb-10 font-medium leading-relaxed drop-shadow-md max-w-2xl mx-auto xl:mx-0">
               Descubre una comunidad educativa comprometida con la excelencia, la innovación y el desarrollo integral de cada estudiante.
             </p>
-          </div>
 
-          {/* Action Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-5xl mx-auto">
+            {/* Action Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-12 max-w-3xl mx-auto xl:mx-0">
             {/* Card 1 */}
             <Link to="/pre-inscripcion" className="group relative p-1 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 hover:from-sky-500 hover:to-sky-600 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-sky-500/30">
               <div className="absolute inset-0 bg-slate-950/60 rounded-2xl backdrop-blur-xl group-hover:bg-slate-900/40 transition-colors"></div>
@@ -149,71 +150,60 @@ export default function Landing() {
                 </div>
               </div>
             </Link>
+            </div>
+          </div>
+
+          {/* Right Column: Avisos Panel */}
+          <div className="w-full xl:w-[450px] shrink-0 mt-12 xl:mt-0">
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-[600px] flex flex-col overflow-hidden shadow-2xl">
+              <div className="bg-sky-600/90 px-6 py-4 flex items-center justify-between border-b border-white/10 shrink-0">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Megaphone className="w-5 h-5" /> Muro de Avisos
+                </h2>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                {loadingNews ? (
+                  <div className="flex justify-center items-center h-full">
+                    <div className="w-8 h-8 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+                  </div>
+                ) : noticias.length === 0 ? (
+                  <div className="flex justify-center items-center h-full text-slate-300 text-sm text-center px-4">
+                    No hay avisos recientes por el momento.
+                  </div>
+                ) : (
+                  noticias.map((aviso) => (
+                    <div key={aviso.id} className="bg-white/10 border border-white/10 rounded-2xl p-5 hover:bg-white/15 transition-colors group">
+                      <div className="flex items-start justify-between mb-3 border-b border-white/10 pb-3">
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${aviso.type === 'warning' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'}`}>
+                          {aviso.type === 'warning' ? 'Importante' : 'Informativo'}
+                        </span>
+                        {aviso.createdAt && (
+                          <div className="flex items-center text-[10px] text-slate-400 font-medium">
+                            {new Date(aviso.createdAt?.seconds * 1000).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="text-base font-bold text-white mb-2 leading-tight">{aviso.title}</h3>
+                      <p className="text-slate-300 text-xs mb-4 line-clamp-3 leading-relaxed whitespace-pre-wrap">{aviso.content}</p>
+                      <Link to="/avisos" className="text-xs font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center w-max">
+                        Leer completo <ArrowRight className="w-3 h-3 ml-1" />
+                      </Link>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="p-4 border-t border-white/10 bg-slate-900/50 shrink-0 text-center">
+                <Link to="/avisos" className="text-sm font-bold text-white hover:text-sky-400 transition-colors inline-flex items-center">
+                  Ver historial de comunicados <ArrowRight className="w-4 h-4 ml-1" />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       
-      <div id="seccion-avisos"></div>
-      {/* SECCIÓN DE NOTICIAS Y AVISOS */}
-      <div className="bg-slate-50 py-20 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-10">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center">
-                <Megaphone className="w-6 h-6 text-sky-600" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-slate-800">Avisos Recientes</h2>
-                <p className="text-slate-500 font-medium mt-1">Mantente informado sobre lo último en nuestra institución</p>
-              </div>
-            </div>
-            <Link to="/avisos" className="hidden md:flex items-center text-sky-600 font-bold hover:text-sky-700 transition-colors">
-              Ver todos los comunicados <ArrowRight className="w-4 h-4 ml-1" />
-            </Link>
-          </div>
-
-          {loadingNews ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="w-10 h-10 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
-            </div>
-          ) : noticias.length === 0 ? (
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center shadow-sm">
-              <p className="text-slate-500 font-medium">No hay avisos recientes por el momento.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {noticias.map((aviso) => (
-                <div key={aviso.id} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-lg transition-shadow flex flex-col h-full group">
-                  <div className="flex items-start justify-between mb-4">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${aviso.type === 'warning' ? 'bg-indigo-100 text-indigo-700' : 'bg-sky-100 text-sky-700'}`}>
-                      {aviso.type === 'warning' ? 'Importante' : 'Informativo'}
-                    </span>
-                    {aviso.createdAt && (
-                      <div className="flex items-center text-xs text-slate-400 font-medium">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        {new Date(aviso.createdAt?.seconds * 1000).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-3 group-hover:text-sky-600 transition-colors">{aviso.title}</h3>
-                  <p className="text-slate-600 text-sm mb-6 flex-1 whitespace-pre-wrap line-clamp-4">{aviso.content}</p>
-                  <Link to="/avisos" className="text-sm font-bold text-sky-600 hover:text-sky-700 transition-colors flex items-center mt-auto">
-                    Leer completo <ArrowRight className="w-4 h-4 ml-1" />
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          <div className="mt-8 text-center md:hidden">
-            <Link to="/avisos" className="inline-flex items-center text-sky-600 font-bold hover:text-sky-700 transition-colors">
-              Ver todos los comunicados <ArrowRight className="w-4 h-4 ml-1" />
-            </Link>
-          </div>
-        </div>
-      </div>
-
       {/* Footer */}
       <footer className="border-t border-white/10 bg-slate-950 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
