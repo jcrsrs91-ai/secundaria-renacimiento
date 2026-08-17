@@ -749,7 +749,12 @@ export default function PreInscripcion() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     <div className="bg-slate-50 p-4 border rounded-lg">
-                      <label className="block text-sm font-bold mb-1">Acta de Nacimiento Actualizada <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-bold mb-1">
+                        Acta de Nacimiento <span className="text-red-500">*</span>
+                        <p className="text-xs text-slate-500 font-normal mt-1 leading-tight">
+                          Serán válidos los formatos oficiales vigentes (tanto en formato tradicional sepia/café como el formato verde).
+                        </p>
+                      </label>
                       <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setActaFile)} className="w-full text-sm" required={!studentData?.actaUrl} />
                       {actaFile && <p className="text-xs text-emerald-600 mt-1">{actaFile.name}</p>}
                       {studentData?.actaUrl && !actaFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
