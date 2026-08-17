@@ -142,7 +142,7 @@ export default function AvisosEscolares() {
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                      aviso.type === 'warning' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                      aviso.type === 'warning' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 
                       aviso.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                       'bg-blue-50 text-blue-700 border-blue-200'
                     }`}>
@@ -172,7 +172,7 @@ export default function AvisosEscolares() {
                   </button>
                   <button
                     onClick={() => handleDelete(aviso.id)}
-                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                    className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
                     title="Eliminar"
                   >
                     <Trash2 className="h-5 w-5" />

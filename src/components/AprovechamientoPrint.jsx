@@ -10,19 +10,19 @@ export default function AprovechamientoPrint({ activos, onClose }) {
     '1er Grado': [
       { name: 'LENGUAJES', span: 3, keys: ['espanol1', 'ingles1', 'artes1'], bg: 'bg-indigo-50 text-indigo-800 border-b-2 border-indigo-200' },
       { name: 'SABERES Y PENSAMIENTO', span: 2, keys: ['matematicas1', 'biologia'], bg: 'bg-emerald-50 text-emerald-800 border-b-2 border-emerald-200' },
-      { name: 'ÉTICA, NAT. Y SOCIEDAD', span: 3, keys: ['geografia', 'historia1', 'fce1'], bg: 'bg-amber-50 text-amber-800 border-b-2 border-amber-200' },
+      { name: 'ÉTICA, NAT. Y SOCIEDAD', span: 3, keys: ['geografia', 'historia1', 'fce1'], bg: 'bg-indigo-50 text-indigo-800 border-b-2 border-indigo-200' },
       { name: 'DE LO HUMANO', span: 2, keys: ['tecnologia1', 'educfisica1'], bg: 'bg-cyan-50 text-cyan-800 border-b-2 border-cyan-200' }
     ],
     '2do Grado': [
       { name: 'LENGUAJES', span: 3, keys: ['espanol2', 'ingles2', 'artes2'], bg: 'bg-indigo-50 text-indigo-800 border-b-2 border-indigo-200' },
       { name: 'SABERES Y PENSAMIENTO', span: 2, keys: ['matematicas2', 'fisica'], bg: 'bg-emerald-50 text-emerald-800 border-b-2 border-emerald-200' },
-      { name: 'ÉTICA, NAT. Y SOCIEDAD', span: 2, keys: ['historia2', 'fce2'], bg: 'bg-amber-50 text-amber-800 border-b-2 border-amber-200' },
+      { name: 'ÉTICA, NAT. Y SOCIEDAD', span: 2, keys: ['historia2', 'fce2'], bg: 'bg-indigo-50 text-indigo-800 border-b-2 border-indigo-200' },
       { name: 'DE LO HUMANO', span: 2, keys: ['tecnologia2', 'educfisica2'], bg: 'bg-cyan-50 text-cyan-800 border-b-2 border-cyan-200' }
     ],
     '3er Grado': [
       { name: 'LENGUAJES', span: 3, keys: ['espanol3', 'ingles3', 'artes3'], bg: 'bg-indigo-50 text-indigo-800 border-b-2 border-indigo-200' },
       { name: 'SABERES Y PENSAMIENTO', span: 2, keys: ['matematicas3', 'quimica'], bg: 'bg-emerald-50 text-emerald-800 border-b-2 border-emerald-200' },
-      { name: 'ÉTICA, NAT. Y SOCIEDAD', span: 2, keys: ['historia3', 'fce3'], bg: 'bg-amber-50 text-amber-800 border-b-2 border-amber-200' },
+      { name: 'ÉTICA, NAT. Y SOCIEDAD', span: 2, keys: ['historia3', 'fce3'], bg: 'bg-indigo-50 text-indigo-800 border-b-2 border-indigo-200' },
       { name: 'DE LO HUMANO', span: 2, keys: ['tecnologia3', 'educfisica3'], bg: 'bg-cyan-50 text-cyan-800 border-b-2 border-cyan-200' }
     ]
   };

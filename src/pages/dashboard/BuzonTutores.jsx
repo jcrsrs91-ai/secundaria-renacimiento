@@ -130,7 +130,7 @@ export default function BuzonTutores() {
                 className={`p-4 border-b border-slate-100 cursor-pointer transition-colors relative ${activeChat?.id === chat.id ? 'bg-primary-50 border-primary-100' : 'hover:bg-slate-100 bg-white'}`}
               >
                 {chat.unreadAdmin && (
-                  <div className="absolute top-4 right-4 w-3 h-3 bg-rose-500 rounded-full shadow-sm"></div>
+                  <div className="absolute top-4 right-4 w-3 h-3 bg-sky-500 rounded-full shadow-sm"></div>
                 )}
                 <div className="flex justify-between items-start mb-1">
                   <h3 className={`font-semibold text-sm truncate pr-2 ${chat.unreadAdmin ? 'text-slate-900' : 'text-slate-700'}`}>

@@ -174,7 +174,7 @@ export default function ReportesAsistencia() {
               </div>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-rose-50 text-rose-600 rounded-xl">
+              <div className="p-3 bg-sky-50 text-sky-600 rounded-xl">
                 <UserX className="w-6 h-6" />
               </div>
               <div>

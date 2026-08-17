@@ -267,7 +267,7 @@ export default function AddStudentModal({ onClose }) {
             {/* Sección 4: Médicos */}
             <section>
               <h3 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4 flex items-center">
-                <HeartPulse className="w-5 h-5 mr-2 text-rose-500" /> Datos Médicos
+                <HeartPulse className="w-5 h-5 mr-2 text-sky-500" /> Datos Médicos
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>

@@ -3,8 +3,8 @@ import { Users, AlertTriangle, BookOpen, Clock } from 'lucide-react';
 export default function Dashboard() {
   const stats = [
     { name: 'Alumnos Activos', value: '854', icon: Users, color: 'bg-blue-500' },
-    { name: 'Expedientes Pendientes', value: '12', icon: Clock, color: 'bg-amber-500' },
-    { name: 'Alertas de Asistencia', value: '5', icon: AlertTriangle, color: 'bg-rose-500' },
+    { name: 'Expedientes Pendientes', value: '12', icon: Clock, color: 'bg-indigo-500' },
+    { name: 'Alertas de Asistencia', value: '5', icon: AlertTriangle, color: 'bg-sky-500' },
     { name: 'Libros en Préstamo', value: '43', icon: BookOpen, color: 'bg-emerald-500' },
   ];
 

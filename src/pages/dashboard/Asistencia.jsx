@@ -211,7 +211,7 @@ export default function Asistencia() {
         </button>
         <button 
           onClick={() => setModo('SALIDA')}
-          className={`flex-1 py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-bold text-lg transition-all ${modo === 'SALIDA' ? 'bg-white text-rose-600 shadow-md transform scale-[1.02]' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex-1 py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-bold text-lg transition-all ${modo === 'SALIDA' ? 'bg-white text-sky-600 shadow-md transform scale-[1.02]' : 'text-slate-500 hover:text-slate-700'}`}
         >
           <LogOut className="h-6 w-6" /> SALIDA
         </button>
@@ -219,7 +219,7 @@ export default function Asistencia() {
 
       {/* Input Oculto / Foco del Escáner */}
       <div className="relative w-full max-w-md mb-12">
-        <div className={`absolute inset-0 bg-${modo === 'ENTRADA' ? 'emerald' : 'rose'}-500 blur-2xl opacity-20 rounded-full animate-pulse`}></div>
+        <div className={`absolute inset-0 bg-${modo === 'ENTRADA' ? 'emerald' : 'sky'}-500 blur-2xl opacity-20 rounded-full animate-pulse`}></div>
         <input 
           ref={inputRef}
           type="text" 
@@ -228,7 +228,7 @@ export default function Asistencia() {
           onKeyDown={handleKeyDown}
           autoFocus
           placeholder="Esperando escáner..."
-          className={`relative w-full text-center bg-white border-4 ${modo === 'ENTRADA' ? 'border-emerald-400 focus:border-emerald-500 text-emerald-700' : 'border-rose-400 focus:border-rose-500 text-rose-700'} rounded-3xl py-6 text-2xl font-bold shadow-xl outline-none placeholder:text-slate-300 transition-all`}
+          className={`relative w-full text-center bg-white border-4 ${modo === 'ENTRADA' ? 'border-emerald-400 focus:border-emerald-500 text-emerald-700' : 'border-sky-400 focus:border-sky-500 text-sky-700'} rounded-3xl py-6 text-2xl font-bold shadow-xl outline-none placeholder:text-slate-300 transition-all`}
           disabled={procesando}
         />
         {procesando && (
@@ -255,7 +255,7 @@ export default function Asistencia() {
             {ultimosRegistros.map((registro, idx) => (
               <div key={registro.id} className="p-4 px-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className={`h-12 w-12 rounded-full flex items-center justify-center shadow-sm ${registro.tipo === 'ENTRADA' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                  <div className={`h-12 w-12 rounded-full flex items-center justify-center shadow-sm ${registro.tipo === 'ENTRADA' ? 'bg-emerald-100 text-emerald-600' : 'bg-sky-100 text-sky-600'}`}>
                     {registro.tipo === 'ENTRADA' ? <LogIn className="h-6 w-6" /> : <LogOut className="h-6 w-6" />}
                   </div>
                   <div>
@@ -276,7 +276,7 @@ export default function Asistencia() {
                     </span>
                   ) : null}
                   <div className="text-right">
-                    <p className={`font-black text-xl ${registro.tipo === 'ENTRADA' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    <p className={`font-black text-xl ${registro.tipo === 'ENTRADA' ? 'text-emerald-500' : 'text-sky-500'}`}>
                       {registro.hora}
                     </p>
                   </div>

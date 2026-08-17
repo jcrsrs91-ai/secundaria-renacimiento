@@ -140,7 +140,7 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                           <td className="py-2 px-2 text-center border-r border-slate-200">{mat.t1}</td>
                           <td className="py-2 px-2 text-center border-r border-slate-200">{mat.t2}</td>
                           <td className="py-2 px-2 text-center border-r border-slate-200">{mat.t3}</td>
-                          <td className={`py-2 px-2 text-center font-bold bg-slate-50 ${isReprobado ? 'text-rose-600' : 'text-slate-900'}`}>{mat.final}</td>
+                          <td className={`py-2 px-2 text-center font-bold bg-slate-50 ${isReprobado ? 'text-sky-600' : 'text-slate-900'}`}>{mat.final}</td>
                         </tr>
                       );
                     })}

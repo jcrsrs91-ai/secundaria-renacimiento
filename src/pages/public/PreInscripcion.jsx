@@ -426,16 +426,16 @@ export default function PreInscripcion() {
 
                 {/* Aviso de Requisitos para Nuevo Ingreso */}
                 {activeTab === 'nuevo' && (
-                  <div className="bg-rose-50 border-l-4 border-rose-600 p-5 rounded-r-lg mb-8 shadow-sm">
+                  <div className="bg-sky-50 border-l-4 border-sky-600 p-5 rounded-r-lg mb-8 shadow-sm">
                     <div className="flex">
                       <div className="flex-shrink-0">
-                        <ClipboardList className="h-6 w-6 text-rose-600" />
+                        <ClipboardList className="h-6 w-6 text-sky-600" />
                       </div>
                       <div className="ml-3">
-                        <h3 className="text-lg font-bold text-rose-800">
+                        <h3 className="text-lg font-bold text-sky-800">
                           Requisitos para Nuevo Ingreso
                         </h3>
-                        <div className="mt-2 text-sm text-rose-700 space-y-2">
+                        <div className="mt-2 text-sm text-sky-700 space-y-2">
                           <p>
                             Para realizar la inscripción de manera exitosa, deberás subir en este formulario los siguientes documentos en formato PDF y entregar los físicos antes del <strong>30 de septiembre</strong> (fecha límite oficial de la SEP):
                           </p>

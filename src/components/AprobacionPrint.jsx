@@ -152,7 +152,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
           <td className="py-2 px-1 print:py-1">{row.irr2}</td>
           <td className="py-2 px-1 print:py-1">{row.irr3}</td>
           <td className="py-2 px-1 print:py-1">{row.irr4}</td>
-          <td className="py-2 px-1 font-bold text-amber-600 bg-amber-50/50 print:bg-transparent print:py-1">{row.irrT}</td>
+          <td className="py-2 px-1 font-bold text-indigo-600 bg-indigo-50/50 print:bg-transparent print:py-1">{row.irrT}</td>
           <td className="py-2 px-1 print:py-1">{row.noaH}</td>
           <td className="py-2 px-1 print:py-1">{row.noaM}</td>
           <td className="py-2 px-1 font-bold text-red-600 bg-red-50/50 print:bg-transparent print:py-1">{row.noaT}</td>
@@ -172,7 +172,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
                 <th rowSpan="2" className="py-2 px-1 print:py-1 rounded-tl-lg">Grupo</th>
                 <th colSpan="3" className="py-2 px-1 print:py-1 border-x border-slate-700">Existencia (Inscritos)</th>
                 <th colSpan="3" className="py-2 px-1 print:py-1 border-r border-slate-700 bg-emerald-800">Alumnos Regulares</th>
-                <th colSpan="5" className="py-2 px-1 print:py-1 border-r border-slate-700 bg-amber-700">Adeudan Disciplinas (Irregulares)</th>
+                <th colSpan="5" className="py-2 px-1 print:py-1 border-r border-slate-700 bg-indigo-700">Adeudan Disciplinas (Irregulares)</th>
                 <th colSpan="3" className="py-2 px-1 print:py-1 border-r border-slate-700 bg-red-800">No Acreditados (5+)</th>
                 <th rowSpan="2" className="py-2 px-1 print:py-1 border-r border-slate-700 w-16">% Rep.</th>
                 <th rowSpan="2" className="py-2 px-1 print:py-1 rounded-tr-lg w-16">Comp.</th>
@@ -186,11 +186,11 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
                 <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-emerald-700">M</th>
                 <th className="py-1 px-1 print:py-0 border-r border-slate-800 bg-emerald-700 font-bold text-emerald-100">T</th>
                 
-                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-amber-600">1</th>
-                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-amber-600">2</th>
-                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-amber-600">3</th>
-                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-amber-600">4</th>
-                <th className="py-1 px-1 print:py-0 border-r border-slate-800 bg-amber-600 font-bold text-amber-100">T</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-indigo-600">1</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-indigo-600">2</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-indigo-600">3</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-indigo-600">4</th>
+                <th className="py-1 px-1 print:py-0 border-r border-slate-800 bg-indigo-600 font-bold text-indigo-100">T</th>
                 
                 <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-red-700">H</th>
                 <th className="py-1 px-1 print:py-0 border-r border-slate-600 bg-red-700">M</th>
@@ -293,14 +293,14 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
           </div>
 
           {/* Irregulares */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border print:border-amber-300 print:shadow-none print:p-1.5">
-            <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1 print:text-[8px]">Riesgo (1 a 4 Materias)</p>
+          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border print:border-indigo-300 print:shadow-none print:p-1.5">
+            <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1 print:text-[8px]">Riesgo (1 a 4 Materias)</p>
             <div className="flex items-baseline gap-2">
-              <p className="text-3xl font-black text-amber-700 print:text-base">
+              <p className="text-3xl font-black text-indigo-700 print:text-base">
                 {totalGeneral.extT > 0 ? truncateTo1Dec((totalGeneral.irrT / totalGeneral.extT) * 100) : 0}%
               </p>
             </div>
-            <p className="mt-1 text-xs font-semibold text-amber-600 print:text-[7px] print:mt-1">{totalGeneral.irrT} Alumnos Irregulares</p>
+            <p className="mt-1 text-xs font-semibold text-indigo-600 print:text-[7px] print:mt-1">{totalGeneral.irrT} Alumnos Irregulares</p>
           </div>
 
           {/* No Acreditados */}
@@ -392,7 +392,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
               <p className="text-2xl font-black print:text-base">{totalGeneral.regT}</p>
             </div>
             <div>
-              <p className="text-xs text-amber-300 font-bold uppercase tracking-wide print:text-[8px]">Irregulares</p>
+              <p className="text-xs text-indigo-300 font-bold uppercase tracking-wide print:text-[8px]">Irregulares</p>
               <p className="text-2xl font-black print:text-base">{totalGeneral.irrT}</p>
             </div>
             <div>

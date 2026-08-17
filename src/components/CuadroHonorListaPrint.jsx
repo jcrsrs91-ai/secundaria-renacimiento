@@ -51,13 +51,13 @@ export default function CuadroHonorListaPrint({ ganadores = [], grado, turno, pe
 
         {/* Resumen Total */}
         <div className="flex justify-center mb-8 print:hidden no-print">
-          <div className="bg-amber-50 border border-amber-200 px-6 py-3 rounded-xl flex items-center gap-4">
-            <div className="bg-amber-100 p-2 rounded-lg">
-              <Trophy className="w-6 h-6 text-amber-600" />
+          <div className="bg-indigo-50 border border-indigo-200 px-6 py-3 rounded-xl flex items-center gap-4">
+            <div className="bg-indigo-100 p-2 rounded-lg">
+              <Trophy className="w-6 h-6 text-indigo-600" />
             </div>
             <div>
-              <p className="text-xs text-amber-700 font-bold uppercase tracking-wider mb-0.5">Alumnos Destacados</p>
-              <p className="text-3xl font-black text-amber-800 leading-none">{ganadores.length}</p>
+              <p className="text-xs text-indigo-700 font-bold uppercase tracking-wider mb-0.5">Alumnos Destacados</p>
+              <p className="text-3xl font-black text-indigo-800 leading-none">{ganadores.length}</p>
             </div>
           </div>
         </div>
@@ -91,7 +91,7 @@ export default function CuadroHonorListaPrint({ ganadores = [], grado, turno, pe
                     
                     return (
                       <tr key={idx} className="hover:bg-slate-50 transition-colors text-slate-700 print:text-black break-inside-avoid">
-                        <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-2 font-black text-amber-700 print:text-black">{lugarBadge}</td>
+                        <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-2 font-black text-indigo-700 print:text-black">{lugarBadge}</td>
                         <td className="px-4 py-2 text-left border-r border-slate-200 print:border-slate-400 print:py-2 font-semibold">{nombreCompleto}</td>
                         <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-2 font-bold">{g.student.grupo}</td>
                         <td className="px-4 py-2 text-center print:py-2 font-black text-indigo-700 print:text-black text-base">

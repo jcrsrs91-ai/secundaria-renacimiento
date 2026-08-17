@@ -54,7 +54,7 @@ export default function Login() {
               </div>
 
               {errorMsg && (
-                <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-sm rounded-lg border border-rose-200 animate-in fade-in slide-in-from-top-1">
+                <div className="mb-4 p-3 bg-sky-50 text-sky-600 text-sm rounded-lg border border-sky-200 animate-in fade-in slide-in-from-top-1">
                   {errorMsg}
                 </div>
               )}

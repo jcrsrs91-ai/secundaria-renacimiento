@@ -73,9 +73,9 @@ export default function CorteCajaPrint({ config, pagos, gastos }) {
           <p className="text-sm font-bold text-emerald-800 uppercase">Total Ingresos</p>
           <p className="text-2xl font-black text-emerald-700">${totalIngresos.toFixed(2)}</p>
         </div>
-        <div className="border-2 border-rose-600 p-4 rounded-lg text-center bg-rose-50">
-          <p className="text-sm font-bold text-rose-800 uppercase">Total Egresos</p>
-          <p className="text-2xl font-black text-rose-700">${totalEgresos.toFixed(2)}</p>
+        <div className="border-2 border-sky-600 p-4 rounded-lg text-center bg-sky-50">
+          <p className="text-sm font-bold text-sky-800 uppercase">Total Egresos</p>
+          <p className="text-2xl font-black text-sky-700">${totalEgresos.toFixed(2)}</p>
         </div>
         <div className="border-2 border-blue-600 p-4 rounded-lg text-center bg-blue-50">
           <p className="text-sm font-bold text-blue-800 uppercase">Saldo en Caja</p>

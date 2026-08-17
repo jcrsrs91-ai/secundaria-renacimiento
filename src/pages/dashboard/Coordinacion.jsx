@@ -22,7 +22,7 @@ export default function Coordinacion() {
           </button>
           <button
             onClick={() => setActiveTab('cuadro-honor')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${activeTab === 'cuadro-honor' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${activeTab === 'cuadro-honor' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
             <Trophy className="w-4 h-4" /> Cuadro de Honor
           </button>

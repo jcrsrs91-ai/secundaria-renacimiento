@@ -7,14 +7,14 @@ export default function CredencialPrint({ students = [] }) {
   const { config } = useGlobalConfig();
   const getGradeColor = (grado) => {
     // 1ro Guinda, 2do Azul, 3ro Verde
-    if (grado?.includes('1')) return 'bg-rose-900 border-rose-900';
+    if (grado?.includes('1')) return 'bg-sky-900 border-sky-900';
     if (grado?.includes('2')) return 'bg-blue-700 border-blue-700';
     if (grado?.includes('3')) return 'bg-emerald-700 border-emerald-700';
     return 'bg-slate-800 border-slate-800'; // Default
   };
 
   const getTextColor = (grado) => {
-    if (grado?.includes('1')) return 'text-rose-900';
+    if (grado?.includes('1')) return 'text-sky-900';
     if (grado?.includes('2')) return 'text-blue-700';
     if (grado?.includes('3')) return 'text-emerald-700';
     return 'text-slate-800';

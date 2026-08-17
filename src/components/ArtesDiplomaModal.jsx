@@ -62,9 +62,9 @@ export default function ArtesDiplomaModal({ onClose, onGenerate, activos }) {
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-rose-50">
+        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-sky-50">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-rose-100 text-rose-600 rounded-xl">
+            <div className="p-2 bg-sky-100 text-sky-600 rounded-xl">
               <Palette className="w-5 h-5" />
             </div>
             <h2 className="text-xl font-bold text-slate-800">Diploma de Artes</h2>
@@ -78,7 +78,7 @@ export default function ArtesDiplomaModal({ onClose, onGenerate, activos }) {
           <div className="p-6 overflow-y-auto flex-1">
             <div className="space-y-4">
               
-              <div className="bg-rose-50/50 p-4 rounded-xl border border-rose-100 mb-6">
+              <div className="bg-sky-50/50 p-4 rounded-xl border border-sky-100 mb-6">
                 <p className="text-sm text-slate-600 italic">
                   Este diploma reconoce la participación destacada en el <strong>Taller de Danza Xochipilli</strong>. 
                   Busca y selecciona al alumno en la base de datos:
@@ -93,7 +93,7 @@ export default function ArtesDiplomaModal({ onClose, onGenerate, activos }) {
                     type="text" 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-rose-500 outline-none"
+                    className="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-sky-500 outline-none"
                     placeholder="Escribe el nombre..."
                   />
                 </div>
@@ -105,7 +105,7 @@ export default function ArtesDiplomaModal({ onClose, onGenerate, activos }) {
                   required
                   value={selectedStudentId}
                   onChange={(e) => setSelectedStudentId(e.target.value)}
-                  className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-rose-500 outline-none"
+                  className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-sky-500 outline-none"
                   size="5"
                 >
                   {filteredStudents.map(student => (
@@ -126,7 +126,7 @@ export default function ArtesDiplomaModal({ onClose, onGenerate, activos }) {
                           }
                         }, manualTurno);
                       }}
-                      className="p-2 border-b border-slate-100 hover:bg-rose-50 cursor-pointer"
+                      className="p-2 border-b border-slate-100 hover:bg-sky-50 cursor-pointer"
                     >
                       {student.nombres} {student.apellidoPaterno} {student.apellidoMaterno} - {student.grado} "{student.grupo}"
                     </option>
@@ -143,7 +143,7 @@ export default function ArtesDiplomaModal({ onClose, onGenerate, activos }) {
                 <select 
                   value={manualTurno}
                   onChange={(e) => setManualTurno(e.target.value)}
-                  className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-rose-500 outline-none"
+                  className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-sky-500 outline-none"
                 >
                   <option value="Matutino">Matutino</option>
                   <option value="Vespertino">Vespertino</option>
@@ -164,7 +164,7 @@ export default function ArtesDiplomaModal({ onClose, onGenerate, activos }) {
             <button
               type="submit"
               disabled={!selectedStudentId}
-              className="px-6 py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 disabled:opacity-50 shadow-md shadow-rose-200 transition-all flex items-center gap-2"
+              className="px-6 py-2.5 bg-sky-600 text-white font-bold rounded-xl hover:bg-sky-700 disabled:opacity-50 shadow-md shadow-sky-200 transition-all flex items-center gap-2"
             >
               Generar Diploma
             </button>

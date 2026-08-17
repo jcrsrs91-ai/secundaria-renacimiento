@@ -156,9 +156,9 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
             <span className="bg-primary-100 text-primary-800 text-xs font-bold px-3 py-1 rounded-full">{student.matricula}</span>
             <span className={`text-xs font-bold px-3 py-1 rounded-full ${
               student.status === 'Activo' ? 'bg-emerald-100 text-emerald-800' :
-              student.status === 'Baja' ? 'bg-rose-100 text-rose-800' :
+              student.status === 'Baja' ? 'bg-sky-100 text-sky-800' :
               student.status === 'Egresado' ? 'bg-blue-100 text-blue-800' :
-              'bg-amber-100 text-amber-800'
+              'bg-indigo-100 text-indigo-800'
             }`}>{student.status || 'Activo'}</span>
           </div>
           <div className="flex space-x-2">
@@ -166,7 +166,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
               <Printer className="w-4 h-4 mr-2" /> Ficha de Inscripción
             </button>
             {!isEditing && (
-              <button onClick={() => setIsEditing(true)} className="flex items-center px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 shadow-sm transition">
+              <button onClick={() => setIsEditing(true)} className="flex items-center px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-medium hover:bg-indigo-600 shadow-sm transition">
                 <Edit className="w-4 h-4 mr-2" /> Habilitar Edición
               </button>
             )}
@@ -389,7 +389,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                          <button onClick={takePhoto} type="button" className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 flex items-center">
                            <Camera className="w-3 h-3 mr-1" /> Capturar
                          </button>
-                         <button onClick={cancelCamera} type="button" className="px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded shadow hover:bg-rose-700">
+                         <button onClick={cancelCamera} type="button" className="px-3 py-1.5 bg-sky-600 text-white text-xs font-bold rounded shadow hover:bg-sky-700">
                            <X className="w-3 h-3" />
                          </button>
                        </div>
@@ -432,17 +432,17 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
 
                 {/* Salud */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                  <div className="flex items-center mb-6 border-b pb-3"><Heart className="w-6 h-6 mr-3 text-rose-500" /><h4 className="font-bold text-xl text-slate-800">Ficha Médica</h4></div>
+                  <div className="flex items-center mb-6 border-b pb-3"><Heart className="w-6 h-6 mr-3 text-sky-500" /><h4 className="font-bold text-xl text-slate-800">Ficha Médica</h4></div>
                   <div className="space-y-4 text-sm">
-                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Tipo de Sangre</span><span className="font-black text-rose-600 text-lg">{student.tipoSangre}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Tipo de Sangre</span><span className="font-black text-sky-600 text-lg">{student.tipoSangre}</span></div>
                     <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Usa Lentes</span><span className="font-bold text-slate-700">{student.lentes}</span></div>
                     <div className="pt-2">
                       <span className="text-slate-500 font-medium block mb-2">Alergias Reportadas</span>
-                      <p className="font-bold text-rose-800 bg-rose-50 p-3 rounded-lg border border-rose-100">{student.alergias}</p>
+                      <p className="font-bold text-sky-800 bg-sky-50 p-3 rounded-lg border border-sky-100">{student.alergias}</p>
                     </div>
                     <div className="pt-2">
                       <span className="text-slate-500 font-medium block mb-2">Padecimientos Crónicos</span>
-                      <p className="font-bold text-rose-800 bg-rose-50 p-3 rounded-lg border border-rose-100">{student.padecimientos}</p>
+                      <p className="font-bold text-sky-800 bg-sky-50 p-3 rounded-lg border border-sky-100">{student.padecimientos}</p>
                     </div>
                   </div>
                 </div>
@@ -513,13 +513,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     const renderCell = (val) => {
                       if (val === undefined || val === null || val === '') return '-';
                       const num = Number(val);
-                      return <span className={num < 6 ? 'text-rose-600 font-bold bg-rose-50 px-2 py-1 rounded' : ''}>{num.toFixed(1)}</span>;
+                      return <span className={num < 6 ? 'text-sky-600 font-bold bg-sky-50 px-2 py-1 rounded' : ''}>{num.toFixed(1)}</span>;
                     };
 
                     return (
                       <>
                         {hasReprobada && (
-                          <div className="mb-4 bg-rose-100 text-rose-800 p-3 rounded-lg text-sm font-semibold flex items-center border border-rose-200">
+                          <div className="mb-4 bg-sky-100 text-sky-800 p-3 rounded-lg text-sm font-semibold flex items-center border border-sky-200">
                             <span className="mr-2 text-xl">⚠️</span> Este alumno tiene calificaciones reprobadas (menores a 6.0) en el ciclo actual.
                           </div>
                         )}
@@ -629,7 +629,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                               const renderCell = (val) => {
                                 if (val === undefined || val === null || val === '') return '-';
                                 const num = Number(val);
-                                return <span className={num < 6 ? 'text-rose-600 font-bold bg-rose-50 px-1 rounded' : ''}>{num.toFixed(1)}</span>;
+                                return <span className={num < 6 ? 'text-sky-600 font-bold bg-sky-50 px-1 rounded' : ''}>{num.toFixed(1)}</span>;
                               };
 
                               return (

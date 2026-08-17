@@ -31,7 +31,7 @@ export default function ActaBajaPrint({ data }) {
             <div className="text-center px-4 flex-1">
               <h1 className="font-black text-lg text-slate-800 uppercase tracking-wider">Escuela Secundaria Técnica N° 68 "Renacimiento"</h1>
               <h2 className="font-bold text-sm text-slate-600 uppercase mt-0.5">Contraloría Interna</h2>
-              <h3 className="font-bold text-xs mt-1.5 bg-rose-100 border border-rose-200 text-rose-800 inline-block px-3 py-1 rounded-full tracking-widest">ACTA DE BAJA DE BIENES</h3>
+              <h3 className="font-bold text-xs mt-1.5 bg-sky-100 border border-sky-200 text-sky-800 inline-block px-3 py-1 rounded-full tracking-widest">ACTA DE BAJA DE BIENES</h3>
             </div>
             <img src="/logo-escuela.png" alt="EST 68" className="h-14 object-contain" />
          </div>
@@ -44,7 +44,7 @@ export default function ActaBajaPrint({ data }) {
             </div>
             <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 shadow-sm">
               <p className="font-black text-slate-700 mb-1 uppercase text-[10px] tracking-widest">Motivo de la Baja</p>
-              <p className="font-bold text-rose-700 mt-1">{data.motivo || 'Deterioro / Obsoleto / Destrucción'}</p>
+              <p className="font-bold text-sky-700 mt-1">{data.motivo || 'Deterioro / Obsoleto / Destrucción'}</p>
             </div>
          </div>
 
@@ -71,7 +71,7 @@ export default function ActaBajaPrint({ data }) {
                     <td className="p-2 text-[10px] font-mono text-slate-600 border-r border-slate-200">{art.codigo}</td>
                     <td className="p-2 text-slate-700 border-r border-slate-200">{art.articulo}</td>
                     <td className="p-2 text-[10px] text-slate-500 border-r border-slate-200">{art.ubicacion}</td>
-                    <td className="p-2 text-center text-xs font-bold text-rose-700 border-slate-200">BAJA</td>
+                    <td className="p-2 text-center text-xs font-bold text-sky-700 border-slate-200">BAJA</td>
                   </tr>
                 ))
               ) : (

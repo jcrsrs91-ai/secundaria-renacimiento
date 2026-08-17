@@ -18,7 +18,7 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
         <div className="flex gap-4">
           <button 
             onClick={() => window.print()}
-            className="flex items-center gap-2 bg-gradient-to-r from-rose-500 to-amber-600 hover:from-rose-600 hover:to-amber-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-rose-500/30"
+            className="flex items-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-sky-500/30"
           >
             <Printer className="w-5 h-5" />
             Imprimir Diploma de Artes
@@ -54,7 +54,7 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
             background-color: white !important;
           }
           .art-border-outer {
-            border: 8px solid #be123c; /* rose-700 */
+            border: 8px solid #be123c; /* sky-700 */
             border-radius: 16px;
             height: 100%;
             padding: 4px;
@@ -62,7 +62,7 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
             background: linear-gradient(135deg, #fff1f2 0%, #ffffff 50%, #fffbeb 100%) !important;
           }
           .art-border-inner {
-            border: 3px dashed #f59e0b; /* amber-500 */
+            border: 3px dashed #f59e0b; /* indigo-500 */
             border-radius: 12px;
             height: 100%;
             padding: 24px;
@@ -112,9 +112,9 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
                   </div>
                   <div className="text-center flex-1 px-4">
                      <p className="text-[10px] font-bold text-slate-700 uppercase tracking-[0.2em] mb-1">Secretaría de Educación Pública</p>
-                     <h2 className="text-sm font-black text-rose-900 uppercase tracking-[0.15em]">Escuela Secundaria Técnica No. 68 "Renacimiento"</h2>
+                     <h2 className="text-sm font-black text-sky-900 uppercase tracking-[0.15em]">Escuela Secundaria Técnica No. 68 "Renacimiento"</h2>
                      <p className="text-[10px] font-bold text-slate-600 tracking-widest mt-1.5">
-                       C.C.T. 12DST0077B <span className="mx-2 text-rose-300">•</span> Zona Escolar 24
+                       C.C.T. 12DST0077B <span className="mx-2 text-sky-300">•</span> Zona Escolar 24
                      </p>
                   </div>
                   <div className="w-40 flex justify-end">
@@ -124,23 +124,23 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
 
                 {/* Título Artístico con Iconos */}
                 <div className="text-center mt-6 mb-8 relative">
-                  <div className="absolute -left-12 top-0 opacity-40 text-amber-500 transform -rotate-12"><Music className="w-12 h-12" /></div>
-                  <div className="absolute -right-12 top-4 opacity-40 text-rose-500 transform rotate-12"><Palette className="w-10 h-10" /></div>
-                  <div className="absolute left-1/4 -top-6 opacity-30 text-amber-400"><Sparkles className="w-8 h-8" /></div>
-                  <div className="absolute right-1/4 -top-4 opacity-30 text-rose-400"><Star className="w-6 h-6" /></div>
+                  <div className="absolute -left-12 top-0 opacity-40 text-indigo-500 transform -rotate-12"><Music className="w-12 h-12" /></div>
+                  <div className="absolute -right-12 top-4 opacity-40 text-sky-500 transform rotate-12"><Palette className="w-10 h-10" /></div>
+                  <div className="absolute left-1/4 -top-6 opacity-30 text-indigo-400"><Sparkles className="w-8 h-8" /></div>
+                  <div className="absolute right-1/4 -top-4 opacity-30 text-sky-400"><Star className="w-6 h-6" /></div>
 
                   <h1 
-                    className="text-6xl font-black text-rose-700 mb-2 drop-shadow-md"
+                    className="text-6xl font-black text-sky-700 mb-2 drop-shadow-md"
                     style={{ fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: '0.05em' }}
                   >
                     RECONOCIMIENTO
                   </h1>
                   <div className="flex items-center justify-center gap-4">
-                    <div className="h-px w-16 bg-amber-500"></div>
-                    <p className="text-lg tracking-[0.2em] text-amber-600 font-bold uppercase" style={{ fontFamily: "Inter, sans-serif" }}>
+                    <div className="h-px w-16 bg-indigo-500"></div>
+                    <p className="text-lg tracking-[0.2em] text-indigo-600 font-bold uppercase" style={{ fontFamily: "Inter, sans-serif" }}>
                       Al Mérito Artístico
                     </p>
-                    <div className="h-px w-16 bg-amber-500"></div>
+                    <div className="h-px w-16 bg-indigo-500"></div>
                   </div>
                 </div>
 
@@ -149,14 +149,14 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
                 </div>
 
                 {/* Nombre del Alumno y Grado */}
-                <div className="w-[95%] border-b-2 border-amber-400 pb-4 mb-10 flex flex-col items-center">
+                <div className="w-[95%] border-b-2 border-indigo-400 pb-4 mb-10 flex flex-col items-center">
                   <h2 
                     className="text-4xl font-black text-slate-900 tracking-wide text-center drop-shadow-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-full px-2"
                     style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                   >
                     {autoAcentuar(student.nombres)} {autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)}
                   </h2>
-                  <p className="text-sm font-black text-rose-700 mt-3 tracking-[0.2em] uppercase">
+                  <p className="text-sm font-black text-sky-700 mt-3 tracking-[0.2em] uppercase">
                     ALUMNO DE {student.grado} GRUPO "{student.grupo}"
                   </p>
                 </div>
@@ -167,7 +167,7 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
                     className="text-[1.1rem] leading-loose text-slate-700 italic font-medium"
                     style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                   >
-                    Por su destacado compromiso, disciplina y pasión artística demostrada como integrante activo del <strong className="text-rose-800 font-black text-[1.2rem] px-1">Taller de Danza Xochipilli</strong>, enriqueciendo el acervo cultural de nuestra institución durante el ciclo escolar {config?.cicloEscolarActual || '2025-2026'}.
+                    Por su destacado compromiso, disciplina y pasión artística demostrada como integrante activo del <strong className="text-sky-800 font-black text-[1.2rem] px-1">Taller de Danza Xochipilli</strong>, enriqueciendo el acervo cultural de nuestra institución durante el ciclo escolar {config?.cicloEscolarActual || '2025-2026'}.
                   </p>
                 </div>
 
@@ -185,7 +185,7 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
                     <div className="flex flex-col items-center justify-end">
                       <div className="w-full border-t border-slate-400 pt-2 text-center">
                         <p className="text-[11px] font-black text-slate-800 tracking-wider">PROFA. MARBELLA SANTANA ALCARAZ</p>
-                        <p className="text-[9px] text-rose-700 font-bold uppercase mt-1 tracking-[0.15em]">
+                        <p className="text-[9px] text-sky-700 font-bold uppercase mt-1 tracking-[0.15em]">
                           Maestra del Taller de Danza
                         </p>
                       </div>

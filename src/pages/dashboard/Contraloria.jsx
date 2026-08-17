@@ -1446,7 +1446,7 @@ export default function Contraloria() {
           <div className="space-y-6">
             <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
               <h2 className="text-lg font-bold text-slate-800">Control de Gastos (Egresos)</h2>
-              <button onClick={() => setShowGastoModal(true)} className="flex items-center px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-medium hover:bg-rose-700">
+              <button onClick={() => setShowGastoModal(true)} className="flex items-center px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700">
                 <Plus className="w-4 h-4 mr-1" /> Registrar Gasto
               </button>
             </div>
@@ -1508,8 +1508,8 @@ export default function Contraloria() {
                 </div>
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center">
-                <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mr-4">
-                  <TrendingDown className="w-6 h-6 text-rose-600" />
+                <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center mr-4">
+                  <TrendingDown className="w-6 h-6 text-sky-600" />
                 </div>
                 <div>
                   <p className="text-sm text-slate-500 font-medium">Total Egresos</p>
@@ -1687,21 +1687,21 @@ export default function Contraloria() {
                 <Printer className="w-4 h-4 mr-2" /> Generar
               </button>
             </div>
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+            <div className="bg-gradient-to-r from-indigo-50 to-orange-50 border border-indigo-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
               <div className="mb-3">
-                <h4 className="font-bold text-amber-900 text-lg">Carta de Resguardo</h4>
-                <p className="text-amber-700 text-xs mt-1">Asignar bienes a maestros o áreas.</p>
+                <h4 className="font-bold text-indigo-900 text-lg">Carta de Resguardo</h4>
+                <p className="text-indigo-700 text-xs mt-1">Asignar bienes a maestros o áreas.</p>
               </div>
-              <button onClick={() => openModal('resguardo')} className="bg-amber-600 hover:bg-amber-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
+              <button onClick={() => openModal('resguardo')} className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
                 <Printer className="w-4 h-4 mr-2" /> Generar
               </button>
             </div>
-            <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+            <div className="bg-gradient-to-r from-sky-50 to-pink-50 border border-sky-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
               <div className="mb-3">
-                <h4 className="font-bold text-rose-900 text-lg">Acta de Baja</h4>
-                <p className="text-rose-700 text-xs mt-1">Desecho oficial de bienes inservibles.</p>
+                <h4 className="font-bold text-sky-900 text-lg">Acta de Baja</h4>
+                <p className="text-sky-700 text-xs mt-1">Desecho oficial de bienes inservibles.</p>
               </div>
-              <button onClick={() => openModal('baja')} className="bg-rose-600 hover:bg-rose-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
+              <button onClick={() => openModal('baja')} className="bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
                 <Printer className="w-4 h-4 mr-2" /> Generar Libre
               </button>
             </div>
@@ -1735,7 +1735,7 @@ export default function Contraloria() {
                 onClick={cleanOrphanedItems}
                 disabled={isSubmitting}
                 title="Elimina bienes que perdieron su resguardo y quedaron atrapados."
-                className="w-full md:w-auto bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 border border-rose-600 rounded-lg text-sm font-bold shadow-sm transition-colors disabled:opacity-50"
+                className="w-full md:w-auto bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 border border-sky-600 rounded-lg text-sm font-bold shadow-sm transition-colors disabled:opacity-50"
               >
                 Limpiar Fantasmas
               </button>
@@ -1777,10 +1777,10 @@ export default function Contraloria() {
                     <button onClick={handlePrintEtiquetas} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 shadow-sm transition-colors mr-1">
                       <Printer className="w-4 h-4 mr-2" /> Imprimir Etiquetas
                     </button>
-                    <button onClick={() => openModal('resguardo')} className="flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-lg text-sm font-medium hover:bg-amber-200 shadow-sm transition-colors border border-amber-200 mr-1">
+                    <button onClick={() => openModal('resguardo')} className="flex items-center px-4 py-2 bg-indigo-100 text-indigo-800 rounded-lg text-sm font-medium hover:bg-indigo-200 shadow-sm transition-colors border border-indigo-200 mr-1">
                       <FileText className="w-4 h-4 mr-2" /> Generar Resguardo
                     </button>
-                    <button onClick={() => openModal('baja')} className="flex items-center px-4 py-2 bg-rose-100 text-rose-800 rounded-lg text-sm font-medium hover:bg-rose-200 shadow-sm transition-colors border border-rose-200 mr-1">
+                    <button onClick={() => openModal('baja')} className="flex items-center px-4 py-2 bg-sky-100 text-sky-800 rounded-lg text-sm font-medium hover:bg-sky-200 shadow-sm transition-colors border border-sky-200 mr-1">
                       <FileText className="w-4 h-4 mr-2" /> Generar Baja
                     </button>
                     <button onClick={() => handleBulkStatusChange('Nuevo')} className="flex items-center px-4 py-2 bg-emerald-100 text-emerald-800 rounded-lg text-sm font-medium hover:bg-emerald-200 shadow-sm transition-colors border border-emerald-200 mr-1">
@@ -2214,8 +2214,8 @@ export default function Contraloria() {
                       <input type="text" placeholder="Ej. Aula 3 / Maestro de Historia" value={formData.areaResguardante} onChange={e => setFormData({...formData, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div className="md:col-span-2 mt-2">
-                      <label className="flex items-center space-x-3 text-sm font-medium text-slate-700 cursor-pointer p-4 bg-amber-50 rounded-xl border border-amber-200 hover:bg-amber-100 transition-colors">
-                        <input type="checkbox" checked={formData.guardarEnInventario} onChange={e => setFormData({...formData, guardarEnInventario: e.target.checked})} className="rounded text-amber-600 focus:ring-amber-500 w-5 h-5" />
+                      <label className="flex items-center space-x-3 text-sm font-medium text-slate-700 cursor-pointer p-4 bg-indigo-50 rounded-xl border border-indigo-200 hover:bg-indigo-100 transition-colors">
+                        <input type="checkbox" checked={formData.guardarEnInventario} onChange={e => setFormData({...formData, guardarEnInventario: e.target.checked})} className="rounded text-indigo-600 focus:ring-indigo-500 w-5 h-5" />
                         <span>Guardar estos artículos automáticamente en el <strong>Inventario General</strong> de la escuela.</span>
                       </label>
                     </div>

@@ -91,7 +91,7 @@ export default function DesempenoAlcanzadoPrint({ activos = [], materiasPorGrado
   const renderRow = (label, turnoOrTotal, key, isTotalGrado = false, isGlobal = false) => {
     const row = stats[key];
     const baseClasses = isGlobal 
-      ? 'bg-amber-100 font-black text-amber-900 border-t-2 border-amber-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-black' 
+      ? 'bg-indigo-100 font-black text-indigo-900 border-t-2 border-indigo-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-black' 
       : isTotalGrado 
         ? 'bg-slate-100 font-bold text-slate-800 border-t-2 border-slate-300 print:bg-slate-200 print:text-black print:border-black' 
         : 'hover:bg-slate-50 transition-colors text-slate-600 font-medium print:text-black';
@@ -152,10 +152,10 @@ export default function DesempenoAlcanzadoPrint({ activos = [], materiasPorGrado
         <td className="px-2 py-2 text-center print:px-1 print:py-1">{row.nivel[8]}</td>
         <td className="px-2 py-2 text-center text-xs text-slate-400 border-r border-slate-200 print:border-slate-400 print:px-1 print:py-1 print:text-slate-500">{getPct(row.nivel[8])}</td>
         
-        <td className="px-2 py-2 text-center font-bold bg-amber-50/50 print:bg-transparent border-l border-amber-200 print:border-slate-400 print:px-1 print:py-1">
+        <td className="px-2 py-2 text-center font-bold bg-indigo-50/50 print:bg-transparent border-l border-indigo-200 print:border-slate-400 print:px-1 print:py-1">
           <span className="flex justify-between w-full">
             <span>{nivelComprobacion}</span>
-            <span className="text-amber-600 text-[10px]">{row.matricula > 0 && nivelComprobacion === row.matricula ? '100%' : '0%'}</span>
+            <span className="text-indigo-600 text-[10px]">{row.matricula > 0 && nivelComprobacion === row.matricula ? '100%' : '0%'}</span>
           </span>
         </td>
       </tr>

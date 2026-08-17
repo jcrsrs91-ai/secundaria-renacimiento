@@ -84,7 +84,7 @@ export default function AcuseRecepcionPrint({ data, onClose }) {
               <p className="text-[9px] font-bold text-slate-700 uppercase tracking-widest mb-1">Secretaría de Educación Pública</p>
               <h1 className="m-0 text-[13pt] text-[#621132] uppercase font-black tracking-wider">Escuela Secundaria Técnica No. 68 "Renacimiento"</h1>
               <p className="text-[9px] font-bold text-slate-600 tracking-widest mt-1">
-                C.C.T. 12DST0077B <span className="mx-2 text-rose-300">•</span> Zona Escolar 24
+                C.C.T. 12DST0077B <span className="mx-2 text-sky-300">•</span> Zona Escolar 24
               </p>
               <h2 className="mt-1 mb-0 text-[10pt] font-semibold text-slate-700">Acapulco de Juárez, Guerrero | Tel. 744 441 5678</h2>
             </div>
@@ -139,7 +139,7 @@ export default function AcuseRecepcionPrint({ data, onClose }) {
                       {docs[key]?.checked ? (
                         <span className="text-[#15803d] font-bold">Documento entregado</span>
                       ) : (
-                        <span>Motivo de falta: <span className="uppercase font-bold text-rose-700">{docs[key]?.motivo}</span></span>
+                        <span>Motivo de falta: <span className="uppercase font-bold text-sky-700">{docs[key]?.motivo}</span></span>
                       )}
                     </td>
                   </tr>

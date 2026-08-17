@@ -772,7 +772,7 @@ export default function ControlEscolar() {
           </button>
           {/* Pendientes */}
           <button onClick={() => setActiveTab('pendientes')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'pendientes' ? 'bg-primary-600 text-white shadow-primary-200 ring-2 ring-primary-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
-            Solicitudes Pendientes <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${activeTab === 'pendientes' ? 'bg-primary-500 text-white' : 'bg-amber-100 text-amber-700'}`}>{pendientes.length}</span>
+            Solicitudes Pendientes <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${activeTab === 'pendientes' ? 'bg-primary-500 text-white' : 'bg-indigo-100 text-indigo-700'}`}>{pendientes.length}</span>
           </button>
           
           {/* Activos */}
@@ -790,8 +790,8 @@ export default function ControlEscolar() {
           </button>
           
           {/* Calificaciones */}
-          <button onClick={() => setActiveTab('calificaciones')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'calificaciones' ? 'bg-amber-500 text-white shadow-amber-200 ring-2 ring-amber-500 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
-            Calificaciones <Star className={`w-3.5 h-3.5 ml-2 ${activeTab === 'calificaciones' ? 'text-amber-100' : 'text-amber-500'}`} />
+          <button onClick={() => setActiveTab('calificaciones')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'calificaciones' ? 'bg-indigo-500 text-white shadow-indigo-200 ring-2 ring-indigo-500 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Calificaciones <Star className={`w-3.5 h-3.5 ml-2 ${activeTab === 'calificaciones' ? 'text-indigo-100' : 'text-indigo-500'}`} />
           </button>
 
           {/* Regularización / Extraordinarios */}
@@ -815,22 +815,22 @@ export default function ControlEscolar() {
           </button>
           
           {/* SEP E2 */}
-          <button onClick={() => setActiveTab('aprobacion')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'aprobacion' ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+          <button onClick={() => setActiveTab('aprobacion')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'aprobacion' ? 'bg-sky-600 text-white shadow-sky-200 ring-2 ring-sky-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Aprobación (E2)
           </button>
           
           {/* SEP E4 */}
-          <button onClick={() => setActiveTab('eficiencia')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'eficiencia' ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+          <button onClick={() => setActiveTab('eficiencia')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'eficiencia' ? 'bg-sky-600 text-white shadow-sky-200 ring-2 ring-sky-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Eficiencia Terminal (E4)
           </button>
           
           {/* SEP E5 */}
-          <button onClick={() => setActiveTab('desempeno')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'desempeno' ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+          <button onClick={() => setActiveTab('desempeno')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'desempeno' ? 'bg-sky-600 text-white shadow-sky-200 ring-2 ring-sky-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Desempeño Alcanzado (E5)
           </button>
 
           {/* SEP E6 */}
-          <button onClick={() => setActiveTab('desertores')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'desertores' ? 'bg-rose-600 text-white shadow-rose-200 ring-2 ring-rose-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+          <button onClick={() => setActiveTab('desertores')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'desertores' ? 'bg-sky-600 text-white shadow-sky-200 ring-2 ring-sky-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Desertores (E6)
           </button>
         </div>
@@ -860,7 +860,7 @@ export default function ControlEscolar() {
                 tramitesPagados.map(t => (
                   <tr key={t.id} className={t.estado === 'Entregado' ? 'bg-slate-50 opacity-60' : 'bg-white hover:bg-slate-50'}>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${t.estado === 'Pendiente' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${t.estado === 'Pendiente' ? 'bg-indigo-100 text-indigo-800' : 'bg-emerald-100 text-emerald-800'}`}>
                         {t.estado}
                       </span>
                     </td>
@@ -904,7 +904,7 @@ export default function ControlEscolar() {
                 pendientes.map(p => (
                   <tr key={p.id}>
                     <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                      <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs">{p.tipoTramite || 'Nuevo Ingreso'}</span>
+                      <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">{p.tipoTramite || 'Nuevo Ingreso'}</span>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 font-semibold uppercase">
                       {p.apellidoPaterno} {p.apellidoMaterno} {p.nombres}
@@ -1024,7 +1024,7 @@ export default function ControlEscolar() {
                     setPrintMode('listaClausura');
                     setTimeout(() => window.print(), 500);
                   }} 
-                  className="flex items-center justify-center w-full md:w-auto px-6 py-2.5 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition shadow-md"
+                  className="flex items-center justify-center w-full md:w-auto px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition shadow-md"
                 >
                   <Award className="w-5 h-5 mr-2" /> Imprimir Lista Clausura (3ro)
                 </button>
@@ -1196,13 +1196,13 @@ export default function ControlEscolar() {
                       <button onClick={() => openModal('grade', a)} className="text-emerald-600 hover:text-emerald-800 font-medium text-sm inline-flex items-center">
                         <Star className="w-4 h-4 mr-1" /> Calificar
                       </button>
-                      <button onClick={() => handlePrintConstancia(a)} className="text-amber-600 hover:text-amber-800 font-medium text-sm inline-flex items-center">
+                      <button onClick={() => handlePrintConstancia(a)} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm inline-flex items-center">
                         <FileText className="w-4 h-4 mr-1" /> Constancia
                       </button>
                       <button onClick={() => openModal('acuseRec', a)} className="text-sky-600 hover:text-sky-800 font-medium text-sm inline-flex items-center">
                         <FileText className="w-4 h-4 mr-1" /> Acuse Recibir
                       </button>
-                      <button onClick={() => openModal('acuse', a)} className="text-rose-600 hover:text-rose-800 font-medium text-sm inline-flex items-center">
+                      <button onClick={() => openModal('acuse', a)} className="text-sky-600 hover:text-sky-800 font-medium text-sm inline-flex items-center">
                         <FileText className="w-4 h-4 mr-1" /> Acuse Devolver
                       </button>
                       <button onClick={() => handlePrintSingle(a)} title={!a.pagoInscripcion ? 'Bloqueada por falta de pago' : ''} className={`font-medium text-sm inline-flex items-center ${a.pagoInscripcion ? 'text-slate-500 hover:text-slate-800' : 'text-slate-300 hover:text-slate-400 cursor-not-allowed'}`}>
@@ -1645,8 +1645,8 @@ export default function ControlEscolar() {
                 </div>
               </button>
 
-              <button onClick={() => executePrintConstancia('terminacion')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-amber-500 hover:bg-amber-50 transition text-left group">
-                <div className="bg-amber-100 text-amber-600 p-2 rounded-lg mr-4 group-hover:bg-amber-500 group-hover:text-white transition shrink-0">
+              <button onClick={() => executePrintConstancia('terminacion')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition text-left group">
+                <div className="bg-indigo-100 text-indigo-600 p-2 rounded-lg mr-4 group-hover:bg-indigo-500 group-hover:text-white transition shrink-0">
                   <Award className="w-6 h-6" />
                 </div>
                 <div>

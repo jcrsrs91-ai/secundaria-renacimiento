@@ -158,7 +158,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
         </div>
 
         {missingGrades && (
-          <div className="bg-amber-100 border border-amber-400 text-amber-800 px-4 py-2 rounded mb-4 text-xs text-center font-bold no-print">
+          <div className="bg-indigo-100 border border-indigo-400 text-indigo-800 px-4 py-2 rounded mb-4 text-xs text-center font-bold no-print">
             Advertencia: El alumno tiene calificaciones faltantes o reprobadas. El promedio general no puede ser calculado oficialmente.
           </div>
         )}

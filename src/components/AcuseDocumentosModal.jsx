@@ -110,10 +110,10 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 rounded-t-xl">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-rose-600" />
+            <FileText className="w-5 h-5 text-sky-600" />
             <h2 className="text-lg font-bold text-slate-800">Acuse de Devolución de Documentos</h2>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -156,7 +156,7 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
                 <select 
                   value={motivo}
                   onChange={(e) => setMotivo(e.target.value)}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 >
                   <option value="Egreso">Egreso</option>
                   <option value="Baja del ciclo escolar">Baja del ciclo escolar</option>
@@ -173,7 +173,7 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
                 <select 
                   value={tutorSelect}
                   onChange={(e) => setTutorSelect(e.target.value)}
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 uppercase"
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 uppercase"
                 >
                   {student.tutorNombre && (
                     <option value={student.tutorNombre}>{autoAcentuar(student.tutorNombre)} (Tutor Principal)</option>
@@ -193,7 +193,7 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
                     value={tutorManual}
                     onChange={(e) => setTutorManual(e.target.value)}
                     placeholder="Nombre completo de quien recibe..."
-                    className="mt-2 w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 uppercase"
+                    className="mt-2 w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 uppercase"
                   />
                 )}
               </div>
@@ -205,7 +205,7 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
               <select 
                 value={quienEntregaSelect}
                 onChange={(e) => setQuienEntregaSelect(e.target.value)}
-                className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               >
                 {secretarios.map(sec => (
                   <option key={sec} value={sec}>{sec}</option>
@@ -219,14 +219,14 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
                   value={quienEntregaManual}
                   onChange={(e) => setQuienEntregaManual(e.target.value)}
                   placeholder="Nombre completo de quien entrega..."
-                  className="mt-2 w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 uppercase"
+                  className="mt-2 w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 uppercase"
                 />
               )}
             </div>
 
             {/* Documentos List */}
             <div>
-              <h3 className="text-sm font-bold text-rose-800 mb-3 border-b-2 border-rose-200 pb-1">
+              <h3 className="text-sm font-bold text-sky-800 mb-3 border-b-2 border-sky-200 pb-1">
                 Documentos a entregar (Desmarque si NO se entrega y escriba el motivo)
               </h3>
               
@@ -252,7 +252,7 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
                         type="checkbox"
                         checked={docState.checked}
                         onChange={(e) => handleExtraDocChange(key, 'checked', e.target.checked)}
-                        className="w-5 h-5 text-rose-600 border-slate-300 rounded focus:ring-rose-500"
+                        className="w-5 h-5 text-sky-600 border-slate-300 rounded focus:ring-sky-500"
                       />
                       <span className="text-sm font-semibold text-slate-700">{docLabels[key] || key}</span>
                     </label>
@@ -265,7 +265,7 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
                         value={docState.checked ? '' : docState.motivo}
                         onChange={(e) => handleExtraDocChange(key, 'motivo', e.target.value)}
                         placeholder={docState.checked ? "Se entrega (Desmarque para escribir motivo)" : "Escriba o seleccione un motivo..."}
-                        className={`w-full p-2 text-sm border rounded-md transition-colors uppercase ${docState.checked ? 'bg-slate-100 border-transparent text-slate-400 placeholder-slate-400 cursor-not-allowed' : 'bg-white border-rose-300 focus:ring-2 focus:ring-rose-500 focus:border-rose-500'}`}
+                        className={`w-full p-2 text-sm border rounded-md transition-colors uppercase ${docState.checked ? 'bg-slate-100 border-transparent text-slate-400 placeholder-slate-400 cursor-not-allowed' : 'bg-white border-sky-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500'}`}
                       />
                     </div>
                   </div>
@@ -273,11 +273,11 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
               </div>
 
               {/* Agregar Documento Extra */}
-              <div className="mt-4 p-4 bg-rose-50 border border-rose-100 rounded-lg flex items-center gap-3">
+              <div className="mt-4 p-4 bg-sky-50 border border-sky-100 rounded-lg flex items-center gap-3">
                 <select 
                   value={extraDocSelect}
                   onChange={(e) => setExtraDocSelect(e.target.value)}
-                  className="flex-1 p-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-rose-500"
+                  className="flex-1 p-2 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-sky-500"
                 >
                   <option value="">-- Añadir documento extra al expediente --</option>
                   {!getDynamicDocs().includes('bol1') && <option value="bol1">Boleta 1er Grado Sec.</option>}
@@ -289,7 +289,7 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
                   type="button"
                   onClick={addExtraDoc}
                   disabled={!extraDocSelect}
-                  className="px-4 py-2 bg-rose-600 text-white text-sm font-bold rounded hover:bg-rose-700 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 bg-sky-600 text-white text-sm font-bold rounded hover:bg-sky-700 disabled:opacity-50 transition-colors"
                 >
                   Agregar
                 </button>
@@ -311,7 +311,7 @@ export default function AcuseDocumentosModal({ student, onClose, onGenerate }) {
           <button 
             type="submit" 
             form="acuseForm"
-            className="px-6 py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-lg flex items-center gap-2 transition-colors shadow-md shadow-rose-200"
+            className="px-6 py-2.5 bg-sky-700 hover:bg-sky-800 text-white font-bold rounded-lg flex items-center gap-2 transition-colors shadow-md shadow-sky-200"
           >
             <CheckCircle className="w-5 h-5" />
             Generar Acuse e Imprimir

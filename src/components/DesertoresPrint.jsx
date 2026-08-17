@@ -92,13 +92,13 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
 
         {/* Resumen Total Bajas */}
         <div className="flex justify-center mb-8 print:mb-4">
-          <div className="bg-rose-50 border border-rose-100 px-6 py-3 rounded-xl flex items-center gap-4 print:border-none print:bg-transparent print:p-0">
-            <div className="bg-rose-100 p-2 rounded-lg print:hidden">
-              <UserMinus className="w-6 h-6 text-rose-600" />
+          <div className="bg-sky-50 border border-sky-100 px-6 py-3 rounded-xl flex items-center gap-4 print:border-none print:bg-transparent print:p-0">
+            <div className="bg-sky-100 p-2 rounded-lg print:hidden">
+              <UserMinus className="w-6 h-6 text-sky-600" />
             </div>
             <div>
-              <p className="text-xs text-rose-600 font-bold uppercase tracking-wider mb-0.5 print:text-black">Total de Bajas Registradas</p>
-              <p className="text-3xl font-black text-rose-700 leading-none print:text-xl print:text-black">{bajasOrdenadas.length}</p>
+              <p className="text-xs text-sky-600 font-bold uppercase tracking-wider mb-0.5 print:text-black">Total de Bajas Registradas</p>
+              <p className="text-3xl font-black text-sky-700 leading-none print:text-xl print:text-black">{bajasOrdenadas.length}</p>
             </div>
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
                           <td className="px-4 py-2 text-left border-r border-slate-200 print:border-slate-400 print:py-1 font-semibold">{nombreCompleto}</td>
                           <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-1">{s.genero === 'Mujer' ? 'M' : 'H'}</td>
                           <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-1 font-bold">{gradoGrupo}</td>
-                          <td className="px-4 py-2 text-left print:py-1 text-rose-700 font-bold print:text-black">{motivo}</td>
+                          <td className="px-4 py-2 text-left print:py-1 text-sky-700 font-bold print:text-black">{motivo}</td>
                         </tr>
                       );
                     })}

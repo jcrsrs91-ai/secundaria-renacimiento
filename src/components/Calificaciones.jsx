@@ -294,7 +294,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                       {mat.name.replace('Formación Cívica y Ética', 'F.C.E.').replace('Ciencias', 'Cien.')}
                     </th>
                   ))}
-                  <th className="px-4 py-3 text-center text-xs font-black text-amber-400 uppercase tracking-wider bg-slate-900 border-l border-slate-700">PROM</th>
+                  <th className="px-4 py-3 text-center text-xs font-black text-indigo-400 uppercase tracking-wider bg-slate-900 border-l border-slate-700">PROM</th>
                   <th className="px-4 py-3 text-center text-xs font-bold text-slate-300 uppercase tracking-wider bg-slate-900 border-l border-slate-700 w-10"></th>
                 </tr>
               </thead>
@@ -319,14 +319,14 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                               value={val}
                               onChange={(e) => handleGradeChange(al.id, mat.id, e.target.value)}
                               className={`w-14 text-center p-1.5 border rounded font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-colors
-                                ${isFailing ? 'bg-rose-50 border-rose-300 text-rose-700' : 'bg-white border-slate-300 text-slate-700'}
+                                ${isFailing ? 'bg-sky-50 border-sky-300 text-sky-700' : 'bg-white border-slate-300 text-slate-700'}
                               `}
                             />
                           </td>
                         );
                       })}
                       <td className="px-4 py-3 text-center bg-inherit border-l border-slate-200">
-                        <span className={`inline-block px-2.5 py-1 rounded-md text-sm font-black ${isReprobado ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-800'}`}>
+                        <span className={`inline-block px-2.5 py-1 rounded-md text-sm font-black ${isReprobado ? 'bg-sky-100 text-sky-700' : 'bg-emerald-100 text-emerald-800'}`}>
                           {calcularPromedio(al.id)}
                         </span>
                       </td>

@@ -222,16 +222,16 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
         )}
 
         {sinCalificaciones.length > 0 && (
-          <div className="no-print mb-4 bg-amber-50 border-l-4 border-amber-500 p-4 shadow-sm">
+          <div className="no-print mb-4 bg-indigo-50 border-l-4 border-indigo-500 p-4 shadow-sm">
             <div className="flex items-center">
-              <AlertCircle className="w-6 h-6 text-amber-500 mr-3" />
-              <h3 className="font-bold text-amber-800 text-lg">Aviso: Alumnos con materias sin calificar</h3>
+              <AlertCircle className="w-6 h-6 text-indigo-500 mr-3" />
+              <h3 className="font-bold text-indigo-800 text-lg">Aviso: Alumnos con materias sin calificar</h3>
             </div>
-            <p className="mt-2 text-sm text-amber-700">
+            <p className="mt-2 text-sm text-indigo-700">
               Hay {sinCalificaciones.length} alumno(s) activos de 3er Grado que tienen <strong>al menos una materia totalmente en blanco (sin calificaciones)</strong>. Estos alumnos son contabilizados automáticamente en la columna de "Egresados sin certificado" (adeudan disciplinas).
             </p>
             <div className="mt-3 max-h-32 overflow-y-auto">
-              <ul className="list-disc pl-5 text-xs text-amber-900 space-y-1">
+              <ul className="list-disc pl-5 text-xs text-indigo-900 space-y-1">
                 {sinCalificaciones.map(s => (
                   <li key={s.id}>
                     <span className="font-bold">{s.nombre} {s.apellidos}</span> - {s.grado} {s.grupo} ({s.turno})
@@ -479,18 +479,18 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
 
           {alumnosOmitidos.length > 0 && (
             <>
-              <h3 className="font-bold text-rose-800 text-lg mb-2 border-t pt-4">
+              <h3 className="font-bold text-sky-800 text-lg mb-2 border-t pt-4">
                 ⚠️ Alumnos de 3er Grado que fueron IGNORADOS ({alumnosOmitidos.length})
               </h3>
-              <p className="text-sm text-rose-600 mb-4">
+              <p className="text-sm text-sky-600 mb-4">
                 El sistema encontró a estos alumnos en la base de datos de 3er Grado, pero NO los sumó al reporte por las siguientes razones:
               </p>
-              <div className="max-h-64 overflow-y-auto bg-rose-50 border border-rose-200 rounded p-4">
-                <ul className="list-disc pl-5 text-xs text-rose-900 space-y-1">
+              <div className="max-h-64 overflow-y-auto bg-sky-50 border border-sky-200 rounded p-4">
+                <ul className="list-disc pl-5 text-xs text-sky-900 space-y-1">
                   {alumnosOmitidos.sort((a,b) => a.apellidos?.localeCompare(b.apellidos)).map(s => (
                     <li key={s.id}>
                       <span className="font-bold">{s.apellidos} {s.nombre}</span> - {s.grado} {s.grupo} ({s.turno}) <br/>
-                      <span className="text-rose-600 bg-rose-100 px-1 rounded ml-2">Motivo: {s.motivo}</span>
+                      <span className="text-sky-600 bg-sky-100 px-1 rounded ml-2">Motivo: {s.motivo}</span>
                     </li>
                   ))}
                 </ul>

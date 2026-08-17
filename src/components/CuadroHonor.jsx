@@ -214,7 +214,7 @@ export default function CuadroHonor() {
                   className={`text-xs font-bold px-3 py-1.5 rounded-lg border flex items-center transition hover:bg-opacity-80
                     ${title === 'Primer Lugar' ? 'border-yellow-200 text-yellow-700 hover:bg-yellow-50' : 
                       title === 'Segundo Lugar' ? 'border-slate-300 text-slate-600 hover:bg-slate-50' : 
-                      'border-amber-200 text-amber-700 hover:bg-amber-50'}
+                      'border-indigo-200 text-indigo-700 hover:bg-indigo-50'}
                   `}
                 >
                   <Printer className="w-3.5 h-3.5 mr-1.5" /> Diploma
@@ -290,7 +290,7 @@ export default function CuadroHonor() {
         <div className="fixed inset-0 z-[60] bg-slate-900/60 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
             <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-              <Award className="w-6 h-6 text-amber-500" /> Diploma de Generación
+              <Award className="w-6 h-6 text-indigo-500" /> Diploma de Generación
             </h3>
             
             <div className="space-y-4">
@@ -345,7 +345,7 @@ export default function CuadroHonor() {
                   setGeneracionPrintData({ student, promedio: genPromedio, generacion: genText, turno: genTurno });
                   setShowGeneracionModal(false);
                 }}
-                className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-bold text-sm"
+                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-bold text-sm"
               >
                 Generar Diploma
               </button>
@@ -359,7 +359,7 @@ export default function CuadroHonor() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-amber-500" />
+              <Trophy className="w-8 h-8 text-indigo-500" />
               Cuadro de Honor
             </h2>
             <p className="text-slate-500 mt-1 font-medium">Reconocimiento a los mejores promedios de la institución.</p>
@@ -367,13 +367,13 @@ export default function CuadroHonor() {
           <div className="flex gap-3 flex-wrap justify-end">
             <button 
               onClick={() => setShowGeneracionModal(true)}
-              className="bg-slate-900 hover:bg-black text-amber-500 px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-slate-300 transition flex items-center"
+              className="bg-slate-900 hover:bg-black text-indigo-500 px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-slate-300 transition flex items-center"
             >
               <Trophy className="w-5 h-5 mr-2" /> Diploma Generación
             </button>
             <button 
               onClick={() => setShowArtesDiplomaModal(true)}
-              className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-rose-200 transition flex items-center"
+              className="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-sky-200 transition flex items-center"
             >
               <Palette className="w-5 h-5 mr-2" /> Diploma Artes
             </button>
@@ -393,7 +393,7 @@ export default function CuadroHonor() {
                 </button>
                 <button 
                   onClick={() => setPrintData(ganadores)}
-                  className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-amber-200 transition flex items-center"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-200 transition flex items-center"
                 >
                   <Printer className="w-5 h-5 mr-2" /> Imprimir Diplomas
                 </button>
@@ -405,7 +405,7 @@ export default function CuadroHonor() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Grado</label>
-            <select value={grado} onChange={(e) => setGrado(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl bg-white font-medium text-slate-700 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+            <select value={grado} onChange={(e) => setGrado(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl bg-white font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
               <option value="1er Grado">1er Grado</option>
               <option value="2do Grado">2do Grado</option>
               <option value="3er Grado">3er Grado</option>
@@ -413,14 +413,14 @@ export default function CuadroHonor() {
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Turno</label>
-            <select value={turno} onChange={(e) => setTurno(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl bg-white font-medium text-slate-700 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+            <select value={turno} onChange={(e) => setTurno(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl bg-white font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
               <option value="Matutino">Matutino</option>
               <option value="Vespertino">Vespertino</option>
             </select>
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Periodo a Evaluar</label>
-            <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl bg-white font-medium text-slate-700 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+            <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl bg-white font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
               <option value="t1">1er Trimestre</option>
               <option value="t2">2do Trimestre</option>
               <option value="t3">3er Trimestre</option>
@@ -442,7 +442,7 @@ export default function CuadroHonor() {
           <div className="max-w-5xl mx-auto">
             {renderGanadoresList(primerLugar, 'Primer Lugar', 'bg-yellow-50', 'text-yellow-700', 'border-yellow-200', 'text-yellow-500', Trophy)}
             {renderGanadoresList(segundoLugar, 'Segundo Lugar', 'bg-slate-100', 'text-slate-700', 'border-slate-300', 'text-slate-500', Medal)}
-            {renderGanadoresList(tercerLugar, 'Tercer Lugar', 'bg-amber-50', 'text-amber-800', 'border-amber-200', 'text-amber-600', Award)}
+            {renderGanadoresList(tercerLugar, 'Tercer Lugar', 'bg-indigo-50', 'text-indigo-800', 'border-indigo-200', 'text-indigo-600', Award)}
           </div>
         )}
       </div>

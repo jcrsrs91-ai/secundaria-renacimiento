@@ -107,10 +107,10 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
             type="date" 
             value={fecha}
             onChange={(e) => setFecha(e.target.value)}
-            className="text-sm font-bold text-slate-700 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-amber-500"
+            className="text-sm font-bold text-slate-700 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
-        <button onClick={() => window.print()} className="flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition font-bold">
+        <button onClick={() => window.print()} className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-bold">
           <Printer className="w-5 h-5 mr-2" /> Imprimir
         </button>
         <button onClick={onClose} className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200 hover:text-slate-800 transition">
@@ -140,10 +140,10 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
               ></div>
 
               {/* Decorative Corners */}
-              <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4 border-amber-500"></div>
-              <div className="absolute top-4 right-4 w-16 h-16 border-t-4 border-r-4 border-amber-500"></div>
-              <div className="absolute bottom-4 left-4 w-16 h-16 border-b-4 border-l-4 border-amber-500"></div>
-              <div className="absolute bottom-4 right-4 w-16 h-16 border-b-4 border-r-4 border-amber-500"></div>
+              <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4 border-indigo-500"></div>
+              <div className="absolute top-4 right-4 w-16 h-16 border-t-4 border-r-4 border-indigo-500"></div>
+              <div className="absolute bottom-4 left-4 w-16 h-16 border-b-4 border-l-4 border-indigo-500"></div>
+              <div className="absolute bottom-4 right-4 w-16 h-16 border-b-4 border-r-4 border-indigo-500"></div>
 
               <div className="relative z-10 w-full h-full flex flex-col items-center text-center justify-between py-4">
                 
@@ -160,15 +160,15 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
 
                 {/* Title */}
                 <div className="mt-2 mb-1">
-                  <h1 className="text-3xl font-serif italic text-amber-700 tracking-wide mb-1">Diploma de Aprovechamiento</h1>
+                  <h1 className="text-3xl font-serif italic text-indigo-700 tracking-wide mb-1">Diploma de Aprovechamiento</h1>
                   <p className="text-xs font-medium text-slate-600 tracking-widest uppercase">La dirección de la escuela otorga el presente reconocimiento a:</p>
                 </div>
 
                 {/* Student Name */}
-                <div className="my-2 w-full max-w-4xl border-b border-amber-300 pb-2 relative flex justify-center">
+                <div className="my-2 w-full max-w-4xl border-b border-indigo-300 pb-2 relative flex justify-center">
                   <div className="bg-white/90 backdrop-blur-sm px-8 py-2 rounded-xl shadow-sm border border-white/50 text-center">
                     <h2 className="text-3xl font-black text-slate-800 tracking-widest" style={{ wordSpacing: '0.4em' }}>{nombreCompleto}</h2>
-                    <p className="text-sm font-bold text-amber-700 tracking-widest uppercase mt-1">
+                    <p className="text-sm font-bold text-indigo-700 tracking-widest uppercase mt-1">
                       {student.grado} Grupo "{student.grupo}"
                     </p>
                   </div>
@@ -180,15 +180,15 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
                     <p className="text-2xl text-slate-700 leading-relaxed font-medium text-center relative z-10">
                       {Math.floor((average + 0.00001) * 10) / 10 === 10 ? (
                         <>
-                          Por haber logrado la <strong className="text-amber-700">Excelencia Académica</strong>, obteniendo el <strong className="text-amber-700">1er Lugar de Aprovechamiento Académico</strong> en el Ciclo Escolar <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
+                          Por haber logrado la <strong className="text-indigo-700">Excelencia Académica</strong>, obteniendo el <strong className="text-indigo-700">1er Lugar de Aprovechamiento Académico</strong> en el Ciclo Escolar <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
                         </>
                       ) : (
                         <>
-                          Por haber logrado el <strong className="text-amber-700">{placeText === 'PRIMER LUGAR' ? '1er Lugar' : placeText === 'SEGUNDO LUGAR' ? '2do Lugar' : placeText === 'TERCER LUGAR' ? '3er Lugar' : 'Mención Honorífica'} de Aprovechamiento Académico</strong> en el Ciclo Escolar <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
+                          Por haber logrado el <strong className="text-indigo-700">{placeText === 'PRIMER LUGAR' ? '1er Lugar' : placeText === 'SEGUNDO LUGAR' ? '2do Lugar' : placeText === 'TERCER LUGAR' ? '3er Lugar' : 'Mención Honorífica'} de Aprovechamiento Académico</strong> en el Ciclo Escolar <strong>{new Date().getMonth() >= 7 ? `${new Date().getFullYear()}-${new Date().getFullYear() + 1}` : `${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}</strong>, con un promedio de:
                         </>
                       )}
                     </p>
-                    <div className="mt-3 text-2xl font-black text-slate-800 bg-amber-50 border border-amber-200 py-1.5 px-6 rounded-xl inline-block shadow-inner relative z-10">
+                    <div className="mt-3 text-2xl font-black text-slate-800 bg-indigo-50 border border-indigo-200 py-1.5 px-6 rounded-xl inline-block shadow-inner relative z-10">
                       {(Math.floor((average + 0.00001) * 100) / 100).toFixed(2)}
                     </div>
                   </div>

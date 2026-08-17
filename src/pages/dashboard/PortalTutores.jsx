@@ -154,7 +154,7 @@ export default function PortalTutores() {
             </div>
           </div>
           <div className="text-center md:text-right flex flex-col items-end">
-            <button onClick={logout} className="mb-4 flex items-center text-rose-400 hover:text-rose-300 transition-colors text-sm font-semibold">
+            <button onClick={logout} className="mb-4 flex items-center text-sky-400 hover:text-sky-300 transition-colors text-sm font-semibold">
               <LogOut className="w-4 h-4 mr-1" /> Cerrar Sesión
             </button>
             <div className="px-3 py-1 bg-slate-800/50 rounded-full text-xs text-emerald-400 font-medium flex items-center">
@@ -205,7 +205,7 @@ export default function PortalTutores() {
               <div key={n.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 bg-rose-50 text-rose-500 rounded-lg">
+                    <div className="p-2 bg-sky-50 text-sky-500 rounded-lg">
                       <BellRing className="w-5 h-5" />
                     </div>
                     <div>
@@ -270,7 +270,7 @@ export default function PortalTutores() {
                       <td className="px-6 py-3 text-sm text-slate-700 font-medium">{materia.name}</td>
                       <td className="px-6 py-3 text-sm text-center font-semibold text-slate-900">{t1 || '-'}</td>
                       <td className="px-6 py-3 text-sm text-center font-semibold text-slate-900">{t2 || '-'}</td>
-                      <td className={`px-6 py-3 text-sm text-center font-bold ${promedio !== '-' && Number(promedio) < 6 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                      <td className={`px-6 py-3 text-sm text-center font-bold ${promedio !== '-' && Number(promedio) < 6 ? 'text-sky-600' : 'text-emerald-600'}`}>
                         {promedio}
                       </td>
                     </tr>

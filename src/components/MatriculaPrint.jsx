@@ -128,7 +128,7 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
   const renderRow = (label, key, isTotal = false, isGlobal = false) => {
     const d = matriculaData[key];
     const baseClasses = isGlobal 
-      ? 'bg-amber-100 font-black text-amber-900 border-t-2 border-amber-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-black' 
+      ? 'bg-indigo-100 font-black text-indigo-900 border-t-2 border-indigo-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-black' 
       : isTotal 
         ? 'bg-slate-100 font-bold text-slate-800 border-t-2 border-slate-300 print:bg-slate-200 print:text-black print:border-black' 
         : 'hover:bg-slate-50 transition-colors text-slate-600 font-medium print:text-black';
@@ -359,26 +359,26 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
 
               {/* TOTAL GLOBAL */}
               <tr>
-                <td colSpan="2" className="px-3 py-3 text-right font-black text-amber-900 bg-amber-100 border-r border-amber-300 border-t-2 border-amber-400 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">TOTAL DE LA ESCUELA</td>
-                <td className="px-2 py-2 text-center font-black bg-amber-100 border-r border-amber-300 border-t-2 border-amber-400 text-amber-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.grupos.size}</td>
+                <td colSpan="2" className="px-3 py-3 text-right font-black text-indigo-900 bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">TOTAL DE LA ESCUELA</td>
+                <td className="px-2 py-2 text-center font-black bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.grupos.size}</td>
                 {/* Inicial */}
-                <td className="px-2 py-2 text-center font-bold bg-amber-100 border-r border-amber-300 border-t-2 border-amber-400 text-amber-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.h}</td>
-                <td className="px-2 py-2 text-center font-bold bg-amber-100 border-r border-amber-300 border-t-2 border-amber-400 text-amber-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.m}</td>
-                <td className="px-2 py-2 text-center font-black bg-amber-200 border-r border-amber-400 border-t-2 border-amber-400 text-amber-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.t}</td>
+                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.h}</td>
+                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.m}</td>
+                <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.t}</td>
                 {/* Altas */}
-                <td className="px-2 py-2 text-center font-bold bg-amber-100 border-r border-amber-300 border-t-2 border-amber-400 text-amber-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.h}</td>
-                <td className="px-2 py-2 text-center font-bold bg-amber-100 border-r border-amber-300 border-t-2 border-amber-400 text-amber-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.m}</td>
-                <td className="px-2 py-2 text-center font-black bg-amber-200 border-r border-amber-400 border-t-2 border-amber-400 text-amber-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.t}</td>
+                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.h}</td>
+                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.m}</td>
+                <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.t}</td>
                 {/* Bajas */}
-                <td className="px-2 py-2 text-center font-bold bg-amber-100 border-r border-amber-300 border-t-2 border-amber-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.h}</td>
-                <td className="px-2 py-2 text-center font-bold bg-amber-100 border-r border-amber-300 border-t-2 border-amber-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.m}</td>
-                <td className="px-2 py-2 text-center font-black bg-amber-200 border-r border-amber-400 border-t-2 border-amber-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.t}</td>
+                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.h}</td>
+                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.m}</td>
+                <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.t}</td>
                 {/* Existencia */}
-                <td className="px-2 py-2 text-center font-bold bg-amber-100 border-r border-amber-300 border-t-2 border-amber-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.h}</td>
-                <td className="px-2 py-2 text-center font-bold bg-amber-100 border-r border-amber-300 border-t-2 border-amber-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.m}</td>
-                <td className="px-2 py-2 text-center font-black bg-amber-200 border-r border-amber-400 border-t-2 border-amber-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.t}</td>
+                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.h}</td>
+                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.m}</td>
+                <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.t}</td>
                 {/* Deserción */}
-                <td className="px-2 py-2 text-center font-black bg-amber-100 border-t-2 border-amber-400 text-orange-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{calcDesercion(matriculaData.global.bajas.t, matriculaData.global.inicial.t, matriculaData.global.altas.t)}</td>
+                <td className="px-2 py-2 text-center font-black bg-indigo-100 border-t-2 border-indigo-400 text-orange-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{calcDesercion(matriculaData.global.bajas.t, matriculaData.global.inicial.t, matriculaData.global.altas.t)}</td>
               </tr>
             </tbody>
           </table>

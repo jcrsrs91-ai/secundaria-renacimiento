@@ -39,8 +39,8 @@ export default function ManualDiplomaModal({ onClose, onGenerate }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden">
         <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50">
           <div className="flex items-center gap-3">
-            <div className="bg-amber-100 p-2 rounded-xl">
-              <Award className="w-6 h-6 text-amber-600" />
+            <div className="bg-indigo-100 p-2 rounded-xl">
+              <Award className="w-6 h-6 text-indigo-600" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-800">Generar Diploma Manual</h2>
@@ -60,7 +60,7 @@ export default function ManualDiplomaModal({ onClose, onGenerate }) {
               required
               value={formData.nombreCompleto}
               onChange={(e) => setFormData({...formData, nombreCompleto: e.target.value.toUpperCase()})}
-              className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-amber-500 outline-none uppercase"
+              className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none uppercase"
               placeholder="EJ: GERALDINE VALADEZ ELACIO"
             />
           </div>
@@ -71,7 +71,7 @@ export default function ManualDiplomaModal({ onClose, onGenerate }) {
               <select 
                 value={formData.grado}
                 onChange={(e) => setFormData({...formData, grado: e.target.value})}
-                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
               >
                 <option value="1er Grado">1er Grado</option>
                 <option value="2do Grado">2do Grado</option>
@@ -86,7 +86,7 @@ export default function ManualDiplomaModal({ onClose, onGenerate }) {
                 maxLength={1}
                 value={formData.grupo}
                 onChange={(e) => setFormData({...formData, grupo: e.target.value.toUpperCase()})}
-                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-amber-500 outline-none text-center uppercase"
+                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none text-center uppercase"
                 placeholder="A"
               />
             </div>
@@ -103,7 +103,7 @@ export default function ManualDiplomaModal({ onClose, onGenerate }) {
                 min="6"
                 value={formData.promedio}
                 onChange={(e) => setFormData({...formData, promedio: e.target.value})}
-                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-bold focus:ring-2 focus:ring-amber-500 outline-none text-center"
+                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-bold focus:ring-2 focus:ring-indigo-500 outline-none text-center"
               />
             </div>
             <div>
@@ -111,7 +111,7 @@ export default function ManualDiplomaModal({ onClose, onGenerate }) {
               <select 
                 value={formData.lugar}
                 onChange={(e) => setFormData({...formData, lugar: e.target.value})}
-                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
               >
                 <option value="PRIMER LUGAR">1er Lugar</option>
                 <option value="SEGUNDO LUGAR">2do Lugar</option>
@@ -127,7 +127,7 @@ export default function ManualDiplomaModal({ onClose, onGenerate }) {
               <select 
                 value={formData.periodo}
                 onChange={(e) => setFormData({...formData, periodo: e.target.value})}
-                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
               >
                 <option value="1er Trimestre">1er Trimestre</option>
                 <option value="2do Trimestre">2do Trimestre</option>
@@ -140,7 +140,7 @@ export default function ManualDiplomaModal({ onClose, onGenerate }) {
               <select 
                 value={formData.turno}
                 onChange={(e) => setFormData({...formData, turno: e.target.value})}
-                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
               >
                 <option value="Matutino">Matutino</option>
                 <option value="Vespertino">Vespertino</option>
@@ -158,7 +158,7 @@ export default function ManualDiplomaModal({ onClose, onGenerate }) {
             </button>
             <button
               type="submit"
-              className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-xl font-bold flex items-center shadow-md transition"
+              className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold flex items-center shadow-md transition"
             >
               <Printer className="w-5 h-5 mr-2" />
               Generar e Imprimir

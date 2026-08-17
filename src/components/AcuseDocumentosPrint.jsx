@@ -31,7 +31,7 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
       <div className="w-full max-w-[215.9mm] mx-auto p-4 flex justify-between items-center print:hidden sticky top-0 bg-slate-900/90 backdrop-blur z-20">
         <button 
           onClick={() => window.print()}
-          className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg"
+          className="flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg"
         >
           <Printer className="w-5 h-5" />
           Imprimir Acuse
@@ -86,7 +86,7 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
               <p className="text-[9px] font-bold text-slate-700 uppercase tracking-widest mb-1">Secretaría de Educación Pública</p>
               <h1 className="m-0 text-[13pt] text-[#621132] uppercase font-black tracking-wider">Escuela Secundaria Técnica No. 68 "Renacimiento"</h1>
               <p className="text-[9px] font-bold text-slate-600 tracking-widest mt-1">
-                C.C.T. 12DST0077B <span className="mx-2 text-rose-300">•</span> Zona Escolar 24
+                C.C.T. 12DST0077B <span className="mx-2 text-sky-300">•</span> Zona Escolar 24
               </p>
               <h2 className="mt-1 mb-0 text-[10pt] font-semibold text-slate-700">Acapulco de Juárez, Guerrero | Tel. 744 441 5678</h2>
             </div>
@@ -145,7 +145,7 @@ export default function AcuseDocumentosPrint({ data, onClose }) {
                       {docs[key].checked ? (
                         <span className="text-[#15803d] font-bold">Documento devuelto</span>
                       ) : (
-                        <span>Motivo de retención/falta: <span className="uppercase font-bold text-rose-700">{docs[key].motivo}</span></span>
+                        <span>Motivo de retención/falta: <span className="uppercase font-bold text-sky-700">{docs[key].motivo}</span></span>
                       )}
                     </td>
                   </tr>
