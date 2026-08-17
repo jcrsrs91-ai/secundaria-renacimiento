@@ -209,8 +209,14 @@ export default function PortalTutores() {
                       <BellRing className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-slate-800">{n.title}</h3>
-                      <p className="text-xs text-slate-500">
+                      <h3 className="font-bold text-slate-800 mb-1">{n.title}</h3>
+                      {n.imageUrl && (
+                        <div className="mb-3 rounded-lg overflow-hidden border border-slate-200">
+                          <img src={n.imageUrl} alt="Flyer del Aviso" className="w-full h-auto object-cover max-h-40" />
+                        </div>
+                      )}
+                      <p className="text-sm text-slate-600 line-clamp-2">{n.content}</p>
+                      <p className="text-xs text-slate-500 mt-2">
                         {n.createdAt && new Date(n.createdAt.seconds * 1000).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </p>
                     </div>

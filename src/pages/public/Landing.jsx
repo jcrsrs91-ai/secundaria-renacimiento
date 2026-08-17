@@ -191,6 +191,11 @@ export default function Landing() {
                         )}
                       </div>
                       <h3 className="text-base font-bold text-white mb-2 leading-tight">{aviso.title}</h3>
+                      {aviso.imageUrl && (
+                        <div className="mb-4 rounded-xl overflow-hidden border border-white/10">
+                          <img src={aviso.imageUrl} alt="Flyer del Aviso" className="w-full h-auto object-cover max-h-48" />
+                        </div>
+                      )}
                       <p className="text-slate-300 text-xs mb-4 line-clamp-3 leading-relaxed whitespace-pre-wrap">{aviso.content}</p>
                       <Link to="/avisos" className="text-xs font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center w-max">
                         Leer completo <ArrowRight className="w-3 h-3 ml-1" />

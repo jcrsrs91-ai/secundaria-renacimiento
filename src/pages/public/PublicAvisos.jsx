@@ -79,6 +79,11 @@ export default function PublicAvisos() {
                   )}
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800 mb-4">{aviso.title}</h2>
+                {aviso.imageUrl && (
+                  <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-slate-100 flex justify-center bg-slate-50">
+                    <img src={aviso.imageUrl} alt="Comunicado Oficial" className="w-full max-w-3xl max-h-[600px] object-contain" />
+                  </div>
+                )}
                 <div className="prose prose-slate max-w-none">
                   <p className="text-slate-600 text-base leading-relaxed whitespace-pre-wrap">{aviso.content}</p>
                 </div>

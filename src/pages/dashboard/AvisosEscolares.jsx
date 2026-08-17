@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../firebase';
 import { Megaphone, Plus, Edit2, Trash2, X, Check, Info, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -15,6 +16,8 @@ export default function AvisosEscolares() {
   const [content, setContent] = useState('');
   const [type, setType] = useState('info'); // info, warning, success
   const [isActive, setIsActive] = useState(true);
+  const [imageFile, setImageFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchAvisos();
@@ -253,10 +256,10 @@ export default function AvisosEscolares() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center"
+                  disabled={uploading} className="px-4 py-2 bg-primary-600 disabled:opacity-50 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center"
                 >
                   <Check className="h-4 w-4 mr-2" />
-                  {editingAviso ? 'Guardar Cambios' : 'Publicar Aviso'}
+                  {uploading ? 'Guardando...' : editingAviso ? 'Guardar Cambios' : 'Publicar Aviso'}
                 </button>
               </div>
             </form>
