@@ -79,11 +79,7 @@ export default function Landing() {
         <div className="relative z-10 max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col xl:flex-row gap-12 items-center xl:items-start">
           
           {/* Left Column: Text and Cards */}
-          <div className="flex-1 text-center xl:text-left w-full">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6">
-              <span className="flex h-2 w-2 rounded-full bg-sky-500 animate-pulse"></span>
-              <span className="text-xs font-medium text-slate-200 uppercase tracking-wider shadow-sm">Ciclo Escolar 2026-2027</span>
-            </div>
+          <div className="flex-1 text-center xl:text-left w-full mt-4 sm:mt-12">
             <h1 className="text-5xl sm:text-7xl font-extrabold text-white tracking-tight mb-6 leading-[1.1] drop-shadow-lg">
               Por la superación <br className="hidden sm:block"/> de <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-sky-600">México.</span>
             </h1>
@@ -147,8 +143,12 @@ export default function Landing() {
           </div>
 
           {/* Right Column: Avisos Panel */}
-          <div className="w-full xl:w-[450px] shrink-0 mt-12 xl:mt-0">
-            <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-[600px] flex flex-col overflow-hidden shadow-2xl">
+          <div className="w-full xl:w-[450px] shrink-0 mt-12 xl:mt-0 flex flex-col items-center xl:items-end">
+            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-sky-950/40 border border-sky-500/30 backdrop-blur-md mb-6 shadow-[0_0_15px_rgba(14,165,233,0.3)]">
+              <span className="flex h-3 w-3 rounded-full bg-sky-400 animate-pulse"></span>
+              <span className="text-sm font-bold text-white uppercase tracking-widest drop-shadow-md">Ciclo Escolar 2026-2027</span>
+            </div>
+            <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-[600px] flex flex-col overflow-hidden shadow-2xl w-full">
               <div className="bg-sky-600/90 px-6 py-4 flex items-center justify-between border-b border-white/10 shrink-0">
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <Megaphone className="w-5 h-5" /> Muro de Avisos
