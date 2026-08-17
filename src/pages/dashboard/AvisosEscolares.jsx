@@ -68,28 +68,47 @@ export default function AvisosEscolares() {
       return;
     }
 
+    setUploading(true);
     try {
+      let uploadedImageUrl = editingAviso?.imageUrl || null;
+
+      if (imageFile) {
+        const imageRef = ref(storage, `avisos/${Date.now()}_${imageFile.name}`);
+        const snapshot = await uploadBytes(imageRef, imageFile);
+        uploadedImageUrl = await getDownloadURL(snapshot.ref);
+      }
+
       if (editingAviso) {
         // Update
         const avisoRef = doc(db, 'avisos', editingAviso.id);
-        await updateDoc(avisoRef, {
+        const updateData = {
           title,
           content,
           type,
+          turno,
           isActive,
           updatedAt: serverTimestamp()
-        });
+        };
+        if (uploadedImageUrl) {
+          updateData.imageUrl = uploadedImageUrl;
+        }
+        await updateDoc(avisoRef, updateData);
         toast.success('Aviso actualizado correctamente');
       } else {
         // Create
-        await addDoc(collection(db, 'avisos'), {
+        const newData = {
           title,
           content,
           type,
+          turno,
           isActive,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
-        });
+        };
+        if (uploadedImageUrl) {
+          newData.imageUrl = uploadedImageUrl;
+        }
+        await addDoc(collection(db, 'avisos'), newData);
         toast.success('Aviso creado correctamente');
       }
       closeModal();
@@ -97,6 +116,9 @@ export default function AvisosEscolares() {
     } catch (error) {
       console.error("Error saving aviso:", error);
       toast.error('Error al guardar el aviso');
+    } finally {
+      setUploading(false);
+      setImageFile(null);
     }
   };
 
