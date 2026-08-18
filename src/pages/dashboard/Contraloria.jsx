@@ -229,7 +229,7 @@ export default function Contraloria() {
 
   const filteredPagos = useMemo(() => {
     return pagosRecientes.filter(p => {
-      const matchSearch = p.alumno.toLowerCase().includes(pagosSearch.toLowerCase()) || p.folio.toLowerCase().includes(pagosSearch.toLowerCase());
+      const matchSearch = !pagosSearch || (p.alumno && p.alumno.toLowerCase().includes(pagosSearch.toLowerCase())) || (p.folio && p.folio.toLowerCase().includes(pagosSearch.toLowerCase()));
       const matchGrado = pagosGrado === 'Todos' || p.grado === pagosGrado;
       const matchGrupo = pagosGrupo === 'Todos' || p.grupo === pagosGrupo;
       return matchSearch && matchGrado && matchGrupo;
@@ -339,7 +339,7 @@ export default function Contraloria() {
   });
 
   const filteredPagosGenerales = todosLosPagosGenerales.filter(p => {
-    const matchesSearch = !pagosSearch || p.alumno?.toLowerCase().includes(pagosSearch.toLowerCase()) || p.folio?.toLowerCase().includes(pagosSearch.toLowerCase());
+    const matchesSearch = !pagosSearch || (p.alumno && p.alumno.toLowerCase().includes(pagosSearch.toLowerCase())) || (p.folio && p.folio.toLowerCase().includes(pagosSearch.toLowerCase()));
     const matchesGrado = pagosGrado === 'Todos' || p.grado === pagosGrado;
     const matchesGrupo = pagosGrupo === 'Todos' || p.grupo === pagosGrupo;
     
@@ -362,7 +362,7 @@ export default function Contraloria() {
       monto: `${parseFloat(p.monto).toFixed(2)}`,
       pagoFecha: p.createdAt 
   })).filter(p => {
-    const matchesSearch = !pagosSearch || p.alumno?.toLowerCase().includes(pagosSearch.toLowerCase());
+    const matchesSearch = !pagosSearch || (p.alumno && p.alumno.toLowerCase().includes(pagosSearch.toLowerCase()));
     let matchesFecha = true;
     if (fechaInicio || fechaFin) {
        const pDate = p.pagoFecha?.toDate ? p.pagoFecha.toDate() : new Date(p.pagoFecha || new Date());
