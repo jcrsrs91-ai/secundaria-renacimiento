@@ -2,8 +2,16 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProtectedRoute() {
-  const { currentUser, studentSession } = useAuth();
+  const { currentUser, studentSession, loading } = useAuth();
   const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-slate-50">
+        <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   // Si no hay ningún tipo de sesión
   if (!currentUser && !studentSession) {

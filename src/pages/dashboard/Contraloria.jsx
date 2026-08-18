@@ -1,9 +1,11 @@
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useState, useEffect, useMemo } from 'react';
-import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu } from 'lucide-react';
+import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu, Wallet, AlertTriangle, TrendingUp, TrendingDown, BarChart as BarChartIcon, FileSpreadsheet, PieChart as PieChartIcon } from 'lucide-react';
+
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
 import { db } from '../../firebase';
-import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import ActaRecepcionPrint from '../../components/ActaRecepcionPrint';
 import CartaResguardoPrint from '../../components/CartaResguardoPrint';
 import ScannerInventarioModal from '../../components/ScannerInventarioModal';
@@ -121,19 +123,129 @@ const getIconForArticulo = (nombre) => {
 export default function Contraloria() {
   const [activeTab, setActiveTab] = useState('pagos');
 
+  // Nuevos estados para Ingresos Avanzados
+  const [corteConfig, setCorteConfig] = useState({ fechaInicio: new Date().toISOString().split('T')[0], fechaFin: new Date().toISOString().split('T')[0], turno: 'Ambos' });
+  const [activeIngresoTab, setActiveIngresoTab] = useState('generales');
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  
+  const [pagosAdmin, setPagosAdmin] = useState([]);
+  const [pagosExtra, setPagosExtra] = useState([]);
+  
+  const [showPagoAdminModal, setShowPagoAdminModal] = useState(false);
+  
+  const [allStudentsRaw, setAllStudentsRaw] = useState([]);
+  
+  const materiasPorGrado = {
+    '1er Grado': [
+      { id: 'espanol1', name: 'Español I' },
+      { id: 'ingles1', name: 'Inglés I' },
+      { id: 'artes1', name: 'Artes I' },
+      { id: 'matematicas1', name: 'Matemáticas I' },
+      { id: 'biologia', name: 'Ciencias I (Biología)' },
+      { id: 'geografia', name: 'Geografía' },
+      { id: 'historia1', name: 'Historia I' },
+      { id: 'fce1', name: 'Formación Cívica y Ética I' },
+      { id: 'tecnologia1', name: 'Tecnología I' },
+      { id: 'educfisica1', name: 'Educación Física I' }
+    ],
+    '2do Grado': [
+      { id: 'espanol2', name: 'Español II' },
+      { id: 'ingles2', name: 'Inglés II' },
+      { id: 'artes2', name: 'Artes II' },
+      { id: 'matematicas2', name: 'Matemáticas II' },
+      { id: 'fisica', name: 'Ciencias II (Física)' },
+      { id: 'historia2', name: 'Historia II' },
+      { id: 'fce2', name: 'Formación Cívica y Ética II' },
+      { id: 'tecnologia2', name: 'Tecnología II' },
+      { id: 'educfisica2', name: 'Educación Física II' }
+    ],
+    '3er Grado': [
+      { id: 'espanol3', name: 'Español III' },
+      { id: 'ingles3', name: 'Inglés III' },
+      { id: 'artes3', name: 'Artes III' },
+      { id: 'matematicas3', name: 'Matemáticas III' },
+      { id: 'quimica', name: 'Ciencias III (Química)' },
+      { id: 'historia3', name: 'Historia III' },
+      { id: 'fce3', name: 'Formación Cívica y Ética III' },
+      { id: 'tecnologia3', name: 'Tecnología III' },
+      { id: 'educfisica3', name: 'Educación Física III' }
+    ]
+  };
+
+  const getFailedSubjects = (student) => {
+    if (!student) return [];
+    
+    // Si es irregular o egresado irregular, su grado real para materias podría ser el anterior
+    // Pero en ControlEscolar asumen student.grado. Limpiaremos "(Irregular)" si lo tiene
+    let gradeKey = student.grado;
+    if (gradeKey?.includes('1er Grado')) gradeKey = '1er Grado';
+    else if (gradeKey?.includes('2do Grado')) gradeKey = '2do Grado';
+    else if (gradeKey?.includes('3er Grado')) gradeKey = '3er Grado';
+
+    if (!materiasPorGrado[gradeKey]) return [];
+    
+    const materias = materiasPorGrado[gradeKey];
+    const failed = [];
+
+    for (let mat of materias) {
+      const t1 = parseFloat(student.calificaciones?.['t1']?.[mat.id]);
+      const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
+      const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
+      
+      const extraScore = student.regularizacion?.[mat.id]?.calificacion;
+      if (extraScore !== undefined && parseFloat(extraScore) >= 6) {
+          continue; 
+      }
+
+      let sum = 0; let count = 0;
+      if (!isNaN(t1)) { sum += t1; count++; }
+      if (!isNaN(t2)) { sum += t2; count++; }
+      if (!isNaN(t3)) { sum += t3; count++; }
+      if (count > 0) {
+        const finalMat = Math.floor((sum / count + 0.00001) * 10) / 10;
+        if (finalMat < 6) {
+          failed.push(mat);
+        }
+      }
+    }
+    return failed;
+  };
+
+  const [pagoFormData, setPagoFormData] = useState({
+    nombre: '', concepto: '', monto: '', metodo: 'Efectivo', tipo: 'administrativo', fecha: new Date().toISOString().split('T')[0]
+  });
+
+
   
   const [pagosRecientes, setPagosRecientes] = useState([]);
+  const [pagosSearch, setPagosSearch] = useState('');
+  const [pagosGrado, setPagosGrado] = useState('Todos');
+  const [pagosGrupo, setPagosGrupo] = useState('Todos');
+  const [gastos, setGastos] = useState([]);
+  const [showGastoModal, setShowGastoModal] = useState(false);
+  const [gastoFormData, setGastoFormData] = useState({ concepto: '', monto: '', fecha: new Date().toISOString().split('T')[0] });
+
+  const filteredPagos = useMemo(() => {
+    return pagosRecientes.filter(p => {
+      const matchSearch = p.alumno.toLowerCase().includes(pagosSearch.toLowerCase()) || p.folio.toLowerCase().includes(pagosSearch.toLowerCase());
+      const matchGrado = pagosGrado === 'Todos' || p.grado === pagosGrado;
+      const matchGrupo = pagosGrupo === 'Todos' || p.grupo === pagosGrupo;
+      return matchSearch && matchGrado && matchGrupo;
+    }).sort((a, b) => a.alumno.localeCompare(b.alumno));
+  }, [pagosRecientes, pagosSearch, pagosGrado, pagosGrupo]);
 
   useEffect(() => {
     const q = query(collection(db, 'students'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const items = [];
-      snapshot.forEach(docSnap => {
+      const items = []; const rawItems = []; snapshot.forEach(docSnap => { rawItems.push({id: docSnap.id, ...docSnap.data()}); 
         const data = docSnap.data();
         // Generar un folio falso si no tiene
         const folio = `P-${docSnap.id.substring(0, 4).toUpperCase()}`;
         const alumno = `${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''} ${data.nombres || ''}`.trim();
         const esNuevo = data.grado === '1er Grado' || data.grado === '1ero' || data.tipoTramite === 'Nuevo Ingreso';
+        const grado = data.grado || 'N/A';
+        const grupo = data.grupo || 'N/A';
         const concepto = esNuevo ? 'Credencial Escolar y Paquete de Folders' : 'Renovación de Credencial Escolar';
         const montoNum = esNuevo ? 130 : 100;
         const monto = `$${montoNum}.00`;
@@ -144,10 +256,12 @@ export default function Contraloria() {
           fecha = dateObj.toLocaleDateString();
         }
 
-        items.push({
+                items.push({
           id: docSnap.id,
           folio,
           alumno,
+          grado,
+          grupo,
           concepto,
           monto,
           montoNum,
@@ -156,7 +270,7 @@ export default function Contraloria() {
         });
       });
       // Sort by date or id
-      setPagosRecientes(items.reverse());
+      setPagosRecientes(items.reverse()); setAllStudentsRaw(rawItems);
     });
     return () => unsubscribe();
   }, []);
@@ -189,6 +303,132 @@ export default function Contraloria() {
   const [resguardos, setResguardos] = useState([]);
   const [editingResguardo, setEditingResguardo] = useState(null);
   const [resguardoSearch, setResguardoSearch] = useState('');
+
+    // Efecto para Pagos Administrativos y Extraordinarios
+  useEffect(() => {
+    const qAdmin = query(collection(db, 'pagos_administrativos'));
+    const unsubAdmin = onSnapshot(qAdmin, snap => {
+      setPagosAdmin(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    
+    const qExtra = query(collection(db, 'pagos_extraordinarios'));
+    const unsubExtra = onSnapshot(qExtra, snap => {
+      setPagosExtra(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    
+    return () => { unsubAdmin(); unsubExtra(); };
+  }, []);
+
+  // Lógica de Filtros y Combinación de Ingresos
+  const todosLosPagosGenerales = [
+    ...pagosRecientes.map(p => ({ ...p, tipoIngreso: 'sistema' })),
+    ...pagosAdmin.map(p => ({ 
+      ...p, 
+      tipoIngreso: 'manual', 
+      folio: p.id.substring(0, 6).toUpperCase(), 
+      alumno: p.nombre, 
+      montoNum: parseFloat(p.monto), 
+      monto: `${parseFloat(p.monto).toFixed(2)}`,
+      pagoFecha: p.createdAt 
+    }))
+  ].sort((a, b) => {
+     const dateA = a.pagoFecha?.toDate ? a.pagoFecha.toDate() : new Date(a.pagoFecha || 0);
+     const dateB = b.pagoFecha?.toDate ? b.pagoFecha.toDate() : new Date(b.pagoFecha || 0);
+     return dateB - dateA;
+  });
+
+  const filteredPagosGenerales = todosLosPagosGenerales.filter(p => {
+    const matchesSearch = !pagosSearch || p.alumno?.toLowerCase().includes(pagosSearch.toLowerCase()) || p.folio?.toLowerCase().includes(pagosSearch.toLowerCase());
+    const matchesGrado = pagosGrado === 'Todos' || p.grado === pagosGrado;
+    const matchesGrupo = pagosGrupo === 'Todos' || p.grupo === pagosGrupo;
+    
+    let matchesFecha = true;
+    if (fechaInicio || fechaFin) {
+       const pDate = p.pagoFecha?.toDate ? p.pagoFecha.toDate() : new Date(p.pagoFecha || new Date());
+       pDate.setHours(0,0,0,0);
+       if (fechaInicio && new Date(fechaInicio + 'T00:00:00') > pDate) matchesFecha = false;
+       if (fechaFin && new Date(fechaFin + 'T23:59:59') < pDate) matchesFecha = false;
+    }
+    
+    return matchesSearch && matchesGrado && matchesGrupo && matchesFecha;
+  });
+
+  const filteredPagosExtra = pagosExtra.map(p => ({
+      ...p, 
+      folio: p.id.substring(0, 6).toUpperCase(), 
+      alumno: p.nombre, 
+      montoNum: parseFloat(p.monto), 
+      monto: `${parseFloat(p.monto).toFixed(2)}`,
+      pagoFecha: p.createdAt 
+  })).filter(p => {
+    const matchesSearch = !pagosSearch || p.alumno?.toLowerCase().includes(pagosSearch.toLowerCase());
+    let matchesFecha = true;
+    if (fechaInicio || fechaFin) {
+       const pDate = p.pagoFecha?.toDate ? p.pagoFecha.toDate() : new Date(p.pagoFecha || new Date());
+       pDate.setHours(0,0,0,0);
+       if (fechaInicio && new Date(fechaInicio + 'T00:00:00') > pDate) matchesFecha = false;
+       if (fechaFin && new Date(fechaFin + 'T23:59:59') < pDate) matchesFecha = false;
+    }
+    return matchesSearch && matchesFecha;
+  }).sort((a, b) => {
+     const dateA = a.pagoFecha?.toDate ? a.pagoFecha.toDate() : new Date(a.pagoFecha || 0);
+     const dateB = b.pagoFecha?.toDate ? b.pagoFecha.toDate() : new Date(b.pagoFecha || 0);
+     return dateB - dateA;
+  });
+
+  const handleGuardarPagoManual = async (e) => {
+    e.preventDefault();
+    if(!pagoFormData.nombre || !pagoFormData.concepto || !pagoFormData.monto) {
+      toast.error('Llena todos los campos.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const collectionName = pagoFormData.tipo === 'administrativo' ? 'pagos_administrativos' : 'pagos_extraordinarios';
+      await addDoc(collection(db, collectionName), {
+        nombre: pagoFormData.nombre,
+        concepto: pagoFormData.concepto,
+        monto: parseFloat(pagoFormData.monto),
+        metodo: pagoFormData.metodo,
+        createdAt: serverTimestamp(),
+        estado: 'Pagado'
+      });
+      toast.success('Pago registrado exitosamente');
+      setShowPagoAdminModal(false);
+      setPagoFormData({ nombre: '', concepto: '', monto: '', metodo: 'Efectivo', tipo: 'administrativo', fecha: new Date().toISOString().split('T')[0] });
+    } catch(err) {
+      toast.error('Error al registrar el pago');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const exportarRelacionIngresos = () => {
+    const dataToExport = activeIngresoTab === 'generales' ? filteredPagosGenerales : filteredPagosExtra;
+    if (dataToExport.length === 0) {
+      alert("No hay registros para exportar en las fechas seleccionadas.");
+      return;
+    }
+    
+    const csvData = dataToExport.map(p => ({
+      'Folio': p.folio || '',
+      'Alumno/Persona': p.alumno || p.nombre || '',
+      'Concepto': p.concepto || '',
+      'Monto': p.monto || '',
+      'Método': p.metodo || 'Efectivo',
+      'Fecha': p.pagoFecha?.toDate ? p.pagoFecha.toDate().toLocaleDateString() : new Date(p.pagoFecha || new Date()).toLocaleDateString()
+    }));
+    
+    const csv = Papa.unparse(csvData, { delimiter: ';' });
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Relacion_Ingresos_${activeIngresoTab}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     const q = query(collection(db, 'inventario'));
@@ -1394,35 +1634,85 @@ export default function Contraloria() {
       </div>
 
       {activeTab === 'pagos' && (
-        <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-            <h3 className="font-semibold text-slate-700">Ingresos Recientes</h3>
-            <button className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
-              <Plus className="w-4 h-4 mr-1" /> Registrar Pago
-            </button>
-          </div>
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Folio</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Alumno</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Concepto</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Monto</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estatus</th>
-              </tr>
-            </thead>
+        <div className="space-y-6">
+          <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-200 bg-slate-50">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <h3 className="font-semibold text-slate-700 text-lg">Módulo de Ingresos</h3>
+                <div className="flex gap-2">
+                  <button onClick={exportarRelacionIngresos} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 shadow-sm transition-colors">
+                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Exportar Relación (CSV)
+                  </button>
+                  <button onClick={() => setShowPagoAdminModal(true)} className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 shadow-sm transition-colors">
+                    <Plus className="w-4 h-4 mr-2" /> Registrar Pago
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mb-4 border-b border-slate-200">
+                <button onClick={() => setActiveIngresoTab('generales')} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeIngresoTab === 'generales' ? 'border-primary-600 text-primary-700 bg-primary-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Ingresos Generales</button>
+                <button onClick={() => setActiveIngresoTab('extraordinarios')} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeIngresoTab === 'extraordinarios' ? 'border-rose-600 text-rose-700 bg-rose-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Exámenes Extraordinarios</button>
+              </div>
+
+              <div className="flex flex-col lg:flex-row gap-4 items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div className="relative w-full lg:w-64">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input type="text" placeholder="Buscar alumno/persona..." value={pagosSearch} onChange={(e) => setPagosSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" />
+                </div>
+                
+                {activeIngresoTab === 'generales' && (
+                  <div className="flex gap-2 w-full lg:w-auto">
+                    <select value={pagosGrado} onChange={(e) => setPagosGrado(e.target.value)} className="w-full sm:w-auto px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                      <option value="Todos">Todos los grados</option>
+                      <option value="1er Grado">1er Grado</option>
+                      <option value="2do Grado">2do Grado</option>
+                      <option value="3er Grado">3er Grado</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center w-full lg:w-auto bg-slate-50 p-2 rounded-lg border border-slate-200">
+                  <span className="text-xs font-semibold text-slate-500 uppercase px-2 w-full sm:w-auto">Filtrar por Fechas:</span>
+                  <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white w-full sm:w-auto" />
+                  <span className="text-slate-400">-</span>
+                  <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className="px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white w-full sm:w-auto" />
+                  {(fechaInicio || fechaFin) && (
+                    <button onClick={() => { setFechaInicio(''); setFechaFin(''); }} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-md" title="Limpiar Fechas"><X className="w-4 h-4"/></button>
+                  )}
+                </div>
+              </div>
+            </div>
             
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Folio</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Persona / Alumno</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Concepto</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Monto</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                </tr>
+              </thead>
               <tbody className="divide-y divide-slate-200">
-                {pagosRecientes.map(p => (
-                  <tr key={p.id}>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{p.folio}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{p.alumno}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{p.concepto}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-slate-800">{p.monto}</td>
+                {(activeIngresoTab === 'generales' ? filteredPagosGenerales : filteredPagosExtra).map((p, idx) => {
+                   const isExtra = activeIngresoTab === 'extraordinarios';
+                   const isManual = p.tipoIngreso === 'manual';
+                   const badgeColor = isExtra ? 'bg-rose-100 text-rose-700 border-rose-200' : isManual ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200';
+                   const badgeText = isExtra ? 'Extraordinario' : isManual ? 'Manual / Libre' : 'Inscripción';
+                   return (
+                  <tr key={p.id || idx} className="hover:bg-slate-50">
+                    <td className="px-6 py-4 text-sm font-medium text-slate-900 font-mono">{p.folio}</td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-bold text-slate-800">{p.alumno}</div>
+                      <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}`}>{badgeText}</span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600 font-medium">{p.concepto}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-emerald-600">{p.monto}</td>
                     <td className="px-6 py-4 text-sm">
-                      {p.estado === 'Pagado' ? (
-                        <span className="text-emerald-600 flex items-center font-bold">
-                          <CheckCircle2 className="w-4 h-4 mr-1" /> Pagado el {p.fecha}
+                      {p.tipoIngreso === 'manual' || p.estado === 'Pagado' ? (
+                        <span className="text-emerald-600 flex items-center font-bold bg-emerald-50 w-max px-2 py-1 rounded-md">
+                          <CheckCircle2 className="w-4 h-4 mr-1" /> 
+                          {p.tipoIngreso === 'manual' ? 'Pagado: ' + new Date(p.pagoFecha || Date.now()).toLocaleDateString() : 'Pagado el ' + p.fecha}
                         </span>
                       ) : (
                         <button 
@@ -1434,14 +1724,16 @@ export default function Contraloria() {
                       )}
                     </td>
                   </tr>
-                ))}
+                )})}
+                {(activeIngresoTab === 'generales' ? filteredPagosGenerales : filteredPagosExtra).length === 0 && (
+                  <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">No se encontraron pagos con los filtros seleccionados.</td></tr>
+                )}
               </tbody>
-
-          </table>
+            </table>
+          </div>
         </div>
       )}
 
-      
       {activeTab === 'gastos' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -1503,7 +1795,7 @@ export default function Contraloria() {
                 <div>
                   <p className="text-sm text-slate-500 font-medium">Total Ingresos</p>
                   <p className="text-2xl font-bold text-slate-800">
-                    ${pagosRecientes.reduce((acc, p) => acc + (Number(p.montoNum) || 0), 0).toFixed(2)}
+                    ${([...pagosRecientes, ...pagosAdmin, ...pagosExtra].reduce((acc, p) => acc + (Number(p.montoNum || p.monto) || 0), 0)).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -1525,7 +1817,7 @@ export default function Contraloria() {
                 <div>
                   <p className="text-sm text-slate-500 font-medium">Saldo en Caja</p>
                   <p className="text-2xl font-bold text-slate-800">
-                    ${(pagosRecientes.reduce((acc, p) => acc + (Number(p.montoNum) || 0), 0) - gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0)).toFixed(2)}
+                    ${(([...pagosRecientes, ...pagosAdmin, ...pagosExtra].reduce((acc, p) => acc + (Number(p.montoNum || p.monto) || 0), 0)) - gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0)).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -1538,7 +1830,7 @@ export default function Contraloria() {
                 </h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[{ name: 'Total Histórico', Ingresos: pagosRecientes.reduce((acc, p) => acc + (Number(p.montoNum) || 0), 0), Egresos: gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0) }]}>
+                    <BarChart data={[{ name: 'Total Histórico', Ingresos: [...pagosRecientes, ...pagosAdmin, ...pagosExtra].reduce((acc, p) => acc + (Number(p.montoNum || p.monto) || 0), 0), Egresos: gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0) }]}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
                       <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(value) => `${value}`} />
@@ -1552,7 +1844,7 @@ export default function Contraloria() {
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-                  <PieChartIcon className="w-5 h-5 mr-2 text-slate-500" /> Distribución de Egresos
+                  <PieChart as PieChartIcon className="w-5 h-5 mr-2 text-slate-500" /> Distribución de Egresos
                 </h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
@@ -1824,29 +2116,46 @@ export default function Contraloria() {
               </tr>
             </thead>
             
-              <tbody className="divide-y divide-slate-200">
-                {pagosRecientes.map(p => (
-                  <tr key={p.id}>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{p.folio}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{p.alumno}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{p.concepto}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-slate-800">{p.monto}</td>
+                            <tbody className="divide-y divide-slate-200">
+                {filteredInventario.length > 0 ? filteredInventario.map(item => (
+                  <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-indigo-50/50' : 'hover:bg-slate-50 transition-colors'}>
+                    <td className="px-6 py-4 text-left w-12">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        checked={selectedItems.includes(item.id)}
+                        onChange={() => toggleSelectItem(item.id)}
+                      />
+                    </td>
+                    <td className="px-6 py-4 text-sm font-mono text-slate-600">{item.codigo || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-800 font-medium">{item.articulo || item.descripcion || 'Sin nombre'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{item.marca || 'N/A'} {item.modelo ? `(${item.modelo})` : ''}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{item.serie || 'N/A'}</td>
                     <td className="px-6 py-4 text-sm">
-                      {p.estado === 'Pagado' ? (
-                        <span className="text-emerald-600 flex items-center font-bold">
-                          <CheckCircle2 className="w-4 h-4 mr-1" /> Pagado el {p.fecha}
-                        </span>
-                      ) : (
+                      <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium border border-slate-200">
+                        {item.ubicacion || 'Sin ubicar'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-slate-800">{item.cantidad || 0}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${item.estadoFisico === 'Nuevo' || item.estado === 'Nuevo' ? 'bg-emerald-100 text-emerald-700' : item.estadoFisico === 'Malo' || item.estado === 'Malo' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {item.estadoFisico || item.estado || 'Bueno'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right space-x-2">
                         <button 
-                          onClick={() => registrarCobro(p.id)}
-                          className="px-3 py-1 bg-primary-600 text-white rounded-md text-xs font-bold hover:bg-primary-700 shadow-sm"
+                          onClick={() => { setEditingItem(item); setModalOpen('editItem'); }}
+                          className="text-primary-600 hover:text-primary-800 font-medium text-xs"
                         >
-                          Registrar Cobro
+                          Editar
                         </button>
-                      )}
                     </td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan="9" className="px-6 py-8 text-center text-slate-500 italic">No se encontraron artículos en el inventario que coincidan con la búsqueda.</td>
+                  </tr>
+                )}
               </tbody>
 
           </table>
@@ -1886,29 +2195,36 @@ export default function Contraloria() {
                 </tr>
               </thead>
               
-              <tbody className="divide-y divide-slate-200">
-                {pagosRecientes.map(p => (
-                  <tr key={p.id}>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{p.folio}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{p.alumno}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{p.concepto}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-slate-800">{p.monto}</td>
-                    <td className="px-6 py-4 text-sm">
-                      {p.estado === 'Pagado' ? (
-                        <span className="text-emerald-600 flex items-center font-bold">
-                          <CheckCircle2 className="w-4 h-4 mr-1" /> Pagado el {p.fecha}
-                        </span>
-                      ) : (
+                            <tbody className="divide-y divide-slate-200">
+                {resguardos.length > 0 ? resguardos.filter(r => 
+                    r.resguardante?.toLowerCase().includes(resguardoSearch.toLowerCase()) ||
+                    r.folio?.toLowerCase().includes(resguardoSearch.toLowerCase())
+                ).map(r => (
+                  <tr key={r.id}>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{r.folio || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{r.fecha ? (r.fecha.toDate ? r.fecha.toDate().toLocaleDateString() : r.fecha) : 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{r.resguardante || 'Desconocido'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{r.area || r.cargo || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">
+                      {r.articulos ? r.articulos.length : 0} artículos
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right">
                         <button 
-                          onClick={() => registrarCobro(p.id)}
-                          className="px-3 py-1 bg-primary-600 text-white rounded-md text-xs font-bold hover:bg-primary-700 shadow-sm"
+                          onClick={() => {
+                            setEditingResguardo(r);
+                            setModalOpen('editResguardo');
+                          }}
+                          className="text-primary-600 hover:text-primary-800 font-medium text-xs"
                         >
-                          Registrar Cobro
+                          Ver / Editar
                         </button>
-                      )}
                     </td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500 italic">No hay actas de resguardo registradas.</td>
+                  </tr>
+                )}
               </tbody>
 
             </table>
@@ -2365,7 +2681,9 @@ export default function Contraloria() {
             )}
           </div>
         </div>
-      </div>
+      
+      
+</div>
     )}
 
     {printMode === 'recepcion' && printData && <ActaRecepcionPrint data={printData} />}
@@ -2378,6 +2696,76 @@ export default function Contraloria() {
         onClose={() => setShowScannerModal(false)} 
       />
     )}
+    
+    {showPagoAdminModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in duration-200">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+              <h3 className="font-bold text-xl text-slate-800 flex items-center">
+                <Wallet className="w-5 h-5 mr-2 text-primary-600" /> Registrar Pago Libre
+              </h3>
+              <button onClick={() => setShowPagoAdminModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button>
+            </div>
+            <form onSubmit={handleGuardarPagoManual} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Ingreso</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'administrativo', concepto: ''})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'administrativo' ? 'bg-primary-50 border-primary-500 text-primary-700 ring-1 ring-primary-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
+                    <FileText className="w-5 h-5" /> Trámites Generales
+                  </button>
+                  <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'extraordinario', concepto: 'Examen Extraordinario de '})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'extraordinario' ? 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
+                    <AlertTriangle className="w-5 h-5" /> Examen Extraordinario
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Nombre de la Persona / Alumno</label>
+                <input type="text" required value={pagoFormData.nombre} onChange={e => setPagoFormData({...pagoFormData, nombre: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500" placeholder="Ej. Juan Pérez López" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Concepto de Pago</label>
+                {pagoFormData.tipo === 'administrativo' ? (
+                  <select required value={pagoFormData.concepto} onChange={e => setPagoFormData({...pagoFormData, concepto: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                    <option value="">Selecciona un concepto...</option>
+                    <option value="Constancia de Estudios">Constancia de Estudios</option>
+                    <option value="Reposición de Credencial">Reposición de Credencial</option>
+                    <option value="Paquete Escolar">Paquete Escolar</option>
+                    <option value="Donación / Aportación">Donación / Aportación Voluntaria</option>
+                    <option value="Otro">Otro (Especificar en notas)</option>
+                  </select>
+                ) : (
+                  <input type="text" required value={pagoFormData.concepto} onChange={e => setPagoFormData({...pagoFormData, concepto: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500" placeholder="Ej. Examen Extraordinario de Matemáticas" />
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Monto Cobrado ($)</label>
+                  <input type="number" step="0.01" required value={pagoFormData.monto} onChange={e => setPagoFormData({...pagoFormData, monto: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 font-bold text-emerald-600" placeholder="0.00" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Método de Pago</label>
+                  <select value={pagoFormData.metodo} onChange={e => setPagoFormData({...pagoFormData, metodo: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Depósito">Depósito Bancario</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                <button type="button" onClick={() => setShowPagoAdminModal(false)} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg">Cancelar</button>
+                <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 shadow-sm flex items-center">
+                  <CheckCircle2 className="w-5 h-5 mr-2" /> {isSubmitting ? 'Guardando...' : 'Registrar Cobro'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </>
   );
 }

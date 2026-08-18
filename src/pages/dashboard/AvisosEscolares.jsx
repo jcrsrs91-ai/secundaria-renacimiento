@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebase';
-import { Megaphone, Plus, Edit2, Trash2, X, Check, Info, AlertTriangle } from 'lucide-react';
+import { Megaphone, Plus, Edit2, Trash2, X, Check, Info, AlertTriangle, Paperclip, Image as ImageIcon, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AvisosEscolares() {
@@ -17,7 +17,7 @@ export default function AvisosEscolares() {
   const [type, setType] = useState('info'); // info, warning, success
   const [isActive, setIsActive] = useState(true);
   const [turno, setTurno] = useState('ambos');
-  const [imageFile, setImageFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -46,19 +46,23 @@ export default function AvisosEscolares() {
       setContent(aviso.content || '');
       setType(aviso.type || 'info');
       setIsActive(aviso.isActive !== false);
+      setTurno(aviso.turno || 'ambos');
     } else {
       setEditingAviso(null);
       setTitle('');
       setContent('');
       setType('info');
       setIsActive(true);
+      setTurno('ambos');
     }
+    setFiles([]);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingAviso(null);
+    setFiles([]);
   };
 
   const handleSubmit = async (e) => {
@@ -70,13 +74,27 @@ export default function AvisosEscolares() {
 
     setUploading(true);
     try {
-      let uploadedImageUrl = editingAviso?.imageUrl || null;
-
-      if (imageFile) {
-        const imageRef = ref(storage, `avisos/${Date.now()}_${imageFile.name}`);
-        const snapshot = await uploadBytes(imageRef, imageFile);
-        uploadedImageUrl = await getDownloadURL(snapshot.ref);
+      let currentAttachments = editingAviso?.attachments || [];
+      // Backward compatibility for old imageUrl
+      if (editingAviso?.imageUrl && currentAttachments.length === 0) {
+        currentAttachments = [{ url: editingAviso.imageUrl, type: 'image', name: 'flyer_adjunto.jpg' }];
       }
+
+      const newUploadedFiles = [];
+      
+      if (files.length > 0) {
+        for (const file of files) {
+          const isImage = file.type.startsWith('image/');
+          const fileType = isImage ? 'image' : 'pdf';
+          const fileRef = ref(storage, `avisos/${Date.now()}_${file.name}`);
+          const snapshot = await uploadBytes(fileRef, file);
+          const url = await getDownloadURL(snapshot.ref);
+          newUploadedFiles.push({ url, type: fileType, name: file.name });
+        }
+      }
+
+      // We append new files to existing ones when updating, if we wanted to replace we would just use newUploadedFiles
+      const finalAttachments = files.length > 0 ? [...currentAttachments, ...newUploadedFiles] : currentAttachments;
 
       if (editingAviso) {
         // Update
@@ -87,11 +105,9 @@ export default function AvisosEscolares() {
           type,
           turno,
           isActive,
+          attachments: finalAttachments,
           updatedAt: serverTimestamp()
         };
-        if (uploadedImageUrl) {
-          updateData.imageUrl = uploadedImageUrl;
-        }
         await updateDoc(avisoRef, updateData);
         toast.success('Aviso actualizado correctamente');
       } else {
@@ -102,12 +118,10 @@ export default function AvisosEscolares() {
           type,
           turno,
           isActive,
+          attachments: finalAttachments,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
-        if (uploadedImageUrl) {
-          newData.imageUrl = uploadedImageUrl;
-        }
         await addDoc(collection(db, 'avisos'), newData);
         toast.success('Aviso creado correctamente');
       }
@@ -118,7 +132,7 @@ export default function AvisosEscolares() {
       toast.error('Error al guardar el aviso');
     } finally {
       setUploading(false);
-      setImageFile(null);
+      setFiles([]);
     }
   };
 
@@ -132,6 +146,27 @@ export default function AvisosEscolares() {
         console.error("Error deleting aviso:", error);
         toast.error('Error al eliminar el aviso');
       }
+    }
+  };
+  
+  const removeAttachment = async (attachmentIndex) => {
+    if (!editingAviso) return;
+    if (!window.confirm('¿Eliminar este adjunto?')) return;
+    
+    let currentAttachments = editingAviso.attachments || [];
+    if (editingAviso.imageUrl && currentAttachments.length === 0) {
+       currentAttachments = [{ url: editingAviso.imageUrl, type: 'image', name: 'flyer_adjunto.jpg' }];
+    }
+    
+    const newAttachments = currentAttachments.filter((_, idx) => idx !== attachmentIndex);
+    try {
+      const avisoRef = doc(db, 'avisos', editingAviso.id);
+      await updateDoc(avisoRef, { attachments: newAttachments });
+      setEditingAviso({ ...editingAviso, attachments: newAttachments });
+      fetchAvisos(); // refresh list in background
+      toast.success('Adjunto eliminado');
+    } catch (e) {
+      toast.error('Error al eliminar adjunto');
     }
   };
 
@@ -163,7 +198,9 @@ export default function AvisosEscolares() {
           </div>
         ) : (
           <div className="divide-y divide-slate-200">
-            {avisos.map(aviso => (
+            {avisos.map(aviso => {
+               const hasAttachments = (aviso.attachments && aviso.attachments.length > 0) || aviso.imageUrl;
+               return (
               <div key={aviso.id} className="p-6 hover:bg-slate-50 transition-colors flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
@@ -186,6 +223,12 @@ export default function AvisosEscolares() {
                     )}
                   </div>
                   <h3 className="text-lg font-semibold text-slate-800">{aviso.title}</h3>
+                  {hasAttachments && (
+                    <div className="mt-2 mb-2 flex items-center gap-1 text-primary-600 bg-primary-50 px-2 py-1 rounded-md w-max text-xs font-semibold">
+                      <Paperclip className="w-3 h-3" />
+                      {aviso.attachments ? aviso.attachments.length : 1} adjunto(s)
+                    </div>
+                  )}
                   <p className="text-slate-600 mt-1 whitespace-pre-wrap">{aviso.content}</p>
                 </div>
                 <div className="flex items-center space-x-2 ml-4">
@@ -205,14 +248,14 @@ export default function AvisosEscolares() {
                   </button>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto py-10">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg my-auto overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="text-lg font-bold text-slate-800">
                 {editingAviso ? 'Editar Aviso' : 'Crear Nuevo Aviso'}
@@ -268,6 +311,8 @@ export default function AvisosEscolares() {
                     <option value="matutino">Turno Matutino</option>
                     <option value="vespertino">Turno Vespertino</option>
                   </select>
+                </div>
+                <div className="col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-1">Estado</label>
                   <select
                     value={isActive ? "true" : "false"}
@@ -279,17 +324,41 @@ export default function AvisosEscolares() {
                   </select>
                 </div>
               </div>
+              
               <div className="pt-2 border-t border-slate-100 mt-2">
-                <label className="block text-sm font-medium text-slate-700 mb-2 mt-4">Adjuntar Flyer o Imagen (Opcional)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2 mt-4">Adjuntar Archivos (Imágenes y PDFs)</label>
+                
+                {/* Visualizar adjuntos existentes */}
+                {editingAviso && ((editingAviso.attachments && editingAviso.attachments.length > 0) || editingAviso.imageUrl) && (
+                  <div className="mb-4 space-y-2">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Archivos ya subidos:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {((editingAviso.attachments && editingAviso.attachments.length > 0) ? editingAviso.attachments : [{url: editingAviso.imageUrl, type: 'image', name: 'flyer_adjunto.jpg'}]).map((att, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                           <div className="flex items-center truncate mr-2">
+                              {att.type === 'image' ? <ImageIcon className="w-4 h-4 text-sky-500 mr-2 shrink-0"/> : <FileText className="w-4 h-4 text-rose-500 mr-2 shrink-0"/>}
+                              <span className="text-xs text-slate-600 truncate">{att.name}</span>
+                           </div>
+                           <button type="button" onClick={() => removeAttachment(idx)} className="p-1 hover:bg-slate-200 rounded-full text-slate-500 hover:text-red-500">
+                             <X className="w-3 h-3" />
+                           </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <input
                   type="file"
-                  accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files[0])}
+                  multiple
+                  accept="image/*,.pdf"
+                  onChange={(e) => setFiles(Array.from(e.target.files))}
                   className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                 />
-                {editingAviso?.imageUrl && !imageFile && (
-                  <p className="mt-2 text-xs text-slate-400">El aviso actual ya tiene una imagen adjunta. Si subes una nueva, se reemplazará la anterior.</p>
+                {files.length > 0 && (
+                  <p className="mt-2 text-xs font-medium text-sky-600">{files.length} archivo(s) nuevo(s) seleccionado(s).</p>
                 )}
+                <p className="mt-1 text-xs text-slate-400">Puedes seleccionar varias imágenes o PDFs a la vez.</p>
               </div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button
@@ -304,7 +373,7 @@ export default function AvisosEscolares() {
                   disabled={uploading} className="px-4 py-2 bg-primary-600 disabled:opacity-50 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center"
                 >
                   <Check className="h-4 w-4 mr-2" />
-                  {uploading ? 'Guardando...' : editingAviso ? 'Guardar Cambios' : 'Publicar Aviso'}
+                  {uploading ? 'Guardando Archivos...' : editingAviso ? 'Guardar Cambios' : 'Publicar Aviso'}
                 </button>
               </div>
             </form>

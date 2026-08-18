@@ -74,12 +74,15 @@ export default function Login() {
               </form>
               
               <div className="mt-6 text-center border-t pt-5 flex flex-col gap-3">
-                <a href="/" className="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors">
+                <a href="/" className="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors mb-2">
                   Volver a la página principal
                 </a>
-                <Link to="/registro-staff" className="text-sm font-bold text-primary-600 hover:text-primary-700 transition-colors">
-                  ¿Fuiste invitado? Crea tu contraseña aquí
-                </Link>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <p className="text-sm text-slate-600 mb-3 font-medium">¿Es tu primera vez ingresando?</p>
+                  <Link to="/registro-staff" className="w-full flex justify-center py-2 px-4 rounded-lg text-sm font-bold text-primary-700 bg-primary-100 hover:bg-primary-200 transition-colors border border-primary-200 shadow-sm">
+                    Crear mi contraseña de acceso
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
