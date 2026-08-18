@@ -229,7 +229,7 @@ export default function Contraloria() {
 
   const filteredPagos = useMemo(() => {
     return pagosRecientes.filter(p => {
-      const nombreBuscado = String(p.alumno || p.nombre || "").toLowerCase(); const folioBuscado = String(p.folio || p.id || "").toLowerCase(); const query = pagosSearch.toLowerCase(); const matchSearch = !pagosSearch || nombreBuscado.includes(query) || folioBuscado.includes(query);
+      const normalizeStr = (str) => String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); const nombreBuscado = normalizeStr(p.alumno || p.nombre); const folioBuscado = normalizeStr(p.folio || p.id); const query = normalizeStr(pagosSearch); const matchSearch = !pagosSearch || nombreBuscado.includes(query) || folioBuscado.includes(query);
       const matchGrado = pagosGrado === 'Todos' || p.grado === pagosGrado;
       const matchGrupo = pagosGrupo === 'Todos' || p.grupo === pagosGrupo;
       return matchSearch && matchGrado && matchGrupo;
@@ -339,7 +339,7 @@ export default function Contraloria() {
   });
 
   const filteredPagosGenerales = todosLosPagosGenerales.filter(p => {
-    const nombreBuscado = String(p.alumno || p.nombre || "").toLowerCase(); const folioBuscado = String(p.folio || p.id || "").toLowerCase(); const query = pagosSearch.toLowerCase(); const matchesSearch = !pagosSearch || nombreBuscado.includes(query) || folioBuscado.includes(query);
+    const normalizeStr = (str) => String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); const nombreBuscado = normalizeStr(p.alumno || p.nombre); const folioBuscado = normalizeStr(p.folio || p.id); const query = normalizeStr(pagosSearch); const matchesSearch = !pagosSearch || nombreBuscado.includes(query) || folioBuscado.includes(query);
     const matchesGrado = pagosGrado === 'Todos' || p.grado === pagosGrado;
     const matchesGrupo = pagosGrupo === 'Todos' || p.grupo === pagosGrupo;
     
@@ -362,7 +362,7 @@ export default function Contraloria() {
       monto: `${parseFloat(p.monto).toFixed(2)}`,
       pagoFecha: p.createdAt 
   })).filter(p => {
-    const nombreBuscado = String(p.alumno || p.nombre || "").toLowerCase(); const folioBuscado = String(p.folio || p.id || "").toLowerCase(); const query = pagosSearch.toLowerCase(); const matchesSearch = !pagosSearch || nombreBuscado.includes(query) || folioBuscado.includes(query);
+    const normalizeStr = (str) => String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); const nombreBuscado = normalizeStr(p.alumno || p.nombre); const folioBuscado = normalizeStr(p.folio || p.id); const query = normalizeStr(pagosSearch); const matchesSearch = !pagosSearch || nombreBuscado.includes(query) || folioBuscado.includes(query);
     let matchesFecha = true;
     if (fechaInicio || fechaFin) {
        const pDate = p.pagoFecha?.toDate ? p.pagoFecha.toDate() : new Date(p.pagoFecha || new Date());
