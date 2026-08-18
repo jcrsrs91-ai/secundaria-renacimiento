@@ -1913,11 +1913,55 @@ export default function Contraloria() {
                     <option value="Vespertino">Vespertino</option>
                   </select>
                 </div>
-                <div className="pt-6">
-                  <button onClick={() => { setPrintData(corteConfig); setPrintMode('corte'); setTimeout(() => window.print(), 500); }} className="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700">
-                    <Printer className="w-5 h-5 mr-2" /> Imprimir Reporte de Corte
-                  </button>
-                </div>
+                
+                  {(() => {
+                    const sDate = new Date(corteConfig.fechaInicio + 'T00:00:00');
+                    const eDate = new Date(corteConfig.fechaFin + 'T23:59:59');
+                    const allPagos = [...pagosAdmin.map(p => ({...p, sysTipo: 'Admin'})), ...pagosExtra.map(p => ({...p, sysTipo: 'Extra'}))];
+                    const filtered = allPagos.filter(p => {
+                      let d = new Date();
+                      if (p.pagoFecha?.toDate) d = p.pagoFecha.toDate();
+                      else if (p.createdAt?.toDate) d = p.createdAt.toDate();
+                      else if (p.pagoFecha) d = new Date(p.pagoFecha);
+                      else if (p.fecha && p.fecha !== 'Pendiente') {
+                        const parts = p.fecha.split('/');
+                        if (parts.length === 3) d = new Date(parts[2], parts[1] - 1, parts[0]);
+                        else d = new Date(p.fecha);
+                      }
+                      return d >= sDate && d <= eDate;
+                    });
+                    
+                    const total = filtered.reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+                    const totalAdmin = filtered.filter(p => p.sysTipo === 'Admin').reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+                    const totalExtra = filtered.filter(p => p.sysTipo === 'Extra').reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+
+                    return (
+                      <div className="mt-6 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">Vista Previa del Corte</h3>
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 text-center">
+                            <div className="text-sm text-slate-500 font-bold mb-1">Ingresos Generales</div>
+                            <div className="text-xl font-bold text-slate-800">${totalAdmin.toFixed(2)}</div>
+                            <div className="text-xs text-slate-400 mt-1">${filtered.filter(p => p.sysTipo === 'Admin').length} pagos</div>
+                          </div>
+                          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 text-center">
+                            <div className="text-sm text-slate-500 font-bold mb-1">Exámenes Extraord.</div>
+                            <div className="text-xl font-bold text-slate-800">${totalExtra.toFixed(2)}</div>
+                            <div className="text-xs text-slate-400 mt-1">${filtered.filter(p => p.sysTipo === 'Extra').length} pagos</div>
+                          </div>
+                          <div className="bg-indigo-50 p-4 rounded-lg shadow-sm border border-indigo-100 text-center">
+                            <div className="text-sm text-indigo-600 font-bold mb-1">Total Neto</div>
+                            <div className="text-2xl font-black text-indigo-700">${total.toFixed(2)}</div>
+                            <div className="text-xs text-indigo-500 mt-1 font-bold">${filtered.length} transacciones</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  <div className="pt-6" id="totalesCorte">
+                    ${printBtnCode}
+                  </div>
+
               </div>
             </div>
           </div>
@@ -2704,6 +2748,121 @@ export default function Contraloria() {
     {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} />}
     {printMode === 'baja' && printData && <ActaBajaPrint data={printData} />}
     {printMode === 'etiquetas' && printData && <EtiquetasPrint items={printData} />}
+
+    {printMode === 'corte' && printData && (
+      <div className="hidden print:block page-container relative mx-auto bg-white p-8">
+        <div className="page-border opacity-30"></div>
+        <div className="text-center mb-8 border-b-[3px] border-slate-800 pb-6 relative">
+          <div className="absolute top-0 left-0 text-slate-200">
+            <Archive className="w-16 h-16 opacity-50" />
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight font-serif">ESC. SEC. GRAL. "RENACIMIENTO"</h1>
+          <h2 className="text-sm font-bold text-slate-600 mt-1 uppercase tracking-widest bg-slate-100 inline-block px-3 py-1 rounded-full border border-slate-200">Reporte de Corte de Caja</h2>
+          <div className="mt-6 flex justify-between items-center text-sm font-mono">
+            <div className="font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200">
+              PERIODO: {printData.fechaInicio} al {printData.fechaFin}
+            </div>
+            <div className="font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200">
+              TURNO: {printData.turno}
+            </div>
+          </div>
+        </div>
+        
+        {(() => {
+          const sDate = new Date(printData.fechaInicio + 'T00:00:00');
+          const eDate = new Date(printData.fechaFin + 'T23:59:59');
+          const allPagos = [...pagosAdmin.map(p => ({...p, sysTipo: 'Admin'})), ...pagosExtra.map(p => ({...p, sysTipo: 'Extra'}))];
+          const filtered = allPagos.filter(p => {
+            let d = new Date();
+            if (p.pagoFecha?.toDate) d = p.pagoFecha.toDate();
+            else if (p.createdAt?.toDate) d = p.createdAt.toDate();
+            else if (p.pagoFecha) d = new Date(p.pagoFecha);
+            else if (p.fecha && p.fecha !== 'Pendiente') {
+              const parts = p.fecha.split('/');
+              if (parts.length === 3) d = new Date(parts[2], parts[1] - 1, parts[0]);
+              else d = new Date(p.fecha);
+            }
+            return d >= sDate && d <= eDate;
+          });
+          
+          const total = filtered.reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+          const totalAdmin = filtered.filter(p => p.sysTipo === 'Admin').reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+          const totalExtra = filtered.filter(p => p.sysTipo === 'Extra').reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+          
+          return (
+            <div className="space-y-6">
+              <div className="grid grid-cols-3 gap-6">
+                <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl text-center">
+                  <div className="text-xs font-bold text-slate-500 uppercase">Ingresos Generales</div>
+                  <div className="text-2xl font-black text-slate-800">${totalAdmin.toFixed(2)}</div>
+                  <div className="text-xs text-slate-400 font-bold">${filtered.filter(p => p.sysTipo === 'Admin').length} Trámites</div>
+                </div>
+                <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl text-center">
+                  <div className="text-xs font-bold text-slate-500 uppercase">Exámenes Extraordinarios</div>
+                  <div className="text-2xl font-black text-slate-800">${totalExtra.toFixed(2)}</div>
+                  <div className="text-xs text-slate-400 font-bold">${filtered.filter(p => p.sysTipo === 'Extra').length} Trámites</div>
+                </div>
+                <div className="bg-emerald-50 p-4 border-2 border-emerald-200 rounded-xl text-center">
+                  <div className="text-xs font-bold text-emerald-600 uppercase">Total Neto</div>
+                  <div className="text-3xl font-black text-emerald-700">${total.toFixed(2)}</div>
+                </div>
+              </div>
+              
+              <div className="mt-8">
+                <h3 className="text-sm font-bold text-slate-800 uppercase border-b-2 border-slate-200 pb-2 mb-4">Desglose de Movimientos</h3>
+                <table className="w-full text-xs font-mono">
+                  <thead className="bg-slate-100">
+                    <tr>
+                      <th className="py-2 px-3 text-left border-b border-slate-200">FECHA</th>
+                      <th className="py-2 px-3 text-left border-b border-slate-200">FOLIO</th>
+                      <th className="py-2 px-3 text-left border-b border-slate-200">ALUMNO</th>
+                      <th className="py-2 px-3 text-left border-b border-slate-200">CONCEPTO</th>
+                      <th className="py-2 px-3 text-right border-b border-slate-200">MONTO</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((p, idx) => (
+                      <tr key={idx} className="border-b border-slate-100">
+                        <td className="py-1.5 px-3">
+                          {(() => {
+                            let d = new Date();
+                            if (p.pagoFecha?.toDate) d = p.pagoFecha.toDate();
+                            else if (p.createdAt?.toDate) d = p.createdAt.toDate();
+                            else if (p.pagoFecha) d = new Date(p.pagoFecha);
+                            return isNaN(d.getTime()) ? (p.fecha || 'N/A') : d.toLocaleDateString();
+                          })()}
+                        </td>
+                        <td className="py-1.5 px-3 font-bold">{p.folio || p.id?.substring(0,6).toUpperCase()}</td>
+                        <td className="py-1.5 px-3 truncate max-w-[200px]">{p.alumno || p.nombre}</td>
+                        <td className="py-1.5 px-3 truncate max-w-[200px]">{p.concepto}</td>
+                        <td className="py-1.5 px-3 text-right font-bold text-emerald-700">${parseFloat(p.monto||0).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    {filtered.length === 0 && (
+                      <tr>
+                        <td colSpan="5" className="py-4 text-center text-slate-400 italic">No hubo movimientos en este periodo.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
+        
+        <div className="mt-20 pt-8 grid grid-cols-2 gap-12 text-center">
+          <div>
+            <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sello de la Institución</span>
+          </div>
+          <div>
+            <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Firma de Entrega / Conformidad</span>
+          </div>
+        </div>
+      </div>
+    )}
+
     
     {showScannerModal && (
       <ScannerInventarioModal 
