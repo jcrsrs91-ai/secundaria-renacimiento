@@ -215,6 +215,7 @@ export default function Contraloria() {
   const [pagoFormData, setPagoFormData] = useState({
     nombre: '', concepto: '', monto: '', metodo: 'Efectivo', tipo: 'administrativo', fecha: new Date().toISOString().split('T')[0]
   });
+  const [receiptPago, setReceiptPago] = useState(null);
 
 
   
@@ -1601,7 +1602,7 @@ export default function Contraloria() {
 
   return (
     <>
-    <div className={printMode ? "hidden" : "space-y-6"}>
+    <div className={`space-y-6 ${printMode ? "hidden" : ""} print:${receiptPago ? "hidden" : "block"}`}>
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Contraloría</h2>
@@ -1629,6 +1630,12 @@ export default function Contraloria() {
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'resguardos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
             <FileText className="w-4 h-4 mr-2" /> Historial de Resguardos
+          </button>
+          <button
+            onClick={() => setActiveTab('corte')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'corte' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            <Wallet className="w-4 h-4 mr-2" /> Corte de Caja
           </button>
         </nav>
       </div>
@@ -1691,6 +1698,7 @@ export default function Contraloria() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Concepto</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Monto</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -1722,6 +1730,9 @@ export default function Contraloria() {
                           Registrar Cobro
                         </button>
                       )}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right space-x-2">
+                      <button onClick={() => setReceiptPago(p)} className="text-slate-400 hover:text-primary-600 transition-colors p-1" title="Imprimir Recibo"><Printer className="w-4 h-4" /></button>
                     </td>
                   </tr>
                 )})}
@@ -1756,10 +1767,13 @@ export default function Contraloria() {
                 </thead>
                 
               <tbody className="divide-y divide-slate-200">
-                {pagosRecientes.map(p => (
+                {filteredPagos.map(p => (
                   <tr key={p.id}>
                     <td className="px-6 py-4 text-sm font-medium text-slate-900">{p.folio}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{p.alumno}</td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-slate-600 font-bold">{p.alumno}</div>
+                      <div className="text-xs text-slate-500">{p.grado !== 'N/A' ? `${p.grado} - Grupo ${p.grupo}` : 'Sin grado/grupo asignado'}</div>
+                    </td>
                     <td className="px-6 py-4 text-sm text-slate-600">{p.concepto}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-slate-800">{p.monto}</td>
                     <td className="px-6 py-4 text-sm">
@@ -2762,6 +2776,109 @@ export default function Contraloria() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {receiptPago && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 print:static print:bg-white print:p-0 print:block backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto print:max-h-none print:shadow-none print:rounded-none print:w-full print:max-w-none relative flex flex-col">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50 sticky top-0 z-10 rounded-t-2xl no-print">
+              <h3 className="font-bold text-xl text-slate-800 flex items-center"><Printer className="w-5 h-5 mr-2 text-primary-600"/> Generar Recibo</h3>
+              <div className="flex items-center gap-3">
+                <button onClick={() => window.print()} className="bg-primary-600 text-white px-5 py-2 rounded-lg font-bold flex items-center hover:bg-primary-700 shadow-sm transition-all hover:scale-105 active:scale-95">
+                  <Printer className="w-4 h-4 mr-2"/> Imprimir
+                </button>
+                <button onClick={() => setReceiptPago(null)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-full transition-colors"><X className="w-6 h-6"/></button>
+              </div>
+            </div>
+            <div className="p-4 sm:p-8 flex-1 bg-slate-200 overflow-y-auto print:bg-white print:overflow-visible print:p-0 flex justify-center items-start">
+              <div className="page-container relative mx-auto bg-white" style={{ marginTop: '0', marginBottom: '0' }}>
+                <div className="page-border opacity-30"></div>
+                <div className="text-center mb-8 border-b-[3px] border-slate-800 pb-6 relative">
+                  <div className="absolute top-0 left-0 text-slate-200">
+                    <Archive className="w-16 h-16 opacity-50" />
+                  </div>
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight font-serif">ESC. SEC. GRAL. "RENACIMIENTO"</h1>
+                  <h2 className="text-sm font-bold text-slate-600 mt-1 uppercase tracking-widest bg-slate-100 inline-block px-3 py-1 rounded-full border border-slate-200">Recibo Oficial de Tr�mite Interno</h2>
+                  <div className="mt-6 flex justify-between items-center text-sm font-mono">
+                    <div className="font-bold text-rose-700 bg-rose-50 px-3 py-1.5 rounded-md border border-rose-200 flex items-center">
+                      FOLIO: {(() => {
+                        if (receiptPago.folio) return receiptPago.folio;
+                        if (receiptPago.id) return receiptPago.id.substring(0, 6).toUpperCase();
+                        return '000000';
+                      })()}
+                    </div>
+                    <div className="font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200">
+                      FECHA: {(() => {
+                        let dateObj = new Date();
+                        if (receiptPago.pagoFecha?.toDate) dateObj = receiptPago.pagoFecha.toDate();
+                        else if (receiptPago.createdAt?.toDate) dateObj = receiptPago.createdAt.toDate();
+                        else if (receiptPago.pagoFecha) dateObj = new Date(receiptPago.pagoFecha);
+                        else if (receiptPago.fecha && receiptPago.fecha !== 'Pendiente') {
+                          const parts = receiptPago.fecha.split('/');
+                          if (parts.length === 3) dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+                          else dateObj = new Date(receiptPago.fecha);
+                        }
+                        if (isNaN(dateObj.getTime())) dateObj = new Date();
+                        return dateObj.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+                      })()}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Recibimos de:</span>
+                    <div className="text-lg font-bold text-slate-900 bg-slate-50/50 px-4 py-3 border-b-2 border-slate-200">
+                      {receiptPago.alumno || receiptPago.nombre}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-6">
+                    <div className="col-span-2">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Por concepto de:</span>
+                      <div className="text-sm font-bold text-slate-800 bg-slate-50/50 px-4 py-3 border-b-2 border-slate-200 min-h-[80px]">
+                        {(receiptPago.concepto || '').split(' + ').map((c, i) => (
+                          <div key={i} className="mb-1.5 last:mb-0 flex items-start before:content-['�'] before:mr-2 before:text-primary-500">{c}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Forma de Pago:</span>
+                      <div className="text-sm font-bold text-slate-800 bg-slate-50/50 px-4 py-3 border-b-2 border-slate-200 min-h-[80px] flex items-center justify-center text-center uppercase tracking-wide">
+                        {receiptPago.metodo || 'Efectivo'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-2">
+                    <div className="w-1/2">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1 text-right">La Cantidad de:</span>
+                      <div className="text-3xl font-black text-emerald-700 bg-emerald-50 px-4 py-3 border-2 border-emerald-200 rounded-xl text-right shadow-inner">
+                        ${parseFloat(receiptPago.monto).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-20 pt-8 grid grid-cols-2 gap-12 text-center">
+                  <div>
+                    <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sello de la Instituci�n</span>
+                  </div>
+                  <div>
+                    <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Firma de Recibido</span>
+                  </div>
+                </div>
+                <div className="mt-12 text-center border-t border-dashed border-slate-300 pt-4">
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+                    *** Este recibo es v�lido �nicamente para tr�mites administrativos internos ***<br/>
+                    No representa un comprobante fiscal. Conserve este documento para cualquier aclaraci�n.
+                  </p>
+                </div>
+                <div className="hidden print:block absolute inset-0 -z-10 flex items-center justify-center opacity-[0.03] pointer-events-none">
+                  <h1 className="text-[150px] font-black transform -rotate-45 tracking-tighter">RENACIMIENTO</h1>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
