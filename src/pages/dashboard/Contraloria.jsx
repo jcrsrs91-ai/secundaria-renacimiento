@@ -403,7 +403,8 @@ export default function Contraloria() {
           detalles: conceptosFiltrados.map(d => ({ concepto: d.concepto, monto: parseFloat(d.monto) })),
           metodo: pagoFormData.metodo,
           createdAt: serverTimestamp(),
-          estado: 'Pagado'
+          estado: 'Pagado',
+          fecha: new Date().toISOString().split('T')[0]
         });
         toast.success('Pago registrado exitosamente');
         setShowPagoAdminModal(false);
@@ -1744,6 +1745,17 @@ export default function Contraloria() {
                     </td>
                     <td className="px-6 py-4 text-sm text-right space-x-2">
                       <button onClick={() => setReceiptPago(p)} className="text-slate-400 hover:text-primary-600 transition-colors p-1" title="Imprimir Recibo"><Printer className="w-4 h-4" /></button>
+                       <button onClick={async () => {
+                         if(window.confirm('¿Estás seguro de eliminar este pago? Esta acción no se puede deshacer.')) {
+                           try {
+                             const colName = p.sysTipo === 'Extra' ? 'pagos_extraordinarios' : 'pagos_administrativos';
+                             await deleteDoc(doc(db, colName, p.id));
+                             toast.success('Pago eliminado exitosamente');
+                           } catch (error) {
+                             toast.error('Error al eliminar el pago');
+                           }
+                         }
+                       }} className="text-slate-400 hover:text-rose-600 transition-colors p-1" title="Eliminar Pago"><Trash2 className="w-4 h-4" /></button>
                     </td>
                   </tr>
                 )})}
@@ -1980,7 +1992,7 @@ export default function Contraloria() {
                                   <tr key={idx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                                     <td className="py-2 px-4 font-medium text-slate-700">{item.concepto}</td>
                                     <td className="py-2 px-4 text-center text-slate-600">{item.count}</td>
-                                    <td className="py-2 px-4 text-right font-mono font-bold text-slate-700">$\u00A0{item.total.toFixed(2)}</td>
+                                    <td className="py-2 px-4 text-right font-mono font-bold text-slate-700">$ {item.total.toFixed(2)}</td>
                                   </tr>
                                 ))}
                                 {desgloseConceptos.length === 0 && (
@@ -1993,26 +2005,24 @@ export default function Contraloria() {
                           <div className="grid grid-cols-3 gap-4 mb-4">
                             <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 text-center">
                               <div className="text-sm text-slate-500 font-bold mb-1">Ingresos Generales</div>
-                              <div className="text-xl font-bold text-slate-800">$\u00A0{totalAdmin.toFixed(2)}</div>
+                              <div className="text-xl font-bold text-slate-800">$ {totalAdmin.toFixed(2)}</div>
                               <div className="text-xs text-slate-400 mt-1">{filtered.filter(p => p.sysTipo === 'Admin').length} transacciones</div>
                             </div>
                             <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 text-center">
                               <div className="text-sm text-slate-500 font-bold mb-1">Ex\u00E1menes Extraord.</div>
-                              <div className="text-xl font-bold text-slate-800">$\u00A0{totalExtra.toFixed(2)}</div>
+                              <div className="text-xl font-bold text-slate-800">$ {totalExtra.toFixed(2)}</div>
                               <div className="text-xs text-slate-400 mt-1">{filtered.filter(p => p.sysTipo === 'Extra').length} transacciones</div>
                             </div>
                             <div className="bg-indigo-50 p-4 rounded-lg shadow-sm border border-indigo-100 text-center">
                               <div className="text-sm text-indigo-600 font-bold mb-1">Total Neto</div>
-                              <div className="text-2xl font-black text-indigo-700">$\u00A0{total.toFixed(2)}</div>
+                              <div className="text-2xl font-black text-indigo-700">$ {total.toFixed(2)}</div>
                               <div className="text-xs text-indigo-500 mt-1 font-bold">{filtered.length} transacciones</div>
                             </div>
                           </div>
                         </div>
                       );
                   })()}
-                  <div className="pt-6" id="totalesCorte">
-                    ${printBtnCode}
-                  </div>
+                  
 
               </div>
             </div>
@@ -3146,7 +3156,7 @@ export default function Contraloria() {
                                 {receiptPago.detalles.map((d, i) => (
                                   <tr key={i} className="border-b border-slate-100 last:border-0">
                                     <td className="py-2 px-4 font-bold">{d.concepto}</td>
-                                    <td className="py-2 px-4 font-bold text-right font-mono text-slate-600">$\u00A0{parseFloat(d.monto).toFixed(2)}</td>
+                                    <td className="py-2 px-4 font-bold text-right font-mono text-slate-600">$ {parseFloat(d.monto).toFixed(2)}</td>
                                   </tr>
                                 ))}
                               </tbody>
