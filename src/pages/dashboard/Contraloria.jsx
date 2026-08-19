@@ -383,31 +383,37 @@ export default function Contraloria() {
   });
 
   const handleGuardarPagoManual = async (e) => {
-    e.preventDefault();
-    if(!pagoFormData.nombre || !pagoFormData.concepto || !pagoFormData.monto) {
-      toast.error('Llena todos los campos.');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const collectionName = pagoFormData.tipo === 'administrativo' ? 'pagos_administrativos' : 'pagos_extraordinarios';
-      await addDoc(collection(db, collectionName), {
-        nombre: pagoFormData.nombre,
-        concepto: pagoFormData.concepto,
-        monto: parseFloat(pagoFormData.monto),
-        metodo: pagoFormData.metodo,
-        createdAt: serverTimestamp(),
-        estado: 'Pagado'
-      });
-      toast.success('Pago registrado exitosamente');
-      setShowPagoAdminModal(false);
-      setPagoFormData({ nombre: '', concepto: '', monto: '', metodo: 'Efectivo', tipo: 'administrativo', fecha: new Date().toISOString().split('T')[0] });
-    } catch(err) {
-      toast.error('Error al registrar el pago');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      e.preventDefault();
+      
+      const conceptosFiltrados = pagoFormData.detalles.filter(d => d.concepto.trim() !== '' && parseFloat(d.monto) >= 0 && d.monto !== '');
+      if(!pagoFormData.nombre || conceptosFiltrados.length === 0) {
+        toast.error('Llena todos los campos válidos (concepto y monto).');
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const collectionName = pagoFormData.tipo === 'administrativo' ? 'pagos_administrativos' : 'pagos_extraordinarios';
+        const conceptoConcatenado = conceptosFiltrados.map(d => d.concepto).join(' + ');
+        const montoTotal = conceptosFiltrados.reduce((s, d) => s + parseFloat(d.monto), 0);
+        
+        await addDoc(collection(db, collectionName), {
+          nombre: pagoFormData.nombre,
+          concepto: conceptoConcatenado,
+          monto: montoTotal,
+          detalles: conceptosFiltrados.map(d => ({ concepto: d.concepto, monto: parseFloat(d.monto) })),
+          metodo: pagoFormData.metodo,
+          createdAt: serverTimestamp(),
+          estado: 'Pagado'
+        });
+        toast.success('Pago registrado exitosamente');
+        setShowPagoAdminModal(false);
+        setPagoFormData({ nombre: '', metodo: 'Efectivo', tipo: 'administrativo', detalles: [{concepto: '', monto: ''}] });
+      } catch(err) {
+        toast.error('Error al registrar el pago');
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
   
   const exportarRelacionIngresos = () => {
     const dataToExport = activeIngresoTab === 'generales' ? filteredPagosGenerales : filteredPagosExtra;
@@ -2930,7 +2936,7 @@ export default function Contraloria() {
                   <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Ingreso</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'administrativo', detalles: [{concepto: '', monto: ''}]})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'administrativo' ? 'bg-primary-50 border-primary-500 text-primary-700 ring-1 ring-primary-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
-                      <FileText className="w-5 h-5" /> Tr\u00E1mites Generales
+                      <FileText className="w-5 h-5" /> Trámites Generales
                     </button>
                     <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'extraordinario', detalles: [{concepto: 'Examen Extraordinario de ', monto: ''}]})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'extraordinario' ? 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
                       <AlertTriangle className="w-5 h-5" /> Examen Extraordinario
@@ -3002,9 +3008,9 @@ export default function Contraloria() {
                             }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm">
                               <option value="">Selecciona un concepto...</option>
                               <option value="Constancia de Estudios">Constancia de Estudios</option>
-                              <option value="Reposici\u00F3n de Credencial">Reposici\u00F3n de Credencial</option>
+                              <option value="Reposición de Credencial">Reposición de Credencial</option>
                               <option value="Paquete Escolar">Paquete Escolar</option>
-                              <option value="Donaci\u00F3n / Aportaci\u00F3n">Donaci\u00F3n / Aportaci\u00F3n Voluntaria</option>
+                              <option value="Donación / Aportación">Donación / Aportación Voluntaria</option>
                               <option value="Otro">Otro (Especificar en notas)</option>
                             </select>
                           ) : (
@@ -3012,7 +3018,7 @@ export default function Contraloria() {
                                 const newDetalles = [...pagoFormData.detalles];
                                 newDetalles[index].concepto = e.target.value;
                                 setPagoFormData({...pagoFormData, detalles: newDetalles});
-                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm" placeholder="Ej. Examen Extraordinario de Matem\u00E1ticas" />
+                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm" placeholder="Ej. Examen Extraordinario de Matemáticas" />
                           )}
                         </div>
                         <div className="w-28 relative">
@@ -3051,11 +3057,11 @@ export default function Contraloria() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">M\u01F8todo de Pago</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Método de Pago</label>
                     <select value={pagoFormData.metodo} onChange={e => setPagoFormData({...pagoFormData, metodo: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
-                      <option value="Dep\u00F3sito">Dep\u00F3sito Bancario</option>
+                      <option value="Depósito">Depósito Bancario</option>
                     </select>
                   </div>
                 </div>
