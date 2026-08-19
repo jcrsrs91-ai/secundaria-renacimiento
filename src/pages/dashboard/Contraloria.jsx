@@ -133,6 +133,8 @@ export default function Contraloria() {
   const [pagosExtra, setPagosExtra] = useState([]);
   
   const [showPagoAdminModal, setShowPagoAdminModal] = useState(false);
+  const [studentSearchMatches, setStudentSearchMatches] = useState([]);
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   
   const [allStudentsRaw, setAllStudentsRaw] = useState([]);
   
@@ -2892,10 +2894,52 @@ export default function Contraloria() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Nombre de la Persona / Alumno</label>
-                <input type="text" required value={pagoFormData.nombre} onChange={e => setPagoFormData({...pagoFormData, nombre: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500" placeholder="Ej. Juan Pérez López" />
-              </div>
+              <div className="relative">
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Nombre del Alumno</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={pagoFormData.nombre} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      setPagoFormData({...pagoFormData, nombre: val});
+                      if(val.length > 1) {
+                        const q = String(val || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                        const matches = allStudentsRaw.filter(s => {
+                           const n = String(`${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''} ${s.nombres || ''}`.trim()).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                           return n.includes(q);
+                        }).slice(0, 5);
+                        setStudentSearchMatches(matches);
+                        setShowStudentDropdown(matches.length > 0);
+                      } else {
+                        setShowStudentDropdown(false);
+                      }
+                    }} 
+                    onFocus={() => { if(pagoFormData.nombre.length > 1 && studentSearchMatches.length > 0) setShowStudentDropdown(true); }}
+                    onBlur={() => setTimeout(() => setShowStudentDropdown(false), 200)}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500" 
+                    placeholder="Escribe para buscar un alumno..." 
+                    autoComplete="off"
+                  />
+                  {showStudentDropdown && (
+                    <ul className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {studentSearchMatches.map(s => {
+                        const fullName = `${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''} ${s.nombres || ''}`.trim();
+                        return (
+                          <li key={s.id} 
+                              className="px-4 py-3 hover:bg-primary-50 cursor-pointer text-sm text-slate-700 border-b border-slate-100 last:border-0"
+                              onClick={() => {
+                                setPagoFormData({...pagoFormData, nombre: fullName});
+                                setShowStudentDropdown(false);
+                              }}>
+                            <div className="font-bold text-slate-800">{fullName}</div>
+                            <div className="text-xs text-slate-500 font-medium">{s.grado !== 'N/A' ? `${s.grado} - Grupo ${s.grupo}` : 'Sin asignar'}</div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Concepto de Pago</label>
