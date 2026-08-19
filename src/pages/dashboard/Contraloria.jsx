@@ -215,7 +215,10 @@ export default function Contraloria() {
   };
 
   const [pagoFormData, setPagoFormData] = useState({
-    nombre: '', concepto: '', monto: '', metodo: 'Efectivo', tipo: 'administrativo', fecha: new Date().toISOString().split('T')[0]
+    nombre: '',
+    metodo: 'Efectivo',
+    tipo: 'administrativo',
+    detalles: [{concepto: '', monto: ''}]
   });
   const [receiptPago, setReceiptPago] = useState(null);
 
@@ -1936,29 +1939,70 @@ export default function Contraloria() {
                     const total = filtered.reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
                     const totalAdmin = filtered.filter(p => p.sysTipo === 'Admin').reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
                     const totalExtra = filtered.filter(p => p.sysTipo === 'Extra').reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+            const conceptosCount = {};
+            filtered.forEach(p => {
+              if (p.detalles && Array.isArray(p.detalles) && p.detalles.length > 0) {
+                 p.detalles.forEach(d => {
+                   const c = d.concepto || 'Otro';
+                   if (!conceptosCount[c]) conceptosCount[c] = { count: 0, total: 0 };
+                   conceptosCount[c].count += 1;
+                   conceptosCount[c].total += parseFloat(d.monto) || 0;
+                 });
+              } else {
+                 const c = p.concepto || 'Otro';
+                 if (!conceptosCount[c]) conceptosCount[c] = { count: 0, total: 0 };
+                 conceptosCount[c].count += 1;
+                 conceptosCount[c].total += parseFloat(p.monto) || 0;
+              }
+            });
+            const desgloseConceptos = Object.keys(conceptosCount).map(k => ({ concepto: k, count: conceptosCount[k].count, total: conceptosCount[k].total })).sort((a, b) => b.total - a.total);
+                      return (
+                        <div className="mt-6 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                          <h3 className="text-lg font-bold text-slate-800 mb-4">Vista Previa del Corte</h3>
+                          
+                          <div className="bg-white rounded-lg border border-slate-200 mb-6 overflow-hidden">
+                            <table className="w-full text-left text-sm">
+                              <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                                <tr>
+                                  <th className="py-2 px-4">Concepto</th>
+                                  <th className="py-2 px-4 text-center">Cantidad</th>
+                                  <th className="py-2 px-4 text-right">Ingreso</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {desgloseConceptos.map((item, idx) => (
+                                  <tr key={idx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                                    <td className="py-2 px-4 font-medium text-slate-700">{item.concepto}</td>
+                                    <td className="py-2 px-4 text-center text-slate-600">{item.count}</td>
+                                    <td className="py-2 px-4 text-right font-mono font-bold text-slate-700">$\u00A0{item.total.toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                                {desgloseConceptos.length === 0 && (
+                                  <tr><td colSpan="3" className="py-4 text-center text-slate-400">No hay pagos en este periodo.</td></tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
 
-                    return (
-                      <div className="mt-6 bg-slate-50 p-5 rounded-xl border border-slate-200">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4">Vista Previa del Corte</h3>
-                        <div className="grid grid-cols-3 gap-4 mb-4">
-                          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 text-center">
-                            <div className="text-sm text-slate-500 font-bold mb-1">Ingresos Generales</div>
-                            <div className="text-xl font-bold text-slate-800">${totalAdmin.toFixed(2)}</div>
-                            <div className="text-xs text-slate-400 mt-1">${filtered.filter(p => p.sysTipo === 'Admin').length} pagos</div>
-                          </div>
-                          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 text-center">
-                            <div className="text-sm text-slate-500 font-bold mb-1">Exámenes Extraord.</div>
-                            <div className="text-xl font-bold text-slate-800">${totalExtra.toFixed(2)}</div>
-                            <div className="text-xs text-slate-400 mt-1">${filtered.filter(p => p.sysTipo === 'Extra').length} pagos</div>
-                          </div>
-                          <div className="bg-indigo-50 p-4 rounded-lg shadow-sm border border-indigo-100 text-center">
-                            <div className="text-sm text-indigo-600 font-bold mb-1">Total Neto</div>
-                            <div className="text-2xl font-black text-indigo-700">${total.toFixed(2)}</div>
-                            <div className="text-xs text-indigo-500 mt-1 font-bold">${filtered.length} transacciones</div>
+                          <div className="grid grid-cols-3 gap-4 mb-4">
+                            <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 text-center">
+                              <div className="text-sm text-slate-500 font-bold mb-1">Ingresos Generales</div>
+                              <div className="text-xl font-bold text-slate-800">$\u00A0{totalAdmin.toFixed(2)}</div>
+                              <div className="text-xs text-slate-400 mt-1">{filtered.filter(p => p.sysTipo === 'Admin').length} transacciones</div>
+                            </div>
+                            <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 text-center">
+                              <div className="text-sm text-slate-500 font-bold mb-1">Ex\u00E1menes Extraord.</div>
+                              <div className="text-xl font-bold text-slate-800">$\u00A0{totalExtra.toFixed(2)}</div>
+                              <div className="text-xs text-slate-400 mt-1">{filtered.filter(p => p.sysTipo === 'Extra').length} transacciones</div>
+                            </div>
+                            <div className="bg-indigo-50 p-4 rounded-lg shadow-sm border border-indigo-100 text-center">
+                              <div className="text-sm text-indigo-600 font-bold mb-1">Total Neto</div>
+                              <div className="text-2xl font-black text-indigo-700">$\u00A0{total.toFixed(2)}</div>
+                              <div className="text-xs text-indigo-500 mt-1 font-bold">{filtered.length} transacciones</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
+                      );
                   })()}
                   <div className="pt-6" id="totalesCorte">
                     ${printBtnCode}
@@ -2882,19 +2926,19 @@ export default function Contraloria() {
               <button onClick={() => setShowPagoAdminModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button>
             </div>
             <form onSubmit={handleGuardarPagoManual} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Ingreso</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'administrativo', concepto: ''})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'administrativo' ? 'bg-primary-50 border-primary-500 text-primary-700 ring-1 ring-primary-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
-                    <FileText className="w-5 h-5" /> Trámites Generales
-                  </button>
-                  <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'extraordinario', concepto: 'Examen Extraordinario de '})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'extraordinario' ? 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
-                    <AlertTriangle className="w-5 h-5" /> Examen Extraordinario
-                  </button>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Ingreso</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'administrativo', detalles: [{concepto: '', monto: ''}]})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'administrativo' ? 'bg-primary-50 border-primary-500 text-primary-700 ring-1 ring-primary-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
+                      <FileText className="w-5 h-5" /> Tr\u00E1mites Generales
+                    </button>
+                    <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'extraordinario', detalles: [{concepto: 'Examen Extraordinario de ', monto: ''}]})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'extraordinario' ? 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
+                      <AlertTriangle className="w-5 h-5" /> Examen Extraordinario
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="relative">
+  
+                <div className="relative">
                   <label className="block text-sm font-bold text-slate-700 mb-1">Nombre del Alumno</label>
                   <input 
                     type="text" 
@@ -2941,44 +2985,88 @@ export default function Contraloria() {
                   )}
                 </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Concepto de Pago</label>
-                {pagoFormData.tipo === 'administrativo' ? (
-                  <select required value={pagoFormData.concepto} onChange={e => setPagoFormData({...pagoFormData, concepto: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    <option value="">Selecciona un concepto...</option>
-                    <option value="Constancia de Estudios">Constancia de Estudios</option>
-                    <option value="Reposición de Credencial">Reposición de Credencial</option>
-                    <option value="Paquete Escolar">Paquete Escolar</option>
-                    <option value="Donación / Aportación">Donación / Aportación Voluntaria</option>
-                    <option value="Otro">Otro (Especificar en notas)</option>
-                  </select>
-                ) : (
-                  <input type="text" required value={pagoFormData.concepto} onChange={e => setPagoFormData({...pagoFormData, concepto: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500" placeholder="Ej. Examen Extraordinario de Matemáticas" />
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Monto Cobrado ($)</label>
-                  <input type="number" step="0.01" required value={pagoFormData.monto} onChange={e => setPagoFormData({...pagoFormData, monto: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 font-bold text-emerald-600" placeholder="0.00" />
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block text-sm font-bold text-slate-700">Conceptos a Cobrar</label>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {pagoFormData.detalles.map((detalle, index) => (
+                      <div key={index} className="flex gap-2 items-start">
+                        <div className="flex-1">
+                          {pagoFormData.tipo === 'administrativo' ? (
+                            <select required value={detalle.concepto} onChange={e => {
+                                const newDetalles = [...pagoFormData.detalles];
+                                newDetalles[index].concepto = e.target.value;
+                                setPagoFormData({...pagoFormData, detalles: newDetalles});
+                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm">
+                              <option value="">Selecciona un concepto...</option>
+                              <option value="Constancia de Estudios">Constancia de Estudios</option>
+                              <option value="Reposici\u00F3n de Credencial">Reposici\u00F3n de Credencial</option>
+                              <option value="Paquete Escolar">Paquete Escolar</option>
+                              <option value="Donaci\u00F3n / Aportaci\u00F3n">Donaci\u00F3n / Aportaci\u00F3n Voluntaria</option>
+                              <option value="Otro">Otro (Especificar en notas)</option>
+                            </select>
+                          ) : (
+                            <input type="text" required value={detalle.concepto} onChange={e => {
+                                const newDetalles = [...pagoFormData.detalles];
+                                newDetalles[index].concepto = e.target.value;
+                                setPagoFormData({...pagoFormData, detalles: newDetalles});
+                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm" placeholder="Ej. Examen Extraordinario de Matem\u00E1ticas" />
+                          )}
+                        </div>
+                        <div className="w-28 relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
+                          <input type="number" step="0.01" required value={detalle.monto} onChange={e => {
+                              const newDetalles = [...pagoFormData.detalles];
+                              newDetalles[index].monto = e.target.value;
+                              setPagoFormData({...pagoFormData, detalles: newDetalles});
+                          }} className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 font-bold text-emerald-600 text-sm" placeholder="0.00" />
+                        </div>
+                        {pagoFormData.detalles.length > 1 && (
+                          <button type="button" onClick={() => {
+                              const newDetalles = pagoFormData.detalles.filter((_, i) => i !== index);
+                              setPagoFormData({...pagoFormData, detalles: newDetalles});
+                          }} className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors mt-0.5" title="Eliminar">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <button type="button" onClick={() => {
+                      setPagoFormData({...pagoFormData, detalles: [...pagoFormData.detalles, {concepto: pagoFormData.tipo === 'extraordinario' ? 'Examen Extraordinario de ' : '', monto: ''}]});
+                  }} className="mt-3 text-sm font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                    <Plus className="w-4 h-4" /> Agregar otro concepto
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Método de Pago</label>
-                  <select value={pagoFormData.metodo} onChange={e => setPagoFormData({...pagoFormData, metodo: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Transferencia">Transferencia</option>
-                    <option value="Depósito">Depósito Bancario</option>
-                  </select>
+  
+                <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 mt-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Monto Total</label>
+                    <div className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-emerald-50 text-emerald-700 font-black text-lg flex items-center">
+                      <span className="mr-1">$</span>
+                      {pagoFormData.detalles.reduce((s, d) => s + (parseFloat(d.monto) || 0), 0).toFixed(2)}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">M\u01F8todo de Pago</label>
+                    <select value={pagoFormData.metodo} onChange={e => setPagoFormData({...pagoFormData, metodo: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                      <option value="Dep\u00F3sito">Dep\u00F3sito Bancario</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
 
-              <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowPagoAdminModal(false)} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg">Cancelar</button>
-                <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 shadow-sm flex items-center">
-                  <CheckCircle2 className="w-5 h-5 mr-2" /> {isSubmitting ? 'Guardando...' : 'Registrar Cobro'}
-                </button>
-              </div>
-            </form>
+                <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-4">
+                  <button type="button" onClick={() => setShowPagoAdminModal(false)} className="px-5 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg">Cancelar</button>
+                  <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 shadow-sm flex items-center">
+                    <CheckCircle2 className="w-5 h-5 mr-2" /> {isSubmitting ? 'Guardando...' : 'Registrar Cobro'}
+                  </button>
+                </div>
+</form>
           </div>
         </div>
       )}
@@ -3037,14 +3125,35 @@ export default function Contraloria() {
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-6">
-                    <div className="col-span-2">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Por concepto de:</span>
-                      <div className="text-sm font-bold text-slate-800 bg-slate-50/50 px-4 py-3 border-b-2 border-slate-200 min-h-[80px]">
-                        {(receiptPago.concepto || '').split(' + ').map((c, i) => (
-                          <div key={i} className="mb-1.5 last:mb-0 flex items-start before:content-['�'] before:mr-2 before:text-primary-500">{c}</div>
-                        ))}
+                    <div className="col-span-3">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Por concepto de:</span>
+                        <div className="text-sm text-slate-800 bg-slate-50/50 border-b-2 border-slate-200 min-h-[80px]">
+                          {receiptPago.detalles && receiptPago.detalles.length > 0 ? (
+                            <table className="w-full text-left">
+                              <thead>
+                                <tr className="border-b border-slate-200 text-xs text-slate-500">
+                                  <th className="py-2 px-4 font-bold">Concepto</th>
+                                  <th className="py-2 px-4 font-bold text-right w-32">Importe</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {receiptPago.detalles.map((d, i) => (
+                                  <tr key={i} className="border-b border-slate-100 last:border-0">
+                                    <td className="py-2 px-4 font-bold">{d.concepto}</td>
+                                    <td className="py-2 px-4 font-bold text-right font-mono text-slate-600">$\u00A0{parseFloat(d.monto).toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <div className="px-4 py-3 font-bold">
+                               {(receiptPago.concepto || '').split(' + ').map((c, i) => (
+                                 <div key={i} className="mb-1.5 last:mb-0 flex items-start before:content-['\\u2022'] before:mr-2 before:text-primary-500">{c}</div>
+                               ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
                     <div>
                       <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Forma de Pago:</span>
                       <div className="text-sm font-bold text-slate-800 bg-slate-50/50 px-4 py-3 border-b-2 border-slate-200 min-h-[80px] flex items-center justify-center text-center uppercase tracking-wide">
