@@ -4,6 +4,8 @@ import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit
 
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
+import { useAuth } from '../../context/AuthContext';
+import CajaLockScreen from '../../components/CajaLockScreen';
 import { db } from '../../firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import ActaRecepcionPrint from '../../components/ActaRecepcionPrint';
@@ -121,6 +123,38 @@ const getIconForArticulo = (nombre) => {
 };
 
 export default function Contraloria() {
+
+  const { currentUser } = useAuth();
+  const [cajaTurno, setCajaTurno] = useState(null); // { id, turno, fondoInicial }
+  
+  
+  useEffect(() => {
+    // Escuchar si ya hay una caja abierta para este usuario
+    const q = query(collection(db, 'cajas'), where('estado', '==', 'abierta'));
+    const unsub = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+           // Asumimos que solo hay una caja abierta a la vez
+           const doc = snapshot.docs[0];
+           setCajaTurno({ id: doc.id, ...doc.data() });
+        } else {
+           setCajaTurno(null);
+        }
+    });
+    return () => unsub();
+  }, []);
+  
+  // Escuchar gastos (egresos) de la caja actual
+  useEffect(() => {
+    if (!cajaTurno) return;
+    const q = query(collection(db, 'gastos'), where('cajaId', '==', cajaTurno.id));
+    const unsub = onSnapshot(q, (snapshot) => {
+        const items = [];
+        snapshot.forEach(d => items.push({ id: d.id, ...d.data() }));
+        setGastos(items);
+    });
+    return () => unsub();
+  }, [cajaTurno]);
+
   const [activeTab, setActiveTab] = useState('pagos');
 
   // Nuevos estados para Ingresos Avanzados
@@ -403,6 +437,7 @@ export default function Contraloria() {
           detalles: conceptosFiltrados.map(d => ({ concepto: d.concepto, monto: parseFloat(d.monto) })),
           metodo: pagoFormData.metodo,
           createdAt: serverTimestamp(),
+          cajaId: cajaTurno?.id || 'sin-caja',
           estado: 'Pagado',
           fecha: new Date().toISOString().split('T')[0]
         });
@@ -1473,7 +1508,9 @@ export default function Contraloria() {
   };
 
   const handleDeleteResguardoClick = async (res) => {
-    const confirmacion = window.confirm(`¿Estás seguro de eliminar el resguardo con Folio ${res.folio || 'S/F'} de ${res.nombreResguardante}?\n\nEsta acción no se puede deshacer.`);
+    const confirmacion = window.confirm(`¿Estás seguro de eliminar el resguardo con Folio ${res.folio || 'S/F'} de ${res.nombreResguardante}?
+
+Esta acción no se puede deshacer.`);
     if (!confirmacion) return;
 
     const eliminarArticulos = window.confirm("¿Deseas ELIMINAR PERMANENTEMENTE los artículos de este resguardo del Inventario General de la escuela?\n\n(Aceptar = Borrar mobiliario del sistema, Cancelar = Mantenerlos en el sistema)");
@@ -1615,6 +1652,10 @@ export default function Contraloria() {
   return (
     <>
     <div className={`space-y-6 ${printMode ? "hidden" : ""} print:${receiptPago ? "hidden" : "block"}`}>
+      {(!cajaTurno && (activeTab === 'pagos' || activeTab === 'gastos' || activeTab === 'corte')) ? (
+         <CajaLockScreen userEmail={currentUser?.email} onCajaAbierta={(id, turno, fondo) => setCajaTurno({id, turno, fondoInicial: fondo})} />
+      ) : (
+        <>
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Contraloría</h2>
@@ -1714,54 +1755,23 @@ export default function Contraloria() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {(activeIngresoTab === 'generales' ? filteredPagosGenerales : filteredPagosExtra).map((p, idx) => {
-                   const isExtra = activeIngresoTab === 'extraordinarios';
-                   const isManual = p.tipoIngreso === 'manual';
-                   const badgeColor = isExtra ? 'bg-rose-100 text-rose-700 border-rose-200' : isManual ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200';
-                   const badgeText = isExtra ? 'Extraordinario' : isManual ? 'Manual / Libre' : 'Inscripción';
-                   return (
-                  <tr key={p.id || idx} className="hover:bg-slate-50">
-                    <td className="px-6 py-4 text-sm font-medium text-slate-900 font-mono">{p.folio}</td>
+                {gastos.length === 0 ? (
+                  <tr><td colSpan="6" className="text-center py-8 text-slate-500">No hay egresos registrados en este turno.</td></tr>
+                ) : gastos.map(g => (
+                  <tr key={g.id} className="hover:bg-slate-50">
+                    <td className="px-6 py-4 text-sm font-mono text-slate-600">{g.id.substring(0, 8).toUpperCase()}</td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-slate-800">{p.alumno}</div>
-                      <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}`}>{badgeText}</span>
+                      <div className="text-sm font-bold text-slate-800">{g.concepto}</div>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800 mt-1">
+                        {g.categoria}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-medium">{p.concepto}</td>
-                    <td className="px-6 py-4 text-sm font-bold text-emerald-600">{p.monto}</td>
-                    <td className="px-6 py-4 text-sm">
-                      {p.tipoIngreso === 'manual' || p.estado === 'Pagado' ? (
-                        <span className="text-emerald-600 flex items-center font-bold bg-emerald-50 w-max px-2 py-1 rounded-md">
-                          <CheckCircle2 className="w-4 h-4 mr-1" /> 
-                          {p.tipoIngreso === 'manual' ? 'Pagado: ' + new Date(p.pagoFecha || Date.now()).toLocaleDateString() : 'Pagado el ' + p.fecha}
-                        </span>
-                      ) : (
-                        <button 
-                          onClick={() => registrarCobro(p.id)}
-                          className="px-3 py-1 bg-primary-600 text-white rounded-md text-xs font-bold hover:bg-primary-700 shadow-sm"
-                        >
-                          Registrar Cobro
-                        </button>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-right space-x-2">
-                      <button onClick={() => setReceiptPago(p)} className="text-slate-400 hover:text-primary-600 transition-colors p-1" title="Imprimir Recibo"><Printer className="w-4 h-4" /></button>
-                       <button onClick={async () => {
-                         if(window.confirm('¿Estás seguro de eliminar este pago? Esta acción no se puede deshacer.')) {
-                           try {
-                             const colName = p.sysTipo === 'Extra' ? 'pagos_extraordinarios' : 'pagos_administrativos';
-                             await deleteDoc(doc(db, colName, p.id));
-                             toast.success('Pago eliminado exitosamente');
-                           } catch (error) {
-                             toast.error('Error al eliminar el pago');
-                           }
-                         }
-                       }} className="text-slate-400 hover:text-rose-600 transition-colors p-1" title="Eliminar Pago"><Trash2 className="w-4 h-4" /></button>
-                    </td>
+                    <td className="px-6 py-4 text-sm font-black text-rose-600 font-mono">-$ {parseFloat(g.monto).toFixed(2)}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{g.registradoPor}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-slate-700">{cajaTurno?.turno || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{new Date(g.fecha).toLocaleDateString()}</td>
                   </tr>
-                )})}
-                {(activeIngresoTab === 'generales' ? filteredPagosGenerales : filteredPagosExtra).length === 0 && (
-                  <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">No se encontraron pagos con los filtros seleccionados.</td></tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
@@ -2350,6 +2360,8 @@ export default function Contraloria() {
             </table>
           </div>
         </div>
+      )}
+    </>
       )}
     </div>
 
