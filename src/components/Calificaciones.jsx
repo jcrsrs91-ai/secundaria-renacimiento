@@ -110,7 +110,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       return row;
     });
 
-    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: ";" });
+    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
