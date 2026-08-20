@@ -190,7 +190,8 @@ export default function ControlEscolar() {
     const matchesGroup = groupFilter === 'Todos' || a.grupo === groupFilter;
     const matchesShift = shiftFilter === 'Todos' || a.turno === shiftFilter;
     const matchesStatus = (statusFilter === 'Todos' && a.status !== 'Egresado') || a.status === statusFilter;
-    const matchesCycle = cycleFilter === 'Todos' || a.cicloEscolar === cycleFilter;
+    const activeCycle = config?.cicloEscolarActual || '2026-2027';
+    const matchesCycle = cycleFilter === 'Todos' || a.cicloEscolar === cycleFilter || (!a.cicloEscolar && cycleFilter === activeCycle) || (a.status === 'Activo' && cycleFilter === activeCycle);
     return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus && matchesCycle;
   }).sort((a, b) => {
     const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
