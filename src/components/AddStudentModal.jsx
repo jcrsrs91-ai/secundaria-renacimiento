@@ -24,6 +24,7 @@ export default function AddStudentModal({ onClose }) {
     promedioEscuela: '',
     status: 'Activo',
     tipoIngreso: 'Nuevo Ingreso',
+    tieneBeca: false,
     
     // Datos Médicos
     tipoSangre: '',
@@ -209,9 +210,16 @@ export default function AddStudentModal({ onClose }) {
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Escuela de Procedencia</label>
                   <input type="text" name="escuelaProcedencia" value={formData.escuelaProcedencia} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
                 </div>
-                <div className="md:col-span-2">
+                <div className="md:col-span-1">
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Promedio Primaria</label>
                   <input type="number" step="0.1" name="promedioEscuela" value={formData.promedioEscuela} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">¿Cuenta con Beca?</label>
+                  <select name="tieneBeca" value={formData.tieneBeca} onChange={e => setFormData({...formData, tieneBeca: e.target.value === 'true'})} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+                    <option value="false">NO</option>
+                    <option value="true">SÍ</option>
+                  </select>
                 </div>
               </div>
             </section>
