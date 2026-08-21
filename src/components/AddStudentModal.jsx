@@ -221,6 +221,12 @@ export default function AddStudentModal({ onClose }) {
                     <option value="true">SÍ</option>
                   </select>
                 </div>
+                {formData.tieneBeca && (
+                  <div className="md:col-span-4">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Nombre de la Beca</label>
+                    <input type="text" name="nombreBeca" value={formData.nombreBeca || ''} onChange={handleChange} placeholder="Ej. Beca Benito Juárez" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                  </div>
+                )}
               </div>
             </section>
 

@@ -96,7 +96,7 @@ export default function HojaInscripcionPrint({ data }) {
             <div className="col-span-2"><span className="font-bold text-gray-600">Escuela de Procedencia:</span> <br/><span className="font-semibold uppercase text-xs">{data.escuelaProcedencia || '-'}</span></div>
             <div className="col-span-2"><span className="font-bold text-gray-600">Domicilio de la Escuela:</span> <br/><span className="font-semibold uppercase text-xs">{data.domicilioEscuela || '-'}</span></div>
             <div className="col-span-1"><span className="font-bold text-gray-600">Promedio Obtenido:</span> <br/><span className="font-semibold uppercase text-xs">{data.promedioEscuela || '-'}</span></div>
-            <div className="col-span-1"><span className="font-bold text-gray-600">¿Cuenta con Beca?:</span> <br/><span className="font-semibold uppercase text-xs">{data.tieneBeca || data.beca ? 'SÍ' : 'NO'}</span></div>
+            <div className="col-span-1"><span className="font-bold text-gray-600">¿Beca?:</span> <br/><span className="font-semibold uppercase text-xs">{(data.tieneBeca === 'SÍ' || data.tieneBeca === true || data.beca) ? (data.nombreBeca || 'SÍ') : 'NO'}</span></div>
           </div>
         </div>
 
