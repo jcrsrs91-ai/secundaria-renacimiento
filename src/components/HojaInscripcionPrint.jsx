@@ -29,7 +29,7 @@ export default function HojaInscripcionPrint({ data }) {
 
       <div className="print-wrapper">
       {/* Contenedor principal de la hoja */}
-      <div className="print-container bg-white text-black mx-auto p-4 shadow-2xl print:shadow-none print:p-0 flex flex-col" style={{ maxWidth: '21.59cm', minHeight: '27.94cm', boxSizing: 'border-box' }}>
+      <div className="print-container bg-white text-black mx-auto p-4 shadow-2xl print:shadow-none print:p-0 flex flex-col" style={{ maxWidth: '21.59cm', minHeight: '26cm', boxSizing: 'border-box' }}>
         
         {/* Cabecera Oficial */}
         <div className="flex justify-between items-center border-b-2 border-black pb-2 mb-2">
@@ -152,7 +152,7 @@ export default function HojaInscripcionPrint({ data }) {
         {/* Footer Flexible que empuja el contenido hacia abajo */}
         <div className="mt-auto">
           {/* Firmas */}
-          <div className="mt-8 grid grid-cols-3 gap-6 text-center text-xs px-6">
+          <div className="mt-4 grid grid-cols-3 gap-6 text-center text-xs px-6">
             <div>
               <div className="border-t-2 border-black pt-1 w-full mx-auto font-bold uppercase truncate">
                 {data.tutor || data.tutorNombre || 'Firma del Tutor'}
@@ -194,7 +194,7 @@ export default function HojaInscripcionPrint({ data }) {
           }
           .print-container {
             width: 100%;
-            height: 27.94cm;
+            height: auto;
             margin: 0;
             padding: 0;
             box-shadow: none;
