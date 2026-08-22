@@ -45,6 +45,7 @@ export default function ControlEscolar() {
 
   const [pendientes, setPendientes] = useState([]);
   const [tramitesPagados, setTramitesPagados] = useState([]);
+  const [searchAspirantes, setSearchAspirantes] = useState("");
   const [activos, setActivos] = useState([]);
   const [directorio, setDirectorio] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -132,6 +133,12 @@ export default function ControlEscolar() {
 
   useEffect(() => {
     const qAll = query(collection(db, "students"));
+    
+    const qTramites = query(collection(db, "tramites_pendientes"));
+    const unsubTramites = onSnapshot(qTramites, snap => {
+      setTramitesPagados(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
     const unsubAll = onSnapshot(qAll, (snapshot) => {
       const allData = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -490,8 +497,7 @@ export default function ControlEscolar() {
       const studentRef = doc(db, "students", student.id);
       await updateDoc(studentRef, {
         status: "Activo",
-        grupo: "Por asignar",
-        taller: "Por asignar"
+        // grupo y taller preservados
       });
       alert(`Alumno aceptado y movido al Directorio Activo.`);
     } catch (error) {
@@ -730,6 +736,11 @@ export default function ControlEscolar() {
     document.body.removeChild(link);
   };
 
+  const removeAccents = (str) => {
+    return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+  };
+  const filteredPendientes = pendientes.filter(p => removeAccents(`${p.nombres} ${p.apellidoPaterno} ${p.apellidoMaterno} ${p.curp}`).toLowerCase().includes(removeAccents(searchAspirantes).toLowerCase()));
+
   return (
     <div className="h-full flex flex-col relative print:bg-white">
       {/* Precarga de imágenes para la impresión */}
@@ -886,22 +897,26 @@ export default function ControlEscolar() {
       )}
 
       {/* Tabla Pendientes */}
-      {!loading && activeTab === 'pendientes' && (
-        <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
+        {!loading && activeTab === 'pendientes' && (
+          <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-x-auto">
+            <div className="p-4 border-b border-slate-200 bg-slate-50 flex">
+              <input type="text" placeholder="Buscar aspirante por nombre o CURP..." value={searchAspirantes} onChange={(e) => setSearchAspirantes(e.target.value)} className="w-full max-w-md px-4 py-2 border border-slate-300 rounded-md focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
+            </div>
+            <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Trámite</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Alumno</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Grado / Escuela Anterior</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Fecha Solicitud</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {pendientes.length === 0 ? (
-                <tr><td colSpan="4" className="px-6 py-8 text-center text-slate-500">No hay solicitudes pendientes.</td></tr>
+              {filteredPendientes.length === 0 ? (
+                <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">No hay solicitudes pendientes.</td></tr>
               ) : (
-                pendientes.map(p => (
+                filteredPendientes.map(p => (
                   <tr key={p.id}>
                     <td className="px-6 py-4 text-sm font-medium text-slate-900">
                       <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">{p.tipoTramite || 'Nuevo Ingreso'}</span>
@@ -916,9 +931,15 @@ export default function ControlEscolar() {
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600">
                       {p.grado} <br/> <span className="text-xs text-slate-400">{p.escuelaProcedencia}</span>
-                    </td>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-500 font-medium">
+                        {p.fechaRegistro ? (p.fechaRegistro?.toDate ? p.fechaRegistro.toDate().toLocaleDateString('es-MX') : new Date(p.fechaRegistro).toLocaleDateString('es-MX')) : 'N/A'}
+                      </td>
                     <td className="px-6 py-4 text-right space-x-2">
-                      <button onClick={() => aceptarAspirante(p)} className="text-emerald-600 font-medium text-sm hover:bg-emerald-50 px-3 py-1 rounded border border-emerald-200 transition-colors">
+                        <button onClick={() => openModal('hoja', p)} className="text-blue-600 font-medium text-sm hover:bg-blue-50 px-3 py-1 rounded border border-blue-200 transition-colors mr-2">
+                          Revisar Expediente
+                        </button>
+                        <button onClick={() => aceptarAspirante(p)} className="text-emerald-600 font-medium text-sm hover:bg-emerald-50 px-3 py-1 rounded border border-emerald-200 transition-colors">
                         Aceptar Aspirante
                       </button>
                       <button onClick={() => handleDeleteStudent(p)} className="text-red-500 font-medium text-sm hover:bg-red-50 px-3 py-1 rounded border border-red-200 transition-colors">

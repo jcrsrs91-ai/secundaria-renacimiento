@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+﻿import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useState, useEffect, useMemo } from 'react';
 import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu, Wallet, AlertTriangle, TrendingUp, TrendingDown, BarChart as BarChartIcon, FileSpreadsheet, PieChart as PieChartIcon } from 'lucide-react';
 
@@ -19,7 +19,7 @@ const generateCodeRange = (baseCode, quantity) => {
   const qty = Number(quantity) || 1;
   if (qty <= 1) return { codes: [baseCode], display: baseCode };
 
-  // Intentar encontrar un número al final del código (ej. "INV-001", "INV-100", "B-5" o "002")
+  // Intentar encontrar un n├║mero al final del c├│digo (ej. "INV-001", "INV-100", "B-5" o "002")
   const match = baseCode.match(/^(.*?)(\d+)$/);
   if (match) {
     const prefix = match[1];
@@ -39,7 +39,7 @@ const generateCodeRange = (baseCode, quantity) => {
       display: `${baseCode} al ${endCode}`
     };
   } else {
-    // Si no termina en número, agregar sufijo consecutivo -1, -2, etc.
+    // Si no termina en n├║mero, agregar sufijo consecutivo -1, -2, etc.
     const codes = [];
     for (let i = 1; i <= qty; i++) {
       codes.push(`${baseCode}-${i}`);
@@ -83,18 +83,18 @@ const getCategoryForArticulo = (nombre) => {
   if (n.includes('compu') || n.includes('pc') || n.includes('cpu') || n.includes('laptop') || n.includes('portatil')) return 'Computadoras';
   if (n.includes('monitor') || n.includes('pantalla')) return 'Monitores y Pantallas';
   if (n.includes('impresora') || n.includes('printer')) return 'Impresoras';
-  if (n.includes('proyector') || n.includes('cañon') || n.includes('canon')) return 'Proyectores';
-  if (n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sillón') || n.includes('sillon')) return 'Sillería';
-  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tablón') || n.includes('pupitre')) return 'Mesas y Escritorios';
+  if (n.includes('proyector') || n.includes('ca├▒on') || n.includes('canon')) return 'Proyectores';
+  if (n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sill├│n') || n.includes('sillon')) return 'Siller├¡a';
+  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tabl├│n') || n.includes('pupitre')) return 'Mesas y Escritorios';
   if (n.includes('libro') || n.includes('diccionario') || n.includes('enciclopedia')) return 'Libros';
-  if (n.includes('tv') || n.includes('televisión') || n.includes('televisor')) return 'Televisores';
+  if (n.includes('tv') || n.includes('televisi├│n') || n.includes('televisor')) return 'Televisores';
   if (n.includes('bocina') || n.includes('altavoz') || n.includes('sonido') || n.includes('audio') || n.includes('microfono')) return 'Equipo de Audio';
-  if (n.includes('teclado') || n.includes('mouse') || n.includes('raton')) return 'Periféricos';
+  if (n.includes('teclado') || n.includes('mouse') || n.includes('raton')) return 'Perif├®ricos';
   if (n.includes('servidor') || n.includes('switch') || n.includes('router') || n.includes('red')) return 'Equipo de Red';
-  if (n.includes('telefono') || n.includes('celular') || n.includes('smartphone')) return 'Telefonía';
+  if (n.includes('telefono') || n.includes('celular') || n.includes('smartphone')) return 'Telefon├¡a';
   if (n.includes('tablet') || n.includes('ipad')) return 'Tablets';
   if (n.includes('archivero') || n.includes('gaveta') || n.includes('estante') || n.includes('librero') || n.includes('locker') || n.includes('casillero')) return 'Archiveros y Estantes';
-  if (n.includes('pizarrón') || n.includes('pintarrón') || n.includes('pizarron') || n.includes('pintarron')) return 'Pizarrones';
+  if (n.includes('pizarr├│n') || n.includes('pintarr├│n') || n.includes('pizarron') || n.includes('pintarron')) return 'Pizarrones';
   if (n.includes('ventilador') || n.includes('abanico')) return 'Ventiladores';
   if (n.includes('aire') || n.includes('minisplit') || n.includes('clima')) return 'Aires Acondicionados';
   
@@ -106,23 +106,23 @@ const getIconForArticulo = (nombre) => {
   if (n.includes('compu') || n.includes('pc') || n.includes('cpu') || n.includes('laptop') || n.includes('portatil')) return <Cpu className="w-5 h-5" />;
   if (n.includes('monitor') || n.includes('pantalla')) return <Monitor className="w-5 h-5" />;
   if (n.includes('impresora') || n.includes('printer')) return <Printer className="w-5 h-5" />;
-  if (n.includes('proyector') || n.includes('cañon') || n.includes('canon')) return <Projector className="w-5 h-5" />;
-  if (n.includes('sillería') || n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sillón')) return <Armchair className="w-5 h-5" />;
-  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tablón') || n.includes('pupitre')) return <Box className="w-5 h-5" />;
+  if (n.includes('proyector') || n.includes('ca├▒on') || n.includes('canon')) return <Projector className="w-5 h-5" />;
+  if (n.includes('siller├¡a') || n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sill├│n')) return <Armchair className="w-5 h-5" />;
+  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tabl├│n') || n.includes('pupitre')) return <Box className="w-5 h-5" />;
   if (n.includes('libro') || n.includes('diccionario') || n.includes('enciclopedia')) return <BookOpen className="w-5 h-5" />;
-  if (n.includes('tv') || n.includes('televisión') || n.includes('televisor')) return <Tv className="w-5 h-5" />;
+  if (n.includes('tv') || n.includes('televisi├│n') || n.includes('televisor')) return <Tv className="w-5 h-5" />;
   if (n.includes('audio') || n.includes('bocina') || n.includes('altavoz') || n.includes('sonido') || n.includes('microfono')) return <Speaker className="w-5 h-5" />;
-  if (n.includes('periféricos') || n.includes('teclado') || n.includes('mouse') || n.includes('raton')) return <Keyboard className="w-5 h-5" />;
+  if (n.includes('perif├®ricos') || n.includes('teclado') || n.includes('mouse') || n.includes('raton')) return <Keyboard className="w-5 h-5" />;
   if (n.includes('red') || n.includes('servidor') || n.includes('switch') || n.includes('router')) return <Server className="w-5 h-5" />;
-  if (n.includes('telefonía') || n.includes('telefono') || n.includes('celular') || n.includes('smartphone')) return <Smartphone className="w-5 h-5" />;
+  if (n.includes('telefon├¡a') || n.includes('telefono') || n.includes('celular') || n.includes('smartphone')) return <Smartphone className="w-5 h-5" />;
   if (n.includes('tablet') || n.includes('ipad')) return <Tablet className="w-5 h-5" />;
   if (n.includes('archivero') || n.includes('gaveta') || n.includes('estante') || n.includes('librero')) return <Archive className="w-5 h-5" />;
-  if (n.includes('pizarrón') || n.includes('pintarrón') || n.includes('pizarron')) return <PenTool className="w-5 h-5" />;
+  if (n.includes('pizarr├│n') || n.includes('pintarr├│n') || n.includes('pizarron')) return <PenTool className="w-5 h-5" />;
   
   return <Box className="w-5 h-5" />;
 };
 
-export default function Contraloria() {
+export default function Inventario() {
 
   const { currentUser } = useAuth();
   const [cajaTurno, setCajaTurno] = useState(null); // { id, turno, fondoInicial }
@@ -146,7 +146,7 @@ export default function Contraloria() {
   // Escuchar gastos (egresos) de la caja actual
   useEffect(() => {
     if (!cajaTurno) return;
-    const q = query(collection(db, 'gastos'), where('cajaId', '==', cajaTurno?.id));
+    const q = query(collection(db, 'gastos'), where('cajaId', '==', cajaTurno.id));
     const unsub = onSnapshot(q, (snapshot) => {
         const items = [];
         snapshot.forEach(d => items.push({ id: d.id, ...d.data() }));
@@ -155,7 +155,7 @@ export default function Contraloria() {
     return () => unsub();
   }, [cajaTurno]);
 
-  const [activeTab, setActiveTab] = useState('pagos');
+  const [activeTab, setActiveTab] = useState('inventario');
 
   // Nuevos estados para Ingresos Avanzados
   const [corteConfig, setCorteConfig] = useState({ fechaInicio: new Date().toISOString().split('T')[0], fechaFin: new Date().toISOString().split('T')[0], turno: 'Ambos' });
@@ -174,45 +174,45 @@ export default function Contraloria() {
   
   const materiasPorGrado = {
     '1er Grado': [
-      { id: 'espanol1', name: 'Español I' },
-      { id: 'ingles1', name: 'Inglés I' },
+      { id: 'espanol1', name: 'Espa├▒ol I' },
+      { id: 'ingles1', name: 'Ingl├®s I' },
       { id: 'artes1', name: 'Artes I' },
-      { id: 'matematicas1', name: 'Matemáticas I' },
-      { id: 'biologia', name: 'Ciencias I (Biología)' },
-      { id: 'geografia', name: 'Geografía' },
+      { id: 'matematicas1', name: 'Matem├íticas I' },
+      { id: 'biologia', name: 'Ciencias I (Biolog├¡a)' },
+      { id: 'geografia', name: 'Geograf├¡a' },
       { id: 'historia1', name: 'Historia I' },
-      { id: 'fce1', name: 'Formación Cívica y Ética I' },
-      { id: 'tecnologia1', name: 'Tecnología I' },
-      { id: 'educfisica1', name: 'Educación Física I' }
+      { id: 'fce1', name: 'Formaci├│n C├¡vica y ├ëtica I' },
+      { id: 'tecnologia1', name: 'Tecnolog├¡a I' },
+      { id: 'educfisica1', name: 'Educaci├│n F├¡sica I' }
     ],
     '2do Grado': [
-      { id: 'espanol2', name: 'Español II' },
-      { id: 'ingles2', name: 'Inglés II' },
+      { id: 'espanol2', name: 'Espa├▒ol II' },
+      { id: 'ingles2', name: 'Ingl├®s II' },
       { id: 'artes2', name: 'Artes II' },
-      { id: 'matematicas2', name: 'Matemáticas II' },
-      { id: 'fisica', name: 'Ciencias II (Física)' },
+      { id: 'matematicas2', name: 'Matem├íticas II' },
+      { id: 'fisica', name: 'Ciencias II (F├¡sica)' },
       { id: 'historia2', name: 'Historia II' },
-      { id: 'fce2', name: 'Formación Cívica y Ética II' },
-      { id: 'tecnologia2', name: 'Tecnología II' },
-      { id: 'educfisica2', name: 'Educación Física II' }
+      { id: 'fce2', name: 'Formaci├│n C├¡vica y ├ëtica II' },
+      { id: 'tecnologia2', name: 'Tecnolog├¡a II' },
+      { id: 'educfisica2', name: 'Educaci├│n F├¡sica II' }
     ],
     '3er Grado': [
-      { id: 'espanol3', name: 'Español III' },
-      { id: 'ingles3', name: 'Inglés III' },
+      { id: 'espanol3', name: 'Espa├▒ol III' },
+      { id: 'ingles3', name: 'Ingl├®s III' },
       { id: 'artes3', name: 'Artes III' },
-      { id: 'matematicas3', name: 'Matemáticas III' },
-      { id: 'quimica', name: 'Ciencias III (Química)' },
+      { id: 'matematicas3', name: 'Matem├íticas III' },
+      { id: 'quimica', name: 'Ciencias III (Qu├¡mica)' },
       { id: 'historia3', name: 'Historia III' },
-      { id: 'fce3', name: 'Formación Cívica y Ética III' },
-      { id: 'tecnologia3', name: 'Tecnología III' },
-      { id: 'educfisica3', name: 'Educación Física III' }
+      { id: 'fce3', name: 'Formaci├│n C├¡vica y ├ëtica III' },
+      { id: 'tecnologia3', name: 'Tecnolog├¡a III' },
+      { id: 'educfisica3', name: 'Educaci├│n F├¡sica III' }
     ]
   };
 
   const getFailedSubjects = (student) => {
     if (!student) return [];
     
-    // Si es irregular o egresado irregular, su grado real para materias podría ser el anterior
+    // Si es irregular o egresado irregular, su grado real para materias podr├¡a ser el anterior
     // Pero en ControlEscolar asumen student.grado. Limpiaremos "(Irregular)" si lo tiene
     let gradeKey = student.grado;
     if (gradeKey?.includes('1er Grado')) gradeKey = '1er Grado';
@@ -286,7 +286,7 @@ export default function Contraloria() {
         const esNuevo = data.grado === '1er Grado' || data.grado === '1ero' || data.tipoTramite === 'Nuevo Ingreso';
         const grado = data.grado || 'N/A';
         const grupo = data.grupo || 'N/A';
-        const concepto = esNuevo ? 'Credencial Escolar y Paquete de Folders' : 'Renovación de Credencial Escolar';
+        const concepto = esNuevo ? 'Credencial Escolar y Paquete de Folders' : 'Renovaci├│n de Credencial Escolar';
         const montoNum = esNuevo ? 130 : 100;
         const monto = `$${montoNum}.00`;
         
@@ -322,7 +322,7 @@ export default function Contraloria() {
         pagoInscripcion: true, 
         pagoFecha: serverTimestamp() 
       });
-      toast.success("Pago de inscripción registrado exitosamente");
+      toast.success("Pago de inscripci├│n registrado exitosamente");
     } catch (e) {
       console.error(e);
       toast.error("Error al registrar el pago");
@@ -334,7 +334,7 @@ export default function Contraloria() {
   const [selectedItems, setSelectedItems] = useState([]); // Array de IDs seleccionados
   const [showScannerModal, setShowScannerModal] = useState(false);
 
-  // Estados para búsqueda y filtrado de inventario
+  // Estados para b├║squeda y filtrado de inventario
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [locationFilter, setLocationFilter] = useState('Todos');
@@ -359,7 +359,7 @@ export default function Contraloria() {
     return () => { unsubAdmin(); unsubExtra(); };
   }, []);
 
-  // Lógica de Filtros y Combinación de Ingresos
+  // L├│gica de Filtros y Combinaci├│n de Ingresos
   const todosLosPagosGenerales = [
     ...pagosRecientes.map(p => ({ ...p, tipoIngreso: 'sistema' })),
     ...pagosAdmin.map(p => ({ 
@@ -421,7 +421,7 @@ export default function Contraloria() {
       
       const conceptosFiltrados = pagoFormData.detalles.filter(d => d.concepto.trim() !== '' && parseFloat(d.monto) >= 0 && d.monto !== '');
       if(!pagoFormData.nombre || conceptosFiltrados.length === 0) {
-        toast.error('Llena todos los campos válidos (concepto y monto).');
+        toast.error('Llena todos los campos v├ílidos (concepto y monto).');
         return;
       }
       setIsSubmitting(true);
@@ -430,7 +430,7 @@ export default function Contraloria() {
         const conceptoConcatenado = conceptosFiltrados.map(d => d.concepto).join(' + ');
         const montoTotal = conceptosFiltrados.reduce((s, d) => s + parseFloat(d.monto), 0);
         
-        const pagoRef = await addDoc(collection(db, collectionName), {
+        await addDoc(collection(db, collectionName), {
           nombre: pagoFormData.nombre,
           concepto: conceptoConcatenado,
           monto: montoTotal,
@@ -441,19 +441,6 @@ export default function Contraloria() {
           estado: 'Pagado',
           fecha: new Date().toISOString().split('T')[0]
         });
-        
-        // CERO PAPEL: Emitir ticket digital para Control Escolar si incluye constancia
-        if (pagoFormData.tipo === 'administrativo' && conceptoConcatenado.toLowerCase().includes('constancia')) {
-          await addDoc(collection(db, 'tramites_pendientes'), {
-            nombreAlumno: pagoFormData.nombre,
-            pagoId: pagoRef.id,
-            conceptoPago: conceptoConcatenado,
-            fechaSolicitud: new Date().toISOString(),
-            estado: 'Pendiente',
-            cajaId: cajaTurno?.id || 'sin-caja',
-            turno: cajaTurno?.turno || 'N/A'
-          });
-        }
         toast.success('Pago registrado exitosamente');
         setShowPagoAdminModal(false);
         setPagoFormData({ nombre: '', metodo: 'Efectivo', tipo: 'administrativo', detalles: [{concepto: '', monto: ''}] });
@@ -464,45 +451,6 @@ export default function Contraloria() {
       }
     };
   
-  
-  const handleCerrarCaja = async (totales) => {
-    if(!window.confirm("¿Estás seguro que deseas cerrar la caja del turno " + cajaTurno?.turno + "? Esta acción guardará el historial del corte y bloqueará el sistema hasta que se inicie un nuevo turno.")) return;
-    
-    try {
-      // 1. Save the Corte document
-      const corteRef = await addDoc(collection(db, "cortes_caja"), {
-        cajaId: cajaTurno?.id,
-        turno: cajaTurno?.turno,
-        usuario: currentUser?.email || 'admin',
-        fechaCierre: serverTimestamp(),
-        fondoInicial: totales.fondoEfectivo,
-        ingresosEfectivo: totales.totalEfectivo,
-        gastosEfectivo: totales.totalGastos,
-        efectivoFinalEnCajon: totales.totalEnCajaFisica,
-        ingresosTransferencia: totales.totalTransferencia,
-        ingresosTerminal: totales.totalTerminal,
-        totalBanco: totales.totalEnBanco,
-        granTotalRecaudado: totales.totalEfectivo + totales.totalTransferencia + totales.totalTerminal
-      });
-      
-      // 2. Mark the current caja session as closed
-      const cajaRef = doc(db, "sesiones_caja", cajaTurno?.id);
-      await updateDoc(cajaRef, {
-        estado: 'Cerrada',
-        fechaCierre: serverTimestamp(),
-        corteId: corteRef.id
-      });
-      
-      toast.success("Corte de Caja guardado. El turno ha sido cerrado.");
-      setCajaTurno(null);
-      setActiveTab('pagos');
-      
-    } catch(err) {
-      console.error(err);
-      toast.error("Error al cerrar caja.");
-    }
-  };
-
   const exportarRelacionIngresos = () => {
     const dataToExport = activeIngresoTab === 'generales' ? filteredPagosGenerales : filteredPagosExtra;
     if (dataToExport.length === 0) {
@@ -515,7 +463,7 @@ export default function Contraloria() {
       'Alumno/Persona': p.alumno || p.nombre || '',
       'Concepto': p.concepto || '',
       'Monto': p.monto || '',
-      'Método': p.metodo || 'Efectivo',
+      'M├®todo': p.metodo || 'Efectivo',
       'Fecha': p.pagoFecha?.toDate ? p.pagoFecha.toDate().toLocaleDateString() : new Date(p.pagoFecha || new Date()).toLocaleDateString()
     }));
     
@@ -544,7 +492,7 @@ export default function Contraloria() {
     if (!name) return 'ART';
     const cleanName = name
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
-      .replace(/[^a-zA-Z\s]/g, "") // Quitar números y caracteres especiales
+      .replace(/[^a-zA-Z\s]/g, "") // Quitar n├║meros y caracteres especiales
       .trim()
       .toUpperCase();
     
@@ -587,13 +535,13 @@ export default function Contraloria() {
   const migrarCodigos = async () => {
     try {
       setIsSubmitting(true);
-      toast.loading("Migrando códigos antiguos...", { id: 'migrar' });
+      toast.loading("Migrando c├│digos antiguos...", { id: 'migrar' });
       
       const toUpdate = inventario.filter(item => item.codigo && item.codigo.includes('INV-AUTO-'));
       const toUpdateResg = resguardos.filter(r => r.articulos && r.articulos.some(art => art.codigo && art.codigo.includes('INV-AUTO-')));
       
       if (toUpdate.length === 0 && toUpdateResg.length === 0) {
-        toast.success("No hay códigos antiguos para migrar.", { id: 'migrar' });
+        toast.success("No hay c├│digos antiguos para migrar.", { id: 'migrar' });
         setIsSubmitting(false);
         return;
       }
@@ -626,7 +574,7 @@ export default function Contraloria() {
         actualizados++;
       }
       
-      // 2. Migrar resguardos (actualizando los códigos en el historial)
+      // 2. Migrar resguardos (actualizando los c├│digos en el historial)
       for (const res of toUpdateResg) {
         let changed = false;
         const newArticulos = res.articulos.map(art => {
@@ -647,7 +595,7 @@ export default function Contraloria() {
       toast.success(`Se actualizaron ${actualizados} registros exitosamente.`, { id: 'migrar' });
     } catch (e) {
       console.error(e);
-      toast.error("Error al migrar códigos.", { id: 'migrar' });
+      toast.error("Error al migrar c├│digos.", { id: 'migrar' });
     } finally {
       setIsSubmitting(false);
     }
@@ -663,7 +611,7 @@ export default function Contraloria() {
     return () => unsubscribeRes();
   }, []);
 
-  // Extraer ubicaciones únicas dinámicamente
+  // Extraer ubicaciones ├║nicas din├ímicamente
   const ubicacionesUnicas = [...new Set(inventario.map(item => item.ubicacion).filter(Boolean))].sort();
 
   // Filtrar el inventario de acuerdo con los criterios seleccionados
@@ -692,7 +640,7 @@ export default function Contraloria() {
         ubs.add(item.ubicacion.trim());
       }
     });
-    // Extraer de las áreas de resguardo directamente
+    // Extraer de las ├íreas de resguardo directamente
     resguardos.forEach(res => {
       if (res.areaResguardante && typeof res.areaResguardante === 'string' && res.areaResguardante.trim()) {
          ubs.add(res.areaResguardante.trim());
@@ -752,10 +700,10 @@ export default function Contraloria() {
     if (e && e.preventDefault) e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-    const toastId = toast.loading('Guardando información...');
+    const toastId = toast.loading('Guardando informaci├│n...');
     let dataToPrint = { ...formData };
     
-    // Guardar en base de datos si es recepción
+    // Guardar en base de datos si es recepci├│n
     if (modalOpen === 'recepcion') {
       try {
         const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca);
@@ -776,7 +724,7 @@ export default function Contraloria() {
 
           let autoCodeOffsets = {};
           const recepcionArticulos = [];
-          // 2. Guardar cada artículo en el inventario
+          // 2. Guardar cada art├¡culo en el inventario
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
             const qty = Number(art.cantidad) || 1;
@@ -795,7 +743,7 @@ export default function Contraloria() {
                 modelo: art.modelo || '',
                 serie: art.serie || '',
                 observaciones: art.observaciones || '',
-                ubicacion: 'Bodega Contraloría',
+                ubicacion: 'Bodega Contralor├¡a',
                 cantidad: 1,
                 estado: art.estado || 'Nuevo',
                 fechaIngreso: new Date().toISOString()
@@ -816,7 +764,7 @@ export default function Contraloria() {
         const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
         if (validItems.length > 0) {
           let autoCodeOffsets = {};
-          // 1. Crear artículos consolidados para guardar en el Acta de Resguardo y para imprimir
+          // 1. Crear art├¡culos consolidados para guardar en el Acta de Resguardo y para imprimir
           const resguardoArticulos = validItems.map((art, idx) => {
             const qty = Number(art.cantidad) || 1;
             let baseCode = art.codigo || art.inventario || '';
@@ -834,12 +782,12 @@ export default function Contraloria() {
               descripcion: art.descripcion || art.articulo || '',
               marca: art.marca || '',
               serie: art.serie || '',
-              codigo: display, // Rangos consolidados para la impresión y visualización
+              codigo: display, // Rangos consolidados para la impresi├│n y visualizaci├│n
               estado: art.estado || 'Bueno'
             };
           });
 
-          // Verificar duplicados en códigos manuales
+          // Verificar duplicados en c├│digos manuales
           for (const art of validItems) {
             const qty = Number(art.cantidad) || 1;
             const baseCode = art._generatedBaseCode || art.codigo || art.inventario;
@@ -847,7 +795,7 @@ export default function Contraloria() {
                const { codes } = generateCodeRange(baseCode, qty);
                for (const code of codes) {
                  if (inventario.some(i => i.codigo === code && i.id !== art.id)) {
-                   toast.error(`El código de inventario ${code} ya existe en el sistema. Usa otro folio.`);
+                   toast.error(`El c├│digo de inventario ${code} ya existe en el sistema. Usa otro folio.`);
                    setIsSubmitting(false);
                    return;
                  }
@@ -892,12 +840,12 @@ export default function Contraloria() {
             await addDoc(collection(db, 'resguardos'), resguardoDoc);
           }
 
-          // 2. Guardar o actualizar artículos en el Inventario General INDIVIDUALMENTE
+          // 2. Guardar o actualizar art├¡culos en el Inventario General INDIVIDUALMENTE
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
             
             if (art.id) {
-              // Si ya existe en el inventario, actualizamos su ubicación y estado
+              // Si ya existe en el inventario, actualizamos su ubicaci├│n y estado
               const invItem = inventario.find(i => i.id === art.id);
               const currentHistorial = invItem?.historial || [];
               const itemRef = doc(db, 'inventario', art.id);
@@ -911,13 +859,13 @@ export default function Contraloria() {
                 observaciones: art.observaciones || invItem?.observaciones || '',
                 historial: [...currentHistorial, {
                   fecha: new Date().toISOString(),
-                  accion: "Asignación de Resguardo",
+                  accion: "Asignaci├│n de Resguardo",
                   detalle: `Asignado a ${formData.nombreResguardante} (Folio ${formData.folio || 'S/F'}).`,
-                  usuario: "Contraloría"
+                  usuario: "Contralor├¡a"
                 }]
               });
             } else if (formData.guardarEnInventario) {
-              // Si no existe y se marcó "Guardar en Inventario", lo desglosamos y guardamos individualmente
+              // Si no existe y se marc├│ "Guardar en Inventario", lo desglosamos y guardamos individualmente
               const baseCode = art._generatedBaseCode || art.codigo || art.inventario || `INV-RESG-${Date.now().toString().slice(-4)}${i}`;
               const qty = Number(art.cantidad) || 1;
               const { codes } = generateCodeRange(baseCode, qty);
@@ -939,7 +887,7 @@ export default function Contraloria() {
               }
             }
           }
-          // Usar artículos consolidados en la impresión
+          // Usar art├¡culos consolidados en la impresi├│n
           dataToPrint.articulos = typeof finalResguardoArticulos !== 'undefined' ? finalResguardoArticulos : resguardoArticulos;
         }
       } catch (error) {
@@ -954,12 +902,12 @@ export default function Contraloria() {
       setPrintData(dataToPrint);
       setPrintMode(modalOpen);
       setModalOpen(null);
-      toast.success("¡Preparando documento para impresión!", { id: toastId });
+      toast.success("┬íPreparando documento para impresi├│n!", { id: toastId });
       setTimeout(() => { window.print(); setIsSubmitting(false); }, 500);
     } else {
       setModalOpen(null);
       setIsSubmitting(false);
-      toast.success("¡Guardado exitosamente en la base de datos!", { id: toastId });
+      toast.success("┬íGuardado exitosamente en la base de datos!", { id: toastId });
     }
   };
 
@@ -969,12 +917,12 @@ export default function Contraloria() {
   };
 
   const migrateToInitials = async () => {
-    const confirm = window.confirm("¿Deseas re-generar los códigos al formato de iniciales (ej. VDT-0001)?");
+    const confirm = window.confirm("┬┐Deseas re-generar los c├│digos al formato de iniciales (ej. VDT-0001)?");
     if (!confirm) return;
 
     try {
       setIsSubmitting(true);
-      toast.loading("Migrando códigos...", { id: 'migrar' });
+      toast.loading("Migrando c├│digos...", { id: 'migrar' });
       
       const counters = {};
       const codeMapping = {}; 
@@ -1066,36 +1014,36 @@ export default function Contraloria() {
       
       await batch.commit();
       
-      toast.success(`Se actualizaron ${updatedInv} artículos y ${updatedResg} resguardos.`, { id: 'migrar' });
+      toast.success(`Se actualizaron ${updatedInv} art├¡culos y ${updatedResg} resguardos.`, { id: 'migrar' });
       setIsSubmitting(false);
     } catch (err) {
       console.error(err);
-      toast.error("Error al actualizar códigos.", { id: 'migrar' });
+      toast.error("Error al actualizar c├│digos.", { id: 'migrar' });
       setIsSubmitting(false);
     }
   };
 
   const cleanOrphanedItems = async () => {
-    const confirm = window.confirm("¿Deseas buscar y eliminar del Inventario los bienes auto-generados que ya no tienen Acta de Resguardo (bienes huérfanos)?\n\nEsto es útil si eliminaste un acta pero los bienes se quedaron 'atrapados' en el sistema.");
+    const confirm = window.confirm("┬┐Deseas buscar y eliminar del Inventario los bienes auto-generados que ya no tienen Acta de Resguardo (bienes hu├®rfanos)?\n\nEsto es ├║til si eliminaste un acta pero los bienes se quedaron 'atrapados' en el sistema.");
     if (!confirm) return;
 
     try {
       setIsSubmitting(true);
-      toast.loading("Buscando bienes huérfanos...", { id: 'clean' });
+      toast.loading("Buscando bienes hu├®rfanos...", { id: 'clean' });
       const batch = writeBatch(db);
       let deletedCount = 0;
 
       for (const item of inventario) {
-        // Solo aplica a códigos automáticos (ej. VDT-0001, INV-AUTO-001, INV-RESG-123)
+        // Solo aplica a c├│digos autom├íticos (ej. VDT-0001, INV-AUTO-001, INV-RESG-123)
         const isAutoGenerated = /^[A-Z]{3}-\d+$/.test(item.codigo) || 
                                item.codigo?.startsWith('INV-AUTO-') || 
                                item.codigo?.startsWith('INV-RESG-');
                                
         if (!isAutoGenerated) continue;
-        // Si están en Bodega, son libres y válidos
-        if (item.ubicacion === 'Bodega Contraloría') continue;
+        // Si est├ín en Bodega, son libres y v├ílidos
+        if (item.ubicacion === 'Bodega Contralor├¡a') continue;
 
-        // Comprobar si su código existe en los rangos de algún resguardo
+        // Comprobar si su c├│digo existe en los rangos de alg├║n resguardo
         let foundInResguardo = false;
         for (const res of resguardos) {
           if (res.articulos) {
@@ -1118,7 +1066,7 @@ export default function Contraloria() {
 
       if (deletedCount > 0) {
         await batch.commit();
-        toast.success(`Se eliminaron ${deletedCount} bienes fantasma/huérfanos.`, { id: 'clean' });
+        toast.success(`Se eliminaron ${deletedCount} bienes fantasma/hu├®rfanos.`, { id: 'clean' });
       } else {
         toast.success("Inventario limpio. No se encontraron bienes fantasma.", { id: 'clean' });
       }
@@ -1143,28 +1091,28 @@ export default function Contraloria() {
           fecha: new Date().toISOString(),
           accion: "Cambio de Estado",
           detalle: `Estado modificado manualmente de '${originalItem.estado}' a '${editingItem.estado}'.`,
-          usuario: "Contraloría"
+          usuario: "Contralor├¡a"
         });
       }
       if (originalItem && originalItem.ubicacion !== editingItem.ubicacion) {
         newHistorial.push({
           fecha: new Date().toISOString(),
-          accion: "Cambio de Ubicación",
+          accion: "Cambio de Ubicaci├│n",
           detalle: `Movido manualmente de '${originalItem.ubicacion}' a '${editingItem.ubicacion}'.`,
-          usuario: "Contraloría"
+          usuario: "Contralor├¡a"
         });
       }
 
       if (originalItem && originalItem.codigo !== editingItem.codigo) {
         if (inventario.some(i => i.codigo === editingItem.codigo && i.id !== editingItem.id)) {
-          toast.error(`El código de inventario ${editingItem.codigo} ya está en uso.`);
+          toast.error(`El c├│digo de inventario ${editingItem.codigo} ya est├í en uso.`);
           return;
         }
         newHistorial.push({
           fecha: new Date().toISOString(),
-          accion: "Cambio de Código de Inventario",
-          detalle: `Código modificado de '${originalItem.codigo}' a '${editingItem.codigo}'.`,
-          usuario: "Contraloría"
+          accion: "Cambio de C├│digo de Inventario",
+          detalle: `C├│digo modificado de '${originalItem.codigo}' a '${editingItem.codigo}'.`,
+          usuario: "Contralor├¡a"
         });
       }
 
@@ -1183,7 +1131,7 @@ export default function Contraloria() {
         historial: newHistorial
       });
 
-      // Sincronización con Actas de Resguardo
+      // Sincronizaci├│n con Actas de Resguardo
       try {
         if (originalItem && originalItem.ubicacion !== editingItem.ubicacion) {
           if (originalItem.ubicacion) {
@@ -1211,7 +1159,7 @@ export default function Contraloria() {
             }
           }
         } else {
-          // Si la ubicación no cambió, actualizar el item dentro del resguardo si existe
+          // Si la ubicaci├│n no cambi├│, actualizar el item dentro del resguardo si existe
           if (editingItem.ubicacion) {
             const currRes = resguardos.find(r => r.areaResguardante === editingItem.ubicacion);
             if (currRes && currRes.articulos) {
@@ -1256,18 +1204,18 @@ export default function Contraloria() {
       toast.success("Cambios guardados correctamente.");
     } catch (error) {
       console.error("Error al actualizar:", error);
-      toast.error("Hubo un error al actualizar el artículo.");
+      toast.error("Hubo un error al actualizar el art├¡culo.");
     }
   };
 
   const handleDeleteClick = async (id) => {
-    if (window.confirm("¿Estás seguro de eliminar este artículo del inventario de forma permanente?")) {
+    if (window.confirm("┬┐Est├ís seguro de eliminar este art├¡culo del inventario de forma permanente?")) {
       toast.promise(
         deleteDoc(doc(db, 'inventario', id)),
         {
           loading: 'Eliminando...',
-          success: 'Artículo eliminado correctamente.',
-          error: 'Error al eliminar el artículo.'
+          success: 'Art├¡culo eliminado correctamente.',
+          error: 'Error al eliminar el art├¡culo.'
         }
       );
     }
@@ -1275,22 +1223,22 @@ export default function Contraloria() {
 
   const handleBulkDelete = async () => {
     if (selectedItems.length === 0) return;
-    if (window.confirm(`¿Estás seguro de eliminar ${selectedItems.length} artículos seleccionados de forma permanente?`)) {
+    if (window.confirm(`┬┐Est├ís seguro de eliminar ${selectedItems.length} art├¡culos seleccionados de forma permanente?`)) {
       try {
         const promises = selectedItems.map(id => deleteDoc(doc(db, 'inventario', id)));
         await Promise.all(promises);
-        setSelectedItems([]); // Limpiar selección tras borrar
-        toast.success("Artículos eliminados correctamente.");
+        setSelectedItems([]); // Limpiar selecci├│n tras borrar
+        toast.success("Art├¡culos eliminados correctamente.");
       } catch (error) {
-        console.error("Error en eliminación masiva:", error);
-        toast.error("Hubo un error al eliminar los artículos seleccionados.");
+        console.error("Error en eliminaci├│n masiva:", error);
+        toast.error("Hubo un error al eliminar los art├¡culos seleccionados.");
       }
     }
   };
 
   const handleBulkStatusChange = async (newStatus) => {
     if (selectedItems.length === 0) return;
-    if (window.confirm(`¿Estás seguro de marcar ${selectedItems.length} artículos seleccionados como '${newStatus}'?`)) {
+    if (window.confirm(`┬┐Est├ís seguro de marcar ${selectedItems.length} art├¡culos seleccionados como '${newStatus}'?`)) {
       const toastId = toast.loading(`Actualizando a ${newStatus}...`);
       try {
         const promises = selectedItems.map(async (id) => {
@@ -1304,17 +1252,17 @@ export default function Contraloria() {
                 fecha: new Date().toISOString(),
                 accion: "Cambio de Estado Masivo",
                 detalle: `Estado modificado de '${originalItem.estado}' a '${newStatus}'.`,
-                usuario: "Contraloría"
+                usuario: "Contralor├¡a"
               }]
             });
           }
         });
         await Promise.all(promises);
         setSelectedItems([]);
-        toast.success(`Artículos actualizados a ${newStatus}.`, { id: toastId });
+        toast.success(`Art├¡culos actualizados a ${newStatus}.`, { id: toastId });
       } catch (error) {
-        console.error("Error en actualización masiva:", error);
-        toast.error("Hubo un error al actualizar los artículos.", { id: toastId });
+        console.error("Error en actualizaci├│n masiva:", error);
+        toast.error("Hubo un error al actualizar los art├¡culos.", { id: toastId });
       }
     }
   };
@@ -1368,7 +1316,7 @@ export default function Contraloria() {
       const originalResguardo = resguardos.find(r => r.id === editingResguardo.id);
       const originalArticulos = originalResguardo ? originalResguardo.articulos || [] : [];
       
-      // Expandir códigos que YA pertenecen a este resguardo para no contarlos como duplicados
+      // Expandir c├│digos que YA pertenecen a este resguardo para no contarlos como duplicados
       let codesBelongingToThisResguardo = new Set();
       for (const origArt of originalArticulos) {
         if (origArt.codigo) {
@@ -1385,7 +1333,7 @@ export default function Contraloria() {
            const { codes } = generateCodeRange(baseCode, qty);
            for (const code of codes) {
              if (inventario.some(i => i.codigo === code && i.id !== art.id && !codesBelongingToThisResguardo.has(code))) {
-               toast.error(`El código de inventario ${code} ya existe en el sistema. Usa otro folio.`);
+               toast.error(`El c├│digo de inventario ${code} ya existe en el sistema. Usa otro folio.`);
                return;
              }
            }
@@ -1399,7 +1347,7 @@ export default function Contraloria() {
       );
 
       let autoCodeOffsets = {};
-      // Asegurar que todos tengan un código, auto-generando si es necesario
+      // Asegurar que todos tengan un c├│digo, auto-generando si es necesario
       const articulosProcesados = validItems.map((art, idx) => {
         const qty = Number(art.cantidad) || 1;
         let finalCode = art.codigo || art.inventario || '';
@@ -1435,7 +1383,7 @@ export default function Contraloria() {
         })
       });
 
-      // Procesar artículos que continúan en el resguardo
+      // Procesar art├¡culos que contin├║an en el resguardo
       for (const art of articulosProcesados) {
         const origArt = art._uid !== undefined ? originalArticulos[art._uid] : null;
         const oldCode = origArt ? (origArt.codigo || origArt.inventario) : null;
@@ -1462,25 +1410,25 @@ export default function Contraloria() {
               ubicacion: editingResguardo.areaResguardante || 'En resguardo'
             };
             
-            // Si cambió el código, actualizarlo
+            // Si cambi├│ el c├│digo, actualizarlo
             if (invItem.codigo !== code) {
               updateData.codigo = code;
               updateData.historial = [...currentHistorial, {
                 fecha: new Date().toISOString(),
-                accion: "Cambio de Código",
-                detalle: `Código actualizado de '${invItem.codigo}' a '${code}' en revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
-                usuario: "Contraloría"
+                accion: "Cambio de C├│digo",
+                detalle: `C├│digo actualizado de '${invItem.codigo}' a '${code}' en revisi├│n de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
+                usuario: "Contralor├¡a"
               }];
             }
             
-            // Si cambió el estado, registrar en historial
+            // Si cambi├│ el estado, registrar en historial
             if (invItem.estado !== (art.estado || 'Bueno')) {
               updateData.estado = art.estado || 'Bueno';
               updateData.historial = [...(updateData.historial || currentHistorial), {
                 fecha: new Date().toISOString(),
                 accion: "Cambio de Estado",
-                detalle: `Estado actualizado a '${updateData.estado}' durante revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
-                usuario: "Contraloría"
+                detalle: `Estado actualizado a '${updateData.estado}' durante revisi├│n de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
+                usuario: "Contralor├¡a"
               }];
             } else {
                updateData.estado = art.estado || 'Bueno';
@@ -1488,7 +1436,7 @@ export default function Contraloria() {
             
             await updateDoc(itemRef, updateData);
           } else {
-            // Si el artículo no existe en el catálogo, lo creamos
+            // Si el art├¡culo no existe en el cat├ílogo, lo creamos
             await addDoc(collection(db, 'inventario'), {
               codigo: code,
               articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
@@ -1509,19 +1457,19 @@ export default function Contraloria() {
              const itemRef = doc(db, 'inventario', invItem.id);
              const currentHistorial = invItem.historial || [];
              await updateDoc(itemRef, {
-               ubicacion: 'Bodega Contraloría',
+               ubicacion: 'Bodega Contralor├¡a',
                historial: [...currentHistorial, {
                  fecha: new Date().toISOString(),
-                 accion: "Liberación por Edición de Resguardo",
+                 accion: "Liberaci├│n por Edici├│n de Resguardo",
                  detalle: `Liberado a bodega al reducir cantidad en resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
-                 usuario: "Contraloría"
+                 usuario: "Contralor├¡a"
                }]
              });
           }
         }
       }
 
-      // Procesar artículos que fueron ELIMINADOS del resguardo (Liberados)
+      // Procesar art├¡culos que fueron ELIMINADOS del resguardo (Liberados)
       for (const art of removedItems) {
         const targetCode = art.codigo || art.inventario;
         const expandedCodes = expandCodeRange(targetCode);
@@ -1533,12 +1481,12 @@ export default function Contraloria() {
             const currentHistorial = invItem.historial || [];
             
             await updateDoc(itemRef, {
-              ubicacion: 'Bodega Contraloría',
+              ubicacion: 'Bodega Contralor├¡a',
               historial: [...currentHistorial, {
                 fecha: new Date().toISOString(),
                 accion: "Retorno a Bodega",
                 detalle: `Liberado del resguardo de ${originalResguardo.nombreResguardante} (Folio ${originalResguardo.folio || 'S/F'}).`,
-                usuario: "Contraloría"
+                usuario: "Contralor├¡a"
               }]
             });
           }
@@ -1550,7 +1498,7 @@ export default function Contraloria() {
 
       toast.promise(updatePromise(), {
         loading: 'Guardando cambios del resguardo...',
-        success: '¡Resguardo actualizado correctamente!',
+        success: '┬íResguardo actualizado correctamente!',
         error: 'Error al actualizar el resguardo'
       });
 
@@ -1560,16 +1508,16 @@ export default function Contraloria() {
   };
 
   const handleDeleteResguardoClick = async (res) => {
-    const confirmacion = window.confirm(`¿Estás seguro de eliminar el resguardo con Folio ${res.folio || 'S/F'} de ${res.nombreResguardante}?
+    const confirmacion = window.confirm(`┬┐Est├ís seguro de eliminar el resguardo con Folio ${res.folio || 'S/F'} de ${res.nombreResguardante}?
 
-Esta acción no se puede deshacer.`);
+Esta acci├│n no se puede deshacer.`);
     if (!confirmacion) return;
 
-    const eliminarArticulos = window.confirm("¿Deseas ELIMINAR PERMANENTEMENTE los artículos de este resguardo del Inventario General de la escuela?\n\n(Aceptar = Borrar mobiliario del sistema, Cancelar = Mantenerlos en el sistema)");
+    const eliminarArticulos = window.confirm("┬┐Deseas ELIMINAR PERMANENTEMENTE los art├¡culos de este resguardo del Inventario General de la escuela?\n\n(Aceptar = Borrar mobiliario del sistema, Cancelar = Mantenerlos en el sistema)");
     
     let liberarArticulos = false;
     if (!eliminarArticulos) {
-      liberarArticulos = window.confirm("Como decidiste no eliminarlos, ¿deseas regresarlos a la 'Bodega Contraloría' como artículos libres?");
+      liberarArticulos = window.confirm("Como decidiste no eliminarlos, ┬┐deseas regresarlos a la 'Bodega Contralor├¡a' como art├¡culos libres?");
     }
 
     const deletePromise = async () => {
@@ -1596,12 +1544,12 @@ Esta acción no se puede deshacer.`);
               const itemRef = doc(db, 'inventario', invItem.id);
               const currentHistorial = invItem.historial || [];
               await updateDoc(itemRef, {
-                ubicacion: 'Bodega Contraloría',
+                ubicacion: 'Bodega Contralor├¡a',
                 historial: [...currentHistorial, {
                   fecha: new Date().toISOString(),
                   accion: "Retorno a Bodega",
                   detalle: `Resguardo eliminado. Liberado de ${res.nombreResguardante} (Folio ${res.folio || 'S/F'}).`,
-                  usuario: "Contraloría"
+                  usuario: "Contralor├¡a"
                 }]
               });
             }
@@ -1612,8 +1560,8 @@ Esta acción no se puede deshacer.`);
     };
 
     toast.promise(deletePromise(), {
-      loading: 'Procesando la eliminación del acta y sus bienes...',
-      success: '¡El acta y los bienes seleccionados fueron eliminados correctamente!',
+      loading: 'Procesando la eliminaci├│n del acta y sus bienes...',
+      success: '┬íEl acta y los bienes seleccionados fueron eliminados correctamente!',
       error: 'Hubo un error al eliminar el resguardo.'
     });
   };
@@ -1637,17 +1585,17 @@ Esta acción no se puede deshacer.`);
 
   const handleExportCSV = () => {
     if (filteredInventario.length === 0) {
-      alert("No hay artículos en la lista filtrada para exportar.");
+      alert("No hay art├¡culos en la lista filtrada para exportar.");
       return;
     }
     
     const dataToExport = filteredInventario.map(item => ({
-      'Código de Inventario': item.codigo || '',
-      'Artículo/Descripción': item.articulo || '',
-      'Ubicación': item.ubicacion || '',
+      'C├│digo de Inventario': item.codigo || '',
+      'Art├¡culo/Descripci├│n': item.articulo || '',
+      'Ubicaci├│n': item.ubicacion || '',
       'Cantidad': item.cantidad || 0,
-      'Estado Físico': item.estado || '',
-      'Número de Serie': item.serie || '',
+      'Estado F├¡sico': item.estado || '',
+      'N├║mero de Serie': item.serie || '',
       'Fecha de Ingreso': item.fechaIngreso ? new Date(item.fechaIngreso).toLocaleDateString() : ''
     }));
     
@@ -1664,11 +1612,11 @@ Esta acción no se puede deshacer.`);
     document.body.removeChild(link);
   };
 
-  // Cálculo de estadísticas generales del inventario
+  // C├ílculo de estad├¡sticas generales del inventario
   const totalArticulos = inventario.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
-  const libres = inventario.filter(i => i.ubicacion === 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+  const libres = inventario.filter(i => i.ubicacion === 'Bodega Contralor├¡a').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
 
-  // Desglose por tipo de artículo (Nuevos vs Usados)
+  // Desglose por tipo de art├¡culo (Nuevos vs Usados)
   const inventarioNuevos = inventario.filter(i => i.estado === 'Nuevo');
   const inventarioUsados = inventario.filter(i => i.estado !== 'Nuevo');
 
@@ -1680,7 +1628,7 @@ Esta acción no se puede deshacer.`);
       const cantidad = Number(item.cantidad) || 0;
       acc[categoria].total += cantidad;
       
-      const nombreExacto = item.articulo ? item.articulo.trim() : 'Sin descripción';
+      const nombreExacto = item.articulo ? item.articulo.trim() : 'Sin descripci├│n';
       acc[categoria].subItems[nombreExacto] = (acc[categoria].subItems[nombreExacto] || 0) + cantidad;
       
       return acc;
@@ -1704,47 +1652,46 @@ Esta acción no se puede deshacer.`);
   return (
     <>
     <div className={`space-y-6 ${printMode ? "hidden" : ""} print:${receiptPago ? "hidden" : "block"}`}>
+      {(!cajaTurno && (activeTab === 'pagos' || activeTab === 'gastos' || activeTab === 'corte')) ? (
+         <CajaLockScreen userEmail={currentUser?.email} onCajaAbierta={(id, turno, fondo) => setCajaTurno({id, turno, fondoInicial: fondo})} />
+      ) : (
+        <>
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Contraloría</h2>
-          <p className="text-slate-500 text-sm">Control de ingresos (trámites) e inventario del mobiliario escolar.</p>
+          <h2 className="text-2xl font-bold text-slate-800">Contralor├¡a</h2>
+          <p className="text-slate-500 text-sm">Control de ingresos (tr├ímites) e inventario del mobiliario escolar.</p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="border-b border-slate-200">
-        <nav className="-mb-px flex flex-wrap gap-y-2 space-x-8">
-          <button
-            onClick={() => setActiveTab('pagos')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'pagos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-          >
-            <DollarSign className="w-4 h-4 mr-2" /> Registro de Pagos
-          </button>
-          
+        <nav className="-mb-px flex space-x-8">
           
           <button
-            onClick={() => setActiveTab('corte')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'corte' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            onClick={() => setActiveTab('inventario')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'inventario' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
-            <Wallet className="w-4 h-4 mr-2" /> Corte de Caja
+            <PackageOpen className="w-4 h-4 mr-2" /> Inventario de Mobiliario
           </button>
+          <button
+            onClick={() => setActiveTab('resguardos')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'resguardos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            <FileText className="w-4 h-4 mr-2" /> Historial de Resguardos
+          </button>
+          
         </nav>
       </div>
-      
-      {(!cajaTurno && (activeTab === 'pagos' || activeTab === 'gastos' || activeTab === 'corte')) ? (
-         <CajaLockScreen userEmail={currentUser?.email} onCajaAbierta={(id, turno, fondo) => setCajaTurno({id, turno, fondoInicial: fondo})} />
-      ) : (
-        <>
 
       {activeTab === 'pagos' && (
         <div className="space-y-6">
           <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <h3 className="font-semibold text-slate-700 text-lg">Módulo de Ingresos</h3>
+                <h3 className="font-semibold text-slate-700 text-lg">M├│dulo de Ingresos</h3>
                 <div className="flex gap-2">
                   <button onClick={exportarRelacionIngresos} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 shadow-sm transition-colors">
-                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Exportar Relación (CSV)
+                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Exportar Relaci├│n (CSV)
                   </button>
                   <button onClick={() => setShowPagoAdminModal(true)} className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 shadow-sm transition-colors">
                     <Plus className="w-4 h-4 mr-2" /> Registrar Pago
@@ -1754,7 +1701,7 @@ Esta acción no se puede deshacer.`);
               
               <div className="flex flex-wrap gap-2 mb-4 border-b border-slate-200">
                 <button onClick={() => setActiveIngresoTab('generales')} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeIngresoTab === 'generales' ? 'border-primary-600 text-primary-700 bg-primary-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Ingresos Generales</button>
-                <button onClick={() => setActiveIngresoTab('extraordinarios')} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeIngresoTab === 'extraordinarios' ? 'border-rose-600 text-rose-700 bg-rose-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Exámenes Extraordinarios</button>
+                <button onClick={() => setActiveIngresoTab('extraordinarios')} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeIngresoTab === 'extraordinarios' ? 'border-rose-600 text-rose-700 bg-rose-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Ex├ímenes Extraordinarios</button>
               </div>
 
               <div className="flex flex-col lg:flex-row gap-4 items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -1920,7 +1867,7 @@ Esta acción no se puede deshacer.`);
                 </h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[{ name: 'Total Histórico', Ingresos: [...pagosRecientes, ...pagosAdmin, ...pagosExtra].reduce((acc, p) => acc + (Number(p.montoNum || p.monto) || 0), 0), Egresos: gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0) }]}>
+                    <BarChart data={[{ name: 'Total Hist├│rico', Ingresos: [...pagosRecientes, ...pagosAdmin, ...pagosExtra].reduce((acc, p) => acc + (Number(p.montoNum || p.monto) || 0), 0), Egresos: gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0) }]}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
                       <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(value) => `${value}`} />
@@ -1934,7 +1881,7 @@ Esta acción no se puede deshacer.`);
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-                  <PieChart as PieChartIcon className="w-5 h-5 mr-2 text-slate-500" /> Distribución de Egresos
+                  <PieChart as PieChartIcon className="w-5 h-5 mr-2 text-slate-500" /> Distribuci├│n de Egresos
                 </h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
@@ -1965,80 +1912,377 @@ Esta acción no se puede deshacer.`);
       )}
 
       {activeTab === 'corte' && (
-  <div className="space-y-6 max-w-4xl mx-auto">
-    {(() => {
-      // Calculate current shift totals
-      const pagosTurno = [...pagosAdmin, ...pagosExtra].filter(p => p.cajaId === cajaTurno?.id);
-      
-      const totalEfectivo = pagosTurno.filter(p => p.metodo === 'Efectivo').reduce((acc, p) => acc + (Number(p.montoNum || p.monto) || 0), 0);
-      const totalTransferencia = pagosTurno.filter(p => p.metodo === 'Transferencia').reduce((acc, p) => acc + (Number(p.montoNum || p.monto) || 0), 0);
-      const totalTerminal = pagosTurno.filter(p => p.metodo === 'Tarjeta').reduce((acc, p) => acc + (Number(p.montoNum || p.monto) || 0), 0);
-      
-      const totalIngresos = totalEfectivo + totalTransferencia + totalTerminal;
-      const totalGastos = gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
-      
-      const fondoEfectivo = Number(cajaTurno?.fondoInicial) || 0;
-      
-      const totalEnCajaFisica = fondoEfectivo + totalEfectivo - totalGastos;
-      const totalEnBanco = totalTransferencia + totalTerminal;
-      
-      return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center justify-between">
-            <div className="flex items-center">
-              <Wallet className="w-6 h-6 mr-2 text-indigo-600" /> Corte de Caja en Curso
-            </div>
-            <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-bold">
-              Turno {cajaTurno?.turno}
-            </span>
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <p className="text-sm text-slate-500 font-medium mb-1">Fondo Inicial</p>
-              <p className="text-xl font-bold text-slate-700">${fondoEfectivo.toFixed(2)}</p>
-            </div>
-            <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
-              <p className="text-sm text-emerald-600 font-medium mb-1">Ingresos (Efectivo)</p>
-              <p className="text-xl font-bold text-emerald-700">+ ${totalEfectivo.toFixed(2)}</p>
-            </div>
-            <div className="bg-rose-50 p-4 rounded-lg border border-rose-200">
-              <p className="text-sm text-rose-600 font-medium mb-1">Gastos (Egresos)</p>
-              <p className="text-xl font-bold text-rose-700">- ${totalGastos.toFixed(2)}</p>
-            </div>
-            <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200 shadow-inner">
-              <p className="text-sm text-indigo-600 font-bold mb-1">EFECTIVO EN CAJÓN</p>
-              <p className="text-2xl font-black text-indigo-700">${totalEnCajaFisica.toFixed(2)}</p>
-            </div>
-          </div>
-          
-          <h3 className="text-sm font-bold text-slate-600 mb-3 border-b pb-2">Ingresos No Físicos (Directo a Banco)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <p className="text-sm text-slate-500 font-medium mb-1">Transferencias</p>
-              <p className="text-xl font-bold text-slate-700">${totalTransferencia.toFixed(2)}</p>
-            </div>
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <p className="text-sm text-slate-500 font-medium mb-1">Terminal (Tarjeta)</p>
-              <p className="text-xl font-bold text-slate-700">${totalTerminal.toFixed(2)}</p>
-            </div>
-            <div className="bg-sky-50 p-4 rounded-lg border border-sky-200">
-              <p className="text-sm text-sky-600 font-medium mb-1">Total a Banco</p>
-              <p className="text-xl font-bold text-sky-700">${totalEnBanco.toFixed(2)}</p>
-            </div>
-          </div>
-          
-          <div className="flex justify-end pt-4 border-t border-slate-200">
-            <button onClick={() => handleCerrarCaja({fondoEfectivo, totalEfectivo, totalGastos, totalEnCajaFisica, totalTransferencia, totalTerminal, totalEnBanco})} className="flex items-center px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 shadow-md transition-colors text-lg">
-              <Archive className="w-5 h-5 mr-2" /> Cerrar Caja Definitivamente
-            </button>
-          </div>
-        </div>
-      )
-    })()}
-  </div>
-)}
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 max-w-2xl mx-auto">
+              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
+                <FileSpreadsheet className="w-6 h-6 mr-2 text-indigo-600" /> Generar Corte de Caja
+              </h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha Inicio</label>
+                    <input type="date" value={corteConfig.fechaInicio} onChange={e => setCorteConfig(prev => ({...prev, fechaInicio: e.target.value}))} className="w-full px-4 py-2 border rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha Fin</label>
+                    <input type="date" value={corteConfig.fechaFin} onChange={e => setCorteConfig(prev => ({...prev, fechaFin: e.target.value}))} className="w-full px-4 py-2 border rounded-lg" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Turno</label>
+                  <select value={corteConfig.turno} onChange={e => setCorteConfig(prev => ({...prev, turno: e.target.value}))} className="w-full px-4 py-2 border rounded-lg bg-white">
+                    <option value="Todos">Ambos Turnos (General)</option>
+                    <option value="Matutino">Matutino</option>
+                    <option value="Vespertino">Vespertino</option>
+                  </select>
+                </div>
+                
+                  {(() => {
+                    const sDate = new Date(corteConfig.fechaInicio + 'T00:00:00');
+                    const eDate = new Date(corteConfig.fechaFin + 'T23:59:59');
+                    const allPagos = [...pagosAdmin.map(p => ({...p, sysTipo: 'Admin'})), ...pagosExtra.map(p => ({...p, sysTipo: 'Extra'}))];
+                    const filtered = allPagos.filter(p => {
+                      let d = new Date();
+                      if (p.pagoFecha?.toDate) d = p.pagoFecha.toDate();
+                      else if (p.createdAt?.toDate) d = p.createdAt.toDate();
+                      else if (p.pagoFecha) d = new Date(p.pagoFecha);
+                      else if (p.fecha && p.fecha !== 'Pendiente') {
+                        const parts = p.fecha.split('/');
+                        if (parts.length === 3) d = new Date(parts[2], parts[1] - 1, parts[0]);
+                        else d = new Date(p.fecha);
+                      }
+                      return d >= sDate && d <= eDate;
+                    });
+                    
+                    const total = filtered.reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+                    const totalAdmin = filtered.filter(p => p.sysTipo === 'Admin').reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+                    const totalExtra = filtered.filter(p => p.sysTipo === 'Extra').reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+            const conceptosCount = {};
+            filtered.forEach(p => {
+              if (p.detalles && Array.isArray(p.detalles) && p.detalles.length > 0) {
+                 p.detalles.forEach(d => {
+                   const c = d.concepto || 'Otro';
+                   if (!conceptosCount[c]) conceptosCount[c] = { count: 0, total: 0 };
+                   conceptosCount[c].count += 1;
+                   conceptosCount[c].total += parseFloat(d.monto) || 0;
+                 });
+              } else {
+                 const c = p.concepto || 'Otro';
+                 if (!conceptosCount[c]) conceptosCount[c] = { count: 0, total: 0 };
+                 conceptosCount[c].count += 1;
+                 conceptosCount[c].total += parseFloat(p.monto) || 0;
+              }
+            });
+            const desgloseConceptos = Object.keys(conceptosCount).map(k => ({ concepto: k, count: conceptosCount[k].count, total: conceptosCount[k].total })).sort((a, b) => b.total - a.total);
+                      return (
+                        <div className="mt-6 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                          <h3 className="text-lg font-bold text-slate-800 mb-4">Vista Previa del Corte</h3>
+                          
+                          <div className="bg-white rounded-lg border border-slate-200 mb-6 overflow-hidden">
+                            <table className="w-full text-left text-sm">
+                              <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                                <tr>
+                                  <th className="py-2 px-4">Concepto</th>
+                                  <th className="py-2 px-4 text-center">Cantidad</th>
+                                  <th className="py-2 px-4 text-right">Ingreso</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {desgloseConceptos.map((item, idx) => (
+                                  <tr key={idx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                                    <td className="py-2 px-4 font-medium text-slate-700">{item.concepto}</td>
+                                    <td className="py-2 px-4 text-center text-slate-600">{item.count}</td>
+                                    <td className="py-2 px-4 text-right font-mono font-bold text-slate-700">$ {item.total.toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                                {desgloseConceptos.length === 0 && (
+                                  <tr><td colSpan="3" className="py-4 text-center text-slate-400">No hay pagos en este periodo.</td></tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
 
+                          <div className="grid grid-cols-3 gap-4 mb-4">
+                            <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 text-center">
+                              <div className="text-sm text-slate-500 font-bold mb-1">Ingresos Generales</div>
+                              <div className="text-xl font-bold text-slate-800">$ {totalAdmin.toFixed(2)}</div>
+                              <div className="text-xs text-slate-400 mt-1">{filtered.filter(p => p.sysTipo === 'Admin').length} transacciones</div>
+                            </div>
+                            <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 text-center">
+                              <div className="text-sm text-slate-500 font-bold mb-1">Ex\u00E1menes Extraord.</div>
+                              <div className="text-xl font-bold text-slate-800">$ {totalExtra.toFixed(2)}</div>
+                              <div className="text-xs text-slate-400 mt-1">{filtered.filter(p => p.sysTipo === 'Extra').length} transacciones</div>
+                            </div>
+                            <div className="bg-indigo-50 p-4 rounded-lg shadow-sm border border-indigo-100 text-center">
+                              <div className="text-sm text-indigo-600 font-bold mb-1">Total Neto</div>
+                              <div className="text-2xl font-black text-indigo-700">$ {total.toFixed(2)}</div>
+                              <div className="text-xs text-indigo-500 mt-1 font-bold">{filtered.length} transacciones</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                  })()}
+                  
+
+              </div>
+            </div>
+          </div>
+      )}
+
+
+      {activeTab === 'inventario' && (
+        <div className="space-y-6">
+          {/* Desglose de Bienes Nuevos */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+              <h4 className="text-lg font-bold text-slate-800 flex items-center">
+                <PackageOpen className="w-6 h-6 mr-2 text-indigo-600" /> Bienes Nuevos
+              </h4>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto pr-2 custom-scrollbar pb-2">
+              {desgloseNuevosArray.length > 0 ? desgloseNuevosArray.map((item, idx) => (
+                <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center hover:border-indigo-300 hover:shadow-md transition-all group">
+                  <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 mb-3 transition-colors">
+                    {getIconForArticulo(item.nombre)}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600 mb-1 line-clamp-2 leading-tight min-h-[2.5rem] flex items-center">{item.nombre}</span>
+                  <span className="text-2xl font-black text-indigo-600 mb-2">{item.cantidad}</span>
+                  <div className="w-full text-left text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 flex-1 overflow-y-auto custom-scrollbar min-h-[3rem]">
+                    {item.detalles.map((det, i) => (
+                      <div key={i} className="truncate" title={det}>ÔÇó {det}</div>
+                    ))}
+                  </div>
+                </div>
+              )) : (
+                <div className="col-span-full py-6 text-center text-slate-500 italic">No hay art├¡culos nuevos registrados.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Desglose de Bienes en Uso */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+              <h4 className="text-lg font-bold text-slate-800 flex items-center">
+                <Archive className="w-6 h-6 mr-2 text-indigo-600" /> Bienes en Uso (Bueno, Regular, Malo)
+              </h4>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto pr-2 custom-scrollbar pb-2">
+              {desgloseUsadosArray.length > 0 ? desgloseUsadosArray.map((item, idx) => (
+                <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center hover:border-indigo-300 hover:shadow-md transition-all group">
+                  <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 mb-3 transition-colors">
+                    {getIconForArticulo(item.nombre)}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600 mb-1 line-clamp-2 leading-tight min-h-[2.5rem] flex items-center">{item.nombre}</span>
+                  <span className="text-2xl font-black text-indigo-600 mb-2">{item.cantidad}</span>
+                  <div className="w-full text-left text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 flex-1 overflow-y-auto custom-scrollbar min-h-[3rem]">
+                    {item.detalles.map((det, i) => (
+                      <div key={i} className="truncate" title={det}>ÔÇó {det}</div>
+                    ))}
+                  </div>
+                </div>
+              )) : (
+                <div className="col-span-full py-6 text-center text-slate-500 italic">No hay art├¡culos en uso registrados.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Tarjetas de Formatos Oficiales */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+              <div className="mb-3">
+                <h4 className="font-bold text-blue-900 text-lg">Acta de Recepci├│n (Alta)</h4>
+                <p className="text-blue-700 text-xs mt-1">Alta oficial de bienes nuevos o donaciones.</p>
+              </div>
+              <button onClick={() => openModal('recepcion')} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
+                <Printer className="w-4 h-4 mr-2" /> Generar
+              </button>
+            </div>
+            <div className="bg-gradient-to-r from-indigo-50 to-orange-50 border border-indigo-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+              <div className="mb-3">
+                <h4 className="font-bold text-indigo-900 text-lg">Carta de Resguardo</h4>
+                <p className="text-indigo-700 text-xs mt-1">Asignar bienes a maestros o ├íreas.</p>
+              </div>
+              <button onClick={() => openModal('resguardo')} className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
+                <Printer className="w-4 h-4 mr-2" /> Generar
+              </button>
+            </div>
+            <div className="bg-gradient-to-r from-sky-50 to-pink-50 border border-sky-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+              <div className="mb-3">
+                <h4 className="font-bold text-sky-900 text-lg">Acta de Baja</h4>
+                <p className="text-sky-700 text-xs mt-1">Desecho oficial de bienes inservibles.</p>
+              </div>
+              <button onClick={() => openModal('baja')} className="bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
+                <Printer className="w-4 h-4 mr-2" /> Generar Libre
+              </button>
+            </div>
+          </div>
+
+          {/* BARRA DE B├ÜSQUEDA Y FILTRADO */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Buscar por Art├¡culo o C├│digo</label>
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input 
+                  type="text" 
+                  className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                  placeholder="Ej. Silla, Computadora, o INV-..." 
+                  value={searchTerm} 
+                  onChange={e => setSearchTerm(e.target.value)} 
+                />
+              </div>
+            </div>
+            <div className="w-full md:w-auto flex flex-col sm:flex-row gap-2">
+              <button 
+                onClick={migrateToInitials}
+                title="Actualiza los c├│digos al nuevo formato de Iniciales (VDT-0001)."
+                className="w-full md:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 border border-indigo-600 rounded-lg text-sm font-bold shadow-sm transition-colors"
+              >
+                Regenerar C├│digos (VDT-0001)
+              </button>
+              
+              <button 
+                onClick={cleanOrphanedItems}
+                disabled={isSubmitting}
+                title="Elimina bienes que perdieron su resguardo y quedaron atrapados."
+                className="w-full md:w-auto bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 border border-sky-600 rounded-lg text-sm font-bold shadow-sm transition-colors disabled:opacity-50"
+              >
+                Limpiar Fantasmas
+              </button>
+            </div>            <div className="w-full md:w-48">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Ubicaci├│n</label>
+              <select 
+                className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                value={locationFilter} 
+                onChange={e => setLocationFilter(e.target.value)}
+              >
+                <option value="Todos">Todas las ubicaciones</option>
+                {ubicacionesUnicas.map(loc => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-full md:w-48">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Estado F├¡sico</label>
+              <select 
+                className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                value={statusFilter} 
+                onChange={e => setStatusFilter(e.target.value)}
+              >
+                <option value="Todos">Todos los estados</option>
+                <option value="Nuevo">Nuevo</option>
+                <option value="Bueno">Bueno</option>
+                <option value="Regular">Regular</option>
+                <option value="Malo">Malo</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+              <h3 className="font-semibold text-slate-700">Cat├ílogo de Bienes Activos</h3>
+              <div className="flex gap-2">
+                {selectedItems.length > 0 && (
+                  <>
+                    <button onClick={handlePrintEtiquetas} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 shadow-sm transition-colors mr-1">
+                      <Printer className="w-4 h-4 mr-2" /> Imprimir Etiquetas
+                    </button>
+                    <button onClick={() => openModal('resguardo')} className="flex items-center px-4 py-2 bg-indigo-100 text-indigo-800 rounded-lg text-sm font-medium hover:bg-indigo-200 shadow-sm transition-colors border border-indigo-200 mr-1">
+                      <FileText className="w-4 h-4 mr-2" /> Generar Resguardo
+                    </button>
+                    <button onClick={() => openModal('baja')} className="flex items-center px-4 py-2 bg-sky-100 text-sky-800 rounded-lg text-sm font-medium hover:bg-sky-200 shadow-sm transition-colors border border-sky-200 mr-1">
+                      <FileText className="w-4 h-4 mr-2" /> Generar Baja
+                    </button>
+                    <button onClick={() => handleBulkStatusChange('Nuevo')} className="flex items-center px-4 py-2 bg-emerald-100 text-emerald-800 rounded-lg text-sm font-medium hover:bg-emerald-200 shadow-sm transition-colors border border-emerald-200 mr-1">
+                      <CheckCircle2 className="w-4 h-4 mr-2" /> Marcar como Nuevo
+                    </button>
+                    <button onClick={handleBulkDelete} className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 shadow-sm transition-colors border border-red-200 mr-2">
+                      <Trash2 className="w-4 h-4 mr-2" /> Eliminar ({selectedItems.length})
+                    </button>
+                  </>
+                )}
+                <button onClick={handleExportCSV} className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors">
+                  <Download className="w-4 h-4 mr-2 text-primary-600" /> Exportar CSV
+                </button>
+                <button onClick={() => setShowScannerModal(true)} className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors">
+                  <ScanLine className="w-4 h-4 mr-2" /> Escanear Lista (OCR)
+                </button>
+                <button onClick={() => setModalOpen('recepcion')} className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-sm transition-colors">
+                  <Plus className="w-4 h-4 mr-1" /> A├▒adir Art├¡culo
+                </button>
+              </div>
+            </div>
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-6 py-3 text-left w-12">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    checked={filteredInventario.length > 0 && filteredInventario.every(item => selectedItems.includes(item.id))}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">C├│digo</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Art├¡culo</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Marca / Modelo</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">No. Serie</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Ubicaci├│n</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Cantidad</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
+              </tr>
+            </thead>
+            
+                            <tbody className="divide-y divide-slate-200">
+                {filteredInventario.length > 0 ? filteredInventario.map(item => (
+                  <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-indigo-50/50' : 'hover:bg-slate-50 transition-colors'}>
+                    <td className="px-6 py-4 text-left w-12">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        checked={selectedItems.includes(item.id)}
+                        onChange={() => toggleSelectItem(item.id)}
+                      />
+                    </td>
+                    <td className="px-6 py-4 text-sm font-mono text-slate-600">{item.codigo || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-800 font-medium">{item.articulo || item.descripcion || 'Sin nombre'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{item.marca || 'N/A'} {item.modelo ? `(${item.modelo})` : ''}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{item.serie || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium border border-slate-200">
+                        {item.ubicacion || 'Sin ubicar'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-slate-800">{item.cantidad || 0}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${item.estadoFisico === 'Nuevo' || item.estado === 'Nuevo' ? 'bg-emerald-100 text-emerald-700' : item.estadoFisico === 'Malo' || item.estado === 'Malo' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {item.estadoFisico || item.estado || 'Bueno'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right space-x-2">
+                        <button 
+                          onClick={() => { setEditingItem(item); setModalOpen('editItem'); }}
+                          className="text-primary-600 hover:text-primary-800 font-medium text-xs"
+                        >
+                          Editar
+                        </button>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="9" className="px-6 py-8 text-center text-slate-500 italic">No se encontraron art├¡culos en el inventario que coincidan con la b├║squeda.</td>
+                  </tr>
+                )}
+              </tbody>
+
+          </table>
+          </div>
+
+        </div>
+      )}
 
       {activeTab === 'resguardos' && (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
@@ -2050,7 +2294,7 @@ Esta acción no se puede deshacer.`);
                 <input 
                   type="text" 
                   className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                  placeholder="Ej. Profr. Juan Pérez, Folio 002..." 
+                  placeholder="Ej. Profr. Juan P├®rez, Folio 002..." 
                   value={resguardoSearch} 
                   onChange={e => setResguardoSearch(e.target.value)} 
                 />
@@ -2065,8 +2309,8 @@ Esta acción no se puede deshacer.`);
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Folio</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Fecha</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Resguardante</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Área / Cargo</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículos</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">├ürea / Cargo</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Art├¡culos</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
                 </tr>
               </thead>
@@ -2082,7 +2326,7 @@ Esta acción no se puede deshacer.`);
                     <td className="px-6 py-4 text-sm text-slate-600 font-bold">{r.resguardante || 'Desconocido'}</td>
                     <td className="px-6 py-4 text-sm text-slate-600">{r.area || r.cargo || 'N/A'}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">
-                      {r.articulos ? r.articulos.length : 0} artículos
+                      {r.articulos ? r.articulos.length : 0} art├¡culos
                     </td>
                     <td className="px-6 py-4 text-sm text-right">
                         <button 
@@ -2116,7 +2360,7 @@ Esta acción no se puede deshacer.`);
         <div className={`bg-white rounded-xl shadow-2xl w-full my-8 ${(modalOpen === 'editItem' || modalOpen === 'editResguardo') ? 'max-w-lg' : 'max-w-4xl'}`}>
           <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
             <h3 className="font-bold text-xl text-slate-800">
-              {modalOpen === 'recepcion' ? 'Generar Acta de Recepción' : 
+              {modalOpen === 'recepcion' ? 'Generar Acta de Recepci├│n' : 
                modalOpen === 'resguardo' ? 'Generar Carta de Resguardo' : 
                modalOpen === 'editResguardo' ? 'Editar Carta de Resguardo' : 
                modalOpen === 'history' ? 'Historial de Movimientos' : 'Editar Bien del Inventario'}
@@ -2132,11 +2376,11 @@ Esta acción no se puede deshacer.`);
                 <div className="space-y-4 mb-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Código de Inventario</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">C├│digo de Inventario</label>
                       <input type="text" value={editingItem.codigo || ''} onChange={e => setEditingItem({...editingItem, codigo: e.target.value})} className="w-full p-2 border rounded font-mono text-sm bg-slate-50" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Nombre / Concepto del artículo</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Nombre / Concepto del art├¡culo</label>
                       <input type="text" value={editingItem.articulo || editingItem.descripcion || ''} onChange={e => setEditingItem({...editingItem, articulo: e.target.value, descripcion: e.target.value})} className="w-full p-2 border rounded text-sm" />
                     </div>
                   </div>
@@ -2162,7 +2406,7 @@ Esta acción no se puede deshacer.`);
                       <input type="number" value={editingItem.cantidad || ''} onChange={e => setEditingItem({...editingItem, cantidad: e.target.value})} className="w-full p-2 border rounded text-sm" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Estado Físico</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Estado F├¡sico</label>
                       <select 
                         value={editingItem.estado || 'Bueno'} 
                         onChange={e => setEditingItem({...editingItem, estado: e.target.value})} 
@@ -2175,7 +2419,7 @@ Esta acción no se puede deshacer.`);
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Ubicación Actual</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Ubicaci├│n Actual</label>
                       {(() => {
                         const isKnown = uniqueUbicaciones.includes(editingItem.ubicacion);
                         const isCustom = !isKnown && editingItem.ubicacion !== '' && editingItem.ubicacion !== undefined && editingItem.ubicacion !== '---NUEVA---';
@@ -2186,16 +2430,16 @@ Esta acción no se puede deshacer.`);
                               value={isKnown ? editingItem.ubicacion : (editingItem.ubicacion === '---NUEVA---' || isCustom ? '---NUEVA---' : '')}
                               onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})}
                             >
-                              <option value="">Selecciona una ubicación...</option>
+                              <option value="">Selecciona una ubicaci├│n...</option>
                               {uniqueUbicaciones.map(ub => (
                                 <option key={ub} value={ub}>{ub}</option>
                               ))}
-                              <option value="---NUEVA---">➕ Agregar nueva área...</option>
+                              <option value="---NUEVA---">Ô×ò Agregar nueva ├írea...</option>
                             </select>
                             {(editingItem.ubicacion === '---NUEVA---' || isCustom) && (
                               <input 
                                 type="text" 
-                                placeholder="Escribe el nombre de la nueva área..." 
+                                placeholder="Escribe el nombre de la nueva ├írea..." 
                                 value={editingItem.ubicacion === '---NUEVA---' ? '' : (editingItem.ubicacion || '')}
                                 onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})}
                                 className="w-full p-2 border rounded text-sm border-indigo-400 focus:ring-1 focus:ring-indigo-500 bg-indigo-50"
@@ -2234,20 +2478,20 @@ Esta acción no se puede deshacer.`);
                     <input type="text" value={editingResguardo.nombreResguardante} onChange={e => setEditingResguardo({...editingResguardo, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Área o Cargo</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">├ürea o Cargo</label>
                     <input type="text" value={editingResguardo.areaResguardante} onChange={e => setEditingResguardo({...editingResguardo, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
-                    <textarea rows="2" value={editingResguardo.observaciones || ''} onChange={e => setEditingResguardo({...editingResguardo, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, faltantes..."></textarea>
+                    <textarea rows="2" value={editingResguardo.observaciones || ''} onChange={e => setEditingResguardo({...editingResguardo, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Da├▒os visibles, faltantes..."></textarea>
                   </div>
                 </div>
 
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold text-slate-700">Artículos incluidos</h4>
+                    <h4 className="font-semibold text-slate-700">Art├¡culos incluidos</h4>
                     <button type="button" onClick={() => setEditingResguardo({ ...editingResguardo, articulos: [...editingResguardo.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: 'Bueno', codigo: '' }] })} className="text-sm text-primary-600 hover:text-primary-700 font-medium font-bold">
-                      + Añadir fila
+                      + A├▒adir fila
                     </button>
                   </div>
                   <div className="space-y-3">
@@ -2262,14 +2506,14 @@ Esta acción no se puede deshacer.`);
                             }} />
                           </div>
                           <div className="flex-1">
-                            <input type="text" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                            <input type="text" placeholder="Nombre/Concepto del art├¡culo" className="w-full rounded-md border-slate-300 text-sm font-bold" value={art.descripcion || art.articulo || ''} onChange={(e) => {
                               const newArts = [...editingResguardo.articulos];
                               newArts[idx].descripcion = e.target.value;
                               setEditingResguardo({...editingResguardo, articulos: newArts});
                             }} />
                           </div>
                           <div className="w-1/4">
-                            <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                            <input type="text" placeholder="C├│digo Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
                               const newArts = [...editingResguardo.articulos];
                               newArts[idx].codigo = e.target.value;
                               setEditingResguardo({...editingResguardo, articulos: newArts});
@@ -2344,7 +2588,7 @@ Esta acción no se puede deshacer.`);
               <div className="space-y-4">
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
                   <h4 className="font-bold text-slate-800">{historyItem.articulo}</h4>
-                  <p className="text-sm text-slate-500">Código: {historyItem.codigo} | Ubicación Actual: {historyItem.ubicacion}</p>
+                  <p className="text-sm text-slate-500">C├│digo: {historyItem.codigo} | Ubicaci├│n Actual: {historyItem.ubicacion}</p>
                 </div>
                 
                 {historyItem.historial && historyItem.historial.length > 0 ? (
@@ -2364,7 +2608,7 @@ Esta acción no se puede deshacer.`);
                   </div>
                 ) : (
                   <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
-                    No hay historial de movimientos para este artículo.
+                    No hay historial de movimientos para este art├¡culo.
                   </div>
                 )}
                 
@@ -2385,7 +2629,7 @@ Esta acción no se puede deshacer.`);
                 {modalOpen === 'recepcion' && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Hora de Recepción</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Hora de Recepci├│n</label>
                       <input type="time" value={formData.hora} onChange={e => setFormData({...formData, hora: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div><label className="block text-sm font-medium text-slate-700 mb-1">Doc. de Origen (Factura, etc.)</label><input type="text" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.origen} onChange={e => setFormData({...formData, origen: e.target.value})} /></div>
@@ -2401,16 +2645,16 @@ Esta acción no se puede deshacer.`);
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Resguardante</label>
-                      <input type="text" placeholder="Profr. Juan Pérez" value={formData.nombreResguardante} onChange={e => setFormData({...formData, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
+                      <input type="text" placeholder="Profr. Juan P├®rez" value={formData.nombreResguardante} onChange={e => setFormData({...formData, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Área o Cargo</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">├ürea o Cargo</label>
                       <input type="text" placeholder="Ej. Aula 3 / Maestro de Historia" value={formData.areaResguardante} onChange={e => setFormData({...formData, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div className="md:col-span-2 mt-2">
                       <label className="flex items-center space-x-3 text-sm font-medium text-slate-700 cursor-pointer p-4 bg-indigo-50 rounded-xl border border-indigo-200 hover:bg-indigo-100 transition-colors">
                         <input type="checkbox" checked={formData.guardarEnInventario} onChange={e => setFormData({...formData, guardarEnInventario: e.target.checked})} className="rounded text-indigo-600 focus:ring-indigo-500 w-5 h-5" />
-                        <span>Guardar estos artículos automáticamente en el <strong>Inventario General</strong> de la escuela.</span>
+                        <span>Guardar estos art├¡culos autom├íticamente en el <strong>Inventario General</strong> de la escuela.</span>
                       </label>
                     </div>
                   </>
@@ -2419,17 +2663,17 @@ Esta acción no se puede deshacer.`);
                 {modalOpen === 'baja' && (
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Motivo de Baja</label>
-                    <input type="text" placeholder="Ej. Daño irreparable, Obsolescencia tecnológica" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} required />
+                    <input type="text" placeholder="Ej. Da├▒o irreparable, Obsolescencia tecnol├│gica" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} required />
                   </div>
                 )}
               </div>
 
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold text-slate-700">Artículos a incluir</h4>
+                    <h4 className="font-semibold text-slate-700">Art├¡culos a incluir</h4>
                     {modalOpen !== 'baja' && (
                       <button type="button" onClick={handleAddRow} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                        + Añadir fila
+                        + A├▒adir fila
                       </button>
                     )}
                   </div>
@@ -2445,7 +2689,7 @@ Esta acción no se puede deshacer.`);
                             }} />
                           </div>
                           <div className="flex-1">
-                            <input type="text" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                            <input type="text" placeholder="Nombre/Concepto del art├¡culo" className="w-full rounded-md border-slate-300 text-sm font-bold" value={art.descripcion || art.articulo || ''} onChange={(e) => {
                               const newArts = [...formData.articulos];
                               newArts[idx].descripcion = e.target.value;
                               setFormData({...formData, articulos: newArts});
@@ -2454,16 +2698,16 @@ Esta acción no se puede deshacer.`);
                           
                           {modalOpen === 'recepcion' && (
                             <div className="w-1/4">
-                              <input type="text" placeholder="Código Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600" value={art.codigo || ''} onChange={(e) => {
+                              <input type="text" placeholder="C├│digo Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600" value={art.codigo || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].codigo = e.target.value;
                                 setFormData({...formData, articulos: newArts});
-                              }} title="El sistema generará los siguientes folios de forma consecutiva automáticamente." />
+                              }} title="El sistema generar├í los siguientes folios de forma consecutiva autom├íticamente." />
                             </div>
                           )}
                           {(modalOpen === 'resguardo' || modalOpen === 'baja') && (
                             <div className="w-1/4">
-                              <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                              <input type="text" placeholder="C├│digo Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].codigo = e.target.value;
                                 setFormData({...formData, articulos: newArts});
@@ -2504,7 +2748,7 @@ Esta acción no se puede deshacer.`);
                            </div>
                            {modalOpen === 'baja' ? (
                              <div className="w-1/4">
-                               <input type="text" list="ubicaciones-list" placeholder="Ubicación" className="w-full rounded-md border-slate-300 text-sm" value={art.ubicacion || ''} onChange={(e) => { const newArts = [...formData.articulos]; newArts[idx].ubicacion = e.target.value; setFormData({...formData, articulos: newArts}); }} />
+                               <input type="text" list="ubicaciones-list" placeholder="Ubicaci├│n" className="w-full rounded-md border-slate-300 text-sm" value={art.ubicacion || ''} onChange={(e) => { const newArts = [...formData.articulos]; newArts[idx].ubicacion = e.target.value; setFormData({...formData, articulos: newArts}); }} />
                              </div>
                            ) : (
                              <div className="w-32">
@@ -2540,7 +2784,7 @@ Esta acción no se puede deshacer.`);
               {modalOpen === 'recepcion' && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
-                  <textarea rows="2" value={formData.observaciones} onChange={e => setFormData({...formData, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, faltantes..."></textarea>
+                  <textarea rows="2" value={formData.observaciones} onChange={e => setFormData({...formData, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Da├▒os visibles, faltantes..."></textarea>
                 </div>
               )}
 
@@ -2615,12 +2859,12 @@ Esta acción no se puede deshacer.`);
                 <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl text-center">
                   <div className="text-xs font-bold text-slate-500 uppercase">Ingresos Generales</div>
                   <div className="text-2xl font-black text-slate-800">${totalAdmin.toFixed(2)}</div>
-                  <div className="text-xs text-slate-400 font-bold">${filtered.filter(p => p.sysTipo === 'Admin').length} Trámites</div>
+                  <div className="text-xs text-slate-400 font-bold">${filtered.filter(p => p.sysTipo === 'Admin').length} Tr├ímites</div>
                 </div>
                 <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl text-center">
-                  <div className="text-xs font-bold text-slate-500 uppercase">Exámenes Extraordinarios</div>
+                  <div className="text-xs font-bold text-slate-500 uppercase">Ex├ímenes Extraordinarios</div>
                   <div className="text-2xl font-black text-slate-800">${totalExtra.toFixed(2)}</div>
-                  <div className="text-xs text-slate-400 font-bold">${filtered.filter(p => p.sysTipo === 'Extra').length} Trámites</div>
+                  <div className="text-xs text-slate-400 font-bold">${filtered.filter(p => p.sysTipo === 'Extra').length} Tr├ímites</div>
                 </div>
                 <div className="bg-emerald-50 p-4 border-2 border-emerald-200 rounded-xl text-center">
                   <div className="text-xs font-bold text-emerald-600 uppercase">Total Neto</div>
@@ -2673,7 +2917,7 @@ Esta acción no se puede deshacer.`);
         <div className="mt-20 pt-8 grid grid-cols-2 gap-12 text-center">
           <div>
             <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sello de la Institución</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sello de la Instituci├│n</span>
           </div>
           <div>
             <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
@@ -2684,8 +2928,13 @@ Esta acción no se puede deshacer.`);
     )}
 
     
-     
-      {showPagoAdminModal && (
+    {showScannerModal && (
+      <ScannerInventarioModal 
+        onClose={() => setShowScannerModal(false)} 
+      />
+    )}
+    
+    {showPagoAdminModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in duration-200">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
@@ -2699,7 +2948,7 @@ Esta acción no se puede deshacer.`);
                   <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Ingreso</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'administrativo', detalles: [{concepto: '', monto: ''}]})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'administrativo' ? 'bg-primary-50 border-primary-500 text-primary-700 ring-1 ring-primary-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
-                      <FileText className="w-5 h-5" /> Trámites Generales
+                      <FileText className="w-5 h-5" /> Tr├ímites Generales
                     </button>
                     <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'extraordinario', detalles: [{concepto: 'Examen Extraordinario de ', monto: ''}]})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'extraordinario' ? 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
                       <AlertTriangle className="w-5 h-5" /> Examen Extraordinario
@@ -2771,9 +3020,9 @@ Esta acción no se puede deshacer.`);
                             }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm">
                               <option value="">Selecciona un concepto...</option>
                               <option value="Constancia de Estudios">Constancia de Estudios</option>
-                              <option value="Reposición de Credencial">Reposición de Credencial</option>
+                              <option value="Reposici├│n de Credencial">Reposici├│n de Credencial</option>
                               <option value="Paquete Escolar">Paquete Escolar</option>
-                              <option value="Donación / Aportación">Donación / Aportación Voluntaria</option>
+                              <option value="Donaci├│n / Aportaci├│n">Donaci├│n / Aportaci├│n Voluntaria</option>
                               <option value="Otro">Otro (Especificar en notas)</option>
                             </select>
                           ) : (
@@ -2781,7 +3030,7 @@ Esta acción no se puede deshacer.`);
                                 const newDetalles = [...pagoFormData.detalles];
                                 newDetalles[index].concepto = e.target.value;
                                 setPagoFormData({...pagoFormData, detalles: newDetalles});
-                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm" placeholder="Ej. Examen Extraordinario de Matemáticas" />
+                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm" placeholder="Ej. Examen Extraordinario de Matem├íticas" />
                           )}
                         </div>
                         <div className="w-28 relative">
@@ -2820,11 +3069,11 @@ Esta acción no se puede deshacer.`);
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Método de Pago</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">M├®todo de Pago</label>
                     <select value={pagoFormData.metodo} onChange={e => setPagoFormData({...pagoFormData, metodo: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
-                      <option value="Depósito">Depósito Bancario</option>
+                      <option value="Dep├│sito">Dep├│sito Bancario</option>
                     </select>
                   </div>
                 </div>
@@ -2860,7 +3109,7 @@ Esta acción no se puede deshacer.`);
                     <Archive className="w-16 h-16 opacity-50" />
                   </div>
                   <h1 className="text-2xl font-black text-slate-900 tracking-tight font-serif">ESC. SEC. GRAL. "RENACIMIENTO"</h1>
-                  <h2 className="text-sm font-bold text-slate-600 mt-1 uppercase tracking-widest bg-slate-100 inline-block px-3 py-1 rounded-full border border-slate-200">Recibo Oficial de Tr�mite Interno</h2>
+                  <h2 className="text-sm font-bold text-slate-600 mt-1 uppercase tracking-widest bg-slate-100 inline-block px-3 py-1 rounded-full border border-slate-200">Recibo Oficial de Tr´┐¢mite Interno</h2>
                   <div className="mt-6 flex justify-between items-center text-sm font-mono">
                     <div className="font-bold text-rose-700 bg-rose-50 px-3 py-1.5 rounded-md border border-rose-200 flex items-center">
                       FOLIO: {(() => {
@@ -2942,7 +3191,7 @@ Esta acción no se puede deshacer.`);
                 <div className="mt-20 pt-8 grid grid-cols-2 gap-12 text-center">
                   <div>
                     <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sello de la Instituci�n</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sello de la Instituci´┐¢n</span>
                   </div>
                   <div>
                     <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
@@ -2951,8 +3200,8 @@ Esta acción no se puede deshacer.`);
                 </div>
                 <div className="mt-12 text-center border-t border-dashed border-slate-300 pt-4">
                   <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-                    *** Este recibo es v�lido �nicamente para tr�mites administrativos internos ***<br/>
-                    No representa un comprobante fiscal. Conserve este documento para cualquier aclaraci�n.
+                    *** Este recibo es v´┐¢lido ´┐¢nicamente para tr´┐¢mites administrativos internos ***<br/>
+                    No representa un comprobante fiscal. Conserve este documento para cualquier aclaraci´┐¢n.
                   </p>
                 </div>
                 <div className="hidden print:block absolute inset-0 -z-10 flex items-center justify-center opacity-[0.03] pointer-events-none">

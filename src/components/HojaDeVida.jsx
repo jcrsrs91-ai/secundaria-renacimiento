@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Save, Edit, User, Heart, Users, Camera, StopCircle, Printer } from 'lucide-react';
+import { X, Save, Edit, User, Heart, Users, Camera, Upload, StopCircle, Printer } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
@@ -54,6 +54,25 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     if (talleresMap[val]) {
       setTaller(talleresMap[val]);
     }
+  };
+
+  
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result;
+      setFotoPreview(base64String);
+      try {
+        const docRef = doc(db, "students", student.id);
+        await updateDoc(docRef, { fotoUrl: base64String });
+        console.log("Foto subida exitosamente");
+      } catch (error) {
+        console.error("Error al subir foto: ", error);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const startCamera = async () => {
@@ -394,9 +413,15 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                          </button>
                        </div>
                      ) : (
-                       <button onClick={startCamera} type="button" className="px-4 py-1.5 bg-slate-800 text-white text-xs font-bold rounded shadow hover:bg-slate-900 flex items-center">
-                         <Camera className="w-3 h-3 mr-1.5" /> Tomar Foto
-                       </button>
+                       <div className="flex">
+        <button onClick={startCamera} type="button" className="px-4 py-1.5 bg-slate-800 text-white text-xs font-bold rounded shadow hover:bg-slate-900 flex items-center">
+            <Camera className="w-3 h-3 mr-1.5" /> Tomar Foto
+        </button>
+        <label className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 flex items-center cursor-pointer ml-2">
+            <Upload className="w-3 h-3 mr-1.5" /> Subir
+            <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+        </label>
+    </div>
                      )}
                    </div>
                  </div>

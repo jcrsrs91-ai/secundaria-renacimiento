@@ -12,6 +12,7 @@ import PreInscripcion from './pages/public/PreInscripcion';
 import Dashboard from './pages/dashboard/Dashboard';
 import ControlEscolar from './pages/dashboard/ControlEscolar';
 import Contraloria from './pages/dashboard/Contraloria';
+import Inventario from './pages/dashboard/Inventario';
 import TrabajoSocial from './pages/dashboard/TrabajoSocial';
 import Coordinacion from './pages/dashboard/Coordinacion';
 import Asistencia from './pages/dashboard/Asistencia';
@@ -42,6 +43,7 @@ function App() {
           <Route path="control-escolar" element={<ControlEscolar />} />
           <Route path="asistencia" element={<Asistencia />} />
           <Route path="contraloria" element={<Contraloria />} />
+            <Route path="inventario" element={<Inventario />} />
           <Route path="trabajo-social" element={<TrabajoSocial />} />
           <Route path="coordinacion" element={<Coordinacion />} />
           <Route path="biblioteca" element={<Biblioteca />} />

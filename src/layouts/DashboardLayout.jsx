@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
+import { Package,  
   LayoutDashboard, 
   Users, 
   Calculator, 
@@ -24,6 +24,7 @@ export default function DashboardLayout() {
     { name: 'Panel Principal', path: '/panel', icon: LayoutDashboard, id: 'home' },
     { name: 'Control Escolar', path: '/panel/control-escolar', icon: Users, id: 'control-escolar' },
     { name: 'Contraloría', path: '/panel/contraloria', icon: Calculator, id: 'contraloria' },
+    { name: 'Inventario y Resguardos', path: '/panel/inventario', icon: Package, id: 'inventario' },
     { name: 'Trabajo Social', path: '/panel/trabajo-social', icon: HeartHandshake, id: 'trabajo-social' },
     { name: 'Coordinación Académica', path: '/panel/coordinacion', icon: GraduationCap, id: 'coordinacion' },
     { name: 'Prefectura / Asistencia', path: '/panel/asistencia', icon: ClipboardCheck, id: 'asistencia' },
@@ -35,6 +36,7 @@ export default function DashboardLayout() {
   ].filter(item => {
     if (item.id === 'home') return true;
     if (userPermissions?.includes('all')) return true;
+    if (item.id === 'inventario' && userPermissions?.includes('contraloria')) return true;
     return userPermissions?.includes(item.id);
   }) : [
     { name: 'Mi Portal Familiar', path: '/panel/portal-familiar', icon: UsersRound },
