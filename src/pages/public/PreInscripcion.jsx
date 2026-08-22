@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
-import { UserPlus, ClipboardList, Search, Upload, Printer, AlertTriangle } from 'lucide-react';
+import { UserPlus, ClipboardList, Search, Upload, Printer } from 'lucide-react';
 import { db, storage } from '../../firebase';
 import { collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -473,17 +473,15 @@ export default function PreInscripcion() {
                 {activeTab !== 'completar' && (
                   <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 text-center">
                     <h3 className="text-lg font-bold text-slate-800 mb-2">Fotografía del Alumno</h3>
-                    <div className="mt-4 p-4 bg-red-100 border-2 border-red-500 rounded-lg text-left shadow-sm">
-                      <h4 className="text-red-700 font-black text-base mb-2 uppercase flex items-center"><AlertTriangle className="w-5 h-5 mr-2" /> ATENCIÓN: REQUISITOS DE FOTOGRAFÍA!!</h4>
-                      <p className="text-sm text-red-800 font-bold mb-2">Esta fotografía se imprimirá directamente en la CREDENCIAL ESCOLAR OFICIAL. Si no cumple con los siguientes requisitos, el trámite será <span className="underline">RECHAZADO</span>:</p>
-                      <ul className="list-disc pl-5 text-sm text-red-800 mt-2 space-y-1 font-semibold">
-                        <li>Fondo COMPLETAMENTE BLANCO (sin sombras, sin texturas).</li>
-                        <li>Vestir playera o camisa escolar (BLANCA), sin logotipos.</li>
-                        <li>Cabello bien peinado y completamente RECOGIDO hacia atrás.</li>
-                        <li>Rostro descubierto (orejas y frente visibles).</li>
-                        <li>SIN maquillaje, SIN aretes, SIN collares, SIN lentes.</li>
-                        <li>Rostro serio y mirando de frente.</li>
-                        <li>Debe ser una foto RECIENTE.</li>
+                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
+                      <h4 className="text-red-800 font-bold text-sm mb-1">FOTOGRAFÍA RECIENTE PARA CREDENCIAL ESCOLAR</h4>
+                      <p className="text-xs text-red-700">Esta fotografía se imprimirá directamente en la credencial oficial del alumno, por lo que debe cumplir <b>estrictamente</b> con las normas de la SEP:</p>
+                      <ul className="list-disc pl-4 text-xs text-red-700 mt-1 space-y-1">
+                        <li>Tomada de frente, rostro serio y orejas descubiertas.</li>
+                        <li>Fondo completamente blanco o muy claro (sin sombras).</li>
+                        <li>Usar playera o camisa tipo polo escolar (blanca).</li>
+                        <li>Sin lentes, sin gorras, sin maquillaje y con el cabello recogido.</li>
+                        <li><b>Completamente Reciente.</b></li>
                       </ul>
                     </div>
 
@@ -573,6 +571,19 @@ export default function PreInscripcion() {
                             </div>
                           </>
                         )}
+                        <div>
+                          <label className="block text-sm font-medium">¿Cuenta con alguna beca?</label>
+                          <select name="tieneBeca" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.tieneBeca || 'NO'} onChange={(e) => {
+                            const input = document.getElementById('nombreBecaContainer');
+                            if(input) input.style.display = e.target.value === 'SÍ' ? 'block' : 'none';
+                          }}>
+                            <option>NO</option><option>SÍ</option>
+                          </select>
+                        </div>
+                        <div id="nombreBecaContainer" style={{display: studentData?.tieneBeca === 'SÍ' ? 'block' : 'none'}}>
+                          <label className="block text-sm font-medium">Nombre de la Beca</label>
+                          <input type="text" name="nombreBeca" className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.nombreBeca} />
+                        </div>
                       </div>
                     </div>
 
@@ -623,19 +634,6 @@ export default function PreInscripcion() {
                         <div>
                           <label className="block text-sm font-medium text-slate-700">Código Postal</label>
                           <input type="text" name="cp" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.cp} />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium">¿Cuenta con alguna beca?</label>
-                          <select name="tieneBeca" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.tieneBeca || 'NO'} onChange={(e) => {
-                            const input = document.getElementById('nombreBecaContainer');
-                            if(input) input.style.display = e.target.value === 'SÍ' ? 'block' : 'none';
-                          }}>
-                            <option>NO</option><option>SÍ</option>
-                          </select>
-                        </div>
-                        <div id="nombreBecaContainer" style={{display: studentData?.tieneBeca === 'SÍ' ? 'block' : 'none'}}>
-                          <label className="block text-sm font-medium">Nombre de la Beca</label>
-                          <input type="text" name="nombreBeca" className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.nombreBeca} />
                         </div>
                       </div>
                     </div>
@@ -709,7 +707,6 @@ export default function PreInscripcion() {
                       </div>
                       
                       
-
                       <h4 className="font-bold text-slate-700 mt-6 mb-3 border-b pb-1">Contactos de Emergencia (Diferentes al Tutor)</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
