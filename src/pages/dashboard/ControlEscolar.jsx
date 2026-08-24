@@ -29,7 +29,6 @@ import AcuseDocumentosPrint from '../../components/AcuseDocumentosPrint';
 import AcuseRecepcionModal from '../../components/AcuseRecepcionModal';
 import AcuseRecepcionPrint from '../../components/AcuseRecepcionPrint';
 import { autoAcentuar } from '../../utils/format';
-import { removeEmptyAndUndefined, formatKey } from '../../utils/format';
 import { searchIncludes } from '../../utils/search';
 
 export default function ControlEscolar() {
