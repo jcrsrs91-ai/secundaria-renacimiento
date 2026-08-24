@@ -1,9 +1,12 @@
-﻿import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useState, useEffect, useMemo } from 'react';
 import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu, Wallet, AlertTriangle, TrendingUp, TrendingDown, BarChart as BarChartIcon, FileSpreadsheet, PieChart as PieChartIcon } from 'lucide-react';
 
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
+import { QRCodeSVG } from 'qrcode.react';
+import { autoAcentuar } from '../../utils/format';
+import { searchIncludes } from '../../utils/search';
 import { useAuth } from '../../context/AuthContext';
 import CajaLockScreen from '../../components/CajaLockScreen';
 import { db } from '../../firebase';
@@ -616,9 +619,7 @@ export default function Inventario() {
 
   // Filtrar el inventario de acuerdo con los criterios seleccionados
   const filteredInventario = inventario.filter(item => {
-    const matchesSearch = !searchTerm || 
-      (item.codigo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.articulo || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !searchTerm || searchIncludes(item.codigo, searchTerm) || searchIncludes(item.articulo, searchTerm);
     
     const matchesStatus = statusFilter === 'Todos' || item.estado === statusFilter;
     const matchesLocation = locationFilter === 'Todos' || item.ubicacion === locationFilter;
@@ -2317,8 +2318,8 @@ Esta acci├│n no se puede deshacer.`);
               
                             <tbody className="divide-y divide-slate-200">
                 {resguardos.length > 0 ? resguardos.filter(r => 
-                    r.resguardante?.toLowerCase().includes(resguardoSearch.toLowerCase()) ||
-                    r.folio?.toLowerCase().includes(resguardoSearch.toLowerCase())
+                    searchIncludes(r.resguardante, resguardoSearch) ||
+                    searchIncludes(r.folio, resguardoSearch)
                 ).map(r => (
                   <tr key={r.id}>
                     <td className="px-6 py-4 text-sm font-medium text-slate-900">{r.folio || 'N/A'}</td>

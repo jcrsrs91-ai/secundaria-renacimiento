@@ -13,6 +13,7 @@ import CartaResguardoPrint from '../../components/CartaResguardoPrint';
 import ScannerInventarioModal from '../../components/ScannerInventarioModal';
 import EtiquetasPrint from '../../components/EtiquetasPrint';
 import ActaBajaPrint from '../../components/ActaBajaPrint';
+import { searchIncludes } from '../../utils/search';
 
 // Funciones auxiliares para el manejo de rangos de folios de inventario
 const generateCodeRange = (baseCode, quantity) => {
@@ -268,7 +269,7 @@ export default function Contraloria() {
 
   const filteredPagos = useMemo(() => {
     return pagosRecientes.filter(p => {
-      const normalizeStr = (str) => String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); const nombreBuscado = normalizeStr(p.alumno || p.nombre); const folioBuscado = normalizeStr(p.folio || p.id); const query = normalizeStr(pagosSearch); const matchSearch = !pagosSearch || nombreBuscado.includes(query) || folioBuscado.includes(query);
+      const matchSearch = !pagosSearch || searchIncludes(p.alumno || p.nombre || '', pagosSearch) || searchIncludes(p.folio || p.id || '', pagosSearch);
       const matchGrado = pagosGrado === 'Todos' || p.grado === pagosGrado;
       const matchGrupo = pagosGrupo === 'Todos' || p.grupo === pagosGrupo;
       return matchSearch && matchGrado && matchGrupo;
@@ -378,7 +379,7 @@ export default function Contraloria() {
   });
 
   const filteredPagosGenerales = todosLosPagosGenerales.filter(p => {
-    const normalizeStr = (str) => String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); const nombreBuscado = normalizeStr(p.alumno || p.nombre); const folioBuscado = normalizeStr(p.folio || p.id); const query = normalizeStr(pagosSearch); const matchesSearch = !pagosSearch || nombreBuscado.includes(query) || folioBuscado.includes(query);
+    const matchesSearch = !pagosSearch || searchIncludes(p.alumno || p.nombre || '', pagosSearch) || searchIncludes(p.folio || p.id || '', pagosSearch);
     const matchesGrado = pagosGrado === 'Todos' || p.grado === pagosGrado;
     const matchesGrupo = pagosGrupo === 'Todos' || p.grupo === pagosGrupo;
     
@@ -401,7 +402,7 @@ export default function Contraloria() {
       monto: `${parseFloat(p.monto).toFixed(2)}`,
       pagoFecha: p.createdAt 
   })).filter(p => {
-    const normalizeStr = (str) => String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); const nombreBuscado = normalizeStr(p.alumno || p.nombre); const folioBuscado = normalizeStr(p.folio || p.id); const query = normalizeStr(pagosSearch); const matchesSearch = !pagosSearch || nombreBuscado.includes(query) || folioBuscado.includes(query);
+    const matchesSearch = !pagosSearch || searchIncludes(p.alumno || p.nombre || '', pagosSearch) || searchIncludes(p.folio || p.id || '', pagosSearch);
     let matchesFecha = true;
     if (fechaInicio || fechaFin) {
        const pDate = p.pagoFecha?.toDate ? p.pagoFecha.toDate() : new Date(p.pagoFecha || new Date());
@@ -665,12 +666,8 @@ export default function Contraloria() {
 
   // Extraer ubicaciones únicas dinámicamente
   const ubicacionesUnicas = [...new Set(inventario.map(item => item.ubicacion).filter(Boolean))].sort();
-
-  // Filtrar el inventario de acuerdo con los criterios seleccionados
   const filteredInventario = inventario.filter(item => {
-    const matchesSearch = !searchTerm || 
-      (item.codigo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.articulo || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !searchTerm || searchIncludes(item.codigo, searchTerm) || searchIncludes(item.articulo, searchTerm);
     
     const matchesStatus = statusFilter === 'Todos' || item.estado === statusFilter;
     const matchesLocation = locationFilter === 'Todos' || item.ubicacion === locationFilter;
@@ -2073,8 +2070,8 @@ Esta acción no se puede deshacer.`);
               
                             <tbody className="divide-y divide-slate-200">
                 {resguardos.length > 0 ? resguardos.filter(r => 
-                    r.resguardante?.toLowerCase().includes(resguardoSearch.toLowerCase()) ||
-                    r.folio?.toLowerCase().includes(resguardoSearch.toLowerCase())
+                    searchIncludes(r.resguardante, resguardoSearch) ||
+                    searchIncludes(r.folio, resguardoSearch)
                 ).map(r => (
                   <tr key={r.id}>
                     <td className="px-6 py-4 text-sm font-medium text-slate-900">{r.folio || 'N/A'}</td>
@@ -2717,10 +2714,9 @@ Esta acción no se puede deshacer.`);
                       const val = e.target.value;
                       setPagoFormData({...pagoFormData, nombre: val});
                       if(val.length > 1) {
-                        const q = String(val || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
                         const matches = allStudentsRaw.filter(s => {
-                           const n = String(`${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''} ${s.nombres || ''}`.trim()).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-                           return n.includes(q);
+                           const n = `${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''} ${s.nombres || ''}`.trim();
+                           return searchIncludes(n, val);
                         }).slice(0, 5);
                         setStudentSearchMatches(matches);
                         setShowStudentDropdown(matches.length > 0);

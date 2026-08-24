@@ -29,6 +29,8 @@ import AcuseDocumentosPrint from '../../components/AcuseDocumentosPrint';
 import AcuseRecepcionModal from '../../components/AcuseRecepcionModal';
 import AcuseRecepcionPrint from '../../components/AcuseRecepcionPrint';
 import { autoAcentuar } from '../../utils/format';
+import { removeEmptyAndUndefined, formatKey } from '../../utils/format';
+import { searchIncludes } from '../../utils/search';
 
 export default function ControlEscolar() {
   const { config, updateConfig } = useGlobalConfig();
@@ -196,10 +198,8 @@ export default function ControlEscolar() {
   }, []);
 
   const filteredDirectorio = directorio.filter(a => {
-    const removeAccents = (str) => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
-    const searchTarget = removeAccents(`${a.nombres} ${a.apellidoPaterno} ${a.apellidoMaterno} ${a.matricula}`).toLowerCase();
-    const searchTerms = removeAccents(searchFilter).toLowerCase();
-    const matchesSearch = searchFilter === '' || searchTarget.includes(searchTerms);
+    const searchTarget = `${a.nombres} ${a.apellidoPaterno} ${a.apellidoMaterno} ${a.matricula}`;
+    const matchesSearch = searchFilter === '' || searchIncludes(searchTarget, searchFilter);
     const matchesGrade = gradeFilter === 'Todos' || a.grado === gradeFilter;
     const matchesGroup = groupFilter === 'Todos' || a.grupo === groupFilter;
     const matchesShift = shiftFilter === 'Todos' || a.turno === shiftFilter;
@@ -743,10 +743,7 @@ export default function ControlEscolar() {
     document.body.removeChild(link);
   };
 
-  const removeAccents = (str) => {
-    return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
-  };
-  const filteredPendientes = pendientes.filter(p => removeAccents(`${p.nombres} ${p.apellidoPaterno} ${p.apellidoMaterno} ${p.curp}`).toLowerCase().includes(removeAccents(searchAspirantes).toLowerCase()));
+  const filteredPendientes = pendientes.filter(p => searchIncludes(`${p.nombres} ${p.apellidoPaterno} ${p.apellidoMaterno} ${p.curp}`, searchAspirantes));
 
   return (
     <div className="h-full flex flex-col relative print:bg-white">
@@ -1295,12 +1292,12 @@ export default function ControlEscolar() {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {directorio.filter(s => s.status === 'Egresado' && (generacionFilter === 'Todos' || s.generacionEgreso === generacionFilter) && 
-                 (searchFilter === '' || `${s.nombres} ${s.apellidoPaterno} ${s.apellidoMaterno}`.toLowerCase().includes(searchFilter.toLowerCase()))
+                 (searchFilter === '' || searchIncludes(`${s.nombres} ${s.apellidoPaterno} ${s.apellidoMaterno}`, searchFilter))
               ).length === 0 ? (
                 <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">No hay egresados que coincidan.</td></tr>
               ) : (
                 directorio.filter(s => s.status === 'Egresado' && (generacionFilter === 'Todos' || s.generacionEgreso === generacionFilter) && 
-                 (searchFilter === '' || `${s.nombres} ${s.apellidoPaterno} ${s.apellidoMaterno}`.toLowerCase().includes(searchFilter.toLowerCase()))
+                 (searchFilter === '' || searchIncludes(`${s.nombres} ${s.apellidoPaterno} ${s.apellidoMaterno}`, searchFilter))
                 ).map(a => (
                   <tr key={a.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 text-sm font-bold text-primary-700">{a.matricula}</td>
