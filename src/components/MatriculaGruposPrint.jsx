@@ -83,23 +83,27 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
   }, [alumnos]);
 
   const chartData = useMemo(() => {
-    return [
-      {
-        name: '1er Grado',
-        Hombres: matriculaData['1er Grado'].existencia.h,
-        Mujeres: matriculaData['1er Grado'].existencia.m,
-      },
-      {
-        name: '2do Grado',
-        Hombres: matriculaData['2do Grado'].existencia.h,
-        Mujeres: matriculaData['2do Grado'].existencia.m,
-      },
-      {
-        name: '3er Grado',
-        Hombres: matriculaData['3er Grado'].existencia.h,
-        Mujeres: matriculaData['3er Grado'].existencia.m,
-      }
-    ];
+    const data = [];
+    ['1er Grado', '2do Grado', '3er Grado'].forEach((grado, gIndex) => {
+      const gPrefix = gIndex + 1;
+      ['Matutino', 'Vespertino'].forEach(turno => {
+        const key = `${grado}-${turno}`;
+        if (!matriculaData[key]) return;
+        const grupos = Array.from(matriculaData[key].grupos).sort();
+        grupos.forEach(grupo => {
+           const groupKey = `${grado}-${turno}-${grupo}`;
+           const gData = matriculaData[groupKey];
+           if (gData && gData.existencia.t > 0) {
+              data.push({
+                name: `${gPrefix}${grupo}`,
+                Hombres: gData.existencia.h,
+                Mujeres: gData.existencia.m
+              });
+           }
+        });
+      });
+    });
+    return data;
   }, [matriculaData]);
 
   const pieData = useMemo(() => {
@@ -294,7 +298,7 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
           {/* Gráfica de Distribución por Grado (Stacked Bar) */}
           <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm print:shadow-none print:border-slate-400 print:p-4 print:mb-8">
             <h3 className="text-center text-sm font-black text-slate-800 mb-2 uppercase tracking-wide print:text-black print:mb-4">
-              Distribución por Grado
+              Distribución por Grupo
             </h3>
             <div className="h-64 w-full print:h-80">
               <ResponsiveContainer width="100%" height="100%">
