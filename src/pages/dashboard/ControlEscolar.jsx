@@ -15,6 +15,7 @@ import CuadroFinalPrint from '../../components/CuadroFinalPrint';
 import CuadroParcialPrint from '../../components/CuadroParcialPrint';
 import AprovechamientoPrint from '../../components/AprovechamientoPrint';
 import MatriculaPrint from '../../components/MatriculaPrint';
+import MatriculaGruposPrint from '../../components/MatriculaGruposPrint';
 import AprobacionPrint from '../../components/AprobacionPrint';
 import EficienciaTerminalPrint from '../../components/EficienciaTerminalPrint';
 import DesempenoAlcanzadoPrint from '../../components/DesempenoAlcanzadoPrint';
@@ -824,6 +825,10 @@ export default function ControlEscolar() {
           {/* Matrícula */}
           <button onClick={() => setActiveTab('matricula')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'matricula' ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Estadística Matrícula
+          </button>
+
+          <button onClick={() => setActiveTab('matriculaGrupos')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'matriculaGrupos' ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Matrícula por Grupos
           </button>
 
           {/* Aprovechamiento */}
@@ -1778,9 +1783,14 @@ export default function ControlEscolar() {
         <AprovechamientoPrint activos={activos} onClose={() => setActiveTab('activos')} />
       )}
 
-      {/* Sección Estadística de Matrícula */}
+      {/* Sección Matrícula */}
       {!loading && activeTab === 'matricula' && !printMode && (
         <MatriculaPrint alumnos={directorio} onClose={() => setActiveTab('activos')} />
+      )}
+
+      {/* Sección Matrícula Grupos */}
+      {!loading && activeTab === 'matriculaGrupos' && !printMode && (
+        <MatriculaGruposPrint alumnos={directorio} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* Sección Aprobación (E2) */}
