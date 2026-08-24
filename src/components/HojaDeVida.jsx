@@ -45,7 +45,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     'C': 'Diseño de Circuitos Eléctricos (4021)',
     'D': 'Administración Contable (6011)',
     'E': 'Diseño y Mecánica Automotriz (3081)',
-    'F': 'Ofimática (6031)'
+    'F': 'Ofimática (6031)',
+    'G': 'Climatización y Refrigeración (3181)',
+    'H': 'Administración Contable (6011)',
+    'I': 'Diseño de Circuitos Eléctricos (4021)',
+    'J': 'Administración Contable (6011)',
+    'K': 'Diseño y Mecánica Automotriz (3081)',
+    'L': 'Ofimática (6031)'
   };
 
   const handleGrupoChange = (e) => {
@@ -217,7 +223,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Grupo</label>
                       <select name="grupo" value={grupo} onChange={handleGrupoChange} translate="no" className="notranslate mt-1 w-full p-2 border rounded" required>
-                        <option value="A" translate="no">A</option><option value="B" translate="no">B</option><option value="C" translate="no">C</option><option value="D" translate="no">D</option><option value="E" translate="no">E</option><option value="F" translate="no">F</option>
+                        <option value="A" translate="no">A</option><option value="B" translate="no">B</option><option value="C" translate="no">C</option><option value="D" translate="no">D</option><option value="E" translate="no">E</option><option value="F" translate="no">F</option><option value="G" translate="no">G</option><option value="H" translate="no">H</option><option value="I" translate="no">I</option><option value="J" translate="no">J</option><option value="K" translate="no">K</option><option value="L" translate="no">L</option>
                       </select>
                     </div>
                     <div>

@@ -49,12 +49,18 @@ export default function AddStudentModal({ onClose }) {
 
   const getTallerPorGrupo = (grupo) => {
     switch(grupo) {
-      case 'A': return 'Climatización y refrigeración';
-      case 'B': return 'Administración contable';
-      case 'C': return 'Diseño y circuitos eléctricos';
-      case 'D': return 'Administración contable';
-      case 'E': return 'Diseño y mecánica automotriz';
-      case 'F': return 'Ofimática';
+      case 'A':
+      case 'G': return 'Climatización y refrigeración';
+      case 'B':
+      case 'H': return 'Administración contable';
+      case 'C':
+      case 'I': return 'Diseño y circuitos eléctricos';
+      case 'D':
+      case 'J': return 'Administración contable';
+      case 'E':
+      case 'K': return 'Diseño y mecánica automotriz';
+      case 'F':
+      case 'L': return 'Ofimática';
       default: return 'Por asignar';
     }
   };
@@ -195,7 +201,7 @@ export default function AddStudentModal({ onClose }) {
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Grupo *</label>
                   <select name="grupo" required value={formData.grupo} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
                     <option value="">Seleccionar...</option>
-                    {['A','B','C','D','E','F'].map(g => <option key={g} value={g}>{g}</option>)}
+                    {['A','B','C','D','E','F','G','H','I','J','K','L'].map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
                 <div>

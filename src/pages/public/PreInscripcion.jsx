@@ -518,7 +518,7 @@ export default function PreInscripcion() {
                         )}
                         <div>
                           <label className="block text-sm font-medium">Grupo</label>
-                          <select name="grupo" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.grupo}
+                          <select name="grupo" className="mt-1 block w-full rounded-md shadow-sm p-2 border notranslate" required defaultValue={studentData?.grupo}
                             onChange={(e) => {
                               const val = e.target.value;
                               const talleresMap = {
@@ -527,7 +527,13 @@ export default function PreInscripcion() {
                                 'C': 'Diseño de Circuitos Eléctricos (4021)',
                                 'D': 'Administración Contable (6011)',
                                 'E': 'Diseño y Mecánica Automotriz (3081)',
-                                'F': 'Ofimática (6031)'
+                                'F': 'Ofimática (6031)',
+                                'G': 'Climatización y Refrigeración (3181)',
+                                'H': 'Administración Contable (6011)',
+                                'I': 'Diseño de Circuitos Eléctricos (4021)',
+                                'J': 'Administración Contable (6011)',
+                                'K': 'Diseño y Mecánica Automotriz (3081)',
+                                'L': 'Ofimática (6031)'
                               };
                               const input = document.getElementById('tallerInput');
                               if (input) {
@@ -542,6 +548,12 @@ export default function PreInscripcion() {
                             <option value="D" translate="no">D</option>
                             <option value="E" translate="no">E</option>
                             <option value="F" translate="no">F</option>
+                            <option value="G" translate="no">G</option>
+                            <option value="H" translate="no">H</option>
+                            <option value="I" translate="no">I</option>
+                            <option value="J" translate="no">J</option>
+                            <option value="K" translate="no">K</option>
+                            <option value="L" translate="no">L</option>
                           </select>
                         </div>
                         <div>

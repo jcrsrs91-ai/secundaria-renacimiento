@@ -121,12 +121,18 @@ export default function ControlEscolar() {
 
   const getTallerPorGrupo = (grupo) => {
     switch(grupo) {
-      case 'A': return 'Climatización y refrigeración';
-      case 'B': return 'Administración contable';
-      case 'C': return 'Diseño y circuitos eléctricos';
-      case 'D': return 'Administración contable';
-      case 'E': return 'Diseño y mecánica automotriz';
-      case 'F': return 'Ofimática';
+      case 'A':
+      case 'G': return 'Climatización y refrigeración';
+      case 'B':
+      case 'H': return 'Administración contable';
+      case 'C':
+      case 'I': return 'Diseño y circuitos eléctricos';
+      case 'D':
+      case 'J': return 'Administración contable';
+      case 'E':
+      case 'K': return 'Diseño y mecánica automotriz';
+      case 'F':
+      case 'L': return 'Ofimática';
       default: return 'Por asignar';
     }
   };
@@ -981,6 +987,12 @@ export default function ControlEscolar() {
                 <option value="D">D</option>
                 <option value="E">E</option>
                 <option value="F">F</option>
+                <option value="G">G</option>
+                <option value="H">H</option>
+                <option value="I">I</option>
+                <option value="J">J</option>
+                <option value="K">K</option>
+                <option value="L">L</option>
               </select>
             </div>
             <div className="w-full md:w-1/5">
@@ -1117,7 +1129,7 @@ export default function ControlEscolar() {
               <label className="block text-xs font-medium text-slate-500 mb-1">Grupo</label>
               <select translate="no" className="notranslate w-full p-2 border rounded-lg text-sm bg-white" value={groupFilter} onChange={e => setGroupFilter(e.target.value)}>
                 <option value="Todos">Todos los Grupos</option>
-                <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option>
+                <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option><option value="J">J</option><option value="K">K</option><option value="L">L</option>
               </select>
             </div>
             <div className="w-full md:w-32">
@@ -1559,6 +1571,12 @@ export default function ControlEscolar() {
                       <option value="D">D - Administración contable</option>
                       <option value="E">E - Diseño y mecánica automotriz</option>
                       <option value="F">F - Ofimática</option>
+                      <option value="G">G - Climatización y refrigeración</option>
+                      <option value="H">H - Administración contable</option>
+                      <option value="I">I - Diseño y circuitos eléctricos</option>
+                      <option value="J">J - Administración contable</option>
+                      <option value="K">K - Diseño y mecánica automotriz</option>
+                      <option value="L">L - Ofimática</option>
                     </select>
                   </div>
 
