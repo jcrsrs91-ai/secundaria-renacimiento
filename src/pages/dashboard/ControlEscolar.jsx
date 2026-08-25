@@ -1723,7 +1723,7 @@ export default function ControlEscolar() {
       {/* Sección Regularización / Extraordinarios */}
       {!loading && activeTab === 'regularizacion' && !printMode && (
         <RegularizacionPrint 
-          activos={activos} 
+            activos={directorio} 
           materiasPorGrado={materiasPorGrado} 
           onCaptureExtra={handleCaptureExtra} 
           onClose={() => setActiveTab('activos')} 

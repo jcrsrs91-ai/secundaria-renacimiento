@@ -43,44 +43,84 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
   };
   
   // Computar alumnos con adeudos (materias reprobadas y no regularizadas)
+  
   const adeudosData = useMemo(() => {
     const list = [];
     activos.forEach(student => {
-      const materias = materiasPorGrado[student.grado];
-      if (!materias) return;
-
       const adeudos = [];
       const regularizadas = [];
+
+      // Check all 3 grades to find any failed subject in historial or current system
+      const gradosAChecar = ['1er Grado', '2do Grado', '3er Grado'];
       
-      materias.forEach(mat => {
-        const calif = getCalificacionFinal(student, mat.id);
-        if (calif) {
-          if (calif.isRegularizacion) {
-            regularizadas.push({ ...mat, finalGrade: calif.valor, fecha: calif.fecha });
-          } else if (calif.isReprobada) {
-            adeudos.push({ ...mat, finalGrade: calif.valor });
+      gradosAChecar.forEach(gradoKey => {
+        const materias = materiasPorGrado[gradoKey] || [];
+        materias.forEach(mat => {
+          let hasGrade = false;
+          let finalMat = 0;
+          
+          // Check historial first
+          if (student.historial && student.historial[gradoKey] && student.historial[gradoKey][mat.id]) {
+            const hist = student.historial[gradoKey][mat.id];
+            const t1 = parseFloat(hist.t1);
+            const t2 = parseFloat(hist.t2);
+            const t3 = parseFloat(hist.t3);
+            if (!isNaN(t1) || !isNaN(t2) || !isNaN(t3)) {
+              let sum = 0, c = 0;
+              if (!isNaN(t1)) { sum += t1; c++; }
+              if (!isNaN(t2)) { sum += t2; c++; }
+              if (!isNaN(t3)) { sum += t3; c++; }
+              finalMat = Math.floor((sum / c + 0.00001) * 10) / 10;
+              hasGrade = true;
+            }
           }
-        }
+          
+          // If not in historial, check active calificaciones (only if student is in this grade, or if the grade exists)
+          if (!hasGrade && student.calificaciones) {
+            const t1 = parseFloat(student.calificaciones?.['t1']?.[mat.id]);
+            const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
+            const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
+            if (!isNaN(t1) || !isNaN(t2) || !isNaN(t3)) {
+              let sum = 0, c = 0;
+              if (!isNaN(t1)) { sum += t1; c++; }
+              if (!isNaN(t2)) { sum += t2; c++; }
+              if (!isNaN(t3)) { sum += t3; c++; }
+              finalMat = Math.floor((sum / c + 0.00001) * 10) / 10;
+              hasGrade = true;
+            }
+          }
+
+          if (hasGrade) {
+            const isReprobada = finalMat < 6;
+            const reg = student.regularizacion?.[mat.id];
+            
+            if (reg) {
+              regularizadas.push({ ...mat, finalGrade: reg.calificacion, fecha: reg.fecha, isHistoric: true });
+            } else if (isReprobada) {
+              adeudos.push({ ...mat, finalGrade: finalMat });
+            }
+          }
+        });
       });
 
       const adeudosAnteriores = student.adeudosAnteriores || [];
       adeudosAnteriores.forEach(histMat => {
-         const reg = student.regularizacion?.[histMat.id];
-         if (reg) {
-            regularizadas.push({ ...histMat, finalGrade: reg.calificacion, fecha: reg.fecha, isHistoric: true });
-         } else {
-            adeudos.push({ ...histMat, isHistoric: true });
+         // avoid duplicates if we already found it
+         if (!adeudos.find(m => m.id === histMat.id) && !regularizadas.find(m => m.id === histMat.id)) {
+           const reg = student.regularizacion?.[histMat.id];
+           if (reg) {
+              regularizadas.push({ ...histMat, finalGrade: reg.calificacion, fecha: reg.fecha, isHistoric: true });
+           } else {
+              adeudos.push({ ...histMat, isHistoric: true });
+           }
          }
       });
 
-      // El alumno aparece en la lista SI tiene adeudos (aún no los ha regularizado)
-      // O si tiene historial de regularizadas
       if (adeudos.length > 0 || regularizadas.length > 0) {
         list.push({ student, adeudos, regularizadas });
       }
     });
-
-    // Ordenar por grupo y luego alfabéticamente
+// Ordenar por grupo y luego alfabéticamente
     return list.sort((a, b) => {
       const grupoA = (a.student.grupo || '').toUpperCase();
       const grupoB = (b.student.grupo || '').toUpperCase();
@@ -148,6 +188,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
             <option value="1er Grado">1er Grado</option>
             <option value="2do Grado">2do Grado</option>
             <option value="3er Grado">3er Grado</option>
+            <option value="Egresado">Egresados</option>
           </select>
         </div>
         
