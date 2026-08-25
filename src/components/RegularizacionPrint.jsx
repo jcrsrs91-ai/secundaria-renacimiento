@@ -151,7 +151,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
 
   const filteredData = useMemo(() => {
     if (filtroGrado === 'Todos') return adeudosData;
-    return adeudosData.filter(item => item.student.grado === filtroGrado);
+    return adeudosData.filter(item => item.student.grado && item.student.grado.includes(filtroGrado));
   }, [adeudosData, filtroGrado]);
 
   const handleImprimir = () => {
