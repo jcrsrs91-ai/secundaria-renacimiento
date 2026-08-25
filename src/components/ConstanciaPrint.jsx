@@ -53,7 +53,7 @@ const promedioALetras = (promedioNum) => {
   return `${enteroStr} PUNTO ${decStr}`;
 };
 
-export default function ConstanciaPrint({ student, type = 'simple', materiasPorGrado = {} }) {
+export default function ConstanciaPrint({ student, type = 'simple', materiasPorGrado = {}, extraordinarioSelected = null }) {
   const { config } = useGlobalConfig();
   if (!student) return null;
 
@@ -186,6 +186,10 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
          ) : type === 'promedio_generacion' ? (
            <p className="mb-6 indent-12">
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios de educación secundaria en esta institución durante la <strong>Generación 2023-2026</strong>.
+           </p>
+         ) : type === 'acreditacion_extraordinario' ? (
+           <p className="mb-6 indent-12">
+             Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, presentó y aprobó el examen extraordinario de la materia <strong>{extraordinarioSelected?.materia || '__________________'}</strong> obteniendo una calificación de <strong>{extraordinarioSelected?.calificacion || '___'}</strong> el día <strong>{extraordinarioSelected?.fecha ? new Date(extraordinarioSelected.fecha + 'T12:00:00Z').toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '__________________'}</strong> correspondiete al periodo <strong>{extraordinarioSelected?.periodo || '__________________'}</strong>. Se extiende la presente constancia debido a que su Certificado Oficial de terminación de estudios se encuentra actualmente en trámite.
            </p>
          ) : (
            <p className="mb-6 indent-12">

@@ -3,15 +3,18 @@ import { X, Save, Edit, User, Heart, Users, Camera, Upload, StopCircle, Printer 
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
+import ConstanciaPrint from './ConstanciaPrint';
 
 export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, onSave }) {
   const [showPrintMode, setShowPrintMode] = useState(false);
+  const [printExtraordinarioSelected, setPrintExtraordinarioSelected] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   
   const [grupo, setGrupo] = useState(student.grupo || '');
   const [taller, setTaller] = useState(student.taller || '');
   const [historial, setHistorial] = useState(student.historial || {});
+  const [extraordinarios, setExtraordinarios] = useState(student.extraordinarios || []);
 
   const handleHistorialChange = (gradoKey, materiaId, trim, value) => {
     setHistorial(prev => ({
@@ -24,6 +27,18 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
         }
       }
     }));
+  };
+
+  const addExtraordinario = () => {
+    setExtraordinarios([...extraordinarios, { id: Date.now().toString(), materia: '', calificacion: '', fecha: '', periodo: '' }]);
+  };
+
+  const removeExtraordinario = (id) => {
+    setExtraordinarios(extraordinarios.filter(e => e.id !== id));
+  };
+
+  const handleExtraordinarioChange = (id, field, value) => {
+    setExtraordinarios(extraordinarios.map(e => e.id === id ? { ...e, [field]: value } : e));
   };
 
   const [isCapturing, setIsCapturing] = useState(false);
@@ -141,6 +156,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     const data = Object.fromEntries(formData.entries());
     
     data.historial = historial;
+    data.extraordinarios = extraordinarios;
 
     try {
       const docRef = doc(db, "students", student.id);
@@ -159,12 +175,19 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     return (
       <div className="fixed inset-0 z-[60] bg-gray-100 overflow-y-auto">
         <div className="p-4 bg-white shadow flex justify-between print:hidden sticky top-0 z-10">
-          <button onClick={() => setShowPrintMode(false)} className="text-gray-500 font-bold hover:text-gray-800 flex items-center bg-gray-200 px-4 py-2 rounded-lg">
+          <button onClick={() => {
+            setShowPrintMode(false);
+            setPrintExtraordinarioSelected(null);
+          }} className="text-gray-500 font-bold hover:text-gray-800 flex items-center bg-gray-200 px-4 py-2 rounded-lg">
              ← Volver al Expediente
           </button>
         </div>
         <div className="py-8">
-          <HojaInscripcionPrint data={student} />
+          {printExtraordinarioSelected ? (
+            <ConstanciaPrint student={student} type="acreditacion_extraordinario" materiasPorGrado={materiasPorGrado} extraordinarioSelected={printExtraordinarioSelected} />
+          ) : (
+            <HojaInscripcionPrint data={student} />
+          )}
         </div>
       </div>
     );
@@ -390,7 +413,43 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     })}
                   </div>
                 )}
-             </form>
+
+                  {/* 6. Exámenes Extraordinarios (Edit) */}
+                  <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex justify-between items-center border-b pb-2 mb-4">
+                      <h3 className="text-lg font-bold text-slate-800">Exámenes Extraordinarios</h3>
+                      <button type="button" onClick={addExtraordinario} className="px-3 py-1 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700">
+                        + Agregar
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      {extraordinarios.length === 0 && <p className="text-sm text-slate-500">No hay registros de extraordinarios.</p>}
+                      {extraordinarios.map((extra) => (
+                        <div key={extra.id} className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-slate-50 p-4 rounded border relative">
+                          <button type="button" onClick={() => removeExtraordinario(extra.id)} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
+                            <X className="w-4 h-4" />
+                          </button>
+                          <div className="md:col-span-2">
+                            <label className="block text-xs font-bold text-slate-600 mb-1">Materia</label>
+                            <input type="text" className="w-full p-2 border rounded text-sm" value={extra.materia} onChange={e => handleExtraordinarioChange(extra.id, 'materia', e.target.value)} placeholder="Ej. Matemáticas 1" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-600 mb-1">Calificación</label>
+                            <input type="number" min="6" max="10" step="0.1" className="w-full p-2 border rounded text-sm" value={extra.calificacion} onChange={e => handleExtraordinarioChange(extra.id, 'calificacion', e.target.value)} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-600 mb-1">Fecha</label>
+                            <input type="date" className="w-full p-2 border rounded text-sm" value={extra.fecha} onChange={e => handleExtraordinarioChange(extra.id, 'fecha', e.target.value)} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-600 mb-1">Periodo</label>
+                            <input type="text" className="w-full p-2 border rounded text-sm" value={extra.periodo} onChange={e => handleExtraordinarioChange(extra.id, 'periodo', e.target.value)} placeholder="Ej. Ago 2026" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+              </form>
           ) : (
             <div className="space-y-8">
               {/* Profile Card */}
@@ -679,11 +738,54 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     </div>
                   );
                 })}
-              </div>
 
-            </div>
-          )}
-        </div>
+                  {/* 7. Exámenes Extraordinarios (Solo Lectura) */}
+                  {extraordinarios.length > 0 && (
+                    <div className="mb-8">
+                      <h5 className="font-bold text-lg text-slate-700 mb-4 bg-slate-50 border p-2 rounded">Exámenes Extraordinarios</h5>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50">
+                              <th className="border p-2 font-semibold text-slate-600">Materia</th>
+                              <th className="border p-2 text-center font-semibold text-slate-600 w-24">Calificación</th>
+                              <th className="border p-2 text-center font-semibold text-slate-600 w-32">Fecha</th>
+                              <th className="border p-2 text-center font-semibold text-slate-600 w-32">Periodo</th>
+                              <th className="border p-2 text-center font-semibold text-slate-600 w-24">Constancia</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {extraordinarios.map(extra => (
+                              <tr key={extra.id} className="hover:bg-slate-50">
+                                <td className="border p-2 text-slate-700 font-bold">{extra.materia}</td>
+                                <td className="border p-2 text-center text-emerald-600 font-bold">{extra.calificacion}</td>
+                                <td className="border p-2 text-center">{extra.fecha}</td>
+                                <td className="border p-2 text-center">{extra.periodo}</td>
+                                <td className="border p-2 text-center">
+                                  <button 
+                                    type="button" 
+                                    onClick={() => {
+                                      setPrintExtraordinarioSelected(extra);
+                                      setShowPrintMode(true);
+                                    }}
+                                    className="p-1.5 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded transition-colors"
+                                    title="Imprimir Constancia"
+                                  >
+                                    <Printer className="w-4 h-4 mx-auto" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )}
+          </div>
         
         {/* Footer */}
         {isEditing && (

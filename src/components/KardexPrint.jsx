@@ -208,6 +208,34 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
           ))}
         </div>
 
+        {student.extraordinarios && student.extraordinarios.length > 0 && (
+          <div className="mt-4 mb-4">
+            <h3 className="font-bold text-sm bg-slate-200 border border-slate-400 px-2 py-0.5 mb-1 text-center uppercase tracking-wider">
+              Exámenes Extraordinarios de Regularización
+            </h3>
+            <table className="w-full text-[9px] border-collapse">
+              <thead>
+                <tr className="bg-slate-100">
+                  <th className="border border-slate-400 px-1 py-[1px] text-left">Asignatura</th>
+                  <th className="border border-slate-400 px-1 py-[1px] text-center w-16">Calificación</th>
+                  <th className="border border-slate-400 px-1 py-[1px] text-center w-20">Fecha</th>
+                  <th className="border border-slate-400 px-1 py-[1px] text-center w-24">Periodo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {student.extraordinarios.map((extra, i) => (
+                  <tr key={i} className="break-inside-avoid">
+                    <td className="border border-slate-400 px-1 py-[1px] font-bold leading-tight">{extra.materia}</td>
+                    <td className="border border-slate-400 px-1 py-[1px] text-center font-bold leading-tight">{extra.calificacion}</td>
+                    <td className="border border-slate-400 px-1 py-[1px] text-center leading-tight">{extra.fecha}</td>
+                    <td className="border border-slate-400 px-1 py-[1px] text-center leading-tight">{extra.periodo}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         <div className="mt-2 border-t-[1.5px] border-slate-800 pt-1 flex justify-between items-center">
           <div className="font-bold text-sm uppercase">
             Promedio General Nivel Secundaria:
