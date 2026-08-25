@@ -325,7 +325,7 @@ export default function ControlEscolar() {
   const saveExtraordinario = async () => {
     let hasData = false;
     for (const matId in extraData) {
-      if (extraData[matId].calificacion && extraData[matId].fecha) hasData = true;
+      if (extraData[matId].calificacion && extraData[matId].fecha && extraData[matId].periodo) hasData = true;
     }
     if (!hasData) {
       toast.error('Captura al menos una calificación y fecha para guardar.');
@@ -337,11 +337,8 @@ export default function ControlEscolar() {
       const currentReg = extraStudent.regularizacion || {};
       const newReg = { ...currentReg };
       for (const matId in extraData) {
-        if (extraData[matId].calificacion && extraData[matId].fecha) {
-           newReg[matId] = {
-             calificacion: parseFloat(extraData[matId].calificacion),
-             fecha: extraData[matId].fecha
-           };
+        if (extraData[matId].calificacion && extraData[matId].fecha && extraData[matId].periodo) {
+           newReg[matId] = { calificacion: parseFloat(extraData[matId].calificacion), fecha: extraData[matId].fecha, periodo: extraData[matId].periodo };
         }
       }
       
@@ -813,9 +810,7 @@ export default function ControlEscolar() {
           </button>
 
           {/* Regularización / Extraordinarios */}
-          <button onClick={() => setActiveTab('regularizacion')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'regularizacion' ? 'bg-orange-600 text-white shadow-orange-200 ring-2 ring-orange-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
-            Regularización
-          </button>
+          <button onClick={() => setActiveTab('regularizacion')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'regularizacion' ? 'bg-orange-600 text-white shadow-orange-200 ring-2 ring-orange-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>Extraordinarios de Regularización</button>
           
           {/* Asistencia */}
           <button onClick={() => setActiveTab('asistencia')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'asistencia' ? 'bg-emerald-600 text-white shadow-emerald-200 ring-2 ring-emerald-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
@@ -1661,6 +1656,15 @@ export default function ControlEscolar() {
                   <p className="text-xs text-slate-500 mt-1">Incluye el promedio general acumulado y la tabla de calificaciones.</p>
                 </div>
               </button>
+<button onClick={() => { setConstanciaType('terminacion_tramite'); setPrintMode('constancia'); closeModal(); }} className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all flex items-start group">
+                  <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg mr-3 group-hover:scale-110 transition-transform">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800">Constancia Certificado en Trámite</h3>
+                    <p className="text-xs text-slate-500 mt-1">Para egresados sin adeudos, indica que su certificado oficial está en proceso.</p>
+                  </div>
+                </button>
 
               <button onClick={() => { setPrintData(selectedStudent); setPrintMode('kardex'); closeModal(); }} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition text-left group">
                 <div className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-4 group-hover:bg-purple-500 group-hover:text-white transition">
@@ -1742,9 +1746,27 @@ export default function ControlEscolar() {
               {extraSubjects.map(mat => (
                 <div key={mat.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                   <h3 className="font-bold text-slate-700 mb-3">{mat.name}</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">Calificación Final (Aprobatoria)</label>
+                      
+     <label className="block text-xs font-semibold text-slate-600 mb-1">Periodo</label>
+     <select 
+       value={extraData[mat.id]?.periodo || ''}
+       onChange={(e) => setExtraData(prev => ({ 
+         ...prev, 
+         [mat.id]: { ...prev[mat.id], periodo: e.target.value } 
+       }))}
+       className="w-full border border-slate-300 rounded-md p-2 text-sm focus:border-orange-500 focus:ring-orange-500"
+     >
+       <option value="">Seleccione...</option>
+       <option value="Agosto">Agosto</option>
+       <option value="Septiembre">Septiembre</option>
+       <option value="Noviembre">Noviembre</option>
+     </select>
+   </div>
+   <div>
+     <label className="block text-xs font-semibold text-slate-600 mb-1">Calificación Final (Aprobatoria)</label>
+     
                       <input 
                         type="number" 
                         step="0.1" 

@@ -20,25 +20,31 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
       
       if (!isNaN(t1) || !isNaN(t2) || !isNaN(t3)) {
         // Check if passed via regularizacion in the past
-        if (student.regularizacion && student.regularizacion[materiaId]) {
-          return {
-            valor: parseFloat(student.regularizacion[materiaId].calificacion),
-            isRegularizacion: true,
-            fecha: student.regularizacion[materiaId].fecha,
-            t1: isNaN(t1) ? '-' : t1,
-            t2: isNaN(t2) ? '-' : t2,
-            t3: isNaN(t3) ? '-' : t3
-          };
-        }
-
+        
         let sum = 0, c = 0;
         if (!isNaN(t1)) { sum += t1; c++; }
         if (!isNaN(t2)) { sum += t2; c++; }
         if (!isNaN(t3)) { sum += t3; c++; }
         
         const finalMat = Math.floor((sum / c + 0.00001) * 10) / 10;
+        
+        // Modificado para mantener el original en Kárdex
+        if (student.regularizacion && student.regularizacion[materiaId]) {
+          return {
+            valor: parseFloat(student.regularizacion[materiaId].calificacion), // para promedios
+            originalValor: finalMat, // para mostrar en tabla
+            isRegularizacion: true,
+            fecha: student.regularizacion[materiaId].fecha,
+            periodo: student.regularizacion[materiaId].periodo,
+            t1: isNaN(t1) ? '-' : t1,
+            t2: isNaN(t2) ? '-' : t2,
+            t3: isNaN(t3) ? '-' : t3
+          };
+        }
+
         return {
           valor: finalMat,
+          originalValor: finalMat,
           isRegularizacion: false,
           fecha: null,
           isReprobada: finalMat < 6,
@@ -50,7 +56,25 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
     }
     
     // 2. Fallback to active system grades
-    return getCalificacionFinal(student, materiaId);
+    
+    const fallback = getCalificacionFinal(student, materiaId);
+    if (fallback.isRegularizacion) {
+      // Re-calculate original
+      const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
+      const t2 = parseFloat(student.calificaciones?.['t2']?.[materiaId]);
+      const t3 = parseFloat(student.calificaciones?.['t3']?.[materiaId]);
+      let sum = 0, c = 0;
+      if (!isNaN(t1)) { sum += t1; c++; }
+      if (!isNaN(t2)) { sum += t2; c++; }
+      if (!isNaN(t3)) { sum += t3; c++; }
+      const finalMat = c > 0 ? Math.floor((sum / c + 0.00001) * 10) / 10 : '-';
+      fallback.originalValor = finalMat;
+      fallback.periodo = student.regularizacion[materiaId].periodo;
+    } else {
+      fallback.originalValor = fallback.valor;
+    }
+    return fallback;
+
   };
 
   const currentGrades = (gradoKey) => {
@@ -85,6 +109,25 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
   }
 
   // Current Date for signature
+  
+  const extraordinariosArray = [];
+  if (student.regularizacion) {
+    Object.keys(student.regularizacion).forEach(matId => {
+      // Find subject name
+      let matName = matId;
+      for (const grado in materiasPorGrado) {
+        const found = materiasPorGrado[grado].find(m => m.id === matId);
+        if (found) matName = found.name;
+      }
+      extraordinariosArray.push({
+        materia: matName,
+        calificacion: student.regularizacion[matId].calificacion,
+        fecha: student.regularizacion[matId].fecha,
+        periodo: student.regularizacion[matId].periodo || '---'
+      });
+    });
+  }
+
   const today = new Date();
   const dateStr = today.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -190,7 +233,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
                       <td className="border border-slate-400 px-1 py-[1px] text-center leading-tight">{item.hist ? item.hist.t2 : '-'}</td>
                       <td className="border border-slate-400 px-1 py-[1px] text-center leading-tight">{item.hist ? item.hist.t3 : '-'}</td>
                       <td className="border border-slate-400 px-1 py-[1px] text-center font-bold leading-tight">
-                        {item.hist ? item.hist.valor : '-'}
+                        {item.hist ? (item.hist.originalValor !== undefined ? item.hist.originalValor : item.hist.valor) : '-'}
                       </td>
                       <td className="border border-slate-400 px-1 py-[1px] text-center text-[8px] leading-tight">
                         {item.hist?.isRegularizacion ? <span className="font-bold text-emerald-700">EXT. ({item.hist.fecha})</span> : ''}
@@ -208,7 +251,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
           ))}
         </div>
 
-        {student.extraordinarios && student.extraordinarios.length > 0 && (
+        {extraordinariosArray && extraordinariosArray.length > 0 && (
           <div className="mt-4 mb-4">
             <h3 className="font-bold text-sm bg-slate-200 border border-slate-400 px-2 py-0.5 mb-1 text-center uppercase tracking-wider">
               Exámenes Extraordinarios de Regularización
@@ -223,7 +266,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
                 </tr>
               </thead>
               <tbody>
-                {student.extraordinarios.map((extra, i) => (
+                {extraordinariosArray.map((extra, i) => (
                   <tr key={i} className="break-inside-avoid">
                     <td className="border border-slate-400 px-1 py-[1px] font-bold leading-tight">{extra.materia}</td>
                     <td className="border border-slate-400 px-1 py-[1px] text-center font-bold leading-tight">{extra.calificacion}</td>

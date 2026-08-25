@@ -142,7 +142,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
           Cualquier cambio futuro a las demÃ¡s constancias NO DEBE afectar a 'terminacion'.
         */}
         <div className={`bg-white text-slate-800 font-serif text-justify relative z-10 watermark 
-          ${type === 'terminacion' ? 'px-10 py-6 leading-relaxed' : 
+          ${(type === 'terminacion' || type === 'terminacion_tramite') ? 'px-10 py-6 leading-relaxed' : 
             type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 'px-10 py-6 leading-relaxed'}`} 
           style={{ fontSize: type === 'calificaciones' ? '10pt' : '11pt' }}>
          {/* HEADER LOGOS AND TITLE */}
@@ -179,7 +179,11 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
             C E R T I F I C A
          </div>
 
-         {type === 'terminacion' ? (
+         {type === 'terminacion_tramite' ? (
+           <p className="mb-6 indent-12">
+             Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios correspondientes a la Educación Secundaria en el ciclo escolar {config?.cicloEscolarActual || '2025-2026'} en esta Institución Educativa. Por lo anterior, <strong>no adeuda ninguna asignatura</strong> y su Certificado Oficial de Terminación de Estudios se encuentra actualmente <strong>en trámite</strong>.
+           </p>
+         ) : type === 'terminacion' ? (
            <p className="mb-6 indent-12">
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Ãšnica de Registro de PoblaciÃ³n (CURP) <strong>{student.curp || '__________________'}</strong> y matrÃ­cula escolar <strong>{student.matricula}</strong>, concluyÃ³ satisfactoriamente sus estudios correspondientes a la EducaciÃ³n Secundaria en el ciclo escolar {config?.cicloEscolarActual || '2025-2026'} en esta InstituciÃ³n Educativa.
            </p>
@@ -213,7 +217,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
            </p>
          )}
 
-         {type === 'terminacion' && (
+         {(type === 'terminacion' || type === 'terminacion_tramite') && (
            <p className="mt-6 mb-6 text-center font-medium px-8 text-[12pt]">
              Se hace constar que cuenta con un Promedio de Nivel Educativo (Certificado) de: <br/>
              <strong className="whitespace-nowrap text-[14pt] block mt-2">{student.manualPromedio ? `${student.manualPromedio} (${promedioALetras(student.manualPromedio)})` : '___ (_________________)'}</strong>
