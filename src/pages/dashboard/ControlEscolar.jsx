@@ -409,6 +409,10 @@ export default function ControlEscolar() {
       alert("La Constancia de Terminación de Estudios es exclusiva para alumnos de 3er Grado.");
       return;
     }
+    if (type === 'inscripcion_primero' && selectedStudent?.grado !== '1er Grado') {
+      alert("Esta constancia es exclusiva para alumnos de 1er Grado.");
+      return;
+    }
     toast.success("Generando constancia...", { icon: '📝' });
     setConstanciaType(type);
     setPrintMode('constancia');
@@ -1619,10 +1623,10 @@ export default function ControlEscolar() {
               </div>
             )}
 
-            {selectedStudent.grado === '3er Grado' && (
+            {(selectedStudent.grado === '3er Grado' || selectedStudent.grado === '1er Grado') && (
               <div className="mb-4 bg-slate-50 border border-slate-200 p-3 rounded-lg">
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Promedio del Nivel Educativo (Opcional)
+                  {selectedStudent.grado === '1er Grado' ? 'Promedio de Primaria (Opcional)' : 'Promedio del Nivel Educativo (Opcional)'}
                 </label>
                 <input 
                   type="number" 
@@ -1633,7 +1637,7 @@ export default function ControlEscolar() {
                   placeholder="Ej. 9.8"
                   className="w-full border-slate-300 rounded-md shadow-sm p-2 text-sm focus:border-primary-500 focus:ring-primary-500"
                 />
-                <p className="text-xs text-slate-500 mt-1">Este dato se añadirá a la Constancia con Calificaciones.</p>
+                <p className="text-xs text-slate-500 mt-1">Este dato se añadirá a la Constancia correspondiente.</p>
               </div>
             )}
 
@@ -1695,6 +1699,16 @@ export default function ControlEscolar() {
                 <div>
                   <h3 className="font-bold text-slate-800">Constancia de Terminación (3er Año)</h3>
                   <p className="text-xs text-slate-500 mt-1">Con fecha fija de cierre de ciclo. Solo para alumnos de 3er grado.</p>
+                </div>
+              </button>
+
+              <button onClick={() => executePrintConstancia('inscripcion_primero')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-teal-500 hover:bg-teal-50 transition text-left group">
+                <div className="bg-teal-100 text-teal-600 p-2 rounded-lg mr-4 group-hover:bg-teal-500 group-hover:text-white transition shrink-0">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Constancia de Inscripción (1er Año)</h3>
+                  <p className="text-xs text-slate-500 mt-1">Incluye promedio de primaria. Solo para alumnos de 1er grado.</p>
                 </div>
               </button>
             </div>
