@@ -157,7 +157,7 @@ export default function Landing() {
             </Link>
 
             {/* Card 3 */}
-            <Link to="/avisos" className="group relative p-1 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 hover:from-indigo-500 hover:to-indigo-600 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/30">
+            <Link to={`/avisos?turno=${activeTab}`} className="group relative p-1 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 hover:from-indigo-500 hover:to-indigo-600 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/30">
               <div className="absolute inset-0 bg-slate-950/60 rounded-2xl backdrop-blur-xl group-hover:bg-slate-900/40 transition-colors"></div>
               <div className="relative p-6 h-full flex flex-col items-start text-left">
                 <div className="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center mb-6 group-hover:bg-white/20 group-hover:border-white/30 transition-colors">
@@ -231,7 +231,7 @@ export default function Landing() {
                         </div>
                       )}
                       <p className="text-slate-300 text-xs mb-4 line-clamp-3 leading-relaxed whitespace-pre-wrap">{aviso.content}</p>
-                      <Link to="/avisos" className="text-xs font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center w-max">
+                      <Link to={`/avisos?turno=${activeTab}`} className="text-xs font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center w-max">
                         Leer completo <ArrowRight className="w-3 h-3 ml-1" />
                       </Link>
                     </div>
@@ -239,7 +239,7 @@ export default function Landing() {
                 )}
               </div>
               <div className="p-4 border-t border-white/10 bg-slate-900/50 shrink-0 text-center">
-                <Link to="/avisos" className="text-sm font-bold text-white hover:text-sky-400 transition-colors inline-flex items-center">
+                <Link to={`/avisos?turno=${activeTab}`} className="text-sm font-bold text-white hover:text-sky-400 transition-colors inline-flex items-center">
                   Ver historial de comunicados <ArrowRight className="w-4 h-4 ml-1" />
                 </Link>
               </div>

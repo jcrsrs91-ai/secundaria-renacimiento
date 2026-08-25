@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { Link } from 'react-router-dom';
-import { Megaphone, Calendar, ArrowLeft, FileText, Download } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Megaphone, Calendar, ArrowLeft, FileText, Download, Sun, Moon } from 'lucide-react';
 
 export default function PublicAvisos() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = searchParams.get('turno') || 'matutino';
+
   const [avisos, setAvisos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('matutino');
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -46,13 +50,29 @@ export default function PublicAvisos() {
       </nav>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center gap-4 mb-10">
-          <div className="w-16 h-16 rounded-2xl bg-sky-100 flex items-center justify-center shadow-sm">
-            <Megaphone className="w-8 h-8 text-sky-600" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-sky-100 flex items-center justify-center shadow-sm">
+              <Megaphone className="w-8 h-8 text-sky-600" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Comunicados Oficiales</h1>
+              <p className="text-lg text-slate-500 mt-2 font-medium">Mantente informado de todos los avisos y noticias.</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Comunicados Oficiales</h1>
-            <p className="text-lg text-slate-500 mt-2 font-medium">Mantente informado de todos los avisos y noticias de la institución.</p>
+          <div className="flex bg-white rounded-xl p-1 shadow-sm border border-slate-200">
+            <button
+              onClick={() => setActiveTab('matutino')}
+              className={`flex items-center px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'matutino' ? 'bg-sky-50 text-sky-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+            >
+              <Sun className="w-4 h-4 mr-2" /> Matutino
+            </button>
+            <button
+              onClick={() => setActiveTab('vespertino')}
+              className={`flex items-center px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'vespertino' ? 'bg-indigo-50 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+            >
+              <Moon className="w-4 h-4 mr-2" /> Vespertino
+            </button>
           </div>
         </div>
 
