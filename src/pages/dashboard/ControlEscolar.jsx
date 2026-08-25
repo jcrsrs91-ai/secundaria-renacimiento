@@ -1606,7 +1606,7 @@ export default function ControlEscolar() {
       {/* MODAL DE TIPO DE CONSTANCIA */}
       {modalType === 'constanciaOptions' && selectedStudent && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
             <button onClick={closeModal} className="absolute right-4 top-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
               <X className="w-5 h-5" />
             </button>
