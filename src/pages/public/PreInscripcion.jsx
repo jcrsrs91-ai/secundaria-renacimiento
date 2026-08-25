@@ -587,12 +587,12 @@ export default function PreInscripcion() {
                           <label className="block text-sm font-medium">¿Cuenta con alguna beca?</label>
                           <select name="tieneBeca" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.tieneBeca || 'NO'} onChange={(e) => {
                             const input = document.getElementById('nombreBecaContainer');
-                            if(input) input.style.display = e.target.value === 'SÍ' ? 'block' : 'none';
+                            if(input) input.style.display = e.target.value !== 'NO' ? 'block' : 'none';
                           }}>
                             <option>NO</option><option>SÍ</option>
                           </select>
                         </div>
-                        <div id="nombreBecaContainer" style={{display: studentData?.tieneBeca === 'SÍ' ? 'block' : 'none'}}>
+                        <div id="nombreBecaContainer" style={{display: studentData?.tieneBeca && studentData?.tieneBeca !== 'NO' ? 'block' : 'none'}}>
                           <label className="block text-sm font-medium">Nombre de la Beca</label>
                           <input type="text" name="nombreBeca" className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.nombreBeca} />
                         </div>
