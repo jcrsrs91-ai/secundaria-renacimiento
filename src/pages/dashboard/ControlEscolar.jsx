@@ -28,6 +28,8 @@ import AcuseDocumentosModal from '../../components/AcuseDocumentosModal';
 import AcuseDocumentosPrint from '../../components/AcuseDocumentosPrint';
 import AcuseRecepcionModal from '../../components/AcuseRecepcionModal';
 import AcuseRecepcionPrint from '../../components/AcuseRecepcionPrint';
+import ExpedienteModal from '../../components/ExpedienteModal';
+import { FolderOpen } from 'lucide-react';
 import { autoAcentuar } from '../../utils/format';
 import { searchIncludes } from '../../utils/search';
 
@@ -37,6 +39,7 @@ export default function ControlEscolar() {
   const [activeTab, setActiveTab] = useState('pendientes');
   const [modalType, setModalType] = useState(null); // 'hoja', 'grade', 'asignacionMasiva'
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedExpediente, setSelectedExpediente] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [constanciaPromedio, setConstanciaPromedio] = useState('');
   
@@ -945,6 +948,9 @@ export default function ControlEscolar() {
                         <button onClick={() => openModal('hoja', p)} className="text-blue-600 font-medium text-sm hover:bg-blue-50 px-3 py-1 rounded border border-blue-200 transition-colors mr-2">
                           Revisar Expediente
                         </button>
+                        <button onClick={() => setSelectedExpediente(p)} className="text-purple-600 hover:text-purple-800 font-medium text-sm inline-flex items-center ml-4">
+                          <FolderOpen className="w-4 h-4 mr-1" /> Docs Digitales
+                        </button>
                         <button onClick={() => aceptarAspirante(p)} className="text-emerald-600 font-medium text-sm hover:bg-emerald-50 px-3 py-1 rounded border border-emerald-200 transition-colors">
                         Aceptar Aspirante
                       </button>
@@ -1226,6 +1232,9 @@ export default function ControlEscolar() {
                       <button onClick={() => openModal('hoja', a)} className="text-blue-600 hover:text-blue-800 font-medium text-sm inline-flex items-center">
                         <User className="w-4 h-4 mr-1" /> Expediente
                       </button>
+                        <button onClick={() => setSelectedExpediente(a)} className="text-purple-600 hover:text-purple-800 font-medium text-sm inline-flex items-center ml-4">
+                          <FolderOpen className="w-4 h-4 mr-1" /> Docs Digitales
+                        </button>
                       <button onClick={() => openModal('grade', a)} className="text-emerald-600 hover:text-emerald-800 font-medium text-sm inline-flex items-center">
                         <Star className="w-4 h-4 mr-1" /> Calificar
                       </button>
@@ -1314,6 +1323,9 @@ export default function ControlEscolar() {
                       <button onClick={() => openModal('hoja', a)} className="text-blue-600 hover:text-blue-800 font-medium text-sm inline-flex items-center">
                         <User className="w-4 h-4 mr-1" /> Expediente
                       </button>
+                        <button onClick={() => setSelectedExpediente(a)} className="text-purple-600 hover:text-purple-800 font-medium text-sm inline-flex items-center ml-4">
+                          <FolderOpen className="w-4 h-4 mr-1" /> Docs Digitales
+                        </button>
                       <button onClick={() => { setPrintData(a); setPrintMode('kardex'); }} className="text-purple-600 hover:text-purple-800 font-medium text-sm inline-flex items-center">
                         <FileText className="w-4 h-4 mr-1" /> Kárdex
                       </button>
@@ -1856,6 +1868,13 @@ export default function ControlEscolar() {
       {printMode === 'listaClausura' && <ListaClausuraPrint students={printData.students} grupo={printData.grupo} asesor={printData.asesor} />}
       {printMode === 'concentrado-final' && <CuadroFinalPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
+
+      {selectedExpediente && (
+        <ExpedienteModal 
+          student={selectedExpediente} 
+          onClose={() => setSelectedExpediente(null)} 
+        />
+      )}
     </div>
   );
 }
