@@ -1329,6 +1329,9 @@ export default function ControlEscolar() {
                       <button onClick={() => { setPrintData(a); setPrintMode('kardex'); }} className="text-purple-600 hover:text-purple-800 font-medium text-sm inline-flex items-center">
                         <FileText className="w-4 h-4 mr-1" /> Kárdex
                       </button>
+                      <button onClick={() => handlePrintConstancia(a)} className="text-indigo-600 hover:text-indigo-800 font-medium text-sm inline-flex items-center ml-4">
+                        <FileText className="w-4 h-4 mr-1" /> Constancia
+                      </button>
                       <button onClick={() => openModal('acuse', a)} className="text-sky-600 hover:text-sky-800 font-medium text-sm inline-flex items-center ml-4">
                         <FileText className="w-4 h-4 mr-1" /> Acuse Devolver
                       </button>
