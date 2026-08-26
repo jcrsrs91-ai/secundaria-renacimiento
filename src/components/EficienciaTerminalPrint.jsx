@@ -6,6 +6,14 @@ import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveCont
 
 export default function EficienciaTerminalPrint({ activos = [], bajas = [], materiasPorGrado = {}, onClose }) {
   const { config } = useGlobalConfig();
+
+  const getGradoBase = (g) => {
+    if (g?.includes('1er')) return '1er Grado';
+    if (g?.includes('2do')) return '2do Grado';
+    if (g?.includes('3er')) return '3er Grado';
+    return null;
+  };
+
   
   // Calculadora de materias reprobadas por alumno
   const getMateriasReprobadas = (student, materias, missingGradesArr, menor5Arr) => {

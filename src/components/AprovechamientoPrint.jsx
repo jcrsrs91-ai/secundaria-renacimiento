@@ -5,6 +5,14 @@ import { truncateTo1Dec } from '../utils/format';
 
 export default function AprovechamientoPrint({ activos, onClose }) {
   const { config } = useGlobalConfig();
+
+  const getGradoBase = (g) => {
+    if (g?.includes('1er')) return '1er Grado';
+    if (g?.includes('2do')) return '2do Grado';
+    if (g?.includes('3er')) return '3er Grado';
+    return null;
+  };
+
   // Configuración de los campos formativos por grado
   const campos = {
     '1er Grado': [
@@ -49,7 +57,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
 
   const calcularPromedioGralAlumno = (student, gradoKeys) => {
     let sum = 0, c = 0;
-    gradoKeys.forEach(key => {
+    (gradoKeys || []).forEach(key => {
       const p = calcularPromedioFinalAlumno(student, key);
       if (p !== null) { sum += p; c++; }
     });
@@ -72,7 +80,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
     // Calcular por turnos
     turnos.forEach(turno => {
       grados.forEach(grado => {
-        const students = activos.filter(a => a.grado === grado && (a.turno || 'Matutino') === turno);
+        const students = activos.filter(a => getGradoBase(a.grado) === grado && (a.turno || 'Matutino') === turno);
         keysByGrado[grado].forEach(key => {
           let sum = 0, count = 0;
           students.forEach(s => {
@@ -93,7 +101,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
       // Promedio general del turno
       let tSum = 0, tCount = 0;
       activos.filter(a => (a.turno || 'Matutino') === turno).forEach(s => {
-        const val = calcularPromedioGralAlumno(s, keysByGrado[s.grado]);
+        const val = calcularPromedioGralAlumno(s, keysByGrado[getGradoBase(s.grado)]);
         if (val !== null) { tSum += val; tCount++; }
       });
       data[turno].promedioGralTurno = tCount > 0 ? (tSum / tCount) : null;
@@ -101,7 +109,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
 
     // Promedios totales escuela
     grados.forEach(grado => {
-      const students = activos.filter(a => a.grado === grado);
+      const students = activos.filter(a => getGradoBase(a.grado) === grado);
       keysByGrado[grado].forEach(key => {
         let sum = 0, count = 0;
         students.forEach(s => {
@@ -122,7 +130,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
     // Promedio general de toda la escuela
     let escSum = 0, escCount = 0;
     activos.forEach(s => {
-      const val = calcularPromedioGralAlumno(s, keysByGrado[s.grado]);
+      const val = calcularPromedioGralAlumno(s, keysByGrado[getGradoBase(s.grado)]);
       if (val !== null) { escSum += val; escCount++; }
     });
     data.Escuela.promedioGralEscuela = escCount > 0 ? (escSum / escCount) : null;

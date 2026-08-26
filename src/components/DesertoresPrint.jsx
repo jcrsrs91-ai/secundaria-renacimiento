@@ -5,6 +5,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 
 export default function DesertoresPrint({ bajas = [], onClose }) {
   const { config } = useGlobalConfig();
+
+  const getGradoBase = (g) => {
+    if (g?.includes('1er')) return '1er Grado';
+    if (g?.includes('2do')) return '2do Grado';
+    if (g?.includes('3er')) return '3er Grado';
+    return null;
+  };
+
   // Función para calcular edad
   const calcularEdad = (fechaNacimiento) => {
     if (!fechaNacimiento) return '';

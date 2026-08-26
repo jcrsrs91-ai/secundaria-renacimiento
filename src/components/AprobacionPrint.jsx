@@ -6,6 +6,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) {
   const { config } = useGlobalConfig();
+
+  const getGradoBase = (g) => {
+    if (g?.includes('1er')) return '1er Grado';
+    if (g?.includes('2do')) return '2do Grado';
+    if (g?.includes('3er')) return '3er Grado';
+    return null;
+  };
+
   // Calculadora de materias reprobadas por alumno
   const getMateriasReprobadas = (student, materias) => {
     let reprobadas = 0;
@@ -40,7 +48,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
       
       grupos.forEach(grupo => {
         let row = initializeRow();
-        const students = activos.filter(a => a.grado === grado && a.grupo === grupo);
+        const students = activos.filter(a => getGradoBase(a.grado) === grado && a.grupo === grupo);
         
         students.forEach(s => {
           const gen = s.genero?.trim().toLowerCase() || '';
