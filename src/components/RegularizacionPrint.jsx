@@ -5,7 +5,7 @@ import { FileText, Calendar, PlusCircle, X, Save, History } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
-export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptureExtra, onClose }) {
+export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptureExtra, onPrintConstanciaExtra, onClose }) {
   const { config } = useGlobalConfig();
   const [filtroGrado, setFiltroGrado] = useState('Todos');
   
@@ -276,7 +276,18 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                               {mat.name} 
                               <span className="font-bold bg-emerald-100 px-1 rounded ml-1">({mat.finalGrade})</span>
                               {mat.isHistoric && <span className="ml-2 text-[9px] text-indigo-600 font-bold bg-indigo-100 px-1 rounded uppercase">Histórico</span>}
-                              <div className="text-[10px] text-slate-500 ml-4">Fecha: {mat.fecha}</div>
+                              <div className="text-[10px] text-slate-500 ml-4 flex items-center justify-between">
+                                  <span>Fecha: {mat.fecha} | Periodo: {mat.periodo || 'N/A'}</span>
+                                  {onPrintConstanciaExtra && (
+                                    <button 
+                                      onClick={() => onPrintConstanciaExtra(item.student, mat)}
+                                      className="ml-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-0.5 rounded text-[9px] font-bold inline-flex items-center no-print"
+                                      title="Imprimir Constancia"
+                                    >
+                                      Imprimir
+                                    </button>
+                                  )}
+                                </div>
                             </li>
                           ))}
                         </ul>

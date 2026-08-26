@@ -45,6 +45,7 @@ export default function ControlEscolar() {
   
   // Estados para Modal de Extraordinarios
   const [extraStudent, setExtraStudent] = useState(null);
+  const [extraordinarioToPrint, setExtraordinarioToPrint] = useState(null);
   const [extraSubjects, setExtraSubjects] = useState([]);
   const [extraData, setExtraData] = useState({});
 
@@ -1739,10 +1740,22 @@ export default function ControlEscolar() {
       {!loading && activeTab === 'regularizacion' && !printMode && (
         <RegularizacionPrint 
             activos={directorio} 
-          materiasPorGrado={materiasPorGrado} 
-          onCaptureExtra={handleCaptureExtra} 
-          onClose={() => setActiveTab('activos')} 
-        />
+            materiasPorGrado={materiasPorGrado} 
+            onCaptureExtra={handleCaptureExtra} 
+            onPrintConstanciaExtra={(student, mat) => {
+              setExtraordinarioToPrint({
+                materia: mat.name,
+                calificacion: mat.finalGrade,
+                fecha: mat.fecha,
+                periodo: mat.periodo || ''
+              });
+              setPrintData(student);
+              setConstanciaType('acreditacion_extraordinario');
+              setPrintMode('constancia');
+              setTimeout(() => window.print(), 800);
+            }}
+            onClose={() => setActiveTab('activos')} 
+          />
       )}
 
       {/* Modal para Capturar Extraordinario */}
@@ -1864,7 +1877,7 @@ export default function ControlEscolar() {
       {printMode === 'acuseRec' && printData && <AcuseRecepcionPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'acuse' && printData && <AcuseDocumentosPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
-      {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} />}
+      {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} extraordinarioSelected={extraordinarioToPrint} />}
       {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
