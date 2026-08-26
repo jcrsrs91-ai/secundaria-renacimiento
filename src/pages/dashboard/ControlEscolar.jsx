@@ -1671,7 +1671,7 @@ export default function ControlEscolar() {
                   <p className="text-xs text-slate-500 mt-1">Incluye el promedio general acumulado y la tabla de calificaciones.</p>
                 </div>
               </button>
-<button onClick={() => { setConstanciaType('terminacion_tramite'); setPrintMode('constancia'); closeModal(); }} className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all flex items-start group">
+<button onClick={() => { executePrintConstancia('terminacion_tramite'); closeModal(); }} className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all flex items-start group">
                   <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg mr-3 group-hover:scale-110 transition-transform">
                     <FileText className="w-5 h-5" />
                   </div>
