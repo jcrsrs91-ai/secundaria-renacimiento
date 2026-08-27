@@ -1749,8 +1749,9 @@ export default function ControlEscolar() {
                   fecha: mat.fecha,
                   periodo: mat.periodo || ''
                 }));
+                const promManual = window.prompt('Ingrese el promedio del nivel educativo (ej. 8.5). Deje en blanco si no aplica:');
                 setExtraordinarioToPrint(formattedMats);
-              setPrintData(student);
+              setPrintData({ ...student, manualPromedio: promManual || '' });
               setConstanciaType('acreditacion_extraordinario');
               setPrintMode('constancia');
               setTimeout(() => window.print(), 800);

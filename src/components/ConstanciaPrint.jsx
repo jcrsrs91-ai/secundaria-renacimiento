@@ -229,7 +229,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
            </p>
          )}
 
-         {(type === 'terminacion' || type === 'terminacion_tramite') && (
+         {(type === 'terminacion' || type === 'terminacion_tramite' || (type === 'acreditacion_extraordinario' && student.manualPromedio)) && (
            <p className="mt-6 mb-6 text-center font-medium px-8 text-[12pt]">
              Se hace constar que cuenta con un Promedio de Nivel Educativo (Certificado) de: <br/>
              <strong className="whitespace-nowrap text-[14pt] block mt-2">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>
