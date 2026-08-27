@@ -177,6 +177,30 @@ export default function ControlEscolar() {
         if (data.nombres) data.nombres = autoAcentuar(data.nombres);
         if (data.apellidoPaterno) data.apellidoPaterno = autoAcentuar(data.apellidoPaterno);
         if (data.apellidoMaterno) data.apellidoMaterno = autoAcentuar(data.apellidoMaterno);
+          
+          // Limpieza de datos criticos y auto-correccion en base de datos
+          if (data.grupo) {
+             const cleanGrupo = data.grupo.toString().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+             if (data.grupo !== cleanGrupo && doc.id) {
+                 // Auto-reparar en base de datos silenciosamente
+                 updateDoc(doc.ref, { grupo: cleanGrupo }).catch(console.error);
+             }
+             data.grupo = cleanGrupo;
+          }
+          if (data.grado) {
+             const cleanGrado = data.grado.trim();
+             if (data.grado !== cleanGrado && doc.id) updateDoc(doc.ref, { grado: cleanGrado }).catch(console.error);
+             data.grado = cleanGrado;
+          }
+          if (data.turno) {
+             let cleanTurno = data.turno.trim();
+             // Fix para alumnos con turno Vespertino por error
+             if (cleanTurno === 'Vespertino') {
+                 cleanTurno = 'Matutino';
+             }
+             if (data.turno !== cleanTurno && doc.id) updateDoc(doc.ref, { turno: cleanTurno }).catch(console.error);
+             data.turno = cleanTurno;
+          }
 
         return { id: doc.id, ...data };
       });
