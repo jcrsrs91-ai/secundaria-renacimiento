@@ -143,12 +143,13 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
         */}
         <div className={`bg-white text-slate-800 font-serif text-justify relative z-10 watermark 
           ${type === 'terminacion' ? 'px-10 py-6 leading-relaxed' : 
-            type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 'px-10 py-6 leading-relaxed'}`} 
-          style={{ fontSize: type === 'calificaciones' ? '10pt' : '11pt' }}>
+            type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 
+            type === 'acreditacion_extraordinario' ? 'px-10 py-4 leading-normal' : 'px-10 py-6 leading-relaxed'}`} 
+          style={{ fontSize: type === 'calificaciones' ? '10pt' : (type === 'acreditacion_extraordinario' && Array.isArray(extraordinarioSelected) && extraordinarioSelected.length > 2) ? '10.5pt' : '11pt' }}>
          {/* HEADER LOGOS AND TITLE */}
 
          {/* HEADER LOGOS AND TITLE */}
-         <div className="flex items-center justify-between mb-4">
+         <div className={`flex items-center justify-between ${type === 'acreditacion_extraordinario' ? 'mb-2' : 'mb-4'}`}>
             <img src="/logo-sep.png" alt="Logo SEP / Guerrero" className="w-24 h-20 object-contain shrink-0" />
             <div className="flex-1 text-center px-4">
               <h1 className="font-black text-[14pt] tracking-widest text-slate-900 uppercase font-sans">Sistema Educativo Nacional</h1>
@@ -160,22 +161,22 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
          </div>
          <hr className="border-t-[1.5px] border-gray-800 mb-6" />
 
-         <div className={`text-right font-bold uppercase text-[11pt] ${type === 'calificaciones' ? 'mb-4' : 'mb-6'}`}>
+         <div className={`text-right font-bold uppercase text-[11pt] ${type === 'calificaciones' ? 'mb-4' : type === 'acreditacion_extraordinario' ? 'mb-2' : 'mb-6'}`}>
             <p>ASUNTO: CONSTANCIA DE ESTUDIOS {type === 'calificaciones' && 'CON CALIFICACIONES'}</p>
             
             {/* LEYENDA OFICIAL DEL AÑO */}
-            <p className="mt-4 text-center font-bold text-[9pt] uppercase tracking-widest text-slate-500">
+            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-2' : 'mt-4'} text-center font-bold text-[9pt] uppercase tracking-widest text-slate-500`}>
                {config?.leyendaOficial || '"2026, Año de Margarita Maza"'}
             </p>
 
-            <p className="mt-4 text-[12pt] normal-case font-normal text-left">A quien corresponda:</p>
+            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-2' : 'mt-4'} text-[12pt] normal-case font-normal text-left`}>A quien corresponda:</p>
          </div>
 
-         <p className="mb-6 indent-12">
+         <p className={`${type === 'acreditacion_extraordinario' ? 'mb-3' : 'mb-6'} indent-12`}>
             El que suscribe, <strong>Profr. Juan Carlos Taboada Barajas</strong>, Director de la Escuela Secundaria Técnica N° 68 "Renacimiento", con domicilio en Calle Alta Quebradora y Andador 24 de Febrero S/N, Cd. Renacimiento, C.P. 39715, Tel. 744 441 5678, por medio de la presente:
          </p>
 
-         <div className="text-center mb-6 font-black text-lg tracking-[0.3em] uppercase">
+         <div className={`text-center ${type === 'acreditacion_extraordinario' ? 'mb-3' : 'mb-6'} font-black text-lg tracking-[0.3em] uppercase`}>
             C E R T I F I C A
          </div>
 
