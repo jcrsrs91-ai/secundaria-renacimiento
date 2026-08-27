@@ -192,11 +192,11 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios de educación secundaria en esta institución durante la <strong>Generación 2023-2026</strong>.
            </p>
          ) : type === 'acreditacion_extraordinario' ? (
-           <div className="mb-6 indent-12 text-justify">
+           <div className="mb-3 indent-12 text-justify">
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, presentó y aprobó {Array.isArray(extraordinarioSelected) && extraordinarioSelected.length > 1 ? 'los exámenes extraordinarios de las siguientes asignaturas:' : 'el examen extraordinario de la siguiente asignatura:'}
              
-             <div className="my-4 ml-12 border-l-2 border-slate-400 pl-4">
-               <ul className="list-disc space-y-2 text-[11pt]">
+             <div className="my-2 ml-12 border-l-2 border-slate-400 pl-4">
+               <ul className="list-disc space-y-1 text-[11pt]">
                  {(Array.isArray(extraordinarioSelected) ? extraordinarioSelected : [extraordinarioSelected]).map((mat, i) => (
                    <li key={i}>
                      <strong>{mat.materia ? mat.materia.toUpperCase() : '__________________'}</strong>, obteniendo una calificación de <strong>{mat.calificacion || '___'}</strong> el día <strong>{mat.fecha ? new Date(mat.fecha + 'T12:00:00Z').toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '__________________'}</strong> correspondiente al periodo <strong>{mat.periodo || '__________________'}</strong>.
@@ -205,7 +205,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
                </ul>
              </div>
              
-             Se extiende la presente constancia debido a que su Certificado Oficial de terminación de estudios se encuentra actualmente en trámite.
+             <span className="block mt-2">Se extiende la presente constancia debido a que su Certificado Oficial de terminación de estudios se encuentra actualmente en trámite.</span>
            </div>
          ) : type === 'inscripcion_primero' ? (
            <p className="mb-6 indent-12">
@@ -230,9 +230,9 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
          )}
 
          {(type === 'terminacion' || type === 'terminacion_tramite' || (type === 'acreditacion_extraordinario' && student.manualPromedio)) && (
-           <p className="mt-6 mb-6 text-center font-medium px-8 text-[12pt]">
+           <p className={`${type === 'acreditacion_extraordinario' ? 'mt-3 mb-3' : 'mt-6 mb-6'} text-center font-medium px-8 text-[12pt]`}>
              Se hace constar que cuenta con un Promedio de Nivel Educativo (Certificado) de: <br/>
-             <strong className="whitespace-nowrap text-[14pt] block mt-2">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>
+             <strong className="whitespace-nowrap text-[14pt] block mt-1">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>
            </p>
          )}
 
@@ -286,13 +286,13 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
            <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-6'}`}>
              A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, <strong>a los 15 días del mes de julio del año 2026</strong>.
            </p>
-         ) : (
-           <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-6'}`}>
+         ) : type !== 'inscripcion_primero' && (
+           <p className={`indent-12 ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mb-2' : 'mb-6'}`}>
              A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
            </p>
          )}
 
-         <div className={`text-center relative ${type === 'calificaciones' ? 'mt-4' : 'mt-6'}`}>
+         <div className={`text-center relative ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mt-2' : 'mt-6'}`}>
             <p className="font-bold tracking-widest text-[11pt]">A T E N T A M E N T E</p>
             <br />
             <br />

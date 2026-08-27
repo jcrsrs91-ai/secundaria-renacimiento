@@ -8,4 +8,9 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  resolve: {
+    alias: {
+      'pdf-lib': 'pdf-lib/dist/pdf-lib.js'
+    }
+  }
 })
