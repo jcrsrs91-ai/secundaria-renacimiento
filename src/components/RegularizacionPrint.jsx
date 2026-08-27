@@ -95,7 +95,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
             const reg = student.regularizacion?.[mat.id];
             
             if (reg) {
-              regularizadas.push({ ...mat, finalGrade: reg.calificacion, fecha: reg.fecha, isHistoric: true });
+              regularizadas.push({ ...mat, finalGrade: reg.calificacion, fecha: reg.fecha, periodo: reg.periodo, isHistoric: true });
             } else if (isReprobada) {
               adeudos.push({ ...mat, finalGrade: finalMat });
             }
@@ -109,7 +109,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
          if (!adeudos.find(m => m.id === histMat.id) && !regularizadas.find(m => m.id === histMat.id)) {
            const reg = student.regularizacion?.[histMat.id];
            if (reg) {
-              regularizadas.push({ ...histMat, finalGrade: reg.calificacion, fecha: reg.fecha, isHistoric: true });
+              regularizadas.push({ ...histMat, finalGrade: reg.calificacion, fecha: reg.fecha, periodo: reg.periodo, isHistoric: true });
            } else {
               adeudos.push({ ...histMat, isHistoric: true });
            }
