@@ -97,6 +97,7 @@
   .page-container {
     width: 100% !important;
     height: auto !important;
+    min-height: auto !important;
     margin: 0 !important;
     padding: 1cm !important; /* Margen muy delgado para la impresora */
     box-shadow: none !important;
