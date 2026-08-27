@@ -1742,13 +1742,14 @@ export default function ControlEscolar() {
             activos={directorio} 
             materiasPorGrado={materiasPorGrado} 
             onCaptureExtra={handleCaptureExtra} 
-            onPrintConstanciaExtra={(student, mat) => {
-              setExtraordinarioToPrint({
-                materia: mat.name,
-                calificacion: mat.finalGrade,
-                fecha: mat.fecha,
-                periodo: mat.periodo || ''
-              });
+            onPrintConstanciaExtra={(student, matsArray) => {
+                const formattedMats = matsArray.map(mat => ({
+                  materia: mat.name,
+                  calificacion: mat.finalGrade,
+                  fecha: mat.fecha,
+                  periodo: mat.periodo || ''
+                }));
+                setExtraordinarioToPrint(formattedMats);
               setPrintData(student);
               setConstanciaType('acreditacion_extraordinario');
               setPrintMode('constancia');

@@ -264,12 +264,22 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                             </li>
                           ))}
                         </ul>
-                      ) : (
+                        ) : (
                         <span className="text-emerald-600 font-bold text-xs italic">Ninguno pendiente</span>
                       )}
                     </td>
                     <td className="border border-slate-300 px-3 py-2">
                       {item.regularizadas.length > 0 ? (
+                          <div>
+                            {onPrintConstanciaExtra && (
+                               <button 
+                                 onClick={() => onPrintConstanciaExtra(item.student, item.regularizadas)}
+                                 className="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-1 rounded text-[10px] font-bold flex items-center w-full justify-center no-print mb-2"
+                                 title="Imprimir Constancia Global"
+                               >
+                                 Imprimir Constancia Global
+                               </button>
+                            )}
                         <ul className="list-disc list-inside space-y-1">
                           {item.regularizadas.map(mat => (
                             <li key={mat.id} className="text-emerald-700 font-medium text-xs">
@@ -278,20 +288,13 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                               {mat.isHistoric && <span className="ml-2 text-[9px] text-indigo-600 font-bold bg-indigo-100 px-1 rounded uppercase">Histórico</span>}
                               <div className="text-[10px] text-slate-500 ml-4 flex items-center justify-between">
                                   <span>Fecha: {mat.fecha} | Periodo: {mat.periodo || 'N/A'}</span>
-                                  {onPrintConstanciaExtra && (
-                                    <button 
-                                      onClick={() => onPrintConstanciaExtra(item.student, mat)}
-                                      className="ml-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-0.5 rounded text-[9px] font-bold inline-flex items-center no-print"
-                                      title="Imprimir Constancia"
-                                    >
-                                      Imprimir
-                                    </button>
-                                  )}
+                                  
                                 </div>
                             </li>
                           ))}
                         </ul>
-                      ) : (
+                          </div>
+                        ) : (
                         <span className="text-slate-400 font-medium text-xs italic">Sin historial</span>
                       )}
                     </td>
