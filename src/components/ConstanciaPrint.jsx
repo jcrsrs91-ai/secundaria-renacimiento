@@ -199,7 +199,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
                <ul className="list-disc space-y-2 text-[11pt]">
                  {(Array.isArray(extraordinarioSelected) ? extraordinarioSelected : [extraordinarioSelected]).map((mat, i) => (
                    <li key={i}>
-                     <strong>{mat.materia || '__________________'}</strong>, obteniendo una calificación de <strong>{mat.calificacion || '___'}</strong> el día <strong>{mat.fecha ? new Date(mat.fecha + 'T12:00:00Z').toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '__________________'}</strong> correspondiente al periodo <strong>{mat.periodo || '__________________'}</strong>.
+                     <strong>{mat.materia ? mat.materia.toUpperCase() : '__________________'}</strong>, obteniendo una calificación de <strong>{mat.calificacion || '___'}</strong> el día <strong>{mat.fecha ? new Date(mat.fecha + 'T12:00:00Z').toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '__________________'}</strong> correspondiente al periodo <strong>{mat.periodo || '__________________'}</strong>.
                    </li>
                  ))}
                </ul>
