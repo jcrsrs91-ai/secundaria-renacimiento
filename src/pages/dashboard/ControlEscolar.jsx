@@ -193,13 +193,17 @@ export default function ControlEscolar() {
              data.grado = cleanGrado;
           }
           if (data.turno) {
-             let cleanTurno = data.turno.trim();
-             // Fix para alumnos con turno Vespertino por error
-             if (cleanTurno === 'Vespertino') {
-                 cleanTurno = 'Matutino';
-             }
+             const cleanTurno = data.turno.trim();
              if (data.turno !== cleanTurno && doc.id) updateDoc(doc.ref, { turno: cleanTurno }).catch(console.error);
-             data.turno = cleanTurno;
+               data.turno = cleanTurno;
+
+               // El usuario indico que si hay alumnos en Vespertino, usan otras letras (ej. L).
+               // Si hay alguien en Vespertino que tiene F, lo pasamos a L
+               if (data.turno === 'Vespertino' && data.grupo === 'F') {
+                   const nuevoGrupo = 'L';
+                   if (doc.id) updateDoc(doc.ref, { grupo: nuevoGrupo }).catch(console.error);
+                   data.grupo = nuevoGrupo;
+               }
           }
 
         return { id: doc.id, ...data };
