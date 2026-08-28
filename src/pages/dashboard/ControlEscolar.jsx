@@ -52,6 +52,7 @@ export default function ControlEscolar() {
   const [pendientes, setPendientes] = useState([]);
   const [tramitesPagados, setTramitesPagados] = useState([]);
   const [searchAspirantes, setSearchAspirantes] = useState("");
+  const [globalShiftFilter, setGlobalShiftFilter] = useState('Todos');
   const [_rawActivos, setActivos] = useState([]);
   const [_rawDirectorio, setDirectorio] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +83,6 @@ export default function ControlEscolar() {
   const [searchFilter, setSearchFilter] = useState('');
   const [gradeFilter, setGradeFilter] = useState('Todos');
   const [groupFilter, setGroupFilter] = useState('Todos');
-  const [globalShiftFilter, setGlobalShiftFilter] = useState('Todos');
   const [statusFilter, setStatusFilter] = useState('Activo');
   const [cycleFilter, setCycleFilter] = useState('Todos');
 
