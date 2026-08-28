@@ -52,9 +52,12 @@ export default function ControlEscolar() {
   const [pendientes, setPendientes] = useState([]);
   const [tramitesPagados, setTramitesPagados] = useState([]);
   const [searchAspirantes, setSearchAspirantes] = useState("");
-  const [activos, setActivos] = useState([]);
-  const [directorio, setDirectorio] = useState([]);
+  const [_rawActivos, setActivos] = useState([]);
+  const [_rawDirectorio, setDirectorio] = useState([]);
   const [loading, setLoading] = useState(true);
+  const activos = useMemo(() => _rawActivos.filter(a => globalShiftFilter === 'Todos' || a.turno === globalShiftFilter), [_rawActivos, globalShiftFilter]);
+  const directorio = useMemo(() => _rawDirectorio.filter(a => globalShiftFilter === 'Todos' || a.turno === globalShiftFilter), [_rawDirectorio, globalShiftFilter]);
+
 
   const [printMode, setPrintMode] = useState(null); // 'credencial', 'constancia', 'boleta', 'listaAsistencia'
   const [printData, setPrintData] = useState(null); // array for credencial, object for constancia
@@ -79,7 +82,7 @@ export default function ControlEscolar() {
   const [searchFilter, setSearchFilter] = useState('');
   const [gradeFilter, setGradeFilter] = useState('Todos');
   const [groupFilter, setGroupFilter] = useState('Todos');
-  const [shiftFilter, setShiftFilter] = useState('Todos');
+  const [globalShiftFilter, setGlobalShiftFilter] = useState('Todos');
   const [statusFilter, setStatusFilter] = useState('Activo');
   const [cycleFilter, setCycleFilter] = useState('Todos');
 
@@ -233,7 +236,7 @@ export default function ControlEscolar() {
     const matchesSearch = searchFilter === '' || searchIncludes(searchTarget, searchFilter);
     const matchesGrade = gradeFilter === 'Todos' || a.grado === gradeFilter;
     const matchesGroup = groupFilter === 'Todos' || a.grupo === groupFilter;
-    const matchesShift = shiftFilter === 'Todos' || a.turno === shiftFilter;
+    const matchesShift = globalShiftFilter === 'Todos' || a.turno === globalShiftFilter;
     const matchesStatus = (statusFilter === 'Todos' && a.status !== 'Egresado') || a.status === statusFilter;
     const matchesCycle = cycleFilter === 'Todos' || a.cicloEscolar === cycleFilter;
     return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus && matchesCycle;
@@ -787,7 +790,15 @@ export default function ControlEscolar() {
           <h2 className="text-2xl font-bold text-slate-800">Control Escolar</h2>
           <p className="text-slate-500 text-sm">Gestión de expedientes, inscripciones y calificaciones.</p>
         </div>
-        <div className="flex gap-2 flex-wrap justify-end">
+        <div className="flex gap-2 flex-wrap justify-end items-center">
+            <div className="flex items-center bg-white rounded-lg border border-slate-300 p-1 mr-2 shadow-sm">
+              <span className="text-xs font-medium text-slate-500 px-2">Turno:</span>
+              <select className="bg-transparent border-none text-sm font-bold text-slate-700 outline-none cursor-pointer" value={globalShiftFilter} onChange={e => setGlobalShiftFilter(e.target.value)}>
+                <option value="Todos">Ambos (Global)</option>
+                <option value="Matutino">Matutino</option>
+                <option value="Vespertino">Vespertino</option>
+              </select>
+            </div>
 
           <button onClick={handleDownloadTemplate} className="flex items-center px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors shadow-sm">
             <Download className="w-4 h-4 mr-2 text-slate-500" /> Descargar Plantilla
@@ -1164,14 +1175,7 @@ export default function ControlEscolar() {
                 <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option><option value="J">J</option><option value="K">K</option><option value="L">L</option>
               </select>
             </div>
-            <div className="w-full md:w-32">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Turno</label>
-              <select className="w-full p-2 border rounded-lg text-sm bg-white" value={shiftFilter} onChange={e => setShiftFilter(e.target.value)}>
-                <option value="Todos">Ambos</option>
-                <option value="Matutino">Matutino</option>
-                <option value="Vespertino">Vespertino</option>
-              </select>
-            </div>
+            
             <div className="w-full md:w-32">
               <label className="block text-xs font-medium text-slate-500 mb-1">Estatus</label>
               <select className="w-full p-2 border rounded-lg text-sm bg-white" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
