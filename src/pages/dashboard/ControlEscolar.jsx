@@ -374,7 +374,7 @@ export default function ControlEscolar() {
         }
       }
       
-      await updateDoc(studentRef, { regularizacion: newReg });
+      await updateDoc(studentRef, { regularizacion: newReg, lastModifiedBy: currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
       toast.success('Historial de regularización guardado exitosamente.');
       closeModal();
     } catch (error) {
@@ -534,10 +534,7 @@ export default function ControlEscolar() {
 
     try {
       const studentRef = doc(db, "students", student.id);
-      await updateDoc(studentRef, {
-        status: "Activo",
-        // grupo y taller preservados
-      });
+      await updateDoc(studentRef, { status: "Activo", lastModifiedBy: currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
       alert(`Alumno aceptado y movido al Directorio Activo.`);
     } catch (error) {
       console.error("Error al aceptar:", error);
@@ -560,7 +557,7 @@ export default function ControlEscolar() {
     });
 
     try {
-      await updateDoc(doc(db, "students", selectedStudent.id), { calificaciones });
+      await updateDoc(doc(db, "students", selectedStudent.id), { calificaciones, lastModifiedBy: currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
       alert('Calificaciones guardadas');
       closeModal();
     } catch (err) {

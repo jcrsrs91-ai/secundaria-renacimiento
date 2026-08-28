@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Save, Edit, User, Heart, Users, Camera, Upload, StopCircle, Printer } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
 
 export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, onSave }) {
+  const { currentUser } = useAuth();
   const [showPrintMode, setShowPrintMode] = useState(false);
   const [printExtraordinarioSelected, setPrintExtraordinarioSelected] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -87,7 +89,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
       setFotoPreview(base64String);
       try {
         const docRef = doc(db, "students", student.id);
-        await updateDoc(docRef, { fotoUrl: base64String });
+        await updateDoc(docRef, { fotoUrl: base64String, lastModifiedBy: currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
         console.log("Foto subida exitosamente");
       } catch (error) {
         console.error("Error al subir foto: ", error);
@@ -134,7 +136,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
       // Guardar automáticamente en Firestore
       try {
         const docRef = doc(db, "students", student.id);
-        await updateDoc(docRef, { fotoUrl: dataUrl });
+        await updateDoc(docRef, { fotoUrl: dataUrl, lastModifiedBy: currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
         // alert("Fotografía guardada exitosamente.");
       } catch (err) {
         console.error("Error al guardar foto: ", err);
@@ -160,7 +162,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
 
     try {
       const docRef = doc(db, "students", student.id);
-      await updateDoc(docRef, data);
+      await updateDoc(docRef, { ...data, lastModifiedBy: currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
       alert("Expediente actualizado exitosamente.");
       onSave({ ...student, ...data });
       setIsEditing(false);
@@ -199,15 +201,22 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white rounded-t-2xl sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center space-x-3">
-            <h2 className="font-extrabold text-2xl text-slate-800">Hoja de Vida del Alumno</h2>
-            <span className="bg-primary-100 text-primary-800 text-xs font-bold px-3 py-1 rounded-full">{student.matricula}</span>
-            <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-              student.status === 'Activo' ? 'bg-emerald-100 text-emerald-800' :
-              student.status === 'Baja' ? 'bg-sky-100 text-sky-800' :
-              student.status === 'Egresado' ? 'bg-blue-100 text-blue-800' :
-              'bg-indigo-100 text-indigo-800'
-            }`}>{student.status || 'Activo'}</span>
+          <div className="flex flex-col">
+            <div className="flex items-center space-x-3">
+              <h2 className="font-extrabold text-2xl text-slate-800">Hoja de Vida del Alumno</h2>
+              <span className="bg-primary-100 text-primary-800 text-xs font-bold px-3 py-1 rounded-full">{student.matricula}</span>
+              <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                student.status === 'Activo' ? 'bg-emerald-100 text-emerald-800' :
+                student.status === 'Baja' ? 'bg-sky-100 text-sky-800' :
+                student.status === 'Egresado' ? 'bg-blue-100 text-blue-800' :
+                'bg-indigo-100 text-indigo-800'
+              }`}>{student.status || 'Activo'}</span>
+            </div>
+            {student.lastModifiedBy && (
+              <div className="text-[11px] text-slate-400 mt-1 font-medium flex items-center">
+                <span className="mr-1">📝</span> Última modificación por: <span className="font-bold text-slate-500 mx-1">{student.lastModifiedBy}</span> el {new Date(student.lastModifiedAt).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
           </div>
           <div className="flex space-x-2">
             <button onClick={() => setShowPrintMode(true)} className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition">
