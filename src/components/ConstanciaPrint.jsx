@@ -145,7 +145,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
           ${type === 'terminacion' ? 'px-10 py-6 leading-relaxed' : 
             type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 
             type === 'acreditacion_extraordinario' ? 'px-10 py-4 leading-normal' : 
-            type === 'simple' ? 'px-12 py-8 leading-relaxed' : 'px-10 py-6 leading-relaxed'}`} 
+            type === 'simple' ? 'px-12 py-6 leading-normal' : 'px-10 py-6 leading-relaxed'}`} 
           style={{ fontSize: type === 'calificaciones' ? '10pt' : (type === 'acreditacion_extraordinario' && Array.isArray(extraordinarioSelected) && extraordinarioSelected.length > 2) ? '10.5pt' : type === 'simple' ? '12pt' : '11pt' }}>
          {/* HEADER LOGOS AND TITLE */}
 
