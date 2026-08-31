@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import { QrCode, FileText, Upload, Download, Star, List, Save, X, User, Search, Printer, Trash2, UserPlus, Award, UserMinus, AlertTriangle, GraduationCap, Settings } from 'lucide-react';
 import Papa from 'papaparse';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import HojaDeVida from '../../components/HojaDeVida';
@@ -377,7 +377,7 @@ export default function ControlEscolar() {
         }
       }
       
-      await updateDoc(studentRef, { regularizacion: newReg, lastModifiedBy: currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
+      await updateDoc(studentRef, { regularizacion: newReg, lastModifiedBy: auth.currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
       toast.success('Historial de regularización guardado exitosamente.');
       closeModal();
     } catch (error) {
@@ -537,7 +537,7 @@ export default function ControlEscolar() {
 
     try {
       const studentRef = doc(db, "students", student.id);
-      await updateDoc(studentRef, { status: "Activo", lastModifiedBy: currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
+      await updateDoc(studentRef, { status: "Activo", lastModifiedBy: auth.currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
       alert(`Alumno aceptado y movido al Directorio Activo.`);
     } catch (error) {
       console.error("Error al aceptar:", error);
@@ -560,7 +560,7 @@ export default function ControlEscolar() {
     });
 
     try {
-      await updateDoc(doc(db, "students", selectedStudent.id), { calificaciones, lastModifiedBy: currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
+      await updateDoc(doc(db, "students", selectedStudent.id), { calificaciones, lastModifiedBy: auth.currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
       alert('Calificaciones guardadas');
       closeModal();
     } catch (err) {
