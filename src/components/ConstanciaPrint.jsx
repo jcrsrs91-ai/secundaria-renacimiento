@@ -145,8 +145,8 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
           ${type === 'terminacion' ? 'px-10 py-6 leading-relaxed' : 
             type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 
             type === 'acreditacion_extraordinario' ? 'px-10 py-4 leading-normal' : 
-            type === 'simple' ? 'px-14 py-8 leading-relaxed' : 'px-10 py-6 leading-relaxed'}`} 
-          style={{ fontSize: type === 'calificaciones' ? '10pt' : (type === 'acreditacion_extraordinario' && Array.isArray(extraordinarioSelected) && extraordinarioSelected.length > 2) ? '10.5pt' : type === 'simple' ? '13pt' : '11pt' }}>
+            type === 'simple' ? 'px-12 py-8 leading-relaxed' : 'px-10 py-6 leading-relaxed'}`} 
+          style={{ fontSize: type === 'calificaciones' ? '10pt' : (type === 'acreditacion_extraordinario' && Array.isArray(extraordinarioSelected) && extraordinarioSelected.length > 2) ? '10.5pt' : type === 'simple' ? '12pt' : '11pt' }}>
          {/* HEADER LOGOS AND TITLE */}
 
          {/* HEADER LOGOS AND TITLE */}
@@ -162,22 +162,22 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
          </div>
          <hr className="border-t-[1.5px] border-gray-800 mb-6" />
 
-         <div className={`text-right font-bold uppercase text-[11pt] ${type === 'calificaciones' ? 'mb-4' : type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'simple' ? 'mb-10' : 'mb-6'}`}>
+         <div className={`text-right font-bold uppercase text-[11pt] ${type === 'calificaciones' ? 'mb-4' : type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'simple' ? 'mb-8' : 'mb-6'}`}>
             <p className={`${type === 'simple' ? 'text-[12pt]' : ''}`}>ASUNTO: CONSTANCIA DE ESTUDIOS {type === 'calificaciones' && 'CON CALIFICACIONES'}</p>
             
             {/* LEYENDA OFICIAL DEL AÑO */}
-            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-6' : 'mt-4'} text-center font-bold text-[9pt] uppercase tracking-widest text-slate-500`}>
+            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-4' : 'mt-4'} text-center font-bold text-[9pt] uppercase tracking-widest text-slate-500`}>
                {config?.leyendaOficial || '"2026, Año de Margarita Maza"'}
             </p>
 
-            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-10' : 'mt-4'} ${type === 'simple' ? 'text-[13pt]' : 'text-[12pt]'} normal-case font-normal text-left`}>A quien corresponda:</p>
+            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-8' : 'mt-4'} ${type === 'simple' ? 'text-[12pt]' : 'text-[12pt]'} normal-case font-normal text-left`}>A quien corresponda:</p>
          </div>
 
-         <p className={`${type === 'acreditacion_extraordinario' ? 'mb-3' : type === 'simple' ? 'mb-10' : 'mb-6'} indent-12`}>
+         <p className={`${type === 'acreditacion_extraordinario' ? 'mb-3' : type === 'simple' ? 'mb-8' : 'mb-6'} indent-12`}>
             El que suscribe, <strong>Profr. Juan Carlos Taboada Barajas</strong>, Director de la Escuela Secundaria Técnica N° 68 "Renacimiento", con domicilio en Calle Alta Quebradora y Andador 24 de Febrero S/N, Cd. Renacimiento, C.P. 39715, Tel. 744 441 5678, por medio de la presente:
          </p>
 
-         <div className={`text-center ${type === 'acreditacion_extraordinario' ? 'mb-3' : type === 'simple' ? 'mb-10' : 'mb-6'} font-black ${type === 'simple' ? 'text-xl' : 'text-lg'} tracking-[0.3em] uppercase`}>
+         <div className={`text-center ${type === 'acreditacion_extraordinario' ? 'mb-3' : type === 'simple' ? 'mb-8' : 'mb-6'} font-black ${type === 'simple' ? 'text-xl' : 'text-lg'} tracking-[0.3em] uppercase`}>
             C E R T I F I C A
          </div>
 
@@ -214,7 +214,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente {config?.cicloEscolarActual || '2025-2026'}. Y de acuerdo con sus documentos originales presentados en esta institución, concluyó su Educación Primaria con un promedio de <strong>{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
            </p>
          ) : (
-           <p className={`${type === 'simple' ? 'mb-10' : 'mb-6'} indent-12`}>
+           <p className={`${type === 'simple' ? 'mb-8' : 'mb-6'} indent-12`}>
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente {config?.cicloEscolarActual || '2025-2026'}.
            </p>
          )}
@@ -289,12 +289,12 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
              A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, <strong>a los 15 días del mes de julio del año 2026</strong>.
            </p>
          ) : type !== 'inscripcion_primero' && (
-           <p className={`indent-12 ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'simple' ? 'mb-12' : 'mb-6'}`}>
+           <p className={`indent-12 ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'simple' ? 'mb-10' : 'mb-6'}`}>
              A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
            </p>
          )}
 
-         <div className={`text-center relative ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-12' : 'mt-6'}`}>
+         <div className={`text-center relative ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-10' : 'mt-6'}`}>
             <p className="font-bold tracking-widest text-[11pt]">A T E N T A M E N T E</p>
             <br />
             <br />
