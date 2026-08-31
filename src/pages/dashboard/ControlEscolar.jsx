@@ -32,6 +32,8 @@ import ExpedienteModal from '../../components/ExpedienteModal';
 import { FolderOpen } from 'lucide-react';
 import { autoAcentuar } from '../../utils/format';
 import { searchIncludes } from '../../utils/search';
+import { registrarMovimiento } from '../../utils/bitacora';
+import BitacoraTab from '../../components/BitacoraTab';
 
 export default function ControlEscolar() {
   const { config, updateConfig } = useGlobalConfig();
@@ -318,6 +320,7 @@ export default function ControlEscolar() {
         }
       }
       await updateConfig({ cicloEscolarActual: cicloEgreso, leyendaOficial: leyendaOficial });
+      await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Cierre de Ciclo', `Se cerró el ciclo escolar. Se promovieron ${countUpdated} alumnos. Nuevo ciclo: ${cicloEgreso}`);
       toast.success(`¡Ciclo Cerrado! Se promovieron ${countUpdated} alumnos y el ciclo escolar actual ahora es ${cicloEgreso}.`);
       closeModal();
     } catch (error) {
@@ -409,6 +412,7 @@ export default function ControlEscolar() {
     if (window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${student.nombres} ${student.apellidoPaterno}? Esta acción no se puede deshacer.`)) {
       try {
         await deleteDoc(doc(db, "students", student.id));
+        await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Eliminar Alumno', `Se eliminó definitivamente al alumno ${student.nombres} ${student.apellidoPaterno} (${student.matricula || 'Sin matrícula'})`);
         toast.success("Alumno eliminado correctamente.");
       } catch (error) {
         console.error("Error al eliminar alumno:", error);
@@ -538,6 +542,7 @@ export default function ControlEscolar() {
     try {
       const studentRef = doc(db, "students", student.id);
       await updateDoc(studentRef, { status: "Activo", lastModifiedBy: auth.currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
+      await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Aceptar Aspirante', `Se aceptó al alumno ${student.nombres} ${student.apellidoPaterno} (${student.matricula})`);
       alert(`Alumno aceptado y movido al Directorio Activo.`);
     } catch (error) {
       console.error("Error al aceptar:", error);
@@ -561,6 +566,7 @@ export default function ControlEscolar() {
 
     try {
       await updateDoc(doc(db, "students", selectedStudent.id), { calificaciones, lastModifiedBy: auth.currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
+      await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Calificaciones', `Se guardaron calificaciones del ${trimestre} para el alumno ${selectedStudent.nombres} ${selectedStudent.apellidoPaterno} (${selectedStudent.matricula})`);
       alert('Calificaciones guardadas');
       closeModal();
     } catch (err) {
@@ -592,6 +598,7 @@ export default function ControlEscolar() {
           turno: turno
         });
       }
+      await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Asignación Masiva', `Se movieron ${selectedStudents.length} alumnos a ${grado} "${grupo}" (${turno}) con taller de ${taller}`);
       alert(`¡${selectedStudents.length} alumnos actualizados con éxito!`);
       setSelectedStudents([]);
       closeModal();
@@ -609,6 +616,7 @@ export default function ControlEscolar() {
       for (const studentId of selectedStudents) {
         await deleteDoc(doc(db, "students", studentId));
       }
+      await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Eliminación Masiva', `Se eliminaron permanentemente ${selectedStudents.length} alumnos de forma masiva.`);
       toast.success(`¡${selectedStudents.length} alumnos eliminados con éxito!`);
       setSelectedStudents([]);
     } catch (error) {
@@ -857,6 +865,11 @@ export default function ControlEscolar() {
             Listas de Asistencia
           </button>
 
+          {/* Bitácora de Movimientos */}
+          <button onClick={() => setActiveTab('bitacora')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'bitacora' ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Bitácora de Movimientos
+          </button>
+
           {/* Matrícula */}
           <button onClick={() => setActiveTab('matricula')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'matricula' ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Estadística Matrícula
@@ -1006,6 +1019,11 @@ export default function ControlEscolar() {
       {/* Tabla Calificaciones */}
       {!loading && activeTab === 'calificaciones' && (
         <Calificaciones activos={activos} materiasPorGrado={materiasPorGrado} onPrintBoleta={handlePrintBoleta} onPrintConcentradoFinal={handlePrintConcentradoFinal} onPrintConcentradoParcial={handlePrintConcentradoParcial} />
+      )}
+
+      {/* Bitacora */}
+      {!loading && activeTab === 'bitacora' && (
+        <BitacoraTab />
       )}
 
       {/* Tabla Listas de Asistencia */}
