@@ -1151,72 +1151,82 @@ export default function ControlEscolar() {
       {/* Tabla Activos / Directorio */}
       {!loading && activeTab === 'activos' && (
         <div className="space-y-4">
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Buscar por Nombre o Matrícula</label>
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                <input type="text" className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm bg-white" placeholder="Ej. Juan Pérez o 2026EST..." value={searchFilter} onChange={e => setSearchFilter(e.target.value)} />
+          <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col gap-5 shadow-sm">
+            
+            {/* Primera fila: Buscador y Acciones Globales */}
+            <div className="flex flex-col md:flex-row gap-4 items-end justify-between">
+              <div className="flex-1 w-full">
+                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Buscar en el Directorio</label>
+                <div className="relative">
+                  <Search className="w-5 h-5 absolute left-3 top-3 text-slate-400" />
+                  <input type="text" className="w-full pl-10 pr-4 py-2.5 border-2 border-slate-300 rounded-xl text-base font-medium text-slate-800 bg-white focus:ring-primary-500 focus:border-primary-500 shadow-sm placeholder-slate-400 transition-all" placeholder="Escribe el nombre, apellidos o matrícula..." value={searchFilter} onChange={e => setSearchFilter(e.target.value)} />
+                </div>
+              </div>
+              <div className="w-full md:w-auto flex flex-wrap gap-2 justify-end">
+                <button onClick={() => setModalType('ajustes')} className="px-4 py-2.5 bg-white text-slate-700 border border-slate-300 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors shadow-sm flex items-center">
+                  <Settings className="w-4 h-4 mr-2" /> Ajustes Globales
+                </button>
+                <button onClick={() => setModalType('cierreCiclo')} className="px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors shadow-sm flex items-center">
+                  <GraduationCap className="w-4 h-4 mr-2" /> Cerrar Ciclo
+                </button>
               </div>
             </div>
-            <div className="w-full md:w-48">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Grado</label>
-              <select className="w-full p-2 border rounded-lg text-sm bg-white" value={gradeFilter} onChange={e => setGradeFilter(e.target.value)}>
-                <option value="Todos">Todos los Grados</option>
-                <option value="1er Grado">1er Grado</option>
-                <option value="2do Grado">2do Grado</option>
-                <option value="3er Grado">3er Grado</option>
-              </select>
-            </div>
-            <div className="w-full md:w-48">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Grupo</label>
-              <select translate="no" className="notranslate w-full p-2 border rounded-lg text-sm bg-white" value={groupFilter} onChange={e => setGroupFilter(e.target.value)}>
-                <option value="Todos">Todos los Grupos</option>
-                <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option><option value="J">J</option><option value="K">K</option><option value="L">L</option>
-              </select>
-            </div>
-            
-            <div className="w-full md:w-32">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Estatus</label>
-              <select className="w-full p-2 border rounded-lg text-sm bg-white" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                <option value="Todos">Todos</option>
-                <option value="Activo">Activos</option>
-                <option value="Baja">Bajas</option>
-                <option value="Egresado">Egresados</option>
-                <option value="Pendiente">Pendientes</option>
-              </select>
-            </div>
-            <div className="w-full md:w-32">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ciclo Escolar</label>
-              <select className="w-full p-2 border rounded-lg text-sm bg-white" value={cycleFilter} onChange={e => setCycleFilter(e.target.value)}>
-                <option value="Todos">Todos</option>
-                
-                <option value={config?.cicloEscolarActual || "2025-2026"}>{config?.cicloEscolarActual || "2025-2026"}</option>
-                <option value="2026-2027">2026-2027</option>
-                <option value="2027-2028">2027-2028</option>
-                <option value="2028-2029">2028-2029</option>
-              </select>
-            </div>
-            <div className="w-full md:w-auto self-end flex gap-2">
-              <button onClick={() => setModalType('ajustes')} className="w-full md:w-auto px-4 py-2 bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-sm font-bold hover:bg-slate-300 transition-colors shadow-sm flex items-center justify-center mr-2">
-                  <Settings className="w-4 h-4 mr-2" /> Configuración Global
+
+            {/* Segunda fila: Filtros y Acciones Masivas */}
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+              <div className="w-full md:w-48">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Grado</label>
+                <select className="w-full p-2 border border-slate-300 rounded-lg text-sm font-medium bg-white" value={gradeFilter} onChange={e => setGradeFilter(e.target.value)}>
+                  <option value="Todos">Todos los Grados</option>
+                  <option value="1er Grado">1er Grado</option>
+                  <option value="2do Grado">2do Grado</option>
+                  <option value="3er Grado">3er Grado</option>
+                </select>
+              </div>
+              <div className="w-full md:w-48">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Grupo</label>
+                <select translate="no" className="notranslate w-full p-2 border border-slate-300 rounded-lg text-sm font-medium bg-white" value={groupFilter} onChange={e => setGroupFilter(e.target.value)}>
+                  <option value="Todos">Todos los Grupos</option>
+                  <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option><option value="J">J</option><option value="K">K</option><option value="L">L</option>
+                </select>
+              </div>
+              <div className="w-full md:w-32">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Estatus</label>
+                <select className="w-full p-2 border border-slate-300 rounded-lg text-sm font-medium bg-white" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                  <option value="Todos">Todos</option>
+                  <option value="Activo">Activos</option>
+                  <option value="Baja">Bajas</option>
+                  <option value="Egresado">Egresados</option>
+                  <option value="Pendiente">Pendientes</option>
+                </select>
+              </div>
+              <div className="w-full md:w-36">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Ciclo Escolar</label>
+                <select className="w-full p-2 border border-slate-300 rounded-lg text-sm font-medium bg-white text-primary-700" value={cycleFilter} onChange={e => setCycleFilter(e.target.value)}>
+                  <option value="Todos">Todos</option>
+                  <option value={config?.cicloEscolarActual || "2025-2026"}>{config?.cicloEscolarActual || "2025-2026"}</option>
+                  <option value="2026-2027">2026-2027</option>
+                  <option value="2027-2028">2027-2028</option>
+                  <option value="2028-2029">2028-2029</option>
+                </select>
+              </div>
+              
+              {/* Acciones para el grupo o masivas */}
+              <div className="flex-1 flex justify-end gap-2 flex-wrap">
+                <button onClick={handlePrintBatch} className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-900 transition-colors shadow-sm flex items-center">
+                  <QrCode className="w-4 h-4 mr-2" /> Credenciales del Grupo
                 </button>
-                <button onClick={() => setModalType('cierreCiclo')} className="w-full md:w-auto px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm flex items-center justify-center mr-2">
-                <GraduationCap className="w-4 h-4 mr-2" /> Cerrar Ciclo
-              </button>
-              <button onClick={handlePrintBatch} className="w-full md:w-auto px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 transition-colors shadow-sm flex items-center justify-center">
-                <QrCode className="w-4 h-4 mr-2" /> Imprimir Grupo
-              </button>
-              {selectedStudents.length > 0 && (
-                <>
-                  <button onClick={() => setModalType('asignacionMasiva')} className="w-full md:w-auto px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center">
-                    Asignación Masiva ({selectedStudents.length})
-                  </button>
-                  <button onClick={handleDeleteMasivo} className="w-full md:w-auto px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm flex items-center justify-center">
-                    <Trash2 className="w-4 h-4 mr-2" /> Eliminar ({selectedStudents.length})
-                  </button>
-                </>
-              )}
+                {selectedStudents.length > 0 && (
+                  <>
+                    <button onClick={() => setModalType('asignacionMasiva')} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition-colors shadow-sm flex items-center">
+                      Asignar ({selectedStudents.length})
+                    </button>
+                    <button onClick={handleDeleteMasivo} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors shadow-sm flex items-center">
+                      <Trash2 className="w-4 h-4 mr-1" /> ({selectedStudents.length})
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
