@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { Printer, Save, CheckCircle, Users } from 'lucide-react';
+import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 
 const numeroALetras = (numStr) => {
   if (!numStr) return "";
@@ -32,6 +33,7 @@ const extraerFechaDeCurp = (curp) => {
 };
 
 const ImpresionDocumentos = () => {
+  const { config } = useGlobalConfig();
   const [students, setStudents] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState('A');
   const [loading, setLoading] = useState(true);
@@ -292,7 +294,7 @@ const ImpresionDocumentos = () => {
                     </div>
 
                     <p>
-                      Con Clave Única de Registro de Población (CURP): <strong>{student.curp || '__________________'}</strong> y fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, cursó y concluyó satisfactoriamente el <strong>Tercer</strong> grado de educación secundaria, grupo <strong>"{student.grupo}"</strong>, durante el Ciclo Escolar 2025-2026.
+                      Con Clave Única de Registro de Población (CURP): <strong>{student.curp || '__________________'}</strong> y fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, cursó y concluyó satisfactoriamente el <strong>Tercer</strong> grado de educación secundaria, grupo <strong>"{student.grupo}"</strong>, durante el Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}.
                     </p>
 
                     <p>
@@ -380,7 +382,7 @@ const ImpresionDocumentos = () => {
                     </div>
 
                     <p>
-                      Con Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, quien cursó y concluyó sus estudios de educación secundaria en esta institución durante el Ciclo Escolar 2025-2026, en el <strong>Tercer</strong> grado, grupo <strong>"{student.grupo}"</strong>.
+                      Con Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, quien cursó y concluyó sus estudios de educación secundaria en esta institución durante el Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}, en el <strong>Tercer</strong> grado, grupo <strong>"{student.grupo}"</strong>.
                     </p>
 
                     <p>

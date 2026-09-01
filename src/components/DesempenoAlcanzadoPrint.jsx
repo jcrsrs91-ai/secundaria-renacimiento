@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { Award, Printer, X } from 'lucide-react';
 import { truncateTo1Dec } from '../utils/format';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function DesempenoAlcanzadoPrint({ activos = [], materiasPorGrado, onClose }) {
+  const { config } = useGlobalConfig();
 
   // Lógica de cálculo de promedios generales
   const stats = useMemo(() => {
@@ -205,7 +207,7 @@ export default function DesempenoAlcanzadoPrint({ activos = [], materiasPorGrado
           </div>
           <div className="text-right">
             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest print:text-xs">Ciclo Escolar</p>
-            <p className="text-xl font-black text-indigo-600 print:text-sm">2025 - 2026</p>
+            <p className="text-xl font-black text-indigo-600 print:text-sm">{config?.cicloEscolarActual || '2025 - 2026'}</p>
           </div>
         </div>
 

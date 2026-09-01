@@ -1,6 +1,8 @@
 import React from 'react';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 
 export default function ListaAsistenciaPrint({ students, grado, grupo, mes, paperSize }) {
+  const { config } = useGlobalConfig();
   if (!students || students.length === 0) return null;
 
   // Ordenar alfabéticamente por nombre completo (Paterno Materno Nombres)
@@ -53,7 +55,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
             <h2 className="font-black text-sm uppercase tracking-widest bg-slate-200 px-4 py-1 border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">Lista de Asistencia y Evaluación</h2>
           </div>
           <div className="text-right">
-            <p className="font-bold text-[10px]">Ciclo Escolar: <span className="underline decoration-slate-400">2025 - 2026</span></p>
+            <p className="font-bold text-[10px]">Ciclo Escolar: <span className="underline decoration-slate-400">{config?.cicloEscolarActual || '2025 - 2026'}</span></p>
             <p className="font-bold text-[10px] mt-0.5">Mes de Evaluación: <span className="underline decoration-slate-400 uppercase">{mes || '______________'}</span></p>
           </div>
         </div>
