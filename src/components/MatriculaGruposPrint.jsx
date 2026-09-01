@@ -356,52 +356,66 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
             <tbody className="divide-y divide-slate-200 bg-white print:divide-slate-400">
               
               {/* PRIMER GRADO */}
-              <tr>
-                <td rowSpan={((matriculaData['1er Grado-Matutino']?.grupos.size > 0 ? matriculaData['1er Grado-Matutino'].grupos.size + 1 : 0) + (matriculaData['1er Grado-Vespertino']?.grupos.size > 0 ? matriculaData['1er Grado-Vespertino'].grupos.size + 1 : 0) + 1) || 1} className="px-3 py-2 text-center font-bold text-slate-800 border-r border-slate-200 bg-slate-50 print:border-slate-400 print:bg-slate-100 align-middle">1ER GRADO</td>
-              </tr>
-              {renderTurnoWithGroups('1er Grado', 'Matutino')}
-              {renderTurnoWithGroups('1er Grado', 'Vespertino')}
-              {renderRow('TOTALES 1ER GRADO', '1er Grado', true)}
+              {(selectedGrado === 'Todos' || selectedGrado === '1er Grado') && (
+                <>
+                  <tr>
+                    <td rowSpan={((matriculaData['1er Grado-Matutino']?.grupos.size > 0 ? matriculaData['1er Grado-Matutino'].grupos.size + 1 : 0) + (matriculaData['1er Grado-Vespertino']?.grupos.size > 0 ? matriculaData['1er Grado-Vespertino'].grupos.size + 1 : 0) + 1) || 1} className="px-3 py-2 text-center font-bold text-slate-800 border-r border-slate-200 bg-slate-50 print:border-slate-400 print:bg-slate-100 align-middle">1ER GRADO</td>
+                  </tr>
+                  {renderTurnoWithGroups('1er Grado', 'Matutino')}
+                  {renderTurnoWithGroups('1er Grado', 'Vespertino')}
+                  {renderRow('TOTALES 1ER GRADO', '1er Grado', true)}
+                </>
+              )}
 
               {/* SEGUNDO GRADO */}
-              <tr>
-                <td rowSpan={((matriculaData['2do Grado-Matutino']?.grupos.size > 0 ? matriculaData['2do Grado-Matutino'].grupos.size + 1 : 0) + (matriculaData['2do Grado-Vespertino']?.grupos.size > 0 ? matriculaData['2do Grado-Vespertino'].grupos.size + 1 : 0) + 1) || 1} className="px-3 py-2 text-center font-bold text-slate-800 border-r border-slate-200 border-t border-slate-300 bg-slate-50 print:border-slate-400 print:bg-slate-100 align-middle">2DO GRADO</td>
-              </tr>
-              {renderTurnoWithGroups('2do Grado', 'Matutino')}
-              {renderTurnoWithGroups('2do Grado', 'Vespertino')}
-              {renderRow('TOTALES 2DO GRADO', '2do Grado', true)}
+              {(selectedGrado === 'Todos' || selectedGrado === '2do Grado') && (
+                <>
+                  <tr>
+                    <td rowSpan={((matriculaData['2do Grado-Matutino']?.grupos.size > 0 ? matriculaData['2do Grado-Matutino'].grupos.size + 1 : 0) + (matriculaData['2do Grado-Vespertino']?.grupos.size > 0 ? matriculaData['2do Grado-Vespertino'].grupos.size + 1 : 0) + 1) || 1} className="px-3 py-2 text-center font-bold text-slate-800 border-r border-slate-200 border-t border-slate-300 bg-slate-50 print:border-slate-400 print:bg-slate-100 align-middle">2DO GRADO</td>
+                  </tr>
+                  {renderTurnoWithGroups('2do Grado', 'Matutino')}
+                  {renderTurnoWithGroups('2do Grado', 'Vespertino')}
+                  {renderRow('TOTALES 2DO GRADO', '2do Grado', true)}
+                </>
+              )}
 
               {/* TERCER GRADO */}
-              <tr>
-                <td rowSpan={((matriculaData['3er Grado-Matutino']?.grupos.size > 0 ? matriculaData['3er Grado-Matutino'].grupos.size + 1 : 0) + (matriculaData['3er Grado-Vespertino']?.grupos.size > 0 ? matriculaData['3er Grado-Vespertino'].grupos.size + 1 : 0) + 1) || 1} className="px-3 py-2 text-center font-bold text-slate-800 border-r border-slate-200 border-t border-slate-300 bg-slate-50 print:border-slate-400 print:bg-slate-100 align-middle">3ER GRADO</td>
-              </tr>
-              {renderTurnoWithGroups('3er Grado', 'Matutino')}
-              {renderTurnoWithGroups('3er Grado', 'Vespertino')}
-              {renderRow('TOTALES 3ER GRADO', '3er Grado', true)}
+              {(selectedGrado === 'Todos' || selectedGrado === '3er Grado') && (
+                <>
+                  <tr>
+                    <td rowSpan={((matriculaData['3er Grado-Matutino']?.grupos.size > 0 ? matriculaData['3er Grado-Matutino'].grupos.size + 1 : 0) + (matriculaData['3er Grado-Vespertino']?.grupos.size > 0 ? matriculaData['3er Grado-Vespertino'].grupos.size + 1 : 0) + 1) || 1} className="px-3 py-2 text-center font-bold text-slate-800 border-r border-slate-200 border-t border-slate-300 bg-slate-50 print:border-slate-400 print:bg-slate-100 align-middle">3ER GRADO</td>
+                  </tr>
+                  {renderTurnoWithGroups('3er Grado', 'Matutino')}
+                  {renderTurnoWithGroups('3er Grado', 'Vespertino')}
+                  {renderRow('TOTALES 3ER GRADO', '3er Grado', true)}
+                </>
+              )}
 
               {/* TOTAL GLOBAL */}
-              <tr>
-                <td colSpan="2" className="px-3 py-3 text-right font-black text-indigo-900 bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">TOTAL DE LA ESCUELA</td>
-                <td className="px-2 py-2 text-center font-black bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.grupos.size}</td>
-                {/* Inicial */}
-                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.h}</td>
-                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.m}</td>
-                <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.t}</td>
-                {/* Altas */}
-                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.h}</td>
-                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.m}</td>
-                <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.t}</td>
-                {/* Bajas */}
-                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.h}</td>
-                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.m}</td>
-                <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.t}</td>
-                {/* Existencia */}
-                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.h}</td>
-                <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.m}</td>
-                <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.t}</td>
-                {/* Deserción */}
-                <td className="px-2 py-2 text-center font-black bg-indigo-100 border-t-2 border-indigo-400 text-orange-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{calcDesercion(matriculaData.global.bajas.t, matriculaData.global.inicial.t, matriculaData.global.altas.t)}</td>
-              </tr>
+              {selectedGrado === 'Todos' && (
+                <tr>
+                  <td colSpan="2" className="px-3 py-3 text-right font-black text-indigo-900 bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">TOTAL DE LA ESCUELA</td>
+                  <td className="px-2 py-2 text-center font-black bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.grupos.size}</td>
+                  {/* Inicial */}
+                  <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.h}</td>
+                  <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.m}</td>
+                  <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.inicial.t}</td>
+                  {/* Altas */}
+                  <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.h}</td>
+                  <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.m}</td>
+                  <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-indigo-900 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.altas.t}</td>
+                  {/* Bajas */}
+                  <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.h}</td>
+                  <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.m}</td>
+                  <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-red-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.bajas.t}</td>
+                  {/* Existencia */}
+                  <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.h}</td>
+                  <td className="px-2 py-2 text-center font-bold bg-indigo-100 border-r border-indigo-300 border-t-2 border-indigo-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.m}</td>
+                  <td className="px-2 py-2 text-center font-black bg-indigo-200 border-r border-indigo-400 border-t-2 border-indigo-400 text-emerald-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{matriculaData.global.existencia.t}</td>
+                  {/* Deserción */}
+                  <td className="px-2 py-2 text-center font-black bg-indigo-100 border-t-2 border-indigo-400 text-orange-700 print:border-slate-400 print:bg-slate-300 print:text-black print:border-t-2 print:border-t-black">{calcDesercion(matriculaData.global.bajas.t, matriculaData.global.inicial.t, matriculaData.global.altas.t)}</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
