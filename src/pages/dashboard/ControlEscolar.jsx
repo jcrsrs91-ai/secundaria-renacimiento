@@ -748,31 +748,42 @@ export default function ControlEscolar() {
       alert("No hay alumnos en la lista filtrada para extraer teléfonos.");
       return;
     }
-    const numbers = filteredDirectorio
-      .map(a => a.telefono || a.celularTutor || a.madreTelefono || a.padreTelefono)
-      .filter(num => num && typeof num === 'string' && num.trim() !== '')
-      .map(num => num.replace(/\D/g, ''))
-      .filter(num => num.length >= 10);
+    
+    let vcfContent = "";
+    let addedCount = 0;
+
+    filteredDirectorio.forEach(student => {
+      const phone = student.telefono || student.celularTutor || student.madreTelefono || student.padreTelefono;
+      if (!phone || typeof phone !== 'string') return;
       
-    if (numbers.length === 0) {
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length < 10) return;
+      
+      let finalPhone = cleanPhone;
+      if (finalPhone.length === 10) finalPhone = "+52" + finalPhone;
+      else if (finalPhone.length === 12 && finalPhone.startsWith("52")) finalPhone = "+" + finalPhone;
+
+      const tutorName = student.tutorNombre || student.tutor || "Tutor";
+      const contactName = `Tutor ${student.grado}${student.grupo} - ${student.nombres} ${student.apellidoPaterno} (${tutorName})`;
+      
+      vcfContent += `BEGIN:VCARD\nVERSION:3.0\nFN:${contactName}\nTEL;TYPE=CELL:${finalPhone}\nEND:VCARD\n`;
+      addedCount++;
+    });
+
+    if (addedCount === 0) {
       alert("No se encontraron números de teléfono válidos en esta lista.");
       return;
     }
+
+    const blob = new Blob([vcfContent], { type: "text/vcard" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Contactos_WhatsApp.vcf";
+    link.click();
+    URL.revokeObjectURL(url);
     
-    const uniqueNumbers = [...new Set(numbers)];
-    const whatsappString = uniqueNumbers.join(', ');
-    
-    const el = document.createElement('textarea');
-    el.value = whatsappString;
-    document.body.appendChild(el);
-    el.select();
-    try {
-      document.execCommand('copy');
-      alert(`¡Copiado al portapapeles!\nSe copiaron ${uniqueNumbers.length} números de teléfono para WhatsApp.`);
-    } catch (err) {
-      alert("Error al copiar. Aquí están los números:\n\n" + whatsappString);
-    }
-    document.body.removeChild(el);
+    alert(`¡Archivo descargado!\nSe exportaron ${addedCount} contactos. Ábrelo en tu teléfono o en Google Contacts para guardarlos; luego búscalo en WhatsApp.`);
   };
   
   const handleExportCSV = () => {
