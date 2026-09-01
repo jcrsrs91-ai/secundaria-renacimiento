@@ -627,8 +627,8 @@ export default function ControlEscolar() {
 
   const handleDownloadTemplate = () => {
     const BOM = "\uFEFF";
-    const csvContent = "matricula;curp;escuelaProcedencia;domicilioEscuela;promedioEscuela;nombres;apellidoPaterno;apellidoMaterno;genero;fechaNacimiento;tipoSangre;lentes;alergias;padecimientos;grado;grupo;turno;calleNumero;colonia;codigoPostal;tutor;celularTutor;referencia1;celularRef1;referencia2;celularRef2\n" +
-                       "2026EST1234;CURP1234567890;Escuela Primaria Sor Juana;Av. Siempre Viva 123;9.5;Juan Carlos;Perez;Garcia;Hombre;2014-05-15;O+;NO;Ninguna;Ninguno;1er Grado;A;Matutino;Calle Falsa 123;Centro;39000;Maria Garcia;7471234567;Tio Pedro;7477654321;Abuela Carmen;7479876543";
+    const csvContent = "sep=,\nmatricula,curp,escuelaProcedencia,domicilioEscuela,promedioEscuela,nombres,apellidoPaterno,apellidoMaterno,genero,fechaNacimiento,tipoSangre,lentes,alergias,padecimientos,grado,grupo,turno,calleNumero,colonia,codigoPostal,tutor,celularTutor,referencia1,celularRef1,referencia2,celularRef2\n" +
+                       "2026EST1234,CURP1234567890,Escuela Primaria Sor Juana,Av. Siempre Viva 123,9.5,Juan Carlos,Perez,Garcia,Hombre,2014-05-15,O+,NO,Ninguna,Ninguno,1er Grado,A,Matutino,Calle Falsa 123,Centro,39000,Maria Garcia,7471234567,Tio Pedro,7477654321,Abuela Carmen,7479876543";
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -644,7 +644,16 @@ export default function ControlEscolar() {
     const file = e.target.files[0];
     if (!file) return;
 
-    Papa.parse(file, {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      let content = event.target.result;
+      if (content.startsWith("sep=,\n") || content.startsWith("sep=,\r\n")) {
+         content = content.substring(content.indexOf('\n') + 1);
+      } else if (content.startsWith("\uFEFFsep=,\n") || content.startsWith("\uFEFFsep=,\r\n")) {
+         content = "\uFEFF" + content.substring(content.indexOf('\n') + 1);
+      }
+
+      Papa.parse(content, {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header) => header.trim().toLowerCase()
@@ -738,6 +747,8 @@ export default function ControlEscolar() {
         alert("Error al leer el archivo CSV: " + error.message);
       }
     });
+    };
+    reader.readAsText(file);
     
     // Limpiar input
     e.target.value = null;
@@ -832,7 +843,7 @@ export default function ControlEscolar() {
 
     const csv = Papa.unparse(dataToExport, { delimiter: ',' });
     const BOM = "\uFEFF";
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(["sep=,\n" + BOM + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

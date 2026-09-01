@@ -110,7 +110,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       return row;
     });
 
-    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
+    const csvContent = "sep=,\n\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -148,7 +148,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       row.push(reprobadas);
       return row;
     });
-    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: ";" });
+    const csvContent = "sep=,\n\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -181,7 +181,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       row.push(count > 0 ? truncateTo1Dec(sum / count, '') : '');
       return row;
     });
-    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: ";" });
+    const csvContent = "sep=,\n\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -193,7 +193,16 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     const file = e.target.files[0];
     if (!file) return;
 
-    Papa.parse(file, {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      let content = event.target.result;
+      if (content.startsWith("sep=,\n") || content.startsWith("sep=,\r\n")) {
+         content = content.substring(content.indexOf('\n') + 1);
+      } else if (content.startsWith("\uFEFFsep=,\n") || content.startsWith("\uFEFFsep=,\r\n")) {
+         content = "\uFEFF" + content.substring(content.indexOf('\n') + 1);
+      }
+
+      Papa.parse(content, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
@@ -225,6 +234,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         console.error(err);
       }
     });
+    };
+    reader.readAsText(file);
     e.target.value = '';
   };
 
