@@ -753,10 +753,11 @@ export default function ControlEscolar() {
     let addedCount = 0;
 
     filteredDirectorio.forEach(student => {
-      const phone = student.telefono || student.celularTutor || student.madreTelefono || student.padreTelefono;
-      if (!phone || typeof phone !== 'string') return;
+      const rawPhone = student.telefono || student.celularTutor || student.madreTelefono || student.padreTelefono;
+      if (!rawPhone) return;
       
-      const cleanPhone = phone.replace(/\D/g, '');
+      const phoneStr = String(rawPhone);
+      const cleanPhone = phoneStr.replace(/\D/g, '');
       if (cleanPhone.length < 10) return;
       
       let finalPhone = cleanPhone;
