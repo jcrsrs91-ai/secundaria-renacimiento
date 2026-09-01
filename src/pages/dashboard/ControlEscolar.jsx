@@ -750,15 +750,25 @@ export default function ControlEscolar() {
     }
     
     let vcfContent = "";
-    let addedCount = 0;
+    let evaluatedCount = 0;
+    let missingCount = 0;
+    let shortCount = 0;
+    let validCount = 0;
 
     filteredDirectorio.forEach(student => {
+      evaluatedCount++;
       const rawPhone = student.telefono || student.celularTutor || student.madreTelefono || student.padreTelefono;
-      if (!rawPhone) return;
+      if (!rawPhone) {
+        missingCount++;
+        return;
+      }
       
       const phoneStr = String(rawPhone);
       const cleanPhone = phoneStr.replace(/\D/g, '');
-      if (cleanPhone.length < 10) return;
+      if (cleanPhone.length < 10) {
+        shortCount++;
+        return;
+      }
       
       let finalPhone = cleanPhone;
       if (finalPhone.length === 10) finalPhone = "+52" + finalPhone;
@@ -768,23 +778,29 @@ export default function ControlEscolar() {
       const contactName = `Tutor ${student.grado}${student.grupo} - ${student.nombres} ${student.apellidoPaterno} (${tutorName})`;
       
       vcfContent += `BEGIN:VCARD\nVERSION:3.0\nFN:${contactName}\nTEL;TYPE=CELL:${finalPhone}\nEND:VCARD\n`;
-      addedCount++;
+      validCount++;
     });
 
-    if (addedCount === 0) {
-      alert("No se encontraron números de teléfono válidos en esta lista.");
+    if (validCount === 0) {
+      alert("No se encontraron números de teléfono válidos en los alumnos mostrados.");
       return;
     }
 
-    const blob = new Blob([vcfContent], { type: "text/vcard" });
+    const blob = new Blob([vcfContent], { type: "text/vcard;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "Contactos_WhatsApp.vcf";
+    link.setAttribute("download", "Contactos_WhatsApp.vcf");
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
-    
-    alert(`¡Archivo descargado!\nSe exportaron ${addedCount} contactos. Ábrelo en tu teléfono o en Google Contacts para guardarlos; luego búscalo en WhatsApp.`);
+    document.body.removeChild(link);
+
+    alert(`Detalle de la exportación:\n\n` + 
+          `- Alumnos en la tabla: ${evaluatedCount}\n` +
+          `- Sin número registrado: ${missingCount}\n` +
+          `- Número demasiado corto: ${shortCount}\n` +
+          `- Exportados correctamente: ${validCount}\n\n` +
+          `Se descargó un archivo con ${validCount} contactos. (Nota: Si tu celular reporta importar menos contactos, es porque los celulares fusionan automáticamente a los papás que tienen exactamente el mismo número telefónico, por ejemplo hermanos).`);
   };
   
   const handleExportCSV = () => {
