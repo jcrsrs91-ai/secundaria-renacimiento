@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { Users, TrendingDown, BookOpen, Printer, X } from 'lucide-react';
 import { truncateTo1Dec } from '../utils/format';
@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
   const { config } = useGlobalConfig();
+  const [selectedGrado, setSelectedGrado] = useState('Todos');
   
   // Procesar datos para la tabla
   const matriculaData = useMemo(() => {
@@ -84,8 +85,10 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
 
   const chartData = useMemo(() => {
     const data = [];
-    ['1er Grado', '2do Grado', '3er Grado'].forEach((grado, gIndex) => {
-      const gPrefix = gIndex + 1;
+    const gradosToProcess = selectedGrado === 'Todos' ? ['1er Grado', '2do Grado', '3er Grado'] : [selectedGrado];
+    gradosToProcess.forEach((grado, gIndex) => {
+      const gPrefix = grado === '1er Grado' ? 1 : grado === '2do Grado' ? 2 : 3;
+      
       ['Matutino', 'Vespertino'].forEach(turno => {
         const key = `${grado}-${turno}`;
         if (!matriculaData[key]) return;
@@ -104,14 +107,21 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
       });
     });
     return data;
-  }, [matriculaData]);
+  }, [matriculaData, selectedGrado]);
 
   const pieData = useMemo(() => {
-    return [
-      { name: 'Hombres', value: matriculaData.global.existencia.h },
-      { name: 'Mujeres', value: matriculaData.global.existencia.m },
-    ];
-  }, [matriculaData]);
+    if (selectedGrado === 'Todos') {
+      return [
+        { name: 'Hombres', value: matriculaData.global.existencia.h },
+        { name: 'Mujeres', value: matriculaData.global.existencia.m },
+      ];
+    } else {
+      return [
+        { name: 'Hombres', value: matriculaData[selectedGrado].existencia.h },
+        { name: 'Mujeres', value: matriculaData[selectedGrado].existencia.m },
+      ];
+    }
+  }, [matriculaData, selectedGrado]);
 
   // Colores CMYK Safe (Flat Design)
   const COLORS = {
@@ -190,7 +200,17 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
     <div className="print-matricula-only relative bg-slate-100 min-h-screen py-8 print:py-0 print:bg-white font-sans text-slate-800">
       
       {/* Controles de Impresión */}
-      <div className="flex justify-center mb-8 gap-4 print:hidden no-print">
+      <div className="flex justify-center items-center mb-8 gap-4 print:hidden no-print">
+        <select 
+          value={selectedGrado} 
+          onChange={(e) => setSelectedGrado(e.target.value)}
+          className="p-2.5 rounded-lg border border-slate-300 font-medium bg-white text-slate-700 shadow-sm outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          <option value="Todos">Todos los Grados</option>
+          <option value="1er Grado">1er Grado</option>
+          <option value="2do Grado">2do Grado</option>
+          <option value="3er Grado">3er Grado</option>
+        </select>
         <button onClick={() => window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
           <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           Imprimir Reporte
@@ -208,7 +228,7 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
         <style>{`
           @media print {
             @page { size: letter portrait; margin: 0.5cm; }
-            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; zoom: 0.75; }
+            html, body, #root { height: auto !important; overflow: visible !important; display: block !important; margin: 0; padding: 0; background: white; zoom: ${selectedGrado === 'Todos' ? '0.75' : '1.0'}; }
             * { overflow: visible !important; }
             aside, header { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -234,28 +254,28 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
               <Users className="w-4 h-4 mr-2 print:hidden" />
               <p className="text-xs font-bold opacity-90 uppercase tracking-wide print:opacity-100 print:text-[10px]">Existencia Total</p>
             </div>
-            <p className="text-3xl font-black print:text-lg">{matriculaData.global.existencia.t}</p>
+            <p className="text-3xl font-black print:text-lg">{selectedGrado === 'Todos' ? matriculaData.global.existencia.t : matriculaData[selectedGrado].existencia.t}</p>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border-2 print:border-black print:shadow-none print:p-2 print:flex-row print:items-center print:justify-between">
              <div className="flex items-center mb-1 print:mb-0 text-slate-500 print:text-black">
               <BookOpen className="w-4 h-4 mr-2 print:hidden" />
               <p className="text-xs font-bold uppercase tracking-wide print:text-[10px]">Total Matutino</p>
             </div>
-            <p className="text-2xl font-black text-slate-800 print:text-lg print:text-black">{matriculaData['1er Grado-Matutino'].existencia.t + matriculaData['2do Grado-Matutino'].existencia.t + matriculaData['3er Grado-Matutino'].existencia.t}</p>
+            <p className="text-2xl font-black text-slate-800 print:text-lg print:text-black">{selectedGrado === 'Todos' ? matriculaData['1er Grado-Matutino'].existencia.t + matriculaData['2do Grado-Matutino'].existencia.t + matriculaData['3er Grado-Matutino'].existencia.t : (matriculaData[selectedGrado + '-Matutino'] ? matriculaData[selectedGrado + '-Matutino'].existencia.t : 0)}</p>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border-2 print:border-black print:shadow-none print:p-2 print:flex-row print:items-center print:justify-between">
              <div className="flex items-center mb-1 print:mb-0 text-slate-500 print:text-black">
               <BookOpen className="w-4 h-4 mr-2 print:hidden" />
               <p className="text-xs font-bold uppercase tracking-wide print:text-[10px]">Total Vespertino</p>
             </div>
-            <p className="text-2xl font-black text-slate-800 print:text-lg print:text-black">{matriculaData['1er Grado-Vespertino'].existencia.t + matriculaData['2do Grado-Vespertino'].existencia.t + matriculaData['3er Grado-Vespertino'].existencia.t}</p>
+            <p className="text-2xl font-black text-slate-800 print:text-lg print:text-black">{selectedGrado === 'Todos' ? matriculaData['1er Grado-Vespertino'].existencia.t + matriculaData['2do Grado-Vespertino'].existencia.t + matriculaData['3er Grado-Vespertino'].existencia.t : (matriculaData[selectedGrado + '-Vespertino'] ? matriculaData[selectedGrado + '-Vespertino'].existencia.t : 0)}</p>
           </div>
           <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex flex-col justify-center print:border-2 print:border-black print:bg-white print:shadow-none print:p-2 print:flex-row print:items-center print:justify-between">
              <div className="flex items-center mb-1 print:mb-0 text-orange-600 print:text-black">
               <TrendingDown className="w-4 h-4 mr-2 print:hidden" />
               <p className="text-xs font-bold uppercase tracking-wide print:text-[10px]">Deserción Global</p>
             </div>
-            <p className="text-2xl font-black text-orange-700 print:text-lg print:text-black">{calcDesercion(matriculaData.global.bajas.t, matriculaData.global.inicial.t, matriculaData.global.altas.t)}</p>
+            <p className="text-2xl font-black text-orange-700 print:text-lg print:text-black">{selectedGrado === 'Todos' ? calcDesercion(matriculaData.global.bajas.t, matriculaData.global.inicial.t, matriculaData.global.altas.t) : calcDesercion(matriculaData[selectedGrado].bajas.t, matriculaData[selectedGrado].inicial.t, matriculaData[selectedGrado].altas.t)}</p>
           </div>
         </div>
 
@@ -265,7 +285,7 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
           {/* Gráfica de Proporción General (Donut) */}
           <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm print:shadow-none print:border-slate-400 print:p-4 print:mb-8">
             <h3 className="text-center text-sm font-black text-slate-800 mb-2 uppercase tracking-wide print:text-black print:mb-4">
-              Proporción por Género (Global)
+              Proporción por Género ({selectedGrado === 'Todos' ? 'Global' : selectedGrado})
             </h3>
             <div className="h-64 w-full print:h-80">
               <ResponsiveContainer width="100%" height="100%">
