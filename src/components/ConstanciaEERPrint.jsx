@@ -114,12 +114,12 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
   }
 
   return (
-    <div className="bg-white text-black font-sans relative" style={{ width: '21.59cm', minHeight: '27.94cm', padding: '1cm 1.5cm' }}>
+    <div className="bg-white text-black font-sans relative" style={{ width: '21.59cm', minHeight: '27.94cm', padding: '0.5cm 1.5cm' }}>
       <style>{`
         @media print {
           @page { size: letter portrait; margin: 0; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .print-content { transform: scale(0.95); transform-origin: top center; }
+          .print-content { transform: scale(0.85); transform-origin: top center; }
         }
       `}</style>
 
@@ -157,7 +157,7 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
 
         <div className="text-[11px] mb-1">LA DIRECCIÓN DE LA ESCUELA</div>
         
-        <div className="w-full border-2 border-black flex mb-6">
+        <div className="w-full border-2 border-black flex mb-4">
           <div className="w-2/3 border-r-2 border-black">
             <div className="text-[9px] px-1 border-b border-black">NOMBRE OFICIAL DE LA ESCUELA SEGÚN CATÁLOGOS DE CENTRO DE TRABAJO</div>
             <div className="text-center font-bold text-base py-1 uppercase">{config?.schoolName || 'RENACIMIENTO'}</div>
@@ -172,7 +172,7 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
           HACE CONSTAR, SEGÚN ANTECEDENTES QUE OBRAN EN EL ARCHIVO DE ESTE PLANTEL, QUE:
         </div>
 
-        <div className="w-full border-2 border-black flex mb-6">
+        <div className="w-full border-2 border-black flex mb-4">
           <div className="w-2/3 border-r-2 border-black">
             <div className="flex justify-between px-2 text-[9px] border-b border-black">
               <span>NOMBRES (S)</span>
@@ -216,7 +216,7 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
           </thead>
           <tbody>
             {rows.map((row, i) => (
-              <tr key={i} className="h-6">
+              <tr key={i} className="h-5">
                 <td className="border-b border-r-2 border-black text-left px-2 uppercase">{row.isEmpty ? '' : row.name}</td>
                 <td className="border-b border-r-2 border-black uppercase">{row.isEmpty ? '' : convertGradoToRoman(student.grado)}</td>
                 <td className="border-b border-r-2 border-black text-sm">{row.isEmpty ? '' : parseFloat(row.finalGrade).toFixed(1)}</td>
@@ -229,7 +229,7 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
         </table>
 
         {/* Texto de cierre */}
-        <div className="text-[11px] leading-6 text-justify mb-8">
+        <div className="text-[11px] leading-tight text-justify mb-4">
           EN CUMPLIMIENTO DE LAS DISPOSICIONES VIGENTES, ESTA CONSTANCIA AMPARA <span className="border-b border-black px-4">{strAcreditadas}</span> ÁREAS
           Y/O ASIGNATURAS ACREDITADAS Y <span className="border-b border-black px-4">{strNoAcreditadas}</span> ÁREAS Y/O ASIGNATURAS NO ACREDITADAS DE
           EDUCACIÓN SECUNDARIA Y SE EXPIDE EN <span className="border-b border-black px-2 uppercase">{config?.city || 'ACAPULCO DE JUÁREZ, GUERRERO'}</span> A LOS <span className="border-b border-black px-2 uppercase">{dia}</span> DIAS DEL MES DE <span className="border-b border-black px-2 uppercase">{mes}</span> DEL
@@ -237,14 +237,14 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
         </div>
 
         {/* Firmas */}
-        <div className="flex justify-between text-center text-[10px] mb-8 font-bold mt-12">
+        <div className="flex justify-between text-center text-[10px] mb-4 font-bold mt-8">
           <div className="w-[45%]">
-            <div className="mb-14">EL DIRECTOR DE LA ESCUELA</div>
+            <div className="mb-10">EL DIRECTOR DE LA ESCUELA</div>
             <div className="border-t border-black pt-1 px-4">{config?.directorName || 'Profr. Juan Carlos Taboada Barajas'}</div>
             <div className="font-normal">NOMBRE, FIRMA Y SELLO</div>
           </div>
           <div className="w-[45%]">
-            <div className="mb-14">Vo. Bo.<br/>JEFE(A) DE CONTROL ESCOLAR</div>
+            <div className="mb-10">Vo. Bo.<br/>JEFE(A) DE CONTROL ESCOLAR</div>
             <div className="border-t border-black pt-1 px-4 uppercase">{config?.controlEscolar || 'Profr. Bernardo Hernández Gómez'}</div>
             <div className="font-normal">NOMBRE, FIRMA Y SELLO</div>
           </div>
