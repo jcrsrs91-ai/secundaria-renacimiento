@@ -110,7 +110,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       return row;
     });
 
-    const csvContent = "sep=,\n\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
+    const csvContent = "\uFEFFsep=,\n" + Papa.unparse({ fields: headers, data }, { delimiter: "," }).toUpperCase();
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -148,7 +148,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       row.push(reprobadas);
       return row;
     });
-    const csvContent = "sep=,\n\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
+    const csvContent = "\uFEFFsep=,\n" + Papa.unparse({ fields: headers, data }, { delimiter: "," }).toUpperCase();
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -181,7 +181,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       row.push(count > 0 ? truncateTo1Dec(sum / count, '') : '');
       return row;
     });
-    const csvContent = "sep=,\n\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," });
+    const csvContent = "\uFEFFsep=,\n" + Papa.unparse({ fields: headers, data }, { delimiter: "," }).toUpperCase();
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -205,18 +205,20 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       Papa.parse(content, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (header) => header.trim().toUpperCase(),
       complete: (results) => {
         const newLocalGrades = { ...localGrades };
         let matchCount = 0;
 
         results.data.forEach(row => {
-          const matricula = row['Matricula'];
-          const student = alumnos.find(a => a.matricula === matricula);
+          const matricula = row['MATRICULA'];
+          const student = alumnos.find(a => a.matricula.toUpperCase() === (matricula || '').toUpperCase());
           if (student) {
             matchCount++;
             materias.forEach(mat => {
-              if (row[mat.name] !== undefined) {
-                newLocalGrades[student.id][mat.id] = row[mat.name];
+              const subjectKey = mat.name.toUpperCase();
+              if (row[subjectKey] !== undefined) {
+                newLocalGrades[student.id][mat.id] = row[subjectKey];
               }
             });
           }

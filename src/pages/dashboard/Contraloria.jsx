@@ -520,8 +520,8 @@ export default function Contraloria() {
       'Fecha': p.pagoFecha?.toDate ? p.pagoFecha.toDate().toLocaleDateString() : new Date(p.pagoFecha || new Date()).toLocaleDateString()
     }));
     
-    const csv = Papa.unparse(csvData, { delimiter: ',' });
-    const blob = new Blob(["sep=,\n\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+    const csv = Papa.unparse(csvData, { delimiter: ',' }).toUpperCase();
+    const blob = new Blob(["\uFEFFsep=,\n" + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -1648,9 +1648,9 @@ Esta acción no se puede deshacer.`);
       'Fecha de Ingreso': item.fechaIngreso ? new Date(item.fechaIngreso).toLocaleDateString() : ''
     }));
     
-    const csv = Papa.unparse(dataToExport, { delimiter: ',' });
+    const csv = Papa.unparse(dataToExport, { delimiter: ',' }).toUpperCase();
     const BOM = "\uFEFF";
-    const blob = new Blob(["sep=,\n" + BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([BOM + "sep=,\n" + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
