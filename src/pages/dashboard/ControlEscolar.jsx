@@ -629,7 +629,7 @@ export default function ControlEscolar() {
     const BOM = "\uFEFF";
     const csvContent = "matricula,curp,escuelaProcedencia,domicilioEscuela,promedioEscuela,nombres,apellidoPaterno,apellidoMaterno,genero,fechaNacimiento,tipoSangre,lentes,alergias,padecimientos,grado,grupo,turno,calleNumero,colonia,codigoPostal,tutor,celularTutor,referencia1,celularRef1,referencia2,celularRef2\n" +
                        "2026EST1234,CURP1234567890,Escuela Primaria Sor Juana,Av. Siempre Viva 123,9.5,Juan Carlos,Perez,Garcia,Hombre,2014-05-15,O+,NO,Ninguna,Ninguno,1er Grado,A,Matutino,Calle Falsa 123,Centro,39000,Maria Garcia,7471234567,Tio Pedro,7477654321,Abuela Carmen,7479876543";
-    const blob = new Blob([BOM + "sep=,\n" + csvContent.toUpperCase()], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([BOM + csvContent.toUpperCase()], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -843,7 +843,7 @@ export default function ControlEscolar() {
 
     const csv = Papa.unparse(dataToExport, { delimiter: ',' }).toUpperCase();
     const BOM = "\uFEFF";
-    const blob = new Blob([BOM + "sep=,\n" + csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

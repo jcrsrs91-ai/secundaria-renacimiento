@@ -471,7 +471,7 @@ export default function Inventario() {
     }));
     
     const csv = Papa.unparse(csvData, { delimiter: ',' }).toUpperCase();
-    const blob = new Blob(["\uFEFFsep=,\n" + csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -1602,7 +1602,7 @@ Esta acci├│n no se puede deshacer.`);
     
     const csv = Papa.unparse(dataToExport, { delimiter: ',' }).toUpperCase();
     const BOM = "\uFEFF";
-    const blob = new Blob([BOM + "sep=,\n" + csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
