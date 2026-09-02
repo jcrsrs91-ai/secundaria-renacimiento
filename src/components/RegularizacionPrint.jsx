@@ -5,7 +5,7 @@ import { FileText, Calendar, PlusCircle, X, Save, History } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
-export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptureExtra, onPrintConstanciaExtra, onClose }) {
+export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptureExtra, onPrintConstanciaExtra, onPrintConstanciaEER, onClose }) {
   const { config } = useGlobalConfig();
   const [filtroGrado, setFiltroGrado] = useState('Todos');
   
@@ -248,7 +248,18 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                   <tr key={item.student.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                     <td className="border border-slate-300 px-3 py-2">
                       <div className="font-bold text-slate-800 uppercase">{item.student.apellidoPaterno} {item.student.apellidoMaterno} {item.student.nombres}</div>
-                      <div className="text-xs text-slate-500">{item.student.matricula}</div>
+                      <div className="flex justify-between items-center mt-1">
+                        <div className="text-xs text-slate-500">{item.student.matricula}</div>
+                        {onPrintConstanciaEER && (
+                          <button
+                            onClick={() => onPrintConstanciaEER(item.student, item.regularizadas, item.adeudos)}
+                            className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold no-print"
+                            title="Constancia E.E.R."
+                          >
+                            Constancia E.E.R.
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="border border-slate-300 px-3 py-2 text-center font-semibold text-slate-700">
                       {item.student.grado} "{item.student.grupo}"
