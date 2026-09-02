@@ -4,6 +4,7 @@ import Papa from 'papaparse';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { truncateTo1Dec } from '../utils/format';
+import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
 
 export default function Calificaciones({ activos, materiasPorGrado, onPrintBoleta, onPrintConcentradoFinal, onPrintConcentradoParcial }) {
   const [grado, setGrado] = useState('1er Grado');
@@ -110,12 +111,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       return row;
     });
 
-    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," }).toUpperCase();
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `Plantilla_Calificaciones_${grado}_${grupo}_${trimestre}.csv`;
-    link.click();
+    const csvContent = Papa.unparse({ fields: headers, data }, { delimiter: "\t" }).toUpperCase();
+    downloadExcelFriendlyCsv(`Plantilla_Calificaciones_${grado}_${grupo}_${trimestre}.csv`, csvContent);
   };
 
   const getPromedioFinal = (student, materiaId) => {
@@ -148,12 +145,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       row.push(reprobadas);
       return row;
     });
-    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," }).toUpperCase();
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `Concentrado_Finales_${grado}_${grupo}.csv`;
-    link.click();
+    const csvContent = Papa.unparse({ fields: headers, data }, { delimiter: "\t" }).toUpperCase();
+    downloadExcelFriendlyCsv(`Concentrado_Finales_${grado}_${grupo}.csv`, csvContent);
   };
 
   const handleExportarExcelParciales = () => {
@@ -181,12 +174,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       row.push(count > 0 ? truncateTo1Dec(sum / count, '') : '');
       return row;
     });
-    const csvContent = "\uFEFF" + Papa.unparse({ fields: headers, data }, { delimiter: "," }).toUpperCase();
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `Concentrado_Parciales_${grado}_${grupo}.csv`;
-    link.click();
+    const csvContent = Papa.unparse({ fields: headers, data }, { delimiter: "\t" }).toUpperCase();
+    downloadExcelFriendlyCsv(`Concentrado_Parciales_${grado}_${grupo}.csv`, csvContent);
   };
 
   const handleUploadCSV = (e) => {

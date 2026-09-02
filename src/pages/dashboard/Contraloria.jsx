@@ -13,6 +13,7 @@ import CartaResguardoPrint from '../../components/CartaResguardoPrint';
 import ScannerInventarioModal from '../../components/ScannerInventarioModal';
 import EtiquetasPrint from '../../components/EtiquetasPrint';
 import ActaBajaPrint from '../../components/ActaBajaPrint';
+import { downloadExcelFriendlyCsv } from '../../utils/exportCsv';
 import { searchIncludes } from '../../utils/search';
 
 // Funciones auxiliares para el manejo de rangos de folios de inventario
@@ -520,15 +521,8 @@ export default function Contraloria() {
       'Fecha': p.pagoFecha?.toDate ? p.pagoFecha.toDate().toLocaleDateString() : new Date(p.pagoFecha || new Date()).toLocaleDateString()
     }));
     
-    const csv = Papa.unparse(csvData, { delimiter: ',' }).toUpperCase();
-    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Relacion_Ingresos_${activeIngresoTab}_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csv = Papa.unparse(csvData, { delimiter: '\t' }).toUpperCase();
+    downloadExcelFriendlyCsv(`Relacion_Ingresos_${activeIngresoTab}_${new Date().toISOString().split('T')[0]}.csv`, csv);
   };
 
   useEffect(() => {
@@ -1648,17 +1642,8 @@ Esta acción no se puede deshacer.`);
       'Fecha de Ingreso': item.fechaIngreso ? new Date(item.fechaIngreso).toLocaleDateString() : ''
     }));
     
-    const csv = Papa.unparse(dataToExport, { delimiter: ',' }).toUpperCase();
-    const BOM = "\uFEFF";
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Inventario_Mobiliario_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csv = Papa.unparse(dataToExport, { delimiter: '\t' }).toUpperCase();
+    downloadExcelFriendlyCsv(`Inventario_Mobiliario_${new Date().toISOString().split('T')[0]}.csv`, csv);
   };
 
   // Cálculo de estadísticas generales del inventario

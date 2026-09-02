@@ -13,6 +13,7 @@ import Calificaciones from '../../components/Calificaciones';
 import ListaAsistenciaPrint from '../../components/ListaAsistenciaPrint';
 import CuadroFinalPrint from '../../components/CuadroFinalPrint';
 import CuadroParcialPrint from '../../components/CuadroParcialPrint';
+import { downloadExcelFriendlyCsv } from '../../utils/exportCsv';
 import AprovechamientoPrint from '../../components/AprovechamientoPrint';
 import MatriculaPrint from '../../components/MatriculaPrint';
 import MatriculaGruposPrint from '../../components/MatriculaGruposPrint';
@@ -626,18 +627,9 @@ export default function ControlEscolar() {
   };
 
   const handleDownloadTemplate = () => {
-    const BOM = "\uFEFF";
-    const csvContent = "matricula,curp,escuelaProcedencia,domicilioEscuela,promedioEscuela,nombres,apellidoPaterno,apellidoMaterno,genero,fechaNacimiento,tipoSangre,lentes,alergias,padecimientos,grado,grupo,turno,calleNumero,colonia,codigoPostal,tutor,celularTutor,referencia1,celularRef1,referencia2,celularRef2\n" +
-                       "2026EST1234,CURP1234567890,Escuela Primaria Sor Juana,Av. Siempre Viva 123,9.5,Juan Carlos,Perez,Garcia,Hombre,2014-05-15,O+,NO,Ninguna,Ninguno,1er Grado,A,Matutino,Calle Falsa 123,Centro,39000,Maria Garcia,7471234567,Tio Pedro,7477654321,Abuela Carmen,7479876543";
-    const blob = new Blob([BOM + csvContent.toUpperCase()], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'Plantilla_Importacion_Alumnos.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = "matricula\tcurp\tescuelaProcedencia\tdomicilioEscuela\tpromedioEscuela\tnombres\tapellidoPaterno\tapellidoMaterno\tgenero\tfechaNacimiento\ttipoSangre\tlentes\talergias\tpadecimientos\tgrado\tgrupo\tturno\tcalleNumero\tcolonia\tcodigoPostal\ttutor\tcelularTutor\treferencia1\tcelularRef1\treferencia2\tcelularRef2\n" +
+                       "2026EST1234\tCURP1234567890\tEscuela Primaria Sor Juana\tAv. Siempre Viva 123\t9.5\tJuan Carlos\tPerez\tGarcia\tHombre\t2014-05-15\tO+\tNO\tNinguna\tNinguno\t1er Grado\tA\tMatutino\tCalle Falsa 123\tCentro\t39000\tMaria Garcia\t7471234567\tTio Pedro\t7477654321\tAbuela Carmen\t7479876543";
+    downloadExcelFriendlyCsv('Plantilla_Importacion_Alumnos.csv', csvContent.toUpperCase());
   };
 
   const handleImportCSV = (e) => {
@@ -841,17 +833,8 @@ export default function ControlEscolar() {
       'Promedio Primaria': a.promedioEscuela || ''
     }));
 
-    const csv = Papa.unparse(dataToExport, { delimiter: ',' }).toUpperCase();
-    const BOM = "\uFEFF";
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Directorio_Alumnos_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csv = Papa.unparse(dataToExport, { delimiter: '\t' }).toUpperCase();
+    downloadExcelFriendlyCsv(`Directorio_Alumnos_${new Date().toISOString().split('T')[0]}.csv`, csv);
   };
 
   const filteredPendientes = pendientes.filter(p => searchIncludes(`${p.nombres} ${p.apellidoPaterno} ${p.apellidoMaterno} ${p.curp}`, searchAspirantes));
