@@ -127,7 +127,7 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
         {/* Encabezado */}
         <div className="flex justify-between items-start mb-2">
           <div className="w-1/4">
-            <img src="/guerrero_logo.png" alt="Gobierno del Estado" className="w-40 object-contain" />
+            <img src="/transformando_guerrero.png" alt="Gobierno del Estado" className="w-48 object-contain" />
           </div>
           <div className="w-2/4 text-center">
             <h1 className="font-bold text-lg mb-1">SISTEMA EDUCATIVO NACIONAL</h1>
