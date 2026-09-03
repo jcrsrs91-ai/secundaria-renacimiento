@@ -43,7 +43,7 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
          data[groupKey] = { inicial: { h:0, m:0, t:0 }, altas: { h:0, m:0, t:0 }, bajas: { h:0, m:0, t:0 }, existencia: { h:0, m:0, t:0 } };
       }
 
-      if (status === 'activo' || status === 'egresado') {
+      if (status === 'activo') {
         data[key].grupos.add(grupo);
         data[grado].grupos.add(`${turno}-${grupo}`);
         data.global.grupos.add(`${grado}-${turno}-${grupo}`);
@@ -51,7 +51,7 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
 
       const isAlta = a.tipoIngreso === 'Alta';
       const isBaja = status === 'baja';
-      const isActivo = status === 'activo' || status === 'egresado'; // Consideramos egresados como activos que terminaron
+      const isActivo = status === 'activo';
 
       const updateStats = (target) => {
          if (isAlta) {

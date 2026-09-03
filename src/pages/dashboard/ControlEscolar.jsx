@@ -218,7 +218,7 @@ export default function ControlEscolar() {
         return { id: doc.id, ...data };
       });
       setPendientes(allData.filter(s => s.status === 'Pendiente'));
-      setActivos(allData.filter(s => s.status === 'Activo'));
+      setActivos(allData.filter(s => (s.status || 'Activo') === 'Activo'));
       setDirectorio(allData.filter(s => s.status !== 'Pendiente'));
       
       // Extraer lista única de generaciones
