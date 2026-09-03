@@ -115,11 +115,13 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
   }
 
   return (
-    <div className="bg-white text-black font-sans relative" style={{ width: '21.59cm', minHeight: '27.94cm', padding: '0.5cm 1.5cm' }}>
+    <div className="constancia-container bg-white text-black font-sans relative" style={{ width: '21.59cm', padding: '0.5cm 1.5cm' }}>
       <style>{`
+        .constancia-container { min-height: 27.94cm; }
         @media print {
           @page { size: letter portrait; margin: 0; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .constancia-container { min-height: 100% !important; height: auto !important; overflow: hidden; page-break-inside: avoid; }
           .print-content { transform: scale(0.95); transform-origin: top center; }
         }
       `}</style>

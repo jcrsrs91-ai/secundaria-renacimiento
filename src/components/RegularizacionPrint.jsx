@@ -18,6 +18,19 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
   const [histGradoMateria, setHistGradoMateria] = useState('1er Grado');
   const [isSavingHistoric, setIsSavingHistoric] = useState(false);
 
+  const handleDeleteHistoric = async (student, matId, matName) => {
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar el adeudo histórico de ${matName}?`)) return;
+    try {
+      const studentRef = doc(db, 'students', student.id);
+      const adeudosAnt = student.adeudosAnteriores || [];
+      const newAdeudos = adeudosAnt.filter(a => a.id ? a.id !== matId : a.name !== matName);
+      await updateDoc(studentRef, { adeudosAnteriores: newAdeudos });
+    } catch (error) {
+      console.error(error);
+      alert('Error al eliminar el adeudo histórico.');
+    }
+  };
+
   const handleSaveHistoric = async () => {
     if (!histStudentId || !histMateria.trim()) return;
     setIsSavingHistoric(true);
@@ -332,10 +345,17 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                       {item.adeudos.length > 0 ? (
                         <ul className="list-disc list-inside space-y-1">
                           {item.adeudos.map(mat => (
-                            <li key={mat.id} className="text-red-600 font-medium text-xs">
-                              {mat.name} 
-                              <span className="font-bold bg-red-100 px-1 rounded ml-1">({mat.finalGrade})</span>
-                              {mat.isHistoric && <span className="ml-2 text-[9px] text-indigo-600 font-bold bg-indigo-100 px-1 rounded uppercase">Histórico</span>}
+                            <li key={mat.id} className="text-red-600 font-medium text-xs flex justify-between items-center">
+                              <div>
+                                {mat.name} 
+                                <span className="font-bold bg-red-100 px-1 rounded ml-1">({mat.finalGrade})</span>
+                                {mat.isHistoric && <span className="ml-2 text-[9px] text-indigo-600 font-bold bg-indigo-100 px-1 rounded uppercase">Histórico</span>}
+                              </div>
+                              {mat.isHistoric && (
+                                <button onClick={() => handleDeleteHistoric(item.student, mat.id, mat.name)} className="text-red-400 hover:text-red-600 no-print ml-2" title="Eliminar">
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -358,13 +378,21 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                         <ul className="list-disc list-inside space-y-1">
                           {item.regularizadas.map(mat => (
                             <li key={mat.id} className="text-emerald-700 font-medium text-xs">
-                              {mat.name} 
-                              <span className="font-bold bg-emerald-100 px-1 rounded ml-1">({mat.finalGrade})</span>
-                              {mat.isHistoric && <span className="ml-2 text-[9px] text-indigo-600 font-bold bg-indigo-100 px-1 rounded uppercase">Histórico</span>}
-                              <div className="text-[10px] text-slate-500 ml-4 flex items-center justify-between">
-                                  <span>Fecha: {mat.fecha} | Periodo: {mat.periodo || 'N/A'}</span>
-                                  
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  {mat.name} 
+                                  <span className="font-bold bg-emerald-100 px-1 rounded ml-1">({mat.finalGrade})</span>
+                                  {mat.isHistoric && <span className="ml-2 text-[9px] text-indigo-600 font-bold bg-indigo-100 px-1 rounded uppercase">Histórico</span>}
                                 </div>
+                                {mat.isHistoric && (
+                                  <button onClick={() => handleDeleteHistoric(item.student, mat.id, mat.name)} className="text-red-400 hover:text-red-600 no-print ml-2" title="Eliminar">
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-slate-500 ml-4 flex items-center justify-between">
+                                <span>Fecha: {mat.fecha} | Periodo: {mat.periodo || 'N/A'}</span>
+                              </div>
                             </li>
                           ))}
                         </ul>
