@@ -119,7 +119,7 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
         @media print {
           @page { size: letter portrait; margin: 0; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .print-content { transform: scale(0.90); transform-origin: top center; }
+          .print-content { transform: scale(0.95); transform-origin: top center; }
         }
       `}</style>
 
