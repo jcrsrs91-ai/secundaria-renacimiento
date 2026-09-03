@@ -13,6 +13,7 @@ import Calificaciones from '../../components/Calificaciones';
 import ListaAsistenciaPrint from '../../components/ListaAsistenciaPrint';
 import CuadroFinalPrint from '../../components/CuadroFinalPrint';
 import ConstanciaEERPrint from '../../components/ConstanciaEERPrint';
+import BatchConstanciaEERPrint from '../../components/BatchConstanciaEERPrint';
 import CuadroParcialPrint from '../../components/CuadroParcialPrint';
 import { downloadExcelFriendlyCsv } from '../../utils/exportCsv';
 import AprovechamientoPrint from '../../components/AprovechamientoPrint';
@@ -1878,6 +1879,12 @@ export default function ControlEscolar() {
               setPrintMode('constancia_eer');
               setTimeout(() => window.print(), 800);
             }}
+            onPrintConstanciaEERBatch={(batchData, fechaExp) => {
+              setEerToPrint({ fechaExpedicion: fechaExp });
+              setPrintData(batchData);
+              setPrintMode('constancia_eer_batch');
+              setTimeout(() => window.print(), 800);
+            }}
             onClose={() => setActiveTab('activos')} 
           />
       )}
@@ -2004,6 +2011,7 @@ export default function ControlEscolar() {
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} extraordinarioSelected={extraordinarioToPrint} />}
       {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'constancia_eer' && eerToPrint && <ConstanciaEERPrint student={printData} regularizadas={eerToPrint.regularizadas} adeudos={eerToPrint.adeudos} fechaExpedicion={eerToPrint.fechaExpedicion} />}
+      {printMode === 'constancia_eer_batch' && eerToPrint && <BatchConstanciaEERPrint data={printData} fechaExpedicion={eerToPrint.fechaExpedicion} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
       {printMode === 'listaClausura' && <ListaClausuraPrint students={printData.students} grupo={printData.grupo} asesor={printData.asesor} />}

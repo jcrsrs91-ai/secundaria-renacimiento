@@ -5,10 +5,11 @@ import { FileText, Calendar, PlusCircle, X, Save, History } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
-export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptureExtra, onPrintConstanciaExtra, onPrintConstanciaEER, onClose }) {
+export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptureExtra, onPrintConstanciaExtra, onPrintConstanciaEER, onPrintConstanciaEERBatch, onClose }) {
   const { config } = useGlobalConfig();
   const [filtroGrado, setFiltroGrado] = useState('Todos');
   const [fechaExpedicion, setFechaExpedicion] = useState(() => new Date().toISOString().split('T')[0]);
+  const [filtroPeriodo, setFiltroPeriodo] = useState('Todos');
   
   const [showHistoricModal, setShowHistoricModal] = useState(false);
   const [histStudentId, setHistStudentId] = useState('');
@@ -153,10 +154,41 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
     });
   }, [activos]);
 
+  const uniquePeriodos = useMemo(() => {
+    const periods = new Set();
+    adeudosData.forEach(item => {
+      item.regularizadas.forEach(r => {
+        if (r.periodo) periods.add(r.periodo.toUpperCase());
+      });
+    });
+    return Array.from(periods).sort();
+  }, [adeudosData]);
+
   const filteredData = useMemo(() => {
-    if (filtroGrado === 'Todos') return adeudosData;
-    return adeudosData.filter(item => item.student.grado && item.student.grado.includes(filtroGrado));
-  }, [adeudosData, filtroGrado]);
+    let result = adeudosData;
+    if (filtroGrado !== 'Todos') {
+      result = result.filter(item => item.student.grado && item.student.grado.includes(filtroGrado));
+    }
+    
+    if (filtroPeriodo !== 'Todos') {
+      const filteredByPeriod = [];
+      result.forEach(item => {
+        const regsDelPeriodo = item.regularizadas.filter(r => (r.periodo || '').toUpperCase() === filtroPeriodo);
+        const otrasRegs = item.regularizadas.filter(r => (r.periodo || '').toUpperCase() !== filtroPeriodo);
+        
+        if (regsDelPeriodo.length > 0) {
+          filteredByPeriod.push({
+            student: item.student,
+            regularizadas: regsDelPeriodo,
+            adeudos: [...item.adeudos, ...otrasRegs]
+          });
+        }
+      });
+      return filteredByPeriod;
+    }
+    
+    return result;
+  }, [adeudosData, filtroGrado, filtroPeriodo]);
 
   const handleImprimir = () => {
     setTimeout(() => window.print(), 500);
@@ -171,6 +203,12 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
           <FileText className="w-5 h-5 mr-2" />
           Imprimir Lista Oficial
         </button>
+        {onPrintConstanciaEERBatch && filtroPeriodo !== 'Todos' && filteredData.length > 0 && (
+          <button onClick={() => onPrintConstanciaEERBatch(filteredData, fechaExpedicion)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
+            <FileText className="w-5 h-5 mr-2" />
+            Imprimir Constancias del Periodo
+          </button>
+        )}
         {onClose && (
           <button onClick={onClose} className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
             <X className="w-5 h-5 mr-2" />
@@ -193,6 +231,18 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
             <option value="2do Grado">2do Grado</option>
             <option value="3er Grado">3er Grado</option>
             <option value="Egresado">Egresados</option>
+          </select>
+        </div>
+
+        <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-3">
+          <label className="text-sm font-bold text-slate-700">Filtrar por Periodo:</label>
+          <select 
+            value={filtroPeriodo} 
+            onChange={(e) => setFiltroPeriodo(e.target.value)}
+            className="border-slate-300 rounded-md text-sm py-1.5 pl-3 pr-8 focus:border-orange-500 focus:ring-orange-500 font-medium text-slate-700"
+          >
+            <option value="Todos">Todos los periodos</option>
+            {uniquePeriodos.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
         
