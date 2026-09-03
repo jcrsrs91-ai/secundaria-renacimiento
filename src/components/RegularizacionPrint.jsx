@@ -17,6 +17,8 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
   const [histMateria, setHistMateria] = useState('');
   const [histGrade, setHistGrade] = useState('');
   const [histGradoMateria, setHistGradoMateria] = useState('1er Grado');
+  const [histPeriodo, setHistPeriodo] = useState('');
+  const [histFecha, setHistFecha] = useState('');
   const [isSavingHistoric, setIsSavingHistoric] = useState(false);
 
   const handleDeleteHistoric = async (student, matId, matName) => {
@@ -34,24 +36,45 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
 
   const handleSaveHistoric = async () => {
     if (!histStudentId || !histMateria.trim()) return;
+    const gradeNum = histGrade ? parseFloat(histGrade) : 5.0;
+    if (gradeNum >= 6.0 && !histPeriodo) {
+      alert('Si la materia ya está aprobada, debes seleccionar el periodo.');
+      return;
+    }
+    
     setIsSavingHistoric(true);
     try {
       const studentRef = doc(db, 'students', histStudentId);
+      const newId = 'hist_' + Date.now();
       const newAdeudo = {
-        id: 'hist_' + Date.now(),
-        name: histMateria.trim(),
-        finalGrade: histGrade ? parseFloat(histGrade) : 5.0,
+        id: newId,
+        name: histMateria.trim().toUpperCase(),
+        finalGrade: gradeNum,
         grado: histGradoMateria,
         isHistoric: true
       };
-      await updateDoc(studentRef, {
+      
+      const updates = {
         adeudosAnteriores: arrayUnion(newAdeudo)
-      });
+      };
+      
+      if (gradeNum >= 6.0) {
+        updates[`regularizacion.${newId}`] = {
+          calificacion: gradeNum,
+          periodo: histPeriodo,
+          fecha: histFecha || new Date().toISOString().split('T')[0]
+        };
+      }
+      
+      await updateDoc(studentRef, updates);
+      
       setShowHistoricModal(false);
       setHistStudentId('');
       setHistMateria('');
       setHistGrade('');
       setHistGradoMateria('1er Grado');
+      setHistPeriodo('');
+      setHistFecha('');
     } catch (error) {
       console.error(error);
       alert('Error al guardar el adeudo histórico.');
@@ -508,7 +531,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                 <input 
                   type="number"
                   step="0.1"
-                  max="5.9"
+                  max="10.0"
                   value={histGrade}
                   onChange={e => setHistGrade(e.target.value)}
                   placeholder="5.0"
@@ -516,6 +539,40 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                 />
               </div>
             </div>
+
+            {parseFloat(histGrade) >= 6.0 && (
+              <div className="grid grid-cols-2 gap-4 mt-4 bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+                <div>
+                  <label className="block text-sm font-bold text-emerald-800 mb-1">Periodo de Aprobación:</label>
+                  <select 
+                    value={histPeriodo}
+                    onChange={e => setHistPeriodo(e.target.value)}
+                    className="w-full border-emerald-300 rounded-md shadow-sm p-2 text-sm"
+                  >
+                    <option value="">Selecciona...</option>
+                    <option value="Agosto">Agosto</option>
+                    <option value="Septiembre">Septiembre</option>
+                    <option value="Noviembre">Noviembre</option>
+                    <option value="Enero">Enero</option>
+                    <option value="Febrero">Febrero</option>
+                    <option value="Marzo">Marzo</option>
+                    <option value="Abril">Abril</option>
+                    <option value="Mayo">Mayo</option>
+                    <option value="Junio">Junio</option>
+                    <option value="Julio">Julio</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-emerald-800 mb-1">Fecha de Examen (Opcional):</label>
+                  <input 
+                    type="date"
+                    value={histFecha}
+                    onChange={e => setHistFecha(e.target.value)}
+                    className="w-full border-emerald-300 rounded-md shadow-sm p-2 text-sm"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="mt-8 flex justify-end gap-3 pt-4 border-t">
               <button onClick={() => setShowHistoricModal(false)} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-lg text-sm">Cancelar</button>
