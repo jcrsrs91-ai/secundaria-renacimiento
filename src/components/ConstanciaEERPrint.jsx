@@ -91,13 +91,14 @@ const formatFecha = (fechaStr) => {
   return fechaStr;
 };
 
-export default function ConstanciaEERPrint({ student, regularizadas = [], adeudos = [] }) {
+export default function ConstanciaEERPrint({ student, regularizadas = [], adeudos = [], fechaExpedicion }) {
   const { config } = useGlobalConfig();
   
-  const today = new Date();
+  const today = fechaExpedicion ? new Date(fechaExpedicion + 'T00:00:00') : new Date();
   const dia = diaALetras(today.getDate());
   const mes = mesALetras(today.getMonth() + 1);
-  const anio = today.getFullYear() === 2025 ? 'DOS MIL VEINTICINCO' : 
+  const anio = today.getFullYear() === 2024 ? 'DOS MIL VEINTICUATRO' :
+               today.getFullYear() === 2025 ? 'DOS MIL VEINTICINCO' : 
                today.getFullYear() === 2026 ? 'DOS MIL VEINTISÉIS' : 
                today.getFullYear() === 2027 ? 'DOS MIL VEINTISIETE' : `DOS MIL VEINTIOCHO`;
 

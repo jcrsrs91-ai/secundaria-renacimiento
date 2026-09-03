@@ -1872,8 +1872,8 @@ export default function ControlEscolar() {
               setPrintMode('constancia');
               setTimeout(() => window.print(), 800);
             }}
-            onPrintConstanciaEER={(student, regularizadas, adeudos) => {
-              setEerToPrint({ regularizadas, adeudos });
+            onPrintConstanciaEER={(student, regularizadas, adeudos, fechaExp) => {
+              setEerToPrint({ regularizadas, adeudos, fechaExpedicion: fechaExp });
               setPrintData(student);
               setPrintMode('constancia_eer');
               setTimeout(() => window.print(), 800);
@@ -2003,7 +2003,7 @@ export default function ControlEscolar() {
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} extraordinarioSelected={extraordinarioToPrint} />}
       {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
-      {printMode === 'constancia_eer' && eerToPrint && <ConstanciaEERPrint student={printData} regularizadas={eerToPrint.regularizadas} adeudos={eerToPrint.adeudos} />}
+      {printMode === 'constancia_eer' && eerToPrint && <ConstanciaEERPrint student={printData} regularizadas={eerToPrint.regularizadas} adeudos={eerToPrint.adeudos} fechaExpedicion={eerToPrint.fechaExpedicion} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
       {printMode === 'listaClausura' && <ListaClausuraPrint students={printData.students} grupo={printData.grupo} asesor={printData.asesor} />}

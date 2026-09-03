@@ -8,6 +8,7 @@ import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptureExtra, onPrintConstanciaExtra, onPrintConstanciaEER, onClose }) {
   const { config } = useGlobalConfig();
   const [filtroGrado, setFiltroGrado] = useState('Todos');
+  const [fechaExpedicion, setFechaExpedicion] = useState(() => new Date().toISOString().split('T')[0]);
   
   const [showHistoricModal, setShowHistoricModal] = useState(false);
   const [histStudentId, setHistStudentId] = useState('');
@@ -178,8 +179,8 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
         )}
       </div>
 
-      {/* Filtro de Grado */}
-      <div className="flex justify-center mb-6 gap-4 print:hidden no-print">
+      {/* Filtro de Grado y Fecha */}
+      <div className="flex justify-center mb-6 gap-4 print:hidden no-print flex-wrap">
         <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-3">
           <label className="text-sm font-bold text-slate-700">Filtrar por Grado:</label>
           <select 
@@ -193,6 +194,16 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
             <option value="3er Grado">3er Grado</option>
             <option value="Egresado">Egresados</option>
           </select>
+        </div>
+        
+        <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-3">
+          <label className="text-sm font-bold text-slate-700">Fecha para Constancias:</label>
+          <input 
+            type="date" 
+            value={fechaExpedicion} 
+            onChange={(e) => setFechaExpedicion(e.target.value)}
+            className="border-slate-300 rounded-md text-sm py-1.5 px-3 focus:border-orange-500 focus:ring-orange-500 font-medium text-slate-700"
+          />
         </div>
         
         <button 
@@ -313,10 +324,19 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                       )}
                     </td>
                     <td className="border border-slate-300 px-3 py-2 text-center no-print">
+                      {onPrintConstanciaEER && (
+                        <button 
+                          onClick={() => onPrintConstanciaEER(item.student, item.regularizadas, item.adeudos, fechaExpedicion)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold transition-colors w-full flex items-center justify-center mt-2"
+                        >
+                          <FileText className="w-3 h-3 mr-1" />
+                          Constancia E.E.R.
+                        </button>
+                      )}
                       {item.adeudos.length > 0 && (
                         <button 
                           onClick={() => onCaptureExtra(item.student, item.adeudos)}
-                          className="bg-orange-100 hover:bg-orange-200 text-orange-700 px-3 py-1.5 rounded text-xs font-bold transition-colors w-full flex items-center justify-center"
+                          className="bg-orange-100 hover:bg-orange-200 text-orange-700 px-3 py-1.5 rounded text-xs font-bold transition-colors w-full flex items-center justify-center mt-2"
                         >
                           <PlusCircle className="w-3 h-3 mr-1" />
                           Capturar
