@@ -218,7 +218,7 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
             {rows.map((row, i) => (
               <tr key={i} className="h-5">
                 <td className="border-b border-r-2 border-black text-left px-2 uppercase">{row.isEmpty ? '' : row.name}</td>
-                <td className="border-b border-r-2 border-black uppercase">{row.isEmpty ? '' : convertGradoToRoman(student.grado)}</td>
+                <td className="border-b border-r-2 border-black uppercase">{row.isEmpty ? '' : convertGradoToRoman(row.grado || student.grado)}</td>
                 <td className="border-b border-r-2 border-black text-sm">{row.isEmpty ? '' : parseFloat(row.finalGrade).toFixed(1)}</td>
                 <td className="border-b border-r-2 border-black uppercase">{row.isEmpty ? '' : promedioALetras(row.finalGrade)}</td>
                 <td className="border-b border-r-2 border-black">{row.isEmpty ? '' : formatFecha(row.fecha)}</td>

@@ -9,11 +9,11 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
   const { config } = useGlobalConfig();
   const [filtroGrado, setFiltroGrado] = useState('Todos');
   
-  // Modal Histórico
   const [showHistoricModal, setShowHistoricModal] = useState(false);
   const [histStudentId, setHistStudentId] = useState('');
   const [histMateria, setHistMateria] = useState('');
   const [histGrade, setHistGrade] = useState('');
+  const [histGradoMateria, setHistGradoMateria] = useState('1er Grado');
   const [isSavingHistoric, setIsSavingHistoric] = useState(false);
 
   const handleSaveHistoric = async () => {
@@ -25,6 +25,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
         id: 'hist_' + Date.now(),
         name: histMateria.trim(),
         finalGrade: histGrade ? parseFloat(histGrade) : 5.0,
+        grado: histGradoMateria,
         isHistoric: true
       };
       await updateDoc(studentRef, {
@@ -34,6 +35,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
       setHistStudentId('');
       setHistMateria('');
       setHistGrade('');
+      setHistGradoMateria('1er Grado');
     } catch (error) {
       console.error(error);
       alert('Error al guardar el adeudo histórico.');
@@ -95,9 +97,9 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
             const reg = student.regularizacion?.[mat.id];
             
             if (reg) {
-              regularizadas.push({ ...mat, finalGrade: reg.calificacion, fecha: reg.fecha, periodo: reg.periodo, isHistoric: true });
+              regularizadas.push({ ...mat, grado: gradoKey, finalGrade: reg.calificacion, fecha: reg.fecha, periodo: reg.periodo, isHistoric: true });
             } else if (isReprobada) {
-              adeudos.push({ ...mat, finalGrade: finalMat });
+              adeudos.push({ ...mat, grado: gradoKey, finalGrade: finalMat });
             }
           }
         });
@@ -108,10 +110,11 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
          // avoid duplicates if we already found it
          if (!adeudos.find(m => m.id === histMat.id) && !regularizadas.find(m => m.id === histMat.id)) {
            const reg = student.regularizacion?.[histMat.id];
+           const subjectGrado = histMat.grado || student.grado;
            if (reg) {
-              regularizadas.push({ ...histMat, finalGrade: reg.calificacion, fecha: reg.fecha, periodo: reg.periodo, isHistoric: true });
+              regularizadas.push({ ...histMat, grado: subjectGrado, finalGrade: reg.calificacion, fecha: reg.fecha, periodo: reg.periodo, isHistoric: true });
            } else {
-              adeudos.push({ ...histMat, isHistoric: true });
+              adeudos.push({ ...histMat, grado: subjectGrado, isHistoric: true });
            }
          }
       });
@@ -368,18 +371,31 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Materia Reprobada:</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Nombre de la Materia (Reprobada):</label>
                 <input 
                   type="text" 
-                  value={histMateria}
-                  onChange={e => setHistMateria(e.target.value)}
-                  placeholder="Ej. Matemáticas I"
+                  value={histMateria} 
+                  onChange={e => setHistMateria(e.target.value.toUpperCase())}
                   className="w-full border-slate-300 rounded-md shadow-sm p-2 text-sm uppercase"
+                  placeholder="Ej: MATEMÁTICAS I"
                 />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Grado de la Materia:</label>
+                <select 
+                  value={histGradoMateria} 
+                  onChange={e => setHistGradoMateria(e.target.value)}
+                  className="w-full border-slate-300 rounded-md shadow-sm p-2 text-sm"
+                >
+                  <option value="1er Grado">1er Grado</option>
+                  <option value="2do Grado">2do Grado</option>
+                  <option value="3er Grado">3er Grado</option>
+                </select>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Calificación (Opcional):</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Calificación Histórica (opcional):</label>
                 <input 
                   type="number"
                   step="0.1"
