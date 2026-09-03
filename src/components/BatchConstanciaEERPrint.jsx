@@ -1,7 +1,7 @@
 import React from 'react';
 import ConstanciaEERPrint from './ConstanciaEERPrint';
 
-export default function BatchConstanciaEERPrint({ data = [], fechaExpedicion }) {
+export default function BatchConstanciaEERPrint({ data = [], fechaExpedicion, fechaExamenBatch }) {
   return (
     <div className="batch-constancias bg-slate-100 min-h-screen py-8 print:py-0 print:bg-white flex flex-col items-center">
       <style>{`
@@ -21,6 +21,7 @@ export default function BatchConstanciaEERPrint({ data = [], fechaExpedicion }) 
             regularizadas={item.regularizadas} 
             adeudos={item.adeudos} 
             fechaExpedicion={fechaExpedicion} 
+            fechaExamenBatch={fechaExamenBatch}
           />
         </div>
       ))}

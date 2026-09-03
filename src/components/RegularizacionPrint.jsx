@@ -9,6 +9,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
   const { config } = useGlobalConfig();
   const [filtroGrado, setFiltroGrado] = useState('Todos');
   const [fechaExpedicion, setFechaExpedicion] = useState(() => new Date().toISOString().split('T')[0]);
+  const [fechaExamenBatch, setFechaExamenBatch] = useState('');
   const [filtroPeriodo, setFiltroPeriodo] = useState('Todos');
   
   const [showHistoricModal, setShowHistoricModal] = useState(false);
@@ -217,7 +218,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
           Imprimir Lista Oficial
         </button>
         {onPrintConstanciaEERBatch && filtroPeriodo !== 'Todos' && filteredData.length > 0 && (
-          <button onClick={() => onPrintConstanciaEERBatch(filteredData, fechaExpedicion)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
+          <button onClick={() => onPrintConstanciaEERBatch(filteredData, fechaExpedicion, fechaExamenBatch)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg transition-colors flex items-center">
             <FileText className="w-5 h-5 mr-2" />
             Imprimir Constancias del Periodo
           </button>
@@ -260,11 +261,21 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
         </div>
         
         <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-3">
-          <label className="text-sm font-bold text-slate-700">Fecha para Constancias:</label>
+          <label className="text-sm font-bold text-slate-700">Fecha de Expedición:</label>
           <input 
             type="date" 
             value={fechaExpedicion} 
             onChange={(e) => setFechaExpedicion(e.target.value)}
+            className="border-slate-300 rounded-md text-sm py-1.5 px-3 focus:border-orange-500 focus:ring-orange-500 font-medium text-slate-700"
+          />
+        </div>
+
+        <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-3">
+          <label className="text-sm font-bold text-slate-700">Fecha del Examen:</label>
+          <input 
+            type="date" 
+            value={fechaExamenBatch} 
+            onChange={(e) => setFechaExamenBatch(e.target.value)}
             className="border-slate-300 rounded-md text-sm py-1.5 px-3 focus:border-orange-500 focus:ring-orange-500 font-medium text-slate-700"
           />
         </div>
@@ -404,7 +415,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                     <td className="border border-slate-300 px-3 py-2 text-center no-print">
                       {onPrintConstanciaEER && (
                         <button 
-                          onClick={() => onPrintConstanciaEER(item.student, item.regularizadas, item.adeudos, fechaExpedicion)}
+                          onClick={() => onPrintConstanciaEER(item.student, item.regularizadas, item.adeudos, fechaExpedicion, fechaExamenBatch)}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold transition-colors w-full flex items-center justify-center mt-2"
                         >
                           <FileText className="w-3 h-3 mr-1" />

@@ -1873,14 +1873,14 @@ export default function ControlEscolar() {
               setPrintMode('constancia');
               setTimeout(() => window.print(), 800);
             }}
-            onPrintConstanciaEER={(student, regularizadas, adeudos, fechaExp) => {
-              setEerToPrint({ regularizadas, adeudos, fechaExpedicion: fechaExp });
+            onPrintConstanciaEER={(student, regularizadas, adeudos, fechaExp, fechaExamenBatch) => {
+              setEerToPrint({ regularizadas, adeudos, fechaExpedicion: fechaExp, fechaExamenBatch });
               setPrintData(student);
               setPrintMode('constancia_eer');
               setTimeout(() => window.print(), 800);
             }}
-            onPrintConstanciaEERBatch={(batchData, fechaExp) => {
-              setEerToPrint({ fechaExpedicion: fechaExp });
+            onPrintConstanciaEERBatch={(batchData, fechaExp, fechaExamenBatch) => {
+              setEerToPrint({ fechaExpedicion: fechaExp, fechaExamenBatch });
               setPrintData(batchData);
               setPrintMode('constancia_eer_batch');
               setTimeout(() => window.print(), 800);
@@ -2010,8 +2010,8 @@ export default function ControlEscolar() {
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} extraordinarioSelected={extraordinarioToPrint} />}
       {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
-      {printMode === 'constancia_eer' && eerToPrint && <ConstanciaEERPrint student={printData} regularizadas={eerToPrint.regularizadas} adeudos={eerToPrint.adeudos} fechaExpedicion={eerToPrint.fechaExpedicion} />}
-      {printMode === 'constancia_eer_batch' && eerToPrint && <BatchConstanciaEERPrint data={printData} fechaExpedicion={eerToPrint.fechaExpedicion} />}
+      {printMode === 'constancia_eer' && eerToPrint && <ConstanciaEERPrint student={printData} regularizadas={eerToPrint.regularizadas} adeudos={eerToPrint.adeudos} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
+      {printMode === 'constancia_eer_batch' && eerToPrint && <BatchConstanciaEERPrint data={printData} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
       {printMode === 'boleta' && <BoletaPrint students={printData} materiasPorGrado={materiasPorGrado} />}
       {printMode === 'listaAsistencia' && <ListaAsistenciaPrint students={printData.students} grado={printData.grado} grupo={printData.grupo} mes={printData.mes} paperSize={printData.paperSize} />}
       {printMode === 'listaClausura' && <ListaClausuraPrint students={printData.students} grupo={printData.grupo} asesor={printData.asesor} />}

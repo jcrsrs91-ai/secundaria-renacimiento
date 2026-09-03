@@ -91,7 +91,7 @@ const formatFecha = (fechaStr) => {
   return fechaStr;
 };
 
-export default function ConstanciaEERPrint({ student, regularizadas = [], adeudos = [], fechaExpedicion }) {
+export default function ConstanciaEERPrint({ student, regularizadas = [], adeudos = [], fechaExpedicion, fechaExamenBatch }) {
   const { config } = useGlobalConfig();
   
   const today = fechaExpedicion ? new Date(fechaExpedicion + 'T00:00:00') : new Date();
@@ -113,6 +113,12 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
   while (rows.length < 6) {
     rows.push({ isEmpty: true });
   }
+
+  // Use the explicitly provided exam date, or fallback to the individual row date
+  const getExamDate = (row) => {
+    if (row.isEmpty) return '';
+    return fechaExamenBatch ? formatFecha(fechaExamenBatch) : formatFecha(row.fecha);
+  };
 
   return (
     <div className="constancia-container bg-white text-black font-sans relative" style={{ width: '21.59cm', padding: '0.5cm 1.5cm' }}>
@@ -224,7 +230,7 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
                 <td className="border-b border-r-2 border-black uppercase">{row.isEmpty ? '' : convertGradoToRoman(row.grado || student.grado)}</td>
                 <td className="border-b border-r-2 border-black text-sm">{row.isEmpty ? '' : parseFloat(row.finalGrade).toFixed(1)}</td>
                 <td className="border-b border-r-2 border-black uppercase">{row.isEmpty ? '' : promedioALetras(row.finalGrade)}</td>
-                <td className="border-b border-r-2 border-black">{row.isEmpty ? '' : formatFecha(row.fecha)}</td>
+                <td className="border-b border-r-2 border-black">{getExamDate(row)}</td>
                 <td className="border-b border-black"></td>
               </tr>
             ))}
