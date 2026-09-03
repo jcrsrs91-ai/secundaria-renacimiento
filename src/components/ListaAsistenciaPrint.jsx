@@ -6,11 +6,26 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
   if (!students || students.length === 0) return null;
 
   // Ordenar alfabéticamente por nombre completo (Paterno Materno Nombres)
-  const sortedStudents = [...students].sort((a, b) => {
+  let sortedStudents = [...students].sort((a, b) => {
     const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
     const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
     return nameA.localeCompare(nameB);
   });
+
+  // Asegurar siempre 30 filas
+  const targetRows = 30;
+  if (sortedStudents.length < targetRows) {
+    const padCount = targetRows - sortedStudents.length;
+    for (let i = 0; i < padCount; i++) {
+      sortedStudents.push({
+        id: `empty_${i}`,
+        isEmpty: true,
+        apellidoPaterno: '',
+        apellidoMaterno: '',
+        nombres: ''
+      });
+    }
+  }
 
   const firstStudent = sortedStudents[0];
   const turno = firstStudent.turno || 'Matutino';
@@ -27,12 +42,12 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
     <div className="print-lista-asistencia-only">
       <style>{`
         @media print {
-          @page { size: ${sizeValue} landscape; margin: 0.6cm; }
-          html, body, #root { height: auto !important; overflow: visible !important; min-height: auto !important; display: block !important; }
+          @page { size: ${sizeValue} landscape; margin: 0.4cm; }
+          html, body, #root { height: 100vh !important; overflow: hidden !important; margin: 0; padding: 0; background: white; }
           * { overflow: visible !important; }
           aside, header { display: none !important; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-          .print-lista-asistencia-only { display: block !important; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+          .print-lista-asistencia-only { display: block !important; transform: scale(0.96); transform-origin: top center; width: 100%; }
         }
         @media screen {
           .print-lista-asistencia-only { display: none !important; }
@@ -99,10 +114,10 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
           </thead>
           <tbody>
             {sortedStudents.map((student, index) => (
-              <tr key={student.id} className="h-[21px] even:bg-slate-50/40">
+              <tr key={student.id} className="h-[18px] even:bg-slate-50/40">
                 <td className="text-center font-bold text-slate-700">{index + 1}</td>
-                <td className="px-2 font-semibold uppercase truncate text-[8.5px] leading-tight" title={`${student.apellidoPaterno} ${student.apellidoMaterno} ${student.nombres}`}>
-                  {student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}
+                <td className="px-2 font-semibold uppercase truncate text-[8.5px] leading-tight" title={student.isEmpty ? '' : `${student.apellidoPaterno} ${student.apellidoMaterno} ${student.nombres}`}>
+                  {student.isEmpty ? '' : `${student.apellidoPaterno} ${student.apellidoMaterno} ${student.nombres}`}
                 </td>
                 
                 {/* Columnas de Asistencia vacías para rellenar */}
@@ -129,7 +144,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
             
             {/* Fila de Promedio General del Grupo al final (Opcional, muy útil) */}
             {sortedStudents.length > 0 && (
-              <tr className="h-[21px] bg-slate-100 font-bold">
+              <tr className="h-[18px] bg-slate-100 font-bold">
                 <td colSpan={2} className="text-right px-2 uppercase text-[9px]">Promedio del Grupo</td>
                 <td colSpan={daysCols.length + 1}></td>
                 <td colSpan={taskCols.length}></td>
