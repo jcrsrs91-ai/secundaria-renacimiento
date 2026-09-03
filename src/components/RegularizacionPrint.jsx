@@ -254,62 +254,79 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
         )}
       </div>
 
-      {/* Filtro de Grado y Fecha */}
-      <div className="flex justify-center mb-6 gap-4 print:hidden no-print flex-wrap">
-        <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-3">
-          <label className="text-sm font-bold text-slate-700">Filtrar por Grado:</label>
-          <select 
-            value={filtroGrado} 
-            onChange={(e) => setFiltroGrado(e.target.value)}
-            className="border-slate-300 rounded-md text-sm py-1.5 pl-3 pr-8 focus:border-orange-500 focus:ring-orange-500 font-medium text-slate-700"
-          >
-            <option value="Todos">Todos los grados</option>
-            <option value="1er Grado">1er Grado</option>
-            <option value="2do Grado">2do Grado</option>
-            <option value="3er Grado">3er Grado</option>
-            <option value="Egresado">Egresados</option>
-          </select>
+      {/* Controles Superiores */}
+      <div className="max-w-6xl mx-auto mb-8 print:hidden no-print space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          {/* Panel de Filtros */}
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">Filtros de Búsqueda</h3>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex-1 min-w-[150px]">
+                <label className="block text-xs font-bold text-slate-700 mb-1">Grado:</label>
+                <select 
+                  value={filtroGrado} 
+                  onChange={(e) => setFiltroGrado(e.target.value)}
+                  className="w-full border-slate-300 rounded-md text-sm py-1.5 focus:border-orange-500 focus:ring-orange-500"
+                >
+                  <option value="Todos">Todos</option>
+                  <option value="1er Grado">1er Grado</option>
+                  <option value="2do Grado">2do Grado</option>
+                  <option value="3er Grado">3er Grado</option>
+                  <option value="Egresado">Egresados</option>
+                </select>
+              </div>
+              <div className="flex-1 min-w-[150px]">
+                <label className="block text-xs font-bold text-slate-700 mb-1">Periodo:</label>
+                <select 
+                  value={filtroPeriodo} 
+                  onChange={(e) => setFiltroPeriodo(e.target.value)}
+                  className="w-full border-slate-300 rounded-md text-sm py-1.5 focus:border-orange-500 focus:ring-orange-500"
+                >
+                  <option value="Todos">Todos los periodos</option>
+                  {uniquePeriodos.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Panel de Fechas de Impresión */}
+          <div className="bg-blue-50 p-4 rounded-xl shadow-sm border border-blue-100">
+            <h3 className="text-xs font-black text-blue-400 uppercase tracking-wider mb-3">Fechas para Impresión de Constancias</h3>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex-1 min-w-[150px]">
+                <label className="block text-xs font-bold text-blue-900 mb-1">Fecha de Expedición:</label>
+                <input 
+                  type="date" 
+                  value={fechaExpedicion} 
+                  onChange={(e) => setFechaExpedicion(e.target.value)}
+                  className="w-full border-blue-200 rounded-md text-sm py-1.5 px-3 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex-1 min-w-[150px]">
+                <label className="block text-xs font-bold text-blue-900 mb-1" title="Si eliges una fecha aquí, sobreescribirá la fecha individual de TODAS las materias al imprimir.">Forzar Fecha Examen (Opcional):</label>
+                <input 
+                  type="date" 
+                  value={fechaExamenBatch} 
+                  onChange={(e) => setFechaExamenBatch(e.target.value)}
+                  className="w-full border-blue-200 rounded-md text-sm py-1.5 px-3 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-3">
-          <label className="text-sm font-bold text-slate-700">Filtrar por Periodo:</label>
-          <select 
-            value={filtroPeriodo} 
-            onChange={(e) => setFiltroPeriodo(e.target.value)}
-            className="border-slate-300 rounded-md text-sm py-1.5 pl-3 pr-8 focus:border-orange-500 focus:ring-orange-500 font-medium text-slate-700"
+        {/* Botón Añadir Adeudo Anterior */}
+        <div className="flex justify-end">
+          <button 
+            onClick={() => setShowHistoricModal(true)} 
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg font-bold shadow-sm transition-colors flex items-center text-sm"
           >
-            <option value="Todos">Todos los periodos</option>
-            {uniquePeriodos.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
+            <History className="w-4 h-4 mr-2" />
+            Añadir Adeudo Anterior
+          </button>
         </div>
-        
-        <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-3">
-          <label className="text-sm font-bold text-slate-700">Fecha de Expedición:</label>
-          <input 
-            type="date" 
-            value={fechaExpedicion} 
-            onChange={(e) => setFechaExpedicion(e.target.value)}
-            className="border-slate-300 rounded-md text-sm py-1.5 px-3 focus:border-orange-500 focus:ring-orange-500 font-medium text-slate-700"
-          />
-        </div>
-
-        <div className="bg-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-3">
-          <label className="text-sm font-bold text-slate-700">Fecha del Examen:</label>
-          <input 
-            type="date" 
-            value={fechaExamenBatch} 
-            onChange={(e) => setFechaExamenBatch(e.target.value)}
-            className="border-slate-300 rounded-md text-sm py-1.5 px-3 focus:border-orange-500 focus:ring-orange-500 font-medium text-slate-700"
-          />
-        </div>
-        
-        <button 
-          onClick={() => setShowHistoricModal(true)} 
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors flex items-center"
-        >
-          <History className="w-5 h-5 mr-2" />
-          Añadir Adeudo Anterior
-        </button>
       </div>
 
       <div className="bg-white max-w-5xl mx-auto p-10 rounded-2xl shadow-xl print:shadow-none print:p-0 print:rounded-none">
