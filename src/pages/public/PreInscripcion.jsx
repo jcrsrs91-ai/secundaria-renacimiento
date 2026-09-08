@@ -332,19 +332,19 @@ export default function PreInscripcion() {
               className={`flex-1 py-4 px-2 sm:px-4 text-center font-medium text-xs sm:text-sm transition-colors ${activeTab === 'completar' ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
               onClick={() => changeTab('completar')}
             >
-              <Upload className="inline-block w-4 h-4 sm:w-5 sm:h-5 sm:mr-1 -mt-1" /> <span className="hidden sm:inline">Subir Docs</span>
+              <Upload className="inline-block w-4 h-4 sm:w-5 sm:h-5 sm:mr-1 -mt-1" /> <span className="hidden sm:inline">Actualizar</span>
             </button>
           </div>
 
           <div className="p-4 sm:p-8">
             
-            {/* Buscador para Completar Expediente */}
+            {/* Buscador para Actualizar Datos */}
             {activeTab === 'completar' && !studentData && (
               <div className="max-w-md mx-auto py-8">
                 <div className="text-center mb-6">
                   <Upload className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                  <h3 className="text-lg font-bold">Completar Expediente Digital</h3>
-                  <p className="text-sm text-slate-500 mt-1">Ingresa la CURP del alumno para subir los documentos en PDF que te faltaron.</p>
+                  <h3 className="text-lg font-bold">Actualizar Datos / Subir Documentos</h3>
+                  <p className="text-sm text-slate-500 mt-1">Ingresa la CURP del alumno para actualizar su información o subir documentos faltantes.</p>
                 </div>
                 {lookupError && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center">{lookupError}</div>}
                 <form onSubmit={handleLookupCompletar} className="space-y-4">
@@ -448,8 +448,7 @@ export default function PreInscripcion() {
                   </div>
                 )}
 
-                {/* Ciclo Escolar - Ocultar en Completar Expediente */}
-                {activeTab !== 'completar' && (
+                {/* Ciclo Escolar */}
                   <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 mb-6">
                     <h3 className="text-lg font-bold text-slate-800 mb-2">Ciclo Escolar</h3>
                     <p className="text-sm text-slate-500 mb-4">Selecciona el ciclo escolar para este trámite.</p>
@@ -462,10 +461,8 @@ export default function PreInscripcion() {
                       <option value="2028-2029">2028-2029</option>
                     </select>
                   </div>
-                )}
 
-                {/* Fotografía - Ocultar en Completar Expediente */}
-                {activeTab !== 'completar' && (
+                {/* Fotografía */}
                   <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 text-center">
                     <h3 className="text-lg font-bold text-slate-800 mb-2">Fotografía del Alumno</h3>
                     <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
@@ -489,10 +486,8 @@ export default function PreInscripcion() {
                     {photoFile && <p className="mt-2 text-sm text-emerald-600 font-medium">Foto seleccionada: {photoFile.name}</p>}
                     {studentData?.fotoUrl && !photoFile && <p className="mt-2 text-sm text-slate-500">Ya tienes una foto guardada. Sube otra solo si deseas cambiarla.</p>}
                   </div>
-                )}
 
-                {/* Ocultar secciones 1 a 4 si es 'completar' */}
-                {activeTab !== 'completar' && (
+                {/* Secciones 1 a 4 */}
                   <>
                     {/* 1. Datos Académicos */}
                     <div>
@@ -747,7 +742,6 @@ export default function PreInscripcion() {
                       </div>
                     </div>
                   </>
-                )}
 
                 {/* 5. Documentación Digital */}
                 <div>
