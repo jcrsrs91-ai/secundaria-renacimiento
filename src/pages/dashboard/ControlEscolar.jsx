@@ -1565,7 +1565,7 @@ export default function ControlEscolar() {
                     className="w-5 h-5 text-primary-600 border-slate-300 rounded focus:ring-primary-500" 
                   />
                   <label htmlFor="input-abiertas" className="ml-2 block text-sm font-bold text-slate-700">
-                    Permitir acceso público a inscripciones / actualizaciones
+                    Permitir que los alumnos "Actualicen" su expediente libremente
                   </label>
                 </div>
               </div>

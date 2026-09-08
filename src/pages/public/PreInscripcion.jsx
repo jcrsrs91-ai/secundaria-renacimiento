@@ -15,10 +15,10 @@ export default function PreInscripcion() {
   const [finalData, setFinalData] = useState(null);
 
   useEffect(() => {
-    if (config && config.inscripcionesAbiertas === false) {
-      setActiveTab('reimprimir');
+    if (config && config.inscripcionesAbiertas === false && activeTab === 'completar') {
+      setActiveTab('nuevo');
     }
-  }, [config]);
+  }, [config, activeTab]);
 
   // Estados de búsqueda
   const [lookupCurp, setLookupCurp] = useState('');
@@ -311,24 +311,20 @@ export default function PreInscripcion() {
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-200">
           {/* Tabs */}
           <div className="flex border-b border-slate-200 flex-wrap sm:flex-nowrap">
-            {config?.inscripcionesAbiertas !== false && (
-              <>
-                <button 
-                  type="button"
-                  className={`flex-1 py-4 px-2 sm:px-6 text-center font-medium text-sm transition-colors ${activeTab === 'nuevo' ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
-                  onClick={() => changeTab('nuevo')}
-                >
-                  <UserPlus className="inline-block w-5 h-5 sm:mr-2 -mt-1" /> <span className="hidden sm:inline">Nuevo Ingreso</span>
-                </button>
-                <button 
-                  type="button"
-                  className={`flex-1 py-4 px-2 sm:px-6 text-center font-medium text-sm transition-colors ${activeTab === 'reinscripcion' ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
-                  onClick={() => changeTab('reinscripcion')}
-                >
-                  <ClipboardList className="inline-block w-5 h-5 sm:mr-2 -mt-1" /> <span className="hidden sm:inline">Reinscripción</span>
-                </button>
-              </>
-            )}
+            <button 
+              type="button"
+              className={`flex-1 py-4 px-2 sm:px-6 text-center font-medium text-sm transition-colors ${activeTab === 'nuevo' ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+              onClick={() => changeTab('nuevo')}
+            >
+              <UserPlus className="inline-block w-5 h-5 sm:mr-2 -mt-1" /> <span className="hidden sm:inline">Nuevo Ingreso</span>
+            </button>
+            <button 
+              type="button"
+              className={`flex-1 py-4 px-2 sm:px-6 text-center font-medium text-sm transition-colors ${activeTab === 'reinscripcion' ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+              onClick={() => changeTab('reinscripcion')}
+            >
+              <ClipboardList className="inline-block w-5 h-5 sm:mr-2 -mt-1" /> <span className="hidden sm:inline">Reinscripción</span>
+            </button>
             <button 
               type="button"
               className={`flex-1 py-4 px-2 sm:px-4 text-center font-medium text-xs sm:text-sm transition-colors ${activeTab === 'reimprimir' ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
