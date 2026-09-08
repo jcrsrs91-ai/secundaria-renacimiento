@@ -4,7 +4,7 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 export function useGlobalConfig() {
   const [config, setConfig] = useState({
-    cicloEscolarActual: '2025-2026',
+    cicloEscolarActual: '2026-2027',
     leyendaOficial: '"2026, Año de Margarita Maza"'
   });
   const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ export function useGlobalConfig() {
         setConfig(prev => ({ ...prev, ...docSnap.data() }));
       } else {
         setDoc(docRef, {
-          cicloEscolarActual: '2025-2026',
+          cicloEscolarActual: '2026-2027',
           leyendaOficial: '"2026, Año de Margarita Maza"'
         });
       }

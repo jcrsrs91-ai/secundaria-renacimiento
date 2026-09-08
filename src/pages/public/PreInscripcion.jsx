@@ -453,7 +453,7 @@ export default function PreInscripcion() {
                   <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 mb-6">
                     <h3 className="text-lg font-bold text-slate-800 mb-2">Ciclo Escolar</h3>
                     <p className="text-sm text-slate-500 mb-4">Selecciona el ciclo escolar para este trámite.</p>
-                    <select name="cicloEscolar" className="block w-full rounded-md shadow-sm p-3 border border-slate-300 font-medium" required defaultValue={config?.cicloEscolarActual || "2026-2027"}>
+                    <select name="cicloEscolar" className="block w-full rounded-md shadow-sm p-3 border border-slate-300 font-medium" required defaultValue="2026-2027">
                       <option value="">Seleccionar ciclo...</option>
                       <option value="2024-2025">2024-2025</option>
                       <option value="2025-2026">2025-2026</option>
