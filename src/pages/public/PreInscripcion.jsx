@@ -38,7 +38,6 @@ export default function PreInscripcion() {
     try {
       const q = query(
         collection(db, "students"),
-        where("matricula", "==", lookupMatricula),
         where("curp", "==", lookupCurp.toUpperCase())
       );
       const querySnapshot = await getDocs(q);
@@ -388,10 +387,6 @@ export default function PreInscripcion() {
                 {lookupError && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center">{lookupError}</div>}
                 <form onSubmit={handleLookup} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium">Matrícula</label>
-                    <input type="text" className="mt-1 w-full p-2 border rounded" required value={lookupMatricula} onChange={e => setLookupMatricula(e.target.value)} />
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium">CURP</label>
                     <input type="text" className="mt-1 w-full p-2 border rounded uppercase" required value={lookupCurp} onChange={e => setLookupCurp(e.target.value)} />
                   </div>
@@ -458,7 +453,7 @@ export default function PreInscripcion() {
                   <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 mb-6">
                     <h3 className="text-lg font-bold text-slate-800 mb-2">Ciclo Escolar</h3>
                     <p className="text-sm text-slate-500 mb-4">Selecciona el ciclo escolar para este trámite.</p>
-                    <select name="cicloEscolar" className="block w-full rounded-md shadow-sm p-3 border border-slate-300 font-medium" required defaultValue={studentData?.cicloEscolar || config?.cicloEscolarActual || "2026-2027"}>
+                    <select name="cicloEscolar" className="block w-full rounded-md shadow-sm p-3 border border-slate-300 font-medium" required defaultValue={config?.cicloEscolarActual || "2026-2027"}>
                       <option value="">Seleccionar ciclo...</option>
                       <option value="2024-2025">2024-2025</option>
                       <option value="2025-2026">2025-2026</option>
