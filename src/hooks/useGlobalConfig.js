@@ -5,7 +5,8 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 export function useGlobalConfig() {
   const [config, setConfig] = useState({
     cicloEscolarActual: '2026-2027',
-    leyendaOficial: '"2026, Año de Margarita Maza"'
+    leyendaOficial: '"2026, Año de Margarita Maza"',
+    inscripcionesAbiertas: true
   });
   const [loading, setLoading] = useState(true);
 
@@ -13,11 +14,14 @@ export function useGlobalConfig() {
     const docRef = doc(db, 'config', 'global');
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
-        setConfig(prev => ({ ...prev, ...docSnap.data() }));
+        const data = docSnap.data();
+        if (data.inscripcionesAbiertas === undefined) data.inscripcionesAbiertas = true;
+        setConfig(prev => ({ ...prev, ...data }));
       } else {
         setDoc(docRef, {
           cicloEscolarActual: '2026-2027',
-          leyendaOficial: '"2026, Año de Margarita Maza"'
+          leyendaOficial: '"2026, Año de Margarita Maza"',
+          inscripcionesAbiertas: true
         });
       }
       setLoading(false);

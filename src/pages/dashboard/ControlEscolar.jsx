@@ -1557,13 +1557,25 @@ export default function ControlEscolar() {
                     className="w-full p-2 border border-slate-300 rounded focus:border-primary-500 focus:ring-primary-500" 
                   />
                 </div>
+                <div className="flex items-center mt-4">
+                  <input 
+                    type="checkbox" 
+                    id="input-abiertas" 
+                    defaultChecked={config?.inscripcionesAbiertas !== false}
+                    className="w-5 h-5 text-primary-600 border-slate-300 rounded focus:ring-primary-500" 
+                  />
+                  <label htmlFor="input-abiertas" className="ml-2 block text-sm font-bold text-slate-700">
+                    Permitir acceso público a inscripciones / actualizaciones
+                  </label>
+                </div>
               </div>
 
               <div className="mt-8">
                 <button onClick={() => {
                   const c = document.getElementById('input-ciclo').value;
                   const l = document.getElementById('input-leyenda').value;
-                  updateConfig({ cicloEscolarActual: c, leyendaOficial: l });
+                  const a = document.getElementById('input-abiertas').checked;
+                  updateConfig({ cicloEscolarActual: c, leyendaOficial: l, inscripcionesAbiertas: a });
                   toast.success('Configuración Global actualizada con éxito');
                   closeModal();
                 }} className="w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 flex justify-center items-center shadow-lg transition-colors">
