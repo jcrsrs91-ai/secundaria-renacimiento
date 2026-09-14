@@ -214,7 +214,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente {config?.cicloEscolarActual || '2025-2026'}. Y de acuerdo con sus documentos originales presentados en esta institución, concluyó su Educación Primaria con un promedio de <strong>{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
            </p>
          ) : (
-           <p className={`${type === 'simple' ? 'mb-8' : 'mb-6'} indent-12`}>
+           <p className={`${type === 'simple' ? 'mb-8' : type === 'promedio_anterior' ? 'mb-12 leading-[2]' : 'mb-6'} indent-12`}>
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente {config?.cicloEscolarActual || '2025-2026'}.
            </p>
          )}
@@ -232,7 +232,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
          )}
 
          {type === 'promedio_anterior' && (
-           <p className="mb-6 indent-12 font-medium">
+           <p className="mb-12 indent-12 font-medium leading-[2]">
              Y de acuerdo con nuestros registros académicos, el ciclo escolar inmediato anterior lo concluyó con un Promedio General de: <strong className="whitespace-nowrap">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
            </p>
          )}
@@ -295,12 +295,12 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
              A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, <strong>a los 15 días del mes de julio del año 2026</strong>.
            </p>
          ) : type !== 'inscripcion_primero' && (
-           <p className={`indent-12 ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'simple' ? 'mb-10' : 'mb-6'}`}>
+           <p className={`indent-12 ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'simple' ? 'mb-10' : type === 'promedio_anterior' ? 'mb-16 leading-[2]' : 'mb-6'}`}>
              A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
            </p>
          )}
 
-         <div className={`text-center relative ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-10' : 'mt-6'}`}>
+         <div className={`text-center relative ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-10' : type === 'promedio_anterior' ? 'mt-16' : 'mt-6'}`}>
             <p className="font-bold tracking-widest text-[11pt]">A T E N T A M E N T E</p>
             <br />
             <br />
