@@ -1845,6 +1845,16 @@ export default function ControlEscolar() {
                 </div>
               </button>
 
+              <button onClick={() => executePrintConstancia('tutor')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-pink-500 hover:bg-pink-50 transition text-left group">
+                <div className="bg-pink-100 text-pink-600 p-2 rounded-lg mr-4 group-hover:bg-pink-500 group-hover:text-white transition shrink-0">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Constancia con Tutor</h3>
+                  <p className="text-xs text-slate-500 mt-1">Constancia de estudios que incluye el nombre del Padre, Madre o Tutor.</p>
+                </div>
+              </button>
+
               <button onClick={() => executePrintConstancia('terminacion')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition text-left group">
                 <div className="bg-indigo-100 text-indigo-600 p-2 rounded-lg mr-4 group-hover:bg-indigo-500 group-hover:text-white transition shrink-0">
                   <Award className="w-6 h-6" />
