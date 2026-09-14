@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { FileHeart, HeartHandshake, Phone, MapPin, Building2, ExternalLink } from 'lucide-react';
+import { FileHeart, HeartHandshake, Phone, MapPin, Building2, ExternalLink, Printer } from 'lucide-react';
 import BuscadorAlumnos from '../../components/BuscadorAlumnos';
 import HojaDeVida from '../../components/HojaDeVida';
+import DirectorioEmergenciaPrint from '../../components/DirectorioEmergenciaPrint';
 import { materiasPorGrado } from '../../utils/materias';
 
 export default function TrabajoSocial() {
   const [activeTab, setActiveTab] = useState('fichas');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showPrintDir, setShowPrintDir] = useState(false);
 
   // Directorio de Instituciones (Módulo 9)
   const directorio = [
@@ -24,7 +26,7 @@ export default function TrabajoSocial() {
         <p className="text-slate-500 text-sm">Expedientes médicos, estudios socioeconómicos y atención a la comunidad.</p>
       </div>
 
-      <div className="border-b border-slate-200">
+      <div className="border-b border-slate-200 flex justify-between items-end">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('fichas')}
@@ -39,6 +41,13 @@ export default function TrabajoSocial() {
             <Building2 className="w-4 h-4 mr-2" /> Directorio de Dependencias
           </button>
         </nav>
+        
+        <button 
+          onClick={() => setShowPrintDir(true)}
+          className="mb-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors shadow-sm flex items-center"
+        >
+          <Printer className="w-4 h-4 mr-2" /> Imprimir Directorios
+        </button>
       </div>
 
       {activeTab === 'fichas' && (
@@ -78,6 +87,8 @@ export default function TrabajoSocial() {
           ))}
         </div>
       )}
+
+      {showPrintDir && <DirectorioEmergenciaPrint onClose={() => setShowPrintDir(false)} />}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import HojaDeVida from '../../components/HojaDeVida';
 import CredencialPrint from '../../components/CredencialPrint';
 import ConstanciaPrint from '../../components/ConstanciaPrint';
 import BoletaPrint from '../../components/BoletaPrint';
+import DirectorioEmergenciaPrint from '../../components/DirectorioEmergenciaPrint';
 import Calificaciones from '../../components/Calificaciones';
 import ListaAsistenciaPrint from '../../components/ListaAsistenciaPrint';
 import CuadroFinalPrint from '../../components/CuadroFinalPrint';
@@ -48,6 +49,7 @@ export default function ControlEscolar() {
   const [selectedExpediente, setSelectedExpediente] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [constanciaPromedio, setConstanciaPromedio] = useState('');
+  const [showPrintDir, setShowPrintDir] = useState(false);
   
   // Estados para Modal de Extraordinarios
   const [extraStudent, setExtraStudent] = useState(null);
@@ -1287,6 +1289,9 @@ export default function ControlEscolar() {
               
               {/* Acciones para el grupo o masivas */}
               <div className="flex-1 flex justify-end gap-2 flex-wrap">
+                <button onClick={() => setShowPrintDir(true)} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors shadow-sm flex items-center">
+                  <Printer className="w-4 h-4 mr-2" /> Directorio de Emergencias
+                </button>
                 <button onClick={handlePrintBatch} className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold hover:bg-slate-900 transition-colors shadow-sm flex items-center">
                   <QrCode className="w-4 h-4 mr-2" /> Credenciales del Grupo
                 </button>
@@ -2050,6 +2055,8 @@ export default function ControlEscolar() {
           onClose={() => setSelectedExpediente(null)} 
         />
       )}
+
+      {showPrintDir && <DirectorioEmergenciaPrint onClose={() => setShowPrintDir(false)} />}
     </div>
   );
 }
