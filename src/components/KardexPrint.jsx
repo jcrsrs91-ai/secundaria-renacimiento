@@ -58,6 +58,8 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
     // 2. Fallback to active system grades
     
     const fallback = getCalificacionFinal(student, materiaId);
+    if (!fallback) return null;
+    
     if (fallback.isRegularizacion) {
       // Re-calculate original
       const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
