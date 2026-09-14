@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
+import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { UserMinus, Printer, X, Calendar, MapPin, AlertCircle, Hash, GraduationCap } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
@@ -27,11 +28,7 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
   };
 
   // Ordenar alfabéticamente
-  const bajasOrdenadas = [...bajas].sort((a, b) => {
-    const nameA = `${a.apellidoPaterno} ${a.apellidoMaterno} ${a.nombres}`.trim().toLowerCase();
-    const nameB = `${b.apellidoPaterno} ${b.apellidoMaterno} ${b.nombres}`.trim().toLowerCase();
-    return nameA.localeCompare(nameB);
-  });
+  const bajasOrdenadas = [...bajas].sort(sortStudents);
 
   const chartData = useMemo(() => {
     const data = {

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { sortStudents } from '../utils/sortUtils';
 import { Trophy, Medal, Award, Printer, Search } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -155,12 +156,9 @@ export default function CuadroHonor() {
     places.sort((a, b) => {
       if (a.place !== b.place) return a.place - b.place;
 
-      const apA = (a.student.apellidoPaterno || '').trim().localeCompare((b.student.apellidoPaterno || '').trim(), 'es', { sensitivity: 'base' });
-      if (apA !== 0) return apA;
-
-      const amA = (a.student.apellidoMaterno || '').trim().localeCompare((b.student.apellidoMaterno || '').trim(), 'es', { sensitivity: 'base' });
-      if (amA !== 0) return amA;
-
+      const studentComp = sortStudents(a.student, b.student);
+      if (studentComp !== 0) return studentComp;
+      
       const grA = (a.student.grupo || '').trim().localeCompare((b.student.grupo || '').trim(), 'es', { sensitivity: 'base' });
       return grA;
     });
@@ -302,7 +300,7 @@ export default function CuadroHonor() {
                   className="w-full border-slate-300 rounded-lg shadow-sm p-2 text-sm"
                 >
                   <option value="">Selecciona al ganador...</option>
-                  {activos.filter(s => s.grado === '3er Grado').sort((a,b) => a.apellidoPaterno.localeCompare(b.apellidoPaterno)).map(al => (
+                  {activos.filter(s => s.grado === '3er Grado').sort(sortStudents).map(al => (
                     <option key={al.id} value={al.id}>{al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}</option>
                   ))}
                 </select>

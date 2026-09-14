@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { sortStudents } from '../utils/sortUtils';
 import { Download, Upload, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../firebase';
@@ -18,11 +19,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   const alumnos = useMemo(() => {
     return activos
       .filter(a => a.grado === grado && a.grupo === grupo)
-      .sort((a, b) => {
-        const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
-        const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
-        return nameA.localeCompare(nameB);
-      });
+      .sort(sortStudents);
   }, [activos, grado, grupo]);
 
   const materias = materiasPorGrado[grado] || [];

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { AlertCircle, Printer, X } from 'lucide-react';
 import { truncateTo1Dec } from '../utils/format';
@@ -477,9 +478,9 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
           </p>
           <div className="max-h-64 overflow-y-auto bg-white border border-slate-200 rounded p-4 mb-6">
             <ul className="list-disc pl-5 text-xs text-slate-700 space-y-1">
-              {alumnosContabilizados.sort((a,b) => a.apellidos?.localeCompare(b.apellidos)).map(s => (
+              {alumnosContabilizados.sort(sortStudents).map(s => (
                 <li key={s.id}>
-                  <span className="font-bold">{s.apellidos} {s.nombre}</span> - {s.grado} {s.grupo} ({s.turno}) - {s.status} - Género: {s.genero || 'N/A'}
+                  <span className="font-bold">{s.apellidoPaterno} {s.apellidoMaterno} {s.nombres}</span> - {s.grado} {s.grupo} ({s.turno}) - {s.status} - Género: {s.genero || 'N/A'}
                 </li>
               ))}
             </ul>
@@ -495,9 +496,9 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
               </p>
               <div className="max-h-64 overflow-y-auto bg-sky-50 border border-sky-200 rounded p-4">
                 <ul className="list-disc pl-5 text-xs text-sky-900 space-y-1">
-                  {alumnosOmitidos.sort((a,b) => a.apellidos?.localeCompare(b.apellidos)).map(s => (
+                  {alumnosOmitidos.sort(sortStudents).map(s => (
                     <li key={s.id}>
-                      <span className="font-bold">{s.apellidos} {s.nombre}</span> - {s.grado} {s.grupo} ({s.turno}) <br/>
+                      <span className="font-bold">{s.apellidoPaterno} {s.apellidoMaterno} {s.nombres}</span> - {s.grado} {s.grupo} ({s.turno}) <br/>
                       <span className="text-sky-600 bg-sky-100 px-1 rounded ml-2">Motivo: {s.motivo}</span>
                     </li>
                   ))}

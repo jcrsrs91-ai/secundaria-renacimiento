@@ -35,6 +35,7 @@ import ExpedienteModal from '../../components/ExpedienteModal';
 import { FolderOpen } from 'lucide-react';
 import { autoAcentuar } from '../../utils/format';
 import { searchIncludes } from '../../utils/search';
+import { sortStudents } from '../../utils/sortUtils';
 import { registrarMovimiento } from '../../utils/bitacora';
 import BitacoraTab from '../../components/BitacoraTab';
 
@@ -246,20 +247,12 @@ export default function ControlEscolar() {
     const matchesStatus = (statusFilter === 'Todos' && a.status !== 'Egresado') || a.status === statusFilter;
     const matchesCycle = cycleFilter === 'Todos' || a.cicloEscolar === cycleFilter;
     return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus && matchesCycle;
-  }).sort((a, b) => {
-    const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
-    const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
-    return nameA.localeCompare(nameB);
-  });
+  }).sort(sortStudents);
 
   const asisAlumnos = useMemo(() => {
     return activos
       .filter(a => a.grado === asisGrado && a.grupo === asisGrupo)
-      .sort((a, b) => {
-        const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
-        const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
-        return nameA.localeCompare(nameB);
-      });
+      .sort(sortStudents);
   }, [activos, asisGrado, asisGrupo]);
 
   const checkIfFailed = (student, materiasPorGradoObj) => {

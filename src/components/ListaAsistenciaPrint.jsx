@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 
 export default function ListaAsistenciaPrint({ students, grado, grupo, mes, paperSize }) {
@@ -6,11 +7,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
   if (!students || students.length === 0) return null;
 
   // Ordenar alfabéticamente por nombre completo (Paterno Materno Nombres)
-  let sortedStudents = [...students].sort((a, b) => {
-    const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
-    const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
-    return nameA.localeCompare(nameB);
-  });
+  let sortedStudents = [...students].sort(sortStudents);
 
   // Asegurar siempre 30 filas
   const targetRows = 30;

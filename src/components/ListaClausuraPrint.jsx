@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { sortStudents } from '../utils/sortUtils';
 
 export default function ListaClausuraPrint({ students, grupo, asesor }) {
   // Cálculo automático de la generación
@@ -13,11 +14,7 @@ export default function ListaClausuraPrint({ students, grupo, asesor }) {
   }, []);
 
   // Sort students alphabetically
-  const sortedStudents = [...students].sort((a, b) => {
-    const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
-    const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
-    return nameA.localeCompare(nameB);
-  });
+  const sortedStudents = [...students].sort(sortStudents);
 
   return (
     <div className="w-full bg-white print:p-8 print:m-0" style={{ fontFamily: "'Inter', sans-serif" }}>

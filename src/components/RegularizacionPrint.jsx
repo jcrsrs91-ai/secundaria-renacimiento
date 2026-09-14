@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { getCalificacionFinal } from '../utils/format';
 import { FileText, Calendar, PlusCircle, X, Save, History } from 'lucide-react';
@@ -168,9 +169,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
       const grupoB = (b.student.grupo || '').toUpperCase();
       if (grupoA !== grupoB) return grupoA.localeCompare(grupoB);
 
-      const nameA = `${a.student.apellidoPaterno || ''} ${a.student.apellidoMaterno || ''} ${a.student.nombres || ''}`.trim().toUpperCase();
-      const nameB = `${b.student.apellidoPaterno || ''} ${b.student.apellidoMaterno || ''} ${b.student.nombres || ''}`.trim().toUpperCase();
-      return nameA.localeCompare(nameB);
+      return sortStudents(a, b);
     });
   }, [activos, materiasPorGrado]);
 
@@ -185,9 +184,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
       const grupoB = (b.grupo || '').toUpperCase();
       if (grupoA !== grupoB) return grupoA.localeCompare(grupoB);
       
-      const nameA = `${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''} ${a.nombres || ''}`.trim().toUpperCase();
-      const nameB = `${b.apellidoPaterno || ''} ${b.apellidoMaterno || ''} ${b.nombres || ''}`.trim().toUpperCase();
-      return nameA.localeCompare(nameB);
+      return sortStudents(a, b);
     });
   }, [activos]);
 
