@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebase';
 import { collection, addDoc, query, where, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { ScanFace, LogIn, LogOut, Clock, BarChart3, QrCode } from 'lucide-react';
+import { ScanFace, LogIn, LogOut, Clock, BarChart3, QrCode, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ReportesAsistencia from '../../components/ReportesAsistencia';
+import BuscadorAlumnos from '../../components/BuscadorAlumnos';
+import HojaDeVida from '../../components/HojaDeVida';
+import { materiasPorGrado } from '../../utils/materias';
 
 export default function Asistencia() {
   const [activeTab, setActiveTab] = useState('ESCANER'); // 'ESCANER' o 'REPORTES'
@@ -11,6 +14,7 @@ export default function Asistencia() {
   const [inputValue, setInputValue] = useState('');
   const [ultimosRegistros, setUltimosRegistros] = useState([]);
   const [procesando, setProcesando] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const inputRef = useRef(null);
 
   // Mantener el foco en el input oculto para el escáner
@@ -175,7 +179,7 @@ export default function Asistencia() {
     <div className="p-6 max-w-6xl mx-auto min-h-[85vh] flex flex-col items-center">
       
       <div className="w-full flex justify-center mb-8 print:hidden">
-        <div className="bg-slate-200 p-1.5 rounded-2xl flex gap-2 w-full max-w-sm">
+        <div className="bg-slate-200 p-1.5 rounded-2xl flex gap-2 w-full max-w-lg">
           <button 
             onClick={() => setActiveTab('ESCANER')}
             className={`flex-1 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${activeTab === 'ESCANER' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
@@ -188,10 +192,16 @@ export default function Asistencia() {
           >
             <BarChart3 className="w-5 h-5" /> Reportes
           </button>
+          <button 
+            onClick={() => setActiveTab('DIRECTORIO')}
+            className={`flex-1 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${activeTab === 'DIRECTORIO' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            <Users className="w-5 h-5" /> Directorio
+          </button>
         </div>
       </div>
 
-      {activeTab === 'ESCANER' ? (
+      {activeTab === 'ESCANER' && (
         <div className="w-full flex flex-col items-center">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-black text-slate-800 flex items-center justify-center gap-3">
@@ -287,9 +297,28 @@ export default function Asistencia() {
         )}
       </div>
       </div>
-      ) : (
+      )}
+
+      {activeTab === 'REPORTES' && (
         <div className="w-full">
           <ReportesAsistencia />
+        </div>
+      )}
+
+      {activeTab === 'DIRECTORIO' && (
+        <div className="w-full">
+          <BuscadorAlumnos 
+            onStudentSelect={(student) => setSelectedStudent(student)} 
+            title="Directorio de Alumnos" 
+            description="Busca alumnos para ver su expediente y contactos de emergencia."
+          />
+          {selectedStudent && (
+            <HojaDeVida 
+              student={selectedStudent}
+              onClose={() => setSelectedStudent(null)} 
+              materiasPorGrado={materiasPorGrado}
+            />
+          )}
         </div>
       )}
     </div>

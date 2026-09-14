@@ -6,8 +6,12 @@ import { useAuth } from '../context/AuthContext';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
 
-export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, onSave }) {
-  const { currentUser } = useAuth();
+export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, onSave, readOnly = false }) {
+  const { currentUser, userPermissions, userRole } = useAuth();
+  
+  // Es de solo lectura si se pasa el prop o si no tiene permiso de control escolar (y no es superadmin)
+  const isReadOnly = readOnly || (userRole !== 'superadmin' && !(userPermissions || []).includes('control-escolar'));
+
   const [showPrintMode, setShowPrintMode] = useState(false);
   const [printExtraordinarioSelected, setPrintExtraordinarioSelected] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -222,7 +226,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
             <button onClick={() => setShowPrintMode(true)} className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition">
               <Printer className="w-4 h-4 mr-2" /> Ficha de Inscripción
             </button>
-            {!isEditing && (
+            {!isEditing && !isReadOnly && (
               <button onClick={() => setIsEditing(true)} className="flex items-center px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-medium hover:bg-indigo-600 shadow-sm transition">
                 <Edit className="w-4 h-4 mr-2" /> Habilitar Edición
               </button>

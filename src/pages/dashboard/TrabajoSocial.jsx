@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { FileHeart, HeartHandshake, Phone, MapPin, Building2, ExternalLink } from 'lucide-react';
+import BuscadorAlumnos from '../../components/BuscadorAlumnos';
+import HojaDeVida from '../../components/HojaDeVida';
+import { materiasPorGrado } from '../../utils/materias';
 
 export default function TrabajoSocial() {
   const [activeTab, setActiveTab] = useState('fichas');
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   // Directorio de Instituciones (Módulo 9)
   const directorio = [
@@ -38,15 +42,20 @@ export default function TrabajoSocial() {
       </div>
 
       {activeTab === 'fichas' && (
-        <div className="bg-white shadow-sm rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <input type="text" placeholder="Buscar alumno por nombre o matrícula..." className="flex-1 px-4 py-2 border border-slate-300 rounded-lg" />
-            <button className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium">Buscar Expediente Médico</button>
-          </div>
-          <div className="p-8 text-center text-slate-500 border-2 border-dashed rounded-lg">
-            Realiza una búsqueda para cargar la ficha médica, tipo de sangre, alergias y contactos de emergencia del alumno.
-          </div>
-        </div>
+        <>
+          <BuscadorAlumnos 
+            onStudentSelect={(student) => setSelectedStudent(student)} 
+            title="Búsqueda de Expedientes" 
+            description="Busca un alumno para consultar su ficha médica, contactos de emergencia y expediente."
+          />
+          {selectedStudent && (
+            <HojaDeVida 
+              student={selectedStudent} 
+              materiasPorGrado={materiasPorGrado}
+              onClose={() => setSelectedStudent(null)} 
+            />
+          )}
+        </>
       )}
 
       {activeTab === 'directorio' && (
