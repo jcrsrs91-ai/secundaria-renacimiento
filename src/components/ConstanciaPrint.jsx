@@ -231,6 +231,12 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
            </p>
          )}
 
+         {type === 'promedio_anterior' && (
+           <p className="mb-6 indent-12 font-medium">
+             Y de acuerdo con nuestros registros académicos, el ciclo escolar inmediato anterior lo concluyó con un Promedio General de: <strong className="whitespace-nowrap">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
+           </p>
+         )}
+
          {(type === 'terminacion' || type === 'terminacion_tramite' || (type === 'acreditacion_extraordinario' && student.manualPromedio)) && (
            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-3 mb-3' : 'mt-6 mb-6'} text-center font-medium px-8 text-[12pt]`}>
              Se hace constar que cuenta con un Promedio de Nivel Educativo (Certificado) de: <br/>

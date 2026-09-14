@@ -329,6 +329,9 @@ export default function ControlEscolar() {
   const openModal = (type, student) => {
     setModalType(type);
     setSelectedStudent(student);
+    if (type === 'constanciaOptions' && student?.promedioEscuela) {
+      setConstanciaPromedio(student.promedioEscuela);
+    }
   };
 
   
@@ -1756,10 +1759,9 @@ export default function ControlEscolar() {
               </div>
             )}
 
-            {(selectedStudent.grado === '3er Grado' || selectedStudent.grado === '1er Grado') && (
               <div className="mb-4 bg-slate-50 border border-slate-200 p-3 rounded-lg">
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {selectedStudent.grado === '1er Grado' ? 'Promedio de Primaria (Opcional)' : 'Promedio del Nivel Educativo (Opcional)'}
+                  Promedio Anterior o del Nivel Educativo (Opcional)
                 </label>
                 <input 
                   type="number" 
@@ -1770,9 +1772,8 @@ export default function ControlEscolar() {
                   placeholder="Ej. 9.8"
                   className="w-full border-slate-300 rounded-md shadow-sm p-2 text-sm focus:border-primary-500 focus:ring-primary-500"
                 />
-                <p className="text-xs text-slate-500 mt-1">Este dato se añadirá a la Constancia correspondiente.</p>
+                <p className="text-xs text-slate-500 mt-1">Este dato se añadirá a la Constancia correspondiente si el alumno no lo tiene registrado.</p>
               </div>
-            )}
 
             <div className="space-y-3">
               <button onClick={() => executePrintConstancia('simple')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition text-left group">
@@ -1829,8 +1830,18 @@ export default function ControlEscolar() {
                   <Star className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800">Constancia de Promedio (Generación)</h3>
-                  <p className="text-xs text-slate-500 mt-1">Requiere capturar el promedio manual arriba. Ideal para 3er año.</p>
+                  <h3 className="font-bold text-slate-800">Constancia Promedio de Generación</h3>
+                  <p className="text-xs text-slate-500 mt-1">Para alumnos de 3er grado. (Usa el Promedio capturado arriba).</p>
+                </div>
+              </button>
+
+              <button onClick={() => executePrintConstancia('promedio_anterior')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-orange-500 hover:bg-orange-50 transition text-left group">
+                <div className="bg-orange-100 text-orange-600 p-2 rounded-lg mr-4 group-hover:bg-orange-500 group-hover:text-white transition shrink-0">
+                  <Star className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Constancia Promedio del Año Pasado</h3>
+                  <p className="text-xs text-slate-500 mt-1">Certifica el promedio obtenido en el ciclo escolar anterior.</p>
                 </div>
               </button>
 
