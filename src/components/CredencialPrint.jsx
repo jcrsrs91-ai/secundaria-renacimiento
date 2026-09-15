@@ -35,7 +35,13 @@ export default function CredencialPrint({ students = [] }) {
           html, body, #root { height: auto !important; overflow: visible !important; min-height: auto !important; display: block !important; }
           * { overflow: visible !important; }
           aside, header { display: none !important; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; background: white; }
+          body { 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+            margin: 0; padding: 0; background: white;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+          }
           .print-only { display: block !important; }
           .credencial-page { 
             page-break-after: always; 
@@ -45,6 +51,13 @@ export default function CredencialPrint({ students = [] }) {
             position: relative; 
             font-family: sans-serif; 
             box-sizing: border-box; 
+          }
+          img {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: high-quality;
+          }
+          svg {
+            shape-rendering: crispEdges;
           }
         }
         @media screen {
@@ -58,19 +71,21 @@ export default function CredencialPrint({ students = [] }) {
           <div className="credencial-page bg-white flex flex-col justify-between overflow-hidden relative border-r border-b border-slate-100 print:border-none">
             
             {/* Header */}
-            <div className={`${getGradeColor(student.grado)} text-white px-1 shadow-md relative z-10 rounded-b flex items-center justify-between h-[11.5mm] pt-0.5`}>
-              <img src="/logo-sep.png" alt="SEP" className="h-[11mm] w-[11mm] object-contain flex-shrink-0" />
-              <div className="flex-1 flex flex-col justify-center items-center px-0.5 mt-0.5">
-                <h1 className="text-[6px] font-extrabold uppercase leading-[1.0] tracking-wide text-center" style={{ transform: 'scale(0.85)', transformOrigin: 'center top', whiteSpace: 'nowrap' }}>
+            <div className={`${getGradeColor(student.grado)} text-white relative z-10 rounded-b flex items-center justify-center h-[12mm] w-full box-border overflow-hidden shadow-md`}>
+              <img src="/logo-sep.png" alt="SEP" className="absolute left-[1.5mm] top-[1mm] h-[10mm] w-[10mm] object-contain drop-shadow-sm" />
+              
+              <div className="flex flex-col justify-center items-center text-center z-10 mx-[13mm]">
+                <h1 className="text-[5.5px] font-extrabold uppercase leading-none tracking-wide whitespace-nowrap">
                   Secretaría de Educación Pública
                 </h1>
-                <h2 className="text-[8px] font-black leading-none tracking-tight -mt-0.5">Esc. Sec. Téc. N°68</h2>
-                <h3 className="text-[9px] font-black leading-none mt-0.5 tracking-[0.2em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
-                <p className="text-[5px] font-semibold tracking-wider mt-0.5 opacity-90" style={{ transform: 'scale(0.9)', transformOrigin: 'center top' }}>
+                <h2 className="text-[7px] font-black leading-none tracking-tight mt-[1px]">Esc. Sec. Téc. N°68</h2>
+                <h3 className="text-[8px] font-black leading-none mt-[1px] tracking-[0.15em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
+                <p className="text-[4.5px] font-bold tracking-widest mt-[1px] opacity-90">
                   C.C.T. 12DST0077B
                 </p>
               </div>
-              <img src="/logo-escuela.png" alt="Escuela" className="h-[11mm] w-[11mm] object-contain flex-shrink-0 drop-shadow-md" />
+
+              <img src="/logo-escuela.png" alt="Escuela" className="absolute right-[1.5mm] top-[1mm] h-[10mm] w-[10mm] object-contain drop-shadow-sm" />
             </div>
 
             {/* Body */}
@@ -103,7 +118,7 @@ export default function CredencialPrint({ students = [] }) {
                   <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
                     CURP: {student.curp || 'NO REGISTRADA'}
                   </p>
-                  <div className="mt-1.5 inline-block bg-slate-800 rounded px-1 py-0.5 self-start">
+                  <div className="mt-1.5 inline-block bg-slate-800 rounded px-1 py-0.5 self-start shadow-sm border border-slate-700">
                     <p className="text-[6px] font-black text-white uppercase tracking-widest leading-none">
                       VIGENCIA: {getSchoolCycle()}
                     </p>
@@ -130,7 +145,7 @@ export default function CredencialPrint({ students = [] }) {
               </div>
 
               {/* Contacto de Emergencia y Leyenda */}
-              <div className="px-1 mt-0 border-t-[0.5px] border-slate-200 pt-[1px] bg-red-50/40">
+              <div className="px-1 mt-0 border-t-[0.5px] border-slate-300 pt-[1px] bg-red-50/40">
                 <p className="text-[6px] font-bold text-red-600 uppercase tracking-widest">En caso de emergencia avisar a:</p>
                 <div className="flex justify-between items-end mt-0">
                   <p className="text-[7.5px] font-black text-slate-800 leading-[1.1] flex-1 pr-1">{student.tutorNombre || student.tutor || student.nombreTutor || 'No registrado'}</p>
@@ -140,23 +155,23 @@ export default function CredencialPrint({ students = [] }) {
 
               {/* Leyenda Oficial SEP */}
               <div className="px-1 mt-0 text-center">
-                 <p className="text-[6px] font-bold text-slate-700 leading-tight text-center px-1">
+                 <p className="text-[5.5px] font-bold text-slate-700 leading-tight text-center px-1">
                    Esta credencial acredita al portador como alumno(a) regular de esta Institución incorporada a la SEP. Es personal e intransferible.
                  </p>
               </div>
             </div>
 
             {/* Footer: 2 QR Codes y Firma */}
-            <div className="px-1 border-t-[0.5px] border-slate-200 flex flex-row items-end justify-between z-10 pb-[2px] h-[22mm] bg-slate-50/50 mt-0">
+            <div className="px-1 border-t-[0.5px] border-slate-300 flex flex-row items-end justify-between z-10 pb-[2px] h-[22mm] bg-slate-50/50 mt-0">
               
               {/* QR 1: Para Celulares (URL) */}
               <div className="flex flex-col items-center justify-end">
-                <div className="flex-shrink-0 bg-white border border-slate-300 shadow-sm self-center flex items-center justify-center overflow-hidden" style={{ width: '17mm', height: '17mm' }}>
+                <div className="flex-shrink-0 bg-white border border-slate-300 shadow-sm self-center flex items-center justify-center overflow-hidden p-[1mm]" style={{ width: '17mm', height: '17mm' }}>
                   <QRCodeSVG 
                     value={`https://web-tec-68.web.app/verificar/${student.matricula}`} 
-                    size={80} 
+                    size={256} 
                     style={{ width: '100%', height: '100%', display: 'block' }}
-                    level="L"
+                    level="M"
                     includeMargin={false}
                     fgColor="#000000"
                     bgColor="#FFFFFF"
@@ -177,12 +192,12 @@ export default function CredencialPrint({ students = [] }) {
 
               {/* QR 2: Para Escáner (Matrícula) */}
               <div className="flex flex-col items-center justify-end">
-                <div className="flex-shrink-0 bg-white border border-slate-300 shadow-sm self-center flex items-center justify-center overflow-hidden" style={{ width: '17mm', height: '17mm' }}>
+                <div className="flex-shrink-0 bg-white border border-slate-300 shadow-sm self-center flex items-center justify-center overflow-hidden p-[1mm]" style={{ width: '17mm', height: '17mm' }}>
                   <QRCodeSVG 
                     value={student.matricula} 
-                    size={80} 
+                    size={256} 
                     style={{ width: '100%', height: '100%', display: 'block' }}
-                    level="L"
+                    level="M"
                     includeMargin={false}
                     fgColor="#000000"
                     bgColor="#FFFFFF"
