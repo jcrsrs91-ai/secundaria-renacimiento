@@ -219,6 +219,13 @@ export default function ControlEscolar() {
                }
           }
 
+          // Auto-reparar Bajas previas que no tengan motivo (asumir 'No Inscrito' ya que es antes del 30 sept)
+          if (data.status === 'Baja' && !data.motivoBaja) {
+             const asNoInscrito = 'No Inscrito';
+             if (doc.id) updateDoc(doc.ref, { motivoBaja: asNoInscrito }).catch(console.error);
+             data.motivoBaja = asNoInscrito;
+          }
+
         return { id: doc.id, ...data };
       });
       setPendientes(allData.filter(s => s.status === 'Pendiente'));
