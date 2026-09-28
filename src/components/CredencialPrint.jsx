@@ -113,7 +113,7 @@ export default function CredencialPrint({ students = [] }) {
                     {student.nombres}
                   </p>
                   <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-2">
-                    MAT: {student.matricula}
+                    MAT: {student.matricula || 'PENDIENTE'}
                   </p>
                   <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
                     CURP: {student.curp || 'NO REGISTRADA'}
@@ -168,7 +168,7 @@ export default function CredencialPrint({ students = [] }) {
               <div className="flex flex-col items-center justify-end">
                 <div className="flex-shrink-0 bg-white border border-slate-300 shadow-sm self-center flex items-center justify-center overflow-hidden p-[1mm]" style={{ width: '17mm', height: '17mm' }}>
                   <QRCodeSVG 
-                    value={`https://web-tec-68.web.app/verificar/${student.matricula}`} 
+                    value={`https://web-tec-68.web.app/verificar/${student.matricula || 'PENDIENTE'}`} 
                     size={256} 
                     style={{ width: '100%', height: '100%', display: 'block' }}
                     level="M"
@@ -194,7 +194,7 @@ export default function CredencialPrint({ students = [] }) {
               <div className="flex flex-col items-center justify-end">
                 <div className="flex-shrink-0 bg-white border border-slate-300 shadow-sm self-center flex items-center justify-center overflow-hidden p-[1mm]" style={{ width: '17mm', height: '17mm' }}>
                   <QRCodeSVG 
-                    value={student.matricula} 
+                    value={student.matricula || 'PENDIENTE'} 
                     size={256} 
                     style={{ width: '100%', height: '100%', display: 'block' }}
                     level="M"

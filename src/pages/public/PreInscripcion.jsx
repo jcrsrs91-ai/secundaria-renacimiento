@@ -488,7 +488,7 @@ export default function PreInscripcion() {
                     <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
                       <Upload className="w-5 h-5 mr-2 text-slate-400" />
                       Seleccionar Archivo de Imagen
-                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} required={!studentData?.fotoUrl} />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} required={activeTab !== 'completar' && !studentData?.fotoUrl} />
                     </label>
                     {photoFile && <p className="mt-2 text-sm text-emerald-600 font-medium">Foto seleccionada: {photoFile.name}</p>}
                     {studentData?.fotoUrl && !photoFile && <p className="mt-2 text-sm text-slate-500">Ya tienes una foto guardada. Sube otra solo si deseas cambiarla.</p>}
@@ -763,14 +763,14 @@ export default function PreInscripcion() {
                           Serán válidos los formatos oficiales vigentes (tanto en formato tradicional sepia/café como el formato verde).
                         </p>
                       </label>
-                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setActaFile)} className="w-full text-sm" required={!studentData?.actaUrl} />
+                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setActaFile)} className="w-full text-sm" required={activeTab !== 'completar' && !studentData?.actaUrl} />
                       {actaFile && <p className="text-xs text-emerald-600 mt-1">{actaFile.name}</p>}
                       {studentData?.actaUrl && !actaFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
                     </div>
 
                     <div className="bg-slate-50 p-4 border rounded-lg">
                       <label className="block text-sm font-bold mb-1">CURP formato reciente y legible <span className="text-red-500">*</span></label>
-                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setCurpFile)} className="w-full text-sm" required={!studentData?.curpUrl} />
+                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setCurpFile)} className="w-full text-sm" required={activeTab !== 'completar' && !studentData?.curpUrl} />
                       {curpFile && <p className="text-xs text-emerald-600 mt-1">{curpFile.name}</p>}
                       {studentData?.curpUrl && !curpFile && <p className="text-xs text-blue-600 mt-1">Ya cargada previamente.</p>}
                     </div>
@@ -791,14 +791,14 @@ export default function PreInscripcion() {
 
                     <div className="bg-slate-50 p-4 border rounded-lg">
                       <label className="block text-sm font-bold mb-1">Identificación oficial del Tutor (INE) <span className="text-red-500">*</span></label>
-                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setIneFile)} className="w-full text-sm" required={!studentData?.ineUrl} />
+                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setIneFile)} className="w-full text-sm" required={activeTab !== 'completar' && !studentData?.ineUrl} />
                       {ineFile && <p className="text-xs text-emerald-600 mt-1">{ineFile.name}</p>}
                       {studentData?.ineUrl && !ineFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
                     </div>
 
                     <div className="bg-slate-50 p-4 border rounded-lg">
                       <label className="block text-sm font-bold mb-1">Comprobante de domicilio reciente <span className="text-red-500">*</span></label>
-                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setDomicilioFile)} className="w-full text-sm" required={!studentData?.domicilioUrl} />
+                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setDomicilioFile)} className="w-full text-sm" required={activeTab !== 'completar' && !studentData?.domicilioUrl} />
                       {domicilioFile && <p className="text-xs text-emerald-600 mt-1">{domicilioFile.name}</p>}
                       {studentData?.domicilioUrl && !domicilioFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
                     </div>
