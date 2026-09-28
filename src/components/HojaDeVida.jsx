@@ -3,6 +3,7 @@ import { X, Save, Edit, User, Heart, Users, Camera, Upload, StopCircle, Printer 
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
+import { isBeforeSept30 } from '../utils/dateRules';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
 
@@ -163,6 +164,16 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     
     data.historial = historial;
     data.extraordinarios = extraordinarios;
+
+    // --- NUEVA LÓGICA DE BAJAS Y FECHAS ---
+    if (data.status === 'Baja' && student.status !== 'Baja') {
+        if (isBeforeSept30()) {
+            data.motivoBaja = 'No Inscrito';
+            alert("⚠️ AVISO: Al dar de baja antes del 30 de septiembre, este alumno se clasifica como 'No Inscrito' y no aparecerá en las Bajas Oficiales.");
+        } else {
+            data.motivoBaja = 'Baja Oficial';
+        }
+    }
 
     try {
       const docRef = doc(db, "students", student.id);

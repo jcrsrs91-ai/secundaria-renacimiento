@@ -24,6 +24,7 @@ import AprobacionPrint from '../../components/AprobacionPrint';
 import EficienciaTerminalPrint from '../../components/EficienciaTerminalPrint';
 import DesempenoAlcanzadoPrint from '../../components/DesempenoAlcanzadoPrint';
 import DesertoresPrint from '../../components/DesertoresPrint';
+import NoInscritosPrint from '../../components/NoInscritosPrint';
 import RegularizacionPrint from '../../components/RegularizacionPrint';
 import KardexPrint from '../../components/KardexPrint';
 import ListaClausuraPrint from '../../components/ListaClausuraPrint';
@@ -960,6 +961,11 @@ export default function ControlEscolar() {
           {/* SEP E6 */}
           <button onClick={() => setActiveTab('desertores')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'desertores' ? 'bg-sky-600 text-white shadow-sky-200 ring-2 ring-sky-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Desertores (E6)
+          </button>
+
+          {/* No Inscritos (Uso Interno) */}
+          <button onClick={() => setActiveTab('no_inscritos')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'no_inscritos' ? 'bg-slate-600 text-white shadow-slate-200 ring-2 ring-slate-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            No Inscritos (Interno)
           </button>
         </div>
       </div>
@@ -2022,7 +2028,7 @@ export default function ControlEscolar() {
 
       {/* Sección Eficiencia Terminal */}
       {!loading && activeTab === 'eficiencia' && !printMode && (
-        <EficienciaTerminalPrint activos={directorio.filter(s => s.status === 'Activo' || s.status === 'Egresado')} bajas={directorio.filter(s => s.status === 'Baja')} materiasPorGrado={materiasPorGrado} onClose={() => setActiveTab('activos')} />
+        <EficienciaTerminalPrint activos={directorio.filter(s => s.status === 'Activo' || s.status === 'Egresado')} bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito')} materiasPorGrado={materiasPorGrado} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* Sección Desempeño Alcanzado */}
@@ -2030,9 +2036,14 @@ export default function ControlEscolar() {
         <DesempenoAlcanzadoPrint activos={activos} materiasPorGrado={materiasPorGrado} onClose={() => setActiveTab('activos')} />
       )}
 
-      {/* Sección Desertores */}
+      {/* Sección Desertores (Oficiales E6) */}
       {!loading && activeTab === 'desertores' && !printMode && (
-        <DesertoresPrint bajas={directorio.filter(s => s.status === 'Baja')} onClose={() => setActiveTab('activos')} />
+        <DesertoresPrint bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito')} onClose={() => setActiveTab('activos')} />
+      )}
+
+      {/* Sección No Inscritos (Uso Interno) */}
+      {!loading && activeTab === 'no_inscritos' && !printMode && (
+        <NoInscritosPrint bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja === 'No Inscrito')} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* IMPRESIÓN MODALES INDIVIDUALES */}

@@ -45,7 +45,7 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
       }
 
       const isAlta = a.tipoIngreso === 'Alta';
-      const isBaja = status === 'baja';
+      const isBaja = status === 'baja' && a.motivoBaja !== 'No Inscrito';
       const isActivo = status === 'activo';
 
       if (isAlta) {

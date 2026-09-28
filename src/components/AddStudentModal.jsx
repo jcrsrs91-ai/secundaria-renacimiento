@@ -3,6 +3,7 @@ import { X, Save, User, GraduationCap, HeartPulse, Users } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import { isBeforeSept30 } from '../utils/dateRules';
 
 export default function AddStudentModal({ onClose }) {
   const [loading, setLoading] = useState(false);
@@ -79,6 +80,12 @@ export default function AddStudentModal({ onClose }) {
       toast.error('Por favor, completa al menos nombres, apellido paterno, grado y grupo.');
       return;
     }
+
+    if (formData.tipoIngreso === 'Alta' && isBeforeSept30()) {
+      formData.tipoIngreso = 'Nuevo Ingreso';
+      alert("⚠️ AVISO: Al registrar antes del 30 de septiembre, este alumno se clasifica como 'Ordinario (Inicio de Ciclo)' en lugar de 'Alta', de acuerdo con las reglas de Control Escolar.");
+    }
+
 
     setLoading(true);
     const idToast = toast.loading('Guardando alumno...');
