@@ -202,7 +202,7 @@ export default function PreInscripcion() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setLoadingMessage('Trabajando en subir los documentos...');
+    setLoadingMessage(activeTab === 'completar' ? 'Guardando actualización de datos...' : 'Trabajando en subir los documentos...');
     
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
@@ -350,8 +350,8 @@ export default function PreInscripcion() {
               <div className="max-w-md mx-auto py-8">
                 <div className="text-center mb-6">
                   <Upload className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                  <h3 className="text-lg font-bold">Actualizar Datos / Subir Documentos</h3>
-                  <p className="text-sm text-slate-500 mt-1">Ingresa la CURP del alumno para actualizar su información o subir documentos faltantes.</p>
+                  <h3 className="text-lg font-bold">Actualizar Datos del Alumno</h3>
+                  <p className="text-sm text-slate-500 mt-1">Ingresa la CURP del alumno para actualizar su información personal, escolar o de contacto.</p>
                 </div>
                 {lookupError && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center">{lookupError}</div>}
                 <form onSubmit={handleLookupCompletar} className="space-y-4">
@@ -469,7 +469,8 @@ export default function PreInscripcion() {
                     </select>
                   </div>
 
-                {/* Fotografía */}
+                {/* Fotografía (Oculta al actualizar datos) */}
+                {activeTab !== 'completar' && (
                   <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 text-center">
                     <h3 className="text-lg font-bold text-slate-800 mb-2">Fotografía del Alumno</h3>
                     <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
@@ -488,12 +489,12 @@ export default function PreInscripcion() {
                     <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
                       <Upload className="w-5 h-5 mr-2 text-slate-400" />
                       Seleccionar Archivo de Imagen
-                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} required={activeTab !== 'completar' && !studentData?.fotoUrl} />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} required={!studentData?.fotoUrl} />
                     </label>
                     {photoFile && <p className="mt-2 text-sm text-emerald-600 font-medium">Foto seleccionada: {photoFile.name}</p>}
                     {studentData?.fotoUrl && !photoFile && <p className="mt-2 text-sm text-slate-500">Ya tienes una foto guardada. Sube otra solo si deseas cambiarla.</p>}
                   </div>
-
+                )}
                 {/* Secciones 1 a 4 */}
                   <>
                     {/* 1. Datos Académicos */}
@@ -750,61 +751,63 @@ export default function PreInscripcion() {
                     </div>
                   </>
 
-                {/* 5. Documentación Digital */}
-                <div>
-                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">5. Documentación Digital en PDF</h3>
-                  <p className="text-sm text-slate-500 mb-4">Solo se aceptan archivos en formato PDF.</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    <div className="bg-slate-50 p-4 border rounded-lg">
-                      <label className="block text-sm font-bold mb-1">
-                        Acta de Nacimiento <span className="text-red-500">*</span>
-                        <p className="text-xs text-slate-500 font-normal mt-1 leading-tight">
-                          Serán válidos los formatos oficiales vigentes (tanto en formato tradicional sepia/café como el formato verde).
-                        </p>
-                      </label>
-                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setActaFile)} className="w-full text-sm" required={activeTab !== 'completar' && !studentData?.actaUrl} />
-                      {actaFile && <p className="text-xs text-emerald-600 mt-1">{actaFile.name}</p>}
-                      {studentData?.actaUrl && !actaFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
-                    </div>
+                {/* 5. Documentación Digital (Oculta al actualizar datos) */}
+                {activeTab !== 'completar' && (
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">5. Documentación Digital en PDF</h3>
+                    <p className="text-sm text-slate-500 mb-4">Solo se aceptan archivos en formato PDF.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      
+                      <div className="bg-slate-50 p-4 border rounded-lg">
+                        <label className="block text-sm font-bold mb-1">
+                          Acta de Nacimiento <span className="text-red-500">*</span>
+                          <p className="text-xs text-slate-500 font-normal mt-1 leading-tight">
+                            Serán válidos los formatos oficiales vigentes (tanto en formato tradicional sepia/café como el formato verde).
+                          </p>
+                        </label>
+                        <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setActaFile)} className="w-full text-sm" required={!studentData?.actaUrl} />
+                        {actaFile && <p className="text-xs text-emerald-600 mt-1">{actaFile.name}</p>}
+                        {studentData?.actaUrl && !actaFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
+                      </div>
 
-                    <div className="bg-slate-50 p-4 border rounded-lg">
-                      <label className="block text-sm font-bold mb-1">CURP formato reciente y legible <span className="text-red-500">*</span></label>
-                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setCurpFile)} className="w-full text-sm" required={activeTab !== 'completar' && !studentData?.curpUrl} />
-                      {curpFile && <p className="text-xs text-emerald-600 mt-1">{curpFile.name}</p>}
-                      {studentData?.curpUrl && !curpFile && <p className="text-xs text-blue-600 mt-1">Ya cargada previamente.</p>}
-                    </div>
+                      <div className="bg-slate-50 p-4 border rounded-lg">
+                        <label className="block text-sm font-bold mb-1">CURP formato reciente y legible <span className="text-red-500">*</span></label>
+                        <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setCurpFile)} className="w-full text-sm" required={!studentData?.curpUrl} />
+                        {curpFile && <p className="text-xs text-emerald-600 mt-1">{curpFile.name}</p>}
+                        {studentData?.curpUrl && !curpFile && <p className="text-xs text-blue-600 mt-1">Ya cargada previamente.</p>}
+                      </div>
 
-                    <div className="bg-slate-50 p-4 border rounded-lg">
-                      <label className="block text-sm font-bold mb-1">Certificado de educación primaria o constancia de 6to <span className="text-slate-400 font-normal">(Opcional por ahora)</span></label>
-                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setCertificadoFile)} className="w-full text-sm" />
-                      {certificadoFile && <p className="text-xs text-emerald-600 mt-1">{certificadoFile.name}</p>}
-                      {studentData?.certificadoUrl && !certificadoFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
-                    </div>
+                      <div className="bg-slate-50 p-4 border rounded-lg">
+                        <label className="block text-sm font-bold mb-1">Certificado de educación primaria o constancia de 6to <span className="text-slate-400 font-normal">(Opcional por ahora)</span></label>
+                        <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setCertificadoFile)} className="w-full text-sm" />
+                        {certificadoFile && <p className="text-xs text-emerald-600 mt-1">{certificadoFile.name}</p>}
+                        {studentData?.certificadoUrl && !certificadoFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
+                      </div>
 
-                    <div className="bg-slate-50 p-4 border rounded-lg">
-                      <label className="block text-sm font-bold mb-1">Comprobante de Asignación (Portal SEP) <span className="text-slate-400 font-normal">(Si aplica)</span></label>
-                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setAsignacionFile)} className="w-full text-sm" />
-                      {asignacionFile && <p className="text-xs text-emerald-600 mt-1">{asignacionFile.name}</p>}
-                      {studentData?.asignacionUrl && !asignacionFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
-                    </div>
+                      <div className="bg-slate-50 p-4 border rounded-lg">
+                        <label className="block text-sm font-bold mb-1">Comprobante de Asignación (Portal SEP) <span className="text-slate-400 font-normal">(Si aplica)</span></label>
+                        <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setAsignacionFile)} className="w-full text-sm" />
+                        {asignacionFile && <p className="text-xs text-emerald-600 mt-1">{asignacionFile.name}</p>}
+                        {studentData?.asignacionUrl && !asignacionFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
+                      </div>
 
-                    <div className="bg-slate-50 p-4 border rounded-lg">
-                      <label className="block text-sm font-bold mb-1">Identificación oficial del Tutor (INE) <span className="text-red-500">*</span></label>
-                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setIneFile)} className="w-full text-sm" required={activeTab !== 'completar' && !studentData?.ineUrl} />
-                      {ineFile && <p className="text-xs text-emerald-600 mt-1">{ineFile.name}</p>}
-                      {studentData?.ineUrl && !ineFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
-                    </div>
+                      <div className="bg-slate-50 p-4 border rounded-lg">
+                        <label className="block text-sm font-bold mb-1">Identificación oficial del Tutor (INE) <span className="text-red-500">*</span></label>
+                        <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setIneFile)} className="w-full text-sm" required={!studentData?.ineUrl} />
+                        {ineFile && <p className="text-xs text-emerald-600 mt-1">{ineFile.name}</p>}
+                        {studentData?.ineUrl && !ineFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
+                      </div>
 
-                    <div className="bg-slate-50 p-4 border rounded-lg">
-                      <label className="block text-sm font-bold mb-1">Comprobante de domicilio reciente <span className="text-red-500">*</span></label>
-                      <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setDomicilioFile)} className="w-full text-sm" required={activeTab !== 'completar' && !studentData?.domicilioUrl} />
-                      {domicilioFile && <p className="text-xs text-emerald-600 mt-1">{domicilioFile.name}</p>}
-                      {studentData?.domicilioUrl && !domicilioFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
-                    </div>
+                      <div className="bg-slate-50 p-4 border rounded-lg">
+                        <label className="block text-sm font-bold mb-1">Comprobante de domicilio reciente <span className="text-red-500">*</span></label>
+                        <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setDomicilioFile)} className="w-full text-sm" required={!studentData?.domicilioUrl} />
+                        {domicilioFile && <p className="text-xs text-emerald-600 mt-1">{domicilioFile.name}</p>}
+                        {studentData?.domicilioUrl && !domicilioFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
+                      </div>
 
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="pt-6 border-t border-slate-200 flex justify-between items-center">
                   <a href="/" className="text-sm text-slate-500 hover:text-slate-700">Cancelar</a>
