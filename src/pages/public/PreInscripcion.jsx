@@ -420,8 +420,8 @@ export default function PreInscripcion() {
                 {activeTab === 'completar' && (
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex items-start mb-6">
                     <div className="flex-1">
-                      <h4 className="font-bold text-blue-800">Completar Expediente de {studentData.nombres}</h4>
-                      <p className="text-sm text-blue-700 mt-1">Sube únicamente los documentos que tengas pendientes en formato PDF y guarda los cambios.</p>
+                      <h4 className="font-bold text-blue-800">Actualizar Expediente de {studentData.nombres}</h4>
+                      <p className="text-sm text-blue-700 mt-1">Revisa y actualiza la información personal, escolar o de contacto y guarda los cambios.</p>
                     </div>
                   </div>
                 )}
