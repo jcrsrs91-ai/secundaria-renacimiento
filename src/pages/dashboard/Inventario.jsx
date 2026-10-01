@@ -1614,7 +1614,7 @@ Esta acción no se puede deshacer.`);
             <div className="p-4 border-b border-slate-200 bg-slate-50">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <h3 className="font-semibold text-slate-700 text-lg">Módulo de Ingresos</h3>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <button onClick={exportarRelacionIngresos} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 shadow-sm transition-colors">
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> Exportar Relación (CSV)
                   </button>
@@ -2108,7 +2108,7 @@ Esta acción no se puede deshacer.`);
           <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
               <h3 className="font-semibold text-slate-700">Catálogo de Bienes Activos</h3>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 {selectedItems.length > 0 && (
                   <>
                     <button onClick={handlePrintEtiquetas} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 shadow-sm transition-colors mr-1">
@@ -2263,6 +2263,7 @@ Esta acción no se puede deshacer.`);
                         >
                           Ver / Editar
                         </button>
+                        <button onClick={() => { setPrintData(r); setPrintMode("resguardo"); }} className="ml-4 text-indigo-600 hover:text-indigo-800 font-medium text-xs">Imprimir PDF</button>
                     </td>
                   </tr>
                 )) : (
@@ -2282,7 +2283,7 @@ Esta acción no se puede deshacer.`);
 
     {modalOpen && (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-        <div className={`bg-white rounded-xl shadow-2xl w-full my-8 ${(modalOpen === 'editItem' || modalOpen === 'editResguardo') ? 'max-w-lg' : 'max-w-4xl'}`}>
+        <div className={`bg-white rounded-xl shadow-2xl w-full my-8 ${modalOpen === 'editItem' ? 'max-w-lg' : 'max-w-4xl'}`}>
           <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
             <h3 className="font-bold text-xl text-slate-800">
               {modalOpen === 'recepcion' ? 'Generar Acta de Recepción' : 
