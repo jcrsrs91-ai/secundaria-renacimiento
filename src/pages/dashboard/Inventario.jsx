@@ -132,32 +132,7 @@ export default function Inventario() {
   const [cajaTurno, setCajaTurno] = useState(null); // { id, turno, fondoInicial }
   
   
-  useEffect(() => {
-    // Escuchar si ya hay una caja abierta para este usuario
-    const q = query(collection(db, 'cajas'), where('estado', '==', 'abierta'));
-    const unsub = onSnapshot(q, (snapshot) => {
-        if (!snapshot.empty) {
-           // Asumimos que solo hay una caja abierta a la vez
-           const doc = snapshot.docs[0];
-           setCajaTurno({ id: doc.id, ...doc.data() });
-        } else {
-           setCajaTurno(null);
-        }
-    });
-    return () => unsub();
-  }, []);
   
-  // Escuchar gastos (egresos) de la caja actual
-  useEffect(() => {
-    if (!cajaTurno) return;
-    const q = query(collection(db, 'gastos'), where('cajaId', '==', cajaTurno.id));
-    const unsub = onSnapshot(q, (snapshot) => {
-        const items = [];
-        snapshot.forEach(d => items.push({ id: d.id, ...d.data() }));
-        setGastos(items);
-    });
-    return () => unsub();
-  }, [cajaTurno]);
 
   const [activeTab, setActiveTab] = useState('inventario');
 
@@ -279,45 +254,6 @@ export default function Inventario() {
     }).sort((a, b) => a.alumno.localeCompare(b.alumno));
   }, [pagosRecientes, pagosSearch, pagosGrado, pagosGrupo]);
 
-  useEffect(() => {
-    const q = query(collection(db, 'students'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const items = []; const rawItems = []; snapshot.forEach(docSnap => { rawItems.push({id: docSnap.id, ...docSnap.data()}); 
-        const data = docSnap.data();
-        // Generar un folio falso si no tiene
-        const folio = `P-${docSnap.id.substring(0, 4).toUpperCase()}`;
-        const alumno = `${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''} ${data.nombres || ''}`.trim();
-        const esNuevo = data.grado === '1er Grado' || data.grado === '1ero' || data.tipoTramite === 'Nuevo Ingreso';
-        const grado = data.grado || 'N/A';
-        const grupo = data.grupo || 'N/A';
-        const concepto = esNuevo ? 'Credencial Escolar y Paquete de Folders' : 'Renovaci├│n de Credencial Escolar';
-        const montoNum = esNuevo ? 130 : 100;
-        const monto = `$${montoNum}.00`;
-        
-        let fecha = 'Pendiente';
-        if (data.pagoFecha) {
-          const dateObj = data.pagoFecha.toDate ? data.pagoFecha.toDate() : new Date();
-          fecha = dateObj.toLocaleDateString();
-        }
-
-                items.push({
-          id: docSnap.id,
-          folio,
-          alumno,
-          grado,
-          grupo,
-          concepto,
-          monto,
-          montoNum,
-          fecha,
-          estado: data.pagoInscripcion ? 'Pagado' : 'Pendiente'
-        });
-      });
-      // Sort by date or id
-      setPagosRecientes(items.reverse()); setAllStudentsRaw(rawItems);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const registrarCobro = async (studentId) => {
     try {
@@ -349,19 +285,6 @@ export default function Inventario() {
   const [resguardoSearch, setResguardoSearch] = useState('');
 
     // Efecto para Pagos Administrativos y Extraordinarios
-  useEffect(() => {
-    const qAdmin = query(collection(db, 'pagos_administrativos'));
-    const unsubAdmin = onSnapshot(qAdmin, snap => {
-      setPagosAdmin(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-    
-    const qExtra = query(collection(db, 'pagos_extraordinarios'));
-    const unsubExtra = onSnapshot(qExtra, snap => {
-      setPagosExtra(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-    
-    return () => { unsubAdmin(); unsubExtra(); };
-  }, []);
 
   // L├│gica de Filtros y Combinaci├│n de Ingresos
   const todosLosPagosGenerales = [
@@ -758,6 +681,21 @@ export default function Inventario() {
       try {
         const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
         if (validItems.length > 0) {
+          
+          // AUTO-LINK: Asignar ID existente a los articulos introducidos manualmente por codigo
+          validItems.forEach(art => {
+            if (!art.id && (art.codigo || art.inventario)) {
+              const manualCode = art.codigo || art.inventario;
+              const existing = inventario.find(i => i.codigo === manualCode);
+              if (existing) {
+                art.id = existing.id;
+                art.descripcion = existing.descripcion || existing.articulo || art.descripcion;
+                art.marca = existing.marca || art.marca;
+                art.serie = existing.serie || art.serie;
+              }
+            }
+          });
+          
           let autoCodeOffsets = {};
           // 1. Crear art├¡culos consolidados para guardar en el Acta de Resguardo y para imprimir
           const resguardoArticulos = validItems.map((art, idx) => {
@@ -782,22 +720,23 @@ export default function Inventario() {
             };
           });
 
-          // Verificar duplicados en c├│digos manuales
-          for (const art of validItems) {
-            const qty = Number(art.cantidad) || 1;
-            const baseCode = art._generatedBaseCode || art.codigo || art.inventario;
-            if (baseCode) {
-               const { codes } = generateCodeRange(baseCode, qty);
-               for (const code of codes) {
-                 if (inventario.some(i => i.codigo === code && i.id !== art.id)) {
-                   toast.error(`El c├│digo de inventario ${code} ya existe en el sistema. Usa otro folio.`);
-                   setIsSubmitting(false);
-                   return;
+          // Verificar duplicados en códigos manuales, SOLO si se va a crear un item nuevo
+          if (formData.guardarEnInventario) {
+            for (const art of validItems) {
+              const qty = Number(art.cantidad) || 1;
+              const baseCode = art._generatedBaseCode || art.codigo || art.inventario;
+              if (baseCode) {
+                 const { codes } = generateCodeRange(baseCode, qty);
+                 for (const code of codes) {
+                   if (inventario.some(i => i.codigo === code && i.id !== art.id)) {
+                     toast.error(`El código de inventario ${code} ya existe en el sistema. Usa otro folio.`);
+                     setIsSubmitting(false);
+                     return;
+                   }
                  }
-               }
+              }
             }
           }
-
           let finalResguardoArticulos = resguardoArticulos;
           const existingResguardo = resguardos.find(r => 
             r.areaResguardante === formData.areaResguardante && 
