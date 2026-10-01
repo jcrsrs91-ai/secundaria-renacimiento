@@ -1,14 +1,16 @@
 const fs = require('fs');
 
-let lay = fs.readFileSync('src/layouts/DashboardLayout.jsx', 'utf8');
+let layout = fs.readFileSync('src/layouts/DashboardLayout.jsx', 'utf8');
 
-// Remove Package from react-router-dom
-lay = lay.replace(/import\s*\{\s*Package\s*,\s*/, 'import { ');
+layout = layout.replace(
+  '<aside className="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all">',
+  '<aside className="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all print:hidden">'
+);
 
-// Add Package to lucide-react
-if (!lay.includes('Package') && lay.includes('lucide-react')) {
-  lay = lay.replace(/import\s*\{([\s\S]*?)\}\s*from\s*'lucide-react';/, "import { Package, $1} from 'lucide-react';");
-}
+layout = layout.replace(
+  '<header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">',
+  '<header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10 print:hidden">'
+);
 
-fs.writeFileSync('src/layouts/DashboardLayout.jsx', lay);
-console.log("Fixed Layout");
+fs.writeFileSync('src/layouts/DashboardLayout.jsx', layout, 'utf8');
+console.log('Added print:hidden to sidebar and header');

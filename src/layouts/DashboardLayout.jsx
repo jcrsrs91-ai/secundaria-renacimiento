@@ -45,7 +45,7 @@ export default function DashboardLayout() {
   return (
     <div className="flex h-screen print:h-auto bg-slate-50 print:bg-white">
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all">
+      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all print:hidden">
         <div className="h-16 flex items-center px-6 bg-slate-950 font-bold text-white tracking-wider border-b border-slate-800">
           EST N°68
         </div>

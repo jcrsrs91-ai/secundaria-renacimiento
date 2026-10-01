@@ -1576,7 +1576,7 @@ Esta acción no se puede deshacer.`);
 
   return (
     <>
-    <div className={`space-y-6 ${printMode ? "hidden" : ""} print:${receiptPago ? "hidden" : "block"}`}>
+    <div className={`space-y-6 ${printMode ? "hidden" : ""} ${(receiptPago || printMode) ? "print:hidden" : "print:block"}`}>
       {(!cajaTurno && (activeTab === 'pagos' || activeTab === 'gastos' || activeTab === 'corte')) ? (
          <CajaLockScreen userEmail={currentUser?.email} onCajaAbierta={(id, turno, fondo) => setCajaTurno({id, turno, fondoInicial: fondo})} />
       ) : (
