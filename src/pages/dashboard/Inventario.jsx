@@ -2263,7 +2263,7 @@ Esta acción no se puede deshacer.`);
                         >
                           Ver / Editar
                         </button>
-                        <button onClick={() => { setPrintData(r); setPrintMode("resguardo"); }} className="ml-4 text-indigo-600 hover:text-indigo-800 font-medium text-xs">Imprimir PDF</button>
+                        <button onClick={() => { setPrintData(r); setPrintMode("resguardo"); setTimeout(() => window.print(), 500); }} className="ml-4 text-indigo-600 hover:text-indigo-800 font-medium text-xs">Imprimir PDF</button>
                     </td>
                   </tr>
                 )) : (
@@ -2735,7 +2735,7 @@ Esta acción no se puede deshacer.`);
     )}
 
     {printMode === 'recepcion' && printData && <ActaRecepcionPrint data={printData} />}
-    {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} />}
+    {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} onBack={() => setPrintMode(null)} />}
     {printMode === 'baja' && printData && <ActaBajaPrint data={printData} />}
     {printMode === 'etiquetas' && printData && <EtiquetasPrint items={printData} />}
 

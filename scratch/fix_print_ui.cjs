@@ -1,4 +1,6 @@
-import React from 'react';
+const fs = require('fs');
+
+const content = `import React from 'react';
 
 export default function CartaResguardoPrint({ data, onBack }) {
   if (!data) return null;
@@ -6,16 +8,16 @@ export default function CartaResguardoPrint({ data, onBack }) {
   const formatDate = (dateString) => {
     if (dateString && dateString.toDate) {
       const d = dateString.toDate();
-      return `${d.getDate()} de ${d.toLocaleString('es-MX', { month: 'long' })} de ${d.getFullYear()}`;
+      return \`\${d.getDate()} de \${d.toLocaleString('es-MX', { month: 'long' })} de \${d.getFullYear()}\`;
     }
     if (!dateString) return '___ de __________ de 202_';
     const d = new Date(dateString + 'T00:00:00');
-    return `${d.getDate()} de ${d.toLocaleString('es-MX', { month: 'long' })} de ${d.getFullYear()}`;
+    return \`\${d.getDate()} de \${d.toLocaleString('es-MX', { month: 'long' })} de \${d.getFullYear()}\`;
   };
 
   return (
     <div className="print-resguardo-only bg-white min-h-screen">
-      <style>{`
+      <style>{\`
         @media print {
           @page { size: letter; margin: 1.0cm; }
           html, body, #root { height: auto !important; overflow: visible !important; min-height: auto !important; display: block !important; }
@@ -27,7 +29,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
         @media screen {
           .print-resguardo-only { padding: 2rem; max-width: 800px; margin: 2rem auto; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); border-radius: 0.5rem; }
         }
-      `}</style>
+      \`}</style>
       
       <div className="no-print flex justify-end gap-4 mb-6 border-b border-slate-200 pb-4">
         <button onClick={onBack} className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Volver a Inventario</button>
@@ -83,7 +85,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
                       <div>{art.descripcion || art.articulo}</div>
                       {art.observaciones && <div className="text-[9px] text-slate-400 mt-0.5 italic text-justify">Obs: {art.observaciones}</div>}
                     </td>
-                    <td className="p-2 uppercase text-[10px] text-slate-500 border-r border-slate-200">{[art.marca, art.modelo, art.serie && `S/N: ${art.serie}`].filter(Boolean).join(' / ')}</td>
+                    <td className="p-2 uppercase text-[10px] text-slate-500 border-r border-slate-200">{[art.marca, art.modelo, art.serie && \`S/N: \${art.serie}\`].filter(Boolean).join(' / ')}</td>
                     <td className="p-2 text-center text-xs border-slate-200">{art.estado}</td>
                   </tr>
                 ))
@@ -122,3 +124,6 @@ export default function CartaResguardoPrint({ data, onBack }) {
     </div>
   );
 }
+`;
+fs.writeFileSync('src/components/CartaResguardoPrint.jsx', content, 'utf8');
+console.log('Fully replaced CartaResguardoPrint');
