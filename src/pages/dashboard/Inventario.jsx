@@ -23,7 +23,7 @@ const generateCodeRange = (baseCode, quantity) => {
   const qty = Number(quantity) || 1;
   if (qty <= 1) return { codes: [baseCode], display: baseCode };
 
-  // Intentar encontrar un n├║mero al final del c├│digo (ej. "INV-001", "INV-100", "B-5" o "002")
+  // Intentar encontrar un número al final del código (ej. "INV-001", "INV-100", "B-5" o "002")
   const match = baseCode.match(/^(.*?)(\d+)$/);
   if (match) {
     const prefix = match[1];
@@ -43,7 +43,7 @@ const generateCodeRange = (baseCode, quantity) => {
       display: `${baseCode} al ${endCode}`
     };
   } else {
-    // Si no termina en n├║mero, agregar sufijo consecutivo -1, -2, etc.
+    // Si no termina en número, agregar sufijo consecutivo -1, -2, etc.
     const codes = [];
     for (let i = 1; i <= qty; i++) {
       codes.push(`${baseCode}-${i}`);
@@ -87,18 +87,18 @@ const getCategoryForArticulo = (nombre) => {
   if (n.includes('compu') || n.includes('pc') || n.includes('cpu') || n.includes('laptop') || n.includes('portatil')) return 'Computadoras';
   if (n.includes('monitor') || n.includes('pantalla')) return 'Monitores y Pantallas';
   if (n.includes('impresora') || n.includes('printer')) return 'Impresoras';
-  if (n.includes('proyector') || n.includes('ca├▒on') || n.includes('canon')) return 'Proyectores';
-  if (n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sill├│n') || n.includes('sillon')) return 'Siller├¡a';
-  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tabl├│n') || n.includes('pupitre')) return 'Mesas y Escritorios';
+  if (n.includes('proyector') || n.includes('cañon') || n.includes('canon')) return 'Proyectores';
+  if (n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sillón') || n.includes('sillon')) return 'Sillería';
+  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tablón') || n.includes('pupitre')) return 'Mesas y Escritorios';
   if (n.includes('libro') || n.includes('diccionario') || n.includes('enciclopedia')) return 'Libros';
-  if (n.includes('tv') || n.includes('televisi├│n') || n.includes('televisor')) return 'Televisores';
+  if (n.includes('tv') || n.includes('televisión') || n.includes('televisor')) return 'Televisores';
   if (n.includes('bocina') || n.includes('altavoz') || n.includes('sonido') || n.includes('audio') || n.includes('microfono')) return 'Equipo de Audio';
-  if (n.includes('teclado') || n.includes('mouse') || n.includes('raton')) return 'Perif├®ricos';
+  if (n.includes('teclado') || n.includes('mouse') || n.includes('raton')) return 'Periféricos';
   if (n.includes('servidor') || n.includes('switch') || n.includes('router') || n.includes('red')) return 'Equipo de Red';
-  if (n.includes('telefono') || n.includes('celular') || n.includes('smartphone')) return 'Telefon├¡a';
+  if (n.includes('telefono') || n.includes('celular') || n.includes('smartphone')) return 'Telefonía';
   if (n.includes('tablet') || n.includes('ipad')) return 'Tablets';
   if (n.includes('archivero') || n.includes('gaveta') || n.includes('estante') || n.includes('librero') || n.includes('locker') || n.includes('casillero')) return 'Archiveros y Estantes';
-  if (n.includes('pizarr├│n') || n.includes('pintarr├│n') || n.includes('pizarron') || n.includes('pintarron')) return 'Pizarrones';
+  if (n.includes('pizarrón') || n.includes('pintarrón') || n.includes('pizarron') || n.includes('pintarron')) return 'Pizarrones';
   if (n.includes('ventilador') || n.includes('abanico')) return 'Ventiladores';
   if (n.includes('aire') || n.includes('minisplit') || n.includes('clima')) return 'Aires Acondicionados';
   
@@ -110,18 +110,18 @@ const getIconForArticulo = (nombre) => {
   if (n.includes('compu') || n.includes('pc') || n.includes('cpu') || n.includes('laptop') || n.includes('portatil')) return <Cpu className="w-5 h-5" />;
   if (n.includes('monitor') || n.includes('pantalla')) return <Monitor className="w-5 h-5" />;
   if (n.includes('impresora') || n.includes('printer')) return <Printer className="w-5 h-5" />;
-  if (n.includes('proyector') || n.includes('ca├▒on') || n.includes('canon')) return <Projector className="w-5 h-5" />;
-  if (n.includes('siller├¡a') || n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sill├│n')) return <Armchair className="w-5 h-5" />;
-  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tabl├│n') || n.includes('pupitre')) return <Box className="w-5 h-5" />;
+  if (n.includes('proyector') || n.includes('cañon') || n.includes('canon')) return <Projector className="w-5 h-5" />;
+  if (n.includes('sillería') || n.includes('silla') || n.includes('banco') || n.includes('butaca') || n.includes('asiento') || n.includes('sofa') || n.includes('sillón')) return <Armchair className="w-5 h-5" />;
+  if (n.includes('mesa') || n.includes('escritorio') || n.includes('tablón') || n.includes('pupitre')) return <Box className="w-5 h-5" />;
   if (n.includes('libro') || n.includes('diccionario') || n.includes('enciclopedia')) return <BookOpen className="w-5 h-5" />;
-  if (n.includes('tv') || n.includes('televisi├│n') || n.includes('televisor')) return <Tv className="w-5 h-5" />;
+  if (n.includes('tv') || n.includes('televisión') || n.includes('televisor')) return <Tv className="w-5 h-5" />;
   if (n.includes('audio') || n.includes('bocina') || n.includes('altavoz') || n.includes('sonido') || n.includes('microfono')) return <Speaker className="w-5 h-5" />;
-  if (n.includes('perif├®ricos') || n.includes('teclado') || n.includes('mouse') || n.includes('raton')) return <Keyboard className="w-5 h-5" />;
+  if (n.includes('periféricos') || n.includes('teclado') || n.includes('mouse') || n.includes('raton')) return <Keyboard className="w-5 h-5" />;
   if (n.includes('red') || n.includes('servidor') || n.includes('switch') || n.includes('router')) return <Server className="w-5 h-5" />;
-  if (n.includes('telefon├¡a') || n.includes('telefono') || n.includes('celular') || n.includes('smartphone')) return <Smartphone className="w-5 h-5" />;
+  if (n.includes('telefonía') || n.includes('telefono') || n.includes('celular') || n.includes('smartphone')) return <Smartphone className="w-5 h-5" />;
   if (n.includes('tablet') || n.includes('ipad')) return <Tablet className="w-5 h-5" />;
   if (n.includes('archivero') || n.includes('gaveta') || n.includes('estante') || n.includes('librero')) return <Archive className="w-5 h-5" />;
-  if (n.includes('pizarr├│n') || n.includes('pintarr├│n') || n.includes('pizarron')) return <PenTool className="w-5 h-5" />;
+  if (n.includes('pizarrón') || n.includes('pintarrón') || n.includes('pizarron')) return <PenTool className="w-5 h-5" />;
   
   return <Box className="w-5 h-5" />;
 };
@@ -153,45 +153,45 @@ export default function Inventario() {
   
   const materiasPorGrado = {
     '1er Grado': [
-      { id: 'espanol1', name: 'Espa├▒ol I' },
-      { id: 'ingles1', name: 'Ingl├®s I' },
+      { id: 'espanol1', name: 'Español I' },
+      { id: 'ingles1', name: 'Inglés I' },
       { id: 'artes1', name: 'Artes I' },
-      { id: 'matematicas1', name: 'Matem├íticas I' },
-      { id: 'biologia', name: 'Ciencias I (Biolog├¡a)' },
-      { id: 'geografia', name: 'Geograf├¡a' },
+      { id: 'matematicas1', name: 'Matemáticas I' },
+      { id: 'biologia', name: 'Ciencias I (Biología)' },
+      { id: 'geografia', name: 'Geografía' },
       { id: 'historia1', name: 'Historia I' },
-      { id: 'fce1', name: 'Formaci├│n C├¡vica y ├ëtica I' },
-      { id: 'tecnologia1', name: 'Tecnolog├¡a I' },
-      { id: 'educfisica1', name: 'Educaci├│n F├¡sica I' }
+      { id: 'fce1', name: 'Formación Cívica y Ética I' },
+      { id: 'tecnologia1', name: 'Tecnología I' },
+      { id: 'educfisica1', name: 'Educación Física I' }
     ],
     '2do Grado': [
-      { id: 'espanol2', name: 'Espa├▒ol II' },
-      { id: 'ingles2', name: 'Ingl├®s II' },
+      { id: 'espanol2', name: 'Español II' },
+      { id: 'ingles2', name: 'Inglés II' },
       { id: 'artes2', name: 'Artes II' },
-      { id: 'matematicas2', name: 'Matem├íticas II' },
-      { id: 'fisica', name: 'Ciencias II (F├¡sica)' },
+      { id: 'matematicas2', name: 'Matemáticas II' },
+      { id: 'fisica', name: 'Ciencias II (Física)' },
       { id: 'historia2', name: 'Historia II' },
-      { id: 'fce2', name: 'Formaci├│n C├¡vica y ├ëtica II' },
-      { id: 'tecnologia2', name: 'Tecnolog├¡a II' },
-      { id: 'educfisica2', name: 'Educaci├│n F├¡sica II' }
+      { id: 'fce2', name: 'Formación Cívica y Ética II' },
+      { id: 'tecnologia2', name: 'Tecnología II' },
+      { id: 'educfisica2', name: 'Educación Física II' }
     ],
     '3er Grado': [
-      { id: 'espanol3', name: 'Espa├▒ol III' },
-      { id: 'ingles3', name: 'Ingl├®s III' },
+      { id: 'espanol3', name: 'Español III' },
+      { id: 'ingles3', name: 'Inglés III' },
       { id: 'artes3', name: 'Artes III' },
-      { id: 'matematicas3', name: 'Matem├íticas III' },
-      { id: 'quimica', name: 'Ciencias III (Qu├¡mica)' },
+      { id: 'matematicas3', name: 'Matemáticas III' },
+      { id: 'quimica', name: 'Ciencias III (Química)' },
       { id: 'historia3', name: 'Historia III' },
-      { id: 'fce3', name: 'Formaci├│n C├¡vica y ├ëtica III' },
-      { id: 'tecnologia3', name: 'Tecnolog├¡a III' },
-      { id: 'educfisica3', name: 'Educaci├│n F├¡sica III' }
+      { id: 'fce3', name: 'Formación Cívica y Ética III' },
+      { id: 'tecnologia3', name: 'Tecnología III' },
+      { id: 'educfisica3', name: 'Educación Física III' }
     ]
   };
 
   const getFailedSubjects = (student) => {
     if (!student) return [];
     
-    // Si es irregular o egresado irregular, su grado real para materias podr├¡a ser el anterior
+    // Si es irregular o egresado irregular, su grado real para materias podría ser el anterior
     // Pero en ControlEscolar asumen student.grado. Limpiaremos "(Irregular)" si lo tiene
     let gradeKey = student.grado;
     if (gradeKey?.includes('1er Grado')) gradeKey = '1er Grado';
@@ -262,7 +262,7 @@ export default function Inventario() {
         pagoInscripcion: true, 
         pagoFecha: serverTimestamp() 
       });
-      toast.success("Pago de inscripci├│n registrado exitosamente");
+      toast.success("Pago de inscripción registrado exitosamente");
     } catch (e) {
       console.error(e);
       toast.error("Error al registrar el pago");
@@ -274,7 +274,7 @@ export default function Inventario() {
   const [selectedItems, setSelectedItems] = useState([]); // Array de IDs seleccionados
   const [showScannerModal, setShowScannerModal] = useState(false);
 
-  // Estados para b├║squeda y filtrado de inventario
+  // Estados para búsqueda y filtrado de inventario
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [locationFilter, setLocationFilter] = useState('Todos');
@@ -286,7 +286,7 @@ export default function Inventario() {
 
     // Efecto para Pagos Administrativos y Extraordinarios
 
-  // L├│gica de Filtros y Combinaci├│n de Ingresos
+  // Lógica de Filtros y Combinación de Ingresos
   const todosLosPagosGenerales = [
     ...pagosRecientes.map(p => ({ ...p, tipoIngreso: 'sistema' })),
     ...pagosAdmin.map(p => ({ 
@@ -348,7 +348,7 @@ export default function Inventario() {
       
       const conceptosFiltrados = pagoFormData.detalles.filter(d => d.concepto.trim() !== '' && parseFloat(d.monto) >= 0 && d.monto !== '');
       if(!pagoFormData.nombre || conceptosFiltrados.length === 0) {
-        toast.error('Llena todos los campos v├ílidos (concepto y monto).');
+        toast.error('Llena todos los campos válidos (concepto y monto).');
         return;
       }
       setIsSubmitting(true);
@@ -390,7 +390,7 @@ export default function Inventario() {
       'Alumno/Persona': p.alumno || p.nombre || '',
       'Concepto': p.concepto || '',
       'Monto': p.monto || '',
-      'M├®todo': p.metodo || 'Efectivo',
+      'Método': p.metodo || 'Efectivo',
       'Fecha': p.pagoFecha?.toDate ? p.pagoFecha.toDate().toLocaleDateString() : new Date(p.pagoFecha || new Date()).toLocaleDateString()
     }));
     
@@ -412,7 +412,7 @@ export default function Inventario() {
     if (!name) return 'ART';
     const cleanName = name
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
-      .replace(/[^a-zA-Z\s]/g, "") // Quitar n├║meros y caracteres especiales
+      .replace(/[^a-zA-Z\s]/g, "") // Quitar números y caracteres especiales
       .trim()
       .toUpperCase();
     
@@ -455,13 +455,13 @@ export default function Inventario() {
   const migrarCodigos = async () => {
     try {
       setIsSubmitting(true);
-      toast.loading("Migrando c├│digos antiguos...", { id: 'migrar' });
+      toast.loading("Migrando códigos antiguos...", { id: 'migrar' });
       
       const toUpdate = inventario.filter(item => item.codigo && item.codigo.includes('INV-AUTO-'));
       const toUpdateResg = resguardos.filter(r => r.articulos && r.articulos.some(art => art.codigo && art.codigo.includes('INV-AUTO-')));
       
       if (toUpdate.length === 0 && toUpdateResg.length === 0) {
-        toast.success("No hay c├│digos antiguos para migrar.", { id: 'migrar' });
+        toast.success("No hay códigos antiguos para migrar.", { id: 'migrar' });
         setIsSubmitting(false);
         return;
       }
@@ -494,7 +494,7 @@ export default function Inventario() {
         actualizados++;
       }
       
-      // 2. Migrar resguardos (actualizando los c├│digos en el historial)
+      // 2. Migrar resguardos (actualizando los códigos en el historial)
       for (const res of toUpdateResg) {
         let changed = false;
         const newArticulos = res.articulos.map(art => {
@@ -515,7 +515,7 @@ export default function Inventario() {
       toast.success(`Se actualizaron ${actualizados} registros exitosamente.`, { id: 'migrar' });
     } catch (e) {
       console.error(e);
-      toast.error("Error al migrar c├│digos.", { id: 'migrar' });
+      toast.error("Error al migrar códigos.", { id: 'migrar' });
     } finally {
       setIsSubmitting(false);
     }
@@ -531,7 +531,7 @@ export default function Inventario() {
     return () => unsubscribeRes();
   }, []);
 
-  // Extraer ubicaciones ├║nicas din├ímicamente
+  // Extraer ubicaciones únicas dinámicamente
   const ubicacionesUnicas = [...new Set(inventario.map(item => item.ubicacion).filter(Boolean))].sort();
 
   // Filtrar el inventario de acuerdo con los criterios seleccionados
@@ -558,7 +558,7 @@ export default function Inventario() {
         ubs.add(item.ubicacion.trim());
       }
     });
-    // Extraer de las ├íreas de resguardo directamente
+    // Extraer de las áreas de resguardo directamente
     resguardos.forEach(res => {
       if (res.areaResguardante && typeof res.areaResguardante === 'string' && res.areaResguardante.trim()) {
          ubs.add(res.areaResguardante.trim());
@@ -618,10 +618,10 @@ export default function Inventario() {
     if (e && e.preventDefault) e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-    const toastId = toast.loading('Guardando informaci├│n...');
+    const toastId = toast.loading('Guardando información...');
     let dataToPrint = { ...formData };
     
-    // Guardar en base de datos si es recepci├│n
+    // Guardar en base de datos si es recepción
     if (modalOpen === 'recepcion') {
       try {
         const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca);
@@ -642,7 +642,7 @@ export default function Inventario() {
 
           let autoCodeOffsets = {};
           const recepcionArticulos = [];
-          // 2. Guardar cada art├¡culo en el inventario
+          // 2. Guardar cada artículo en el inventario
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
             const qty = Number(art.cantidad) || 1;
@@ -661,7 +661,7 @@ export default function Inventario() {
                 modelo: art.modelo || '',
                 serie: art.serie || '',
                 observaciones: art.observaciones || '',
-                ubicacion: 'Bodega Contralor├¡a',
+                ubicacion: 'Bodega Contraloría',
                 cantidad: 1,
                 estado: art.estado || 'Nuevo',
                 fechaIngreso: new Date().toISOString()
@@ -697,7 +697,7 @@ export default function Inventario() {
           });
           
           let autoCodeOffsets = {};
-          // 1. Crear art├¡culos consolidados para guardar en el Acta de Resguardo y para imprimir
+          // 1. Crear artículos consolidados para guardar en el Acta de Resguardo y para imprimir
           const resguardoArticulos = validItems.map((art, idx) => {
             const qty = Number(art.cantidad) || 1;
             let baseCode = art.codigo || art.inventario || '';
@@ -715,7 +715,7 @@ export default function Inventario() {
               descripcion: art.descripcion || art.articulo || '',
               marca: art.marca || '',
               serie: art.serie || '',
-              codigo: display, // Rangos consolidados para la impresi├│n y visualizaci├│n
+              codigo: display, // Rangos consolidados para la impresión y visualización
               estado: art.estado || 'Bueno'
             };
           });
@@ -774,12 +774,12 @@ export default function Inventario() {
             await addDoc(collection(db, 'resguardos'), resguardoDoc);
           }
 
-          // 2. Guardar o actualizar art├¡culos en el Inventario General INDIVIDUALMENTE
+          // 2. Guardar o actualizar artículos en el Inventario General INDIVIDUALMENTE
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
             
             if (art.id) {
-              // Si ya existe en el inventario, actualizamos su ubicaci├│n y estado
+              // Si ya existe en el inventario, actualizamos su ubicación y estado
               const invItem = inventario.find(i => i.id === art.id);
               const currentHistorial = invItem?.historial || [];
               const itemRef = doc(db, 'inventario', art.id);
@@ -793,13 +793,13 @@ export default function Inventario() {
                 observaciones: art.observaciones || invItem?.observaciones || '',
                 historial: [...currentHistorial, {
                   fecha: new Date().toISOString(),
-                  accion: "Asignaci├│n de Resguardo",
+                  accion: "Asignación de Resguardo",
                   detalle: `Asignado a ${formData.nombreResguardante} (Folio ${formData.folio || 'S/F'}).`,
-                  usuario: "Contralor├¡a"
+                  usuario: "Contraloría"
                 }]
               });
             } else if (formData.guardarEnInventario) {
-              // Si no existe y se marc├│ "Guardar en Inventario", lo desglosamos y guardamos individualmente
+              // Si no existe y se marcó "Guardar en Inventario", lo desglosamos y guardamos individualmente
               const baseCode = art._generatedBaseCode || art.codigo || art.inventario || `INV-RESG-${Date.now().toString().slice(-4)}${i}`;
               const qty = Number(art.cantidad) || 1;
               const { codes } = generateCodeRange(baseCode, qty);
@@ -821,7 +821,7 @@ export default function Inventario() {
               }
             }
           }
-          // Usar art├¡culos consolidados en la impresi├│n
+          // Usar artículos consolidados en la impresión
           dataToPrint.articulos = typeof finalResguardoArticulos !== 'undefined' ? finalResguardoArticulos : resguardoArticulos;
         }
       } catch (error) {
@@ -836,12 +836,12 @@ export default function Inventario() {
       setPrintData(dataToPrint);
       setPrintMode(modalOpen);
       setModalOpen(null);
-      toast.success("┬íPreparando documento para impresi├│n!", { id: toastId });
+      toast.success("¡Preparando documento para impresión!", { id: toastId });
       setTimeout(() => { window.print(); setIsSubmitting(false); }, 500);
     } else {
       setModalOpen(null);
       setIsSubmitting(false);
-      toast.success("┬íGuardado exitosamente en la base de datos!", { id: toastId });
+      toast.success("¡Guardado exitosamente en la base de datos!", { id: toastId });
     }
   };
 
@@ -851,12 +851,12 @@ export default function Inventario() {
   };
 
   const migrateToInitials = async () => {
-    const confirm = window.confirm("┬┐Deseas re-generar los c├│digos al formato de iniciales (ej. VDT-0001)?");
+    const confirm = window.confirm("¿Deseas re-generar los códigos al formato de iniciales (ej. VDT-0001)?");
     if (!confirm) return;
 
     try {
       setIsSubmitting(true);
-      toast.loading("Migrando c├│digos...", { id: 'migrar' });
+      toast.loading("Migrando códigos...", { id: 'migrar' });
       
       const counters = {};
       const codeMapping = {}; 
@@ -948,36 +948,36 @@ export default function Inventario() {
       
       await batch.commit();
       
-      toast.success(`Se actualizaron ${updatedInv} art├¡culos y ${updatedResg} resguardos.`, { id: 'migrar' });
+      toast.success(`Se actualizaron ${updatedInv} artículos y ${updatedResg} resguardos.`, { id: 'migrar' });
       setIsSubmitting(false);
     } catch (err) {
       console.error(err);
-      toast.error("Error al actualizar c├│digos.", { id: 'migrar' });
+      toast.error("Error al actualizar códigos.", { id: 'migrar' });
       setIsSubmitting(false);
     }
   };
 
   const cleanOrphanedItems = async () => {
-    const confirm = window.confirm("┬┐Deseas buscar y eliminar del Inventario los bienes auto-generados que ya no tienen Acta de Resguardo (bienes hu├®rfanos)?\n\nEsto es ├║til si eliminaste un acta pero los bienes se quedaron 'atrapados' en el sistema.");
+    const confirm = window.confirm("¿Deseas buscar y eliminar del Inventario los bienes auto-generados que ya no tienen Acta de Resguardo (bienes huérfanos)?\n\nEsto es útil si eliminaste un acta pero los bienes se quedaron 'atrapados' en el sistema.");
     if (!confirm) return;
 
     try {
       setIsSubmitting(true);
-      toast.loading("Buscando bienes hu├®rfanos...", { id: 'clean' });
+      toast.loading("Buscando bienes huérfanos...", { id: 'clean' });
       const batch = writeBatch(db);
       let deletedCount = 0;
 
       for (const item of inventario) {
-        // Solo aplica a c├│digos autom├íticos (ej. VDT-0001, INV-AUTO-001, INV-RESG-123)
+        // Solo aplica a códigos automáticos (ej. VDT-0001, INV-AUTO-001, INV-RESG-123)
         const isAutoGenerated = /^[A-Z]{3}-\d+$/.test(item.codigo) || 
                                item.codigo?.startsWith('INV-AUTO-') || 
                                item.codigo?.startsWith('INV-RESG-');
                                
         if (!isAutoGenerated) continue;
-        // Si est├ín en Bodega, son libres y v├ílidos
-        if (item.ubicacion === 'Bodega Contralor├¡a') continue;
+        // Si están en Bodega, son libres y válidos
+        if (item.ubicacion === 'Bodega Contraloría') continue;
 
-        // Comprobar si su c├│digo existe en los rangos de alg├║n resguardo
+        // Comprobar si su código existe en los rangos de algún resguardo
         let foundInResguardo = false;
         for (const res of resguardos) {
           if (res.articulos) {
@@ -1000,7 +1000,7 @@ export default function Inventario() {
 
       if (deletedCount > 0) {
         await batch.commit();
-        toast.success(`Se eliminaron ${deletedCount} bienes fantasma/hu├®rfanos.`, { id: 'clean' });
+        toast.success(`Se eliminaron ${deletedCount} bienes fantasma/huérfanos.`, { id: 'clean' });
       } else {
         toast.success("Inventario limpio. No se encontraron bienes fantasma.", { id: 'clean' });
       }
@@ -1025,28 +1025,28 @@ export default function Inventario() {
           fecha: new Date().toISOString(),
           accion: "Cambio de Estado",
           detalle: `Estado modificado manualmente de '${originalItem.estado}' a '${editingItem.estado}'.`,
-          usuario: "Contralor├¡a"
+          usuario: "Contraloría"
         });
       }
       if (originalItem && originalItem.ubicacion !== editingItem.ubicacion) {
         newHistorial.push({
           fecha: new Date().toISOString(),
-          accion: "Cambio de Ubicaci├│n",
+          accion: "Cambio de Ubicación",
           detalle: `Movido manualmente de '${originalItem.ubicacion}' a '${editingItem.ubicacion}'.`,
-          usuario: "Contralor├¡a"
+          usuario: "Contraloría"
         });
       }
 
       if (originalItem && originalItem.codigo !== editingItem.codigo) {
         if (inventario.some(i => i.codigo === editingItem.codigo && i.id !== editingItem.id)) {
-          toast.error(`El c├│digo de inventario ${editingItem.codigo} ya est├í en uso.`);
+          toast.error(`El código de inventario ${editingItem.codigo} ya está en uso.`);
           return;
         }
         newHistorial.push({
           fecha: new Date().toISOString(),
-          accion: "Cambio de C├│digo de Inventario",
-          detalle: `C├│digo modificado de '${originalItem.codigo}' a '${editingItem.codigo}'.`,
-          usuario: "Contralor├¡a"
+          accion: "Cambio de Código de Inventario",
+          detalle: `Código modificado de '${originalItem.codigo}' a '${editingItem.codigo}'.`,
+          usuario: "Contraloría"
         });
       }
 
@@ -1065,7 +1065,7 @@ export default function Inventario() {
         historial: newHistorial
       });
 
-      // Sincronizaci├│n con Actas de Resguardo
+      // Sincronización con Actas de Resguardo
       try {
         if (originalItem && originalItem.ubicacion !== editingItem.ubicacion) {
           if (originalItem.ubicacion) {
@@ -1093,7 +1093,7 @@ export default function Inventario() {
             }
           }
         } else {
-          // Si la ubicaci├│n no cambi├│, actualizar el item dentro del resguardo si existe
+          // Si la ubicación no cambió, actualizar el item dentro del resguardo si existe
           if (editingItem.ubicacion) {
             const currRes = resguardos.find(r => r.areaResguardante === editingItem.ubicacion);
             if (currRes && currRes.articulos) {
@@ -1138,18 +1138,18 @@ export default function Inventario() {
       toast.success("Cambios guardados correctamente.");
     } catch (error) {
       console.error("Error al actualizar:", error);
-      toast.error("Hubo un error al actualizar el art├¡culo.");
+      toast.error("Hubo un error al actualizar el artículo.");
     }
   };
 
   const handleDeleteClick = async (id) => {
-    if (window.confirm("┬┐Est├ís seguro de eliminar este art├¡culo del inventario de forma permanente?")) {
+    if (window.confirm("¿Estás seguro de eliminar este artículo del inventario de forma permanente?")) {
       toast.promise(
         deleteDoc(doc(db, 'inventario', id)),
         {
           loading: 'Eliminando...',
-          success: 'Art├¡culo eliminado correctamente.',
-          error: 'Error al eliminar el art├¡culo.'
+          success: 'Artículo eliminado correctamente.',
+          error: 'Error al eliminar el artículo.'
         }
       );
     }
@@ -1157,22 +1157,22 @@ export default function Inventario() {
 
   const handleBulkDelete = async () => {
     if (selectedItems.length === 0) return;
-    if (window.confirm(`┬┐Est├ís seguro de eliminar ${selectedItems.length} art├¡culos seleccionados de forma permanente?`)) {
+    if (window.confirm(`¿Estás seguro de eliminar ${selectedItems.length} artículos seleccionados de forma permanente?`)) {
       try {
         const promises = selectedItems.map(id => deleteDoc(doc(db, 'inventario', id)));
         await Promise.all(promises);
-        setSelectedItems([]); // Limpiar selecci├│n tras borrar
-        toast.success("Art├¡culos eliminados correctamente.");
+        setSelectedItems([]); // Limpiar selección tras borrar
+        toast.success("Artículos eliminados correctamente.");
       } catch (error) {
-        console.error("Error en eliminaci├│n masiva:", error);
-        toast.error("Hubo un error al eliminar los art├¡culos seleccionados.");
+        console.error("Error en eliminación masiva:", error);
+        toast.error("Hubo un error al eliminar los artículos seleccionados.");
       }
     }
   };
 
   const handleBulkStatusChange = async (newStatus) => {
     if (selectedItems.length === 0) return;
-    if (window.confirm(`┬┐Est├ís seguro de marcar ${selectedItems.length} art├¡culos seleccionados como '${newStatus}'?`)) {
+    if (window.confirm(`¿Estás seguro de marcar ${selectedItems.length} artículos seleccionados como '${newStatus}'?`)) {
       const toastId = toast.loading(`Actualizando a ${newStatus}...`);
       try {
         const promises = selectedItems.map(async (id) => {
@@ -1186,17 +1186,17 @@ export default function Inventario() {
                 fecha: new Date().toISOString(),
                 accion: "Cambio de Estado Masivo",
                 detalle: `Estado modificado de '${originalItem.estado}' a '${newStatus}'.`,
-                usuario: "Contralor├¡a"
+                usuario: "Contraloría"
               }]
             });
           }
         });
         await Promise.all(promises);
         setSelectedItems([]);
-        toast.success(`Art├¡culos actualizados a ${newStatus}.`, { id: toastId });
+        toast.success(`Artículos actualizados a ${newStatus}.`, { id: toastId });
       } catch (error) {
-        console.error("Error en actualizaci├│n masiva:", error);
-        toast.error("Hubo un error al actualizar los art├¡culos.", { id: toastId });
+        console.error("Error en actualización masiva:", error);
+        toast.error("Hubo un error al actualizar los artículos.", { id: toastId });
       }
     }
   };
@@ -1250,7 +1250,7 @@ export default function Inventario() {
       const originalResguardo = resguardos.find(r => r.id === editingResguardo.id);
       const originalArticulos = originalResguardo ? originalResguardo.articulos || [] : [];
       
-      // Expandir c├│digos que YA pertenecen a este resguardo para no contarlos como duplicados
+      // Expandir códigos que YA pertenecen a este resguardo para no contarlos como duplicados
       let codesBelongingToThisResguardo = new Set();
       for (const origArt of originalArticulos) {
         if (origArt.codigo) {
@@ -1267,7 +1267,7 @@ export default function Inventario() {
            const { codes } = generateCodeRange(baseCode, qty);
            for (const code of codes) {
              if (inventario.some(i => i.codigo === code && i.id !== art.id && !codesBelongingToThisResguardo.has(code))) {
-               toast.error(`El c├│digo de inventario ${code} ya existe en el sistema. Usa otro folio.`);
+               toast.error(`El código de inventario ${code} ya existe en el sistema. Usa otro folio.`);
                return;
              }
            }
@@ -1281,7 +1281,7 @@ export default function Inventario() {
       );
 
       let autoCodeOffsets = {};
-      // Asegurar que todos tengan un c├│digo, auto-generando si es necesario
+      // Asegurar que todos tengan un código, auto-generando si es necesario
       const articulosProcesados = validItems.map((art, idx) => {
         const qty = Number(art.cantidad) || 1;
         let finalCode = art.codigo || art.inventario || '';
@@ -1317,7 +1317,7 @@ export default function Inventario() {
         })
       });
 
-      // Procesar art├¡culos que contin├║an en el resguardo
+      // Procesar artículos que continúan en el resguardo
       for (const art of articulosProcesados) {
         const origArt = art._uid !== undefined ? originalArticulos[art._uid] : null;
         const oldCode = origArt ? (origArt.codigo || origArt.inventario) : null;
@@ -1344,25 +1344,25 @@ export default function Inventario() {
               ubicacion: editingResguardo.areaResguardante || 'En resguardo'
             };
             
-            // Si cambi├│ el c├│digo, actualizarlo
+            // Si cambió el código, actualizarlo
             if (invItem.codigo !== code) {
               updateData.codigo = code;
               updateData.historial = [...currentHistorial, {
                 fecha: new Date().toISOString(),
-                accion: "Cambio de C├│digo",
-                detalle: `C├│digo actualizado de '${invItem.codigo}' a '${code}' en revisi├│n de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
-                usuario: "Contralor├¡a"
+                accion: "Cambio de Código",
+                detalle: `Código actualizado de '${invItem.codigo}' a '${code}' en revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
+                usuario: "Contraloría"
               }];
             }
             
-            // Si cambi├│ el estado, registrar en historial
+            // Si cambió el estado, registrar en historial
             if (invItem.estado !== (art.estado || 'Bueno')) {
               updateData.estado = art.estado || 'Bueno';
               updateData.historial = [...(updateData.historial || currentHistorial), {
                 fecha: new Date().toISOString(),
                 accion: "Cambio de Estado",
-                detalle: `Estado actualizado a '${updateData.estado}' durante revisi├│n de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
-                usuario: "Contralor├¡a"
+                detalle: `Estado actualizado a '${updateData.estado}' durante revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
+                usuario: "Contraloría"
               }];
             } else {
                updateData.estado = art.estado || 'Bueno';
@@ -1370,7 +1370,7 @@ export default function Inventario() {
             
             await updateDoc(itemRef, updateData);
           } else {
-            // Si el art├¡culo no existe en el cat├ílogo, lo creamos
+            // Si el artículo no existe en el catálogo, lo creamos
             await addDoc(collection(db, 'inventario'), {
               codigo: code,
               articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
@@ -1391,19 +1391,19 @@ export default function Inventario() {
              const itemRef = doc(db, 'inventario', invItem.id);
              const currentHistorial = invItem.historial || [];
              await updateDoc(itemRef, {
-               ubicacion: 'Bodega Contralor├¡a',
+               ubicacion: 'Bodega Contraloría',
                historial: [...currentHistorial, {
                  fecha: new Date().toISOString(),
-                 accion: "Liberaci├│n por Edici├│n de Resguardo",
+                 accion: "Liberación por Edición de Resguardo",
                  detalle: `Liberado a bodega al reducir cantidad en resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
-                 usuario: "Contralor├¡a"
+                 usuario: "Contraloría"
                }]
              });
           }
         }
       }
 
-      // Procesar art├¡culos que fueron ELIMINADOS del resguardo (Liberados)
+      // Procesar artículos que fueron ELIMINADOS del resguardo (Liberados)
       for (const art of removedItems) {
         const targetCode = art.codigo || art.inventario;
         const expandedCodes = expandCodeRange(targetCode);
@@ -1415,12 +1415,12 @@ export default function Inventario() {
             const currentHistorial = invItem.historial || [];
             
             await updateDoc(itemRef, {
-              ubicacion: 'Bodega Contralor├¡a',
+              ubicacion: 'Bodega Contraloría',
               historial: [...currentHistorial, {
                 fecha: new Date().toISOString(),
                 accion: "Retorno a Bodega",
                 detalle: `Liberado del resguardo de ${originalResguardo.nombreResguardante} (Folio ${originalResguardo.folio || 'S/F'}).`,
-                usuario: "Contralor├¡a"
+                usuario: "Contraloría"
               }]
             });
           }
@@ -1432,7 +1432,7 @@ export default function Inventario() {
 
       toast.promise(updatePromise(), {
         loading: 'Guardando cambios del resguardo...',
-        success: '┬íResguardo actualizado correctamente!',
+        success: '¡Resguardo actualizado correctamente!',
         error: 'Error al actualizar el resguardo'
       });
 
@@ -1442,16 +1442,16 @@ export default function Inventario() {
   };
 
   const handleDeleteResguardoClick = async (res) => {
-    const confirmacion = window.confirm(`┬┐Est├ís seguro de eliminar el resguardo con Folio ${res.folio || 'S/F'} de ${res.nombreResguardante}?
+    const confirmacion = window.confirm(`¿Estás seguro de eliminar el resguardo con Folio ${res.folio || 'S/F'} de ${res.nombreResguardante}?
 
-Esta acci├│n no se puede deshacer.`);
+Esta acción no se puede deshacer.`);
     if (!confirmacion) return;
 
-    const eliminarArticulos = window.confirm("┬┐Deseas ELIMINAR PERMANENTEMENTE los art├¡culos de este resguardo del Inventario General de la escuela?\n\n(Aceptar = Borrar mobiliario del sistema, Cancelar = Mantenerlos en el sistema)");
+    const eliminarArticulos = window.confirm("¿Deseas ELIMINAR PERMANENTEMENTE los artículos de este resguardo del Inventario General de la escuela?\n\n(Aceptar = Borrar mobiliario del sistema, Cancelar = Mantenerlos en el sistema)");
     
     let liberarArticulos = false;
     if (!eliminarArticulos) {
-      liberarArticulos = window.confirm("Como decidiste no eliminarlos, ┬┐deseas regresarlos a la 'Bodega Contralor├¡a' como art├¡culos libres?");
+      liberarArticulos = window.confirm("Como decidiste no eliminarlos, ¿deseas regresarlos a la 'Bodega Contraloría' como artículos libres?");
     }
 
     const deletePromise = async () => {
@@ -1478,12 +1478,12 @@ Esta acci├│n no se puede deshacer.`);
               const itemRef = doc(db, 'inventario', invItem.id);
               const currentHistorial = invItem.historial || [];
               await updateDoc(itemRef, {
-                ubicacion: 'Bodega Contralor├¡a',
+                ubicacion: 'Bodega Contraloría',
                 historial: [...currentHistorial, {
                   fecha: new Date().toISOString(),
                   accion: "Retorno a Bodega",
                   detalle: `Resguardo eliminado. Liberado de ${res.nombreResguardante} (Folio ${res.folio || 'S/F'}).`,
-                  usuario: "Contralor├¡a"
+                  usuario: "Contraloría"
                 }]
               });
             }
@@ -1494,8 +1494,8 @@ Esta acci├│n no se puede deshacer.`);
     };
 
     toast.promise(deletePromise(), {
-      loading: 'Procesando la eliminaci├│n del acta y sus bienes...',
-      success: '┬íEl acta y los bienes seleccionados fueron eliminados correctamente!',
+      loading: 'Procesando la eliminación del acta y sus bienes...',
+      success: '¡El acta y los bienes seleccionados fueron eliminados correctamente!',
       error: 'Hubo un error al eliminar el resguardo.'
     });
   };
@@ -1519,17 +1519,17 @@ Esta acci├│n no se puede deshacer.`);
 
   const handleExportCSV = () => {
     if (filteredInventario.length === 0) {
-      alert("No hay art├¡culos en la lista filtrada para exportar.");
+      alert("No hay artículos en la lista filtrada para exportar.");
       return;
     }
     
     const dataToExport = filteredInventario.map(item => ({
-      'C├│digo de Inventario': item.codigo || '',
-      'Art├¡culo/Descripci├│n': item.articulo || '',
-      'Ubicaci├│n': item.ubicacion || '',
+      'Código de Inventario': item.codigo || '',
+      'Artículo/Descripción': item.articulo || '',
+      'Ubicación': item.ubicacion || '',
       'Cantidad': item.cantidad || 0,
-      'Estado F├¡sico': item.estado || '',
-      'N├║mero de Serie': item.serie || '',
+      'Estado Físico': item.estado || '',
+      'Número de Serie': item.serie || '',
       'Fecha de Ingreso': item.fechaIngreso ? new Date(item.fechaIngreso).toLocaleDateString() : ''
     }));
     
@@ -1537,11 +1537,11 @@ Esta acci├│n no se puede deshacer.`);
     downloadExcelFriendlyCsv(`Inventario_Mobiliario_${new Date().toISOString().split('T')[0]}.csv`, csv);
   };
 
-  // C├ílculo de estad├¡sticas generales del inventario
+  // Cálculo de estadísticas generales del inventario
   const totalArticulos = inventario.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
-  const libres = inventario.filter(i => i.ubicacion === 'Bodega Contralor├¡a').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+  const libres = inventario.filter(i => i.ubicacion === 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
 
-  // Desglose por tipo de art├¡culo (Nuevos vs Usados)
+  // Desglose por tipo de artículo (Nuevos vs Usados)
   const inventarioNuevos = inventario.filter(i => i.estado === 'Nuevo');
   const inventarioUsados = inventario.filter(i => i.estado !== 'Nuevo');
 
@@ -1553,7 +1553,7 @@ Esta acci├│n no se puede deshacer.`);
       const cantidad = Number(item.cantidad) || 0;
       acc[categoria].total += cantidad;
       
-      const nombreExacto = item.articulo ? item.articulo.trim() : 'Sin descripci├│n';
+      const nombreExacto = item.articulo ? item.articulo.trim() : 'Sin descripción';
       acc[categoria].subItems[nombreExacto] = (acc[categoria].subItems[nombreExacto] || 0) + cantidad;
       
       return acc;
@@ -1583,8 +1583,8 @@ Esta acci├│n no se puede deshacer.`);
         <>
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Contralor├¡a</h2>
-          <p className="text-slate-500 text-sm">Control de ingresos (tr├ímites) e inventario del mobiliario escolar.</p>
+          <h2 className="text-2xl font-bold text-slate-800">Contraloría</h2>
+          <p className="text-slate-500 text-sm">Control de ingresos (trámites) e inventario del mobiliario escolar.</p>
         </div>
       </div>
 
@@ -1613,10 +1613,10 @@ Esta acci├│n no se puede deshacer.`);
           <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <h3 className="font-semibold text-slate-700 text-lg">M├│dulo de Ingresos</h3>
+                <h3 className="font-semibold text-slate-700 text-lg">Módulo de Ingresos</h3>
                 <div className="flex gap-2">
                   <button onClick={exportarRelacionIngresos} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 shadow-sm transition-colors">
-                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Exportar Relaci├│n (CSV)
+                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Exportar Relación (CSV)
                   </button>
                   <button onClick={() => setShowPagoAdminModal(true)} className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 shadow-sm transition-colors">
                     <Plus className="w-4 h-4 mr-2" /> Registrar Pago
@@ -1626,7 +1626,7 @@ Esta acci├│n no se puede deshacer.`);
               
               <div className="flex flex-wrap gap-2 mb-4 border-b border-slate-200">
                 <button onClick={() => setActiveIngresoTab('generales')} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeIngresoTab === 'generales' ? 'border-primary-600 text-primary-700 bg-primary-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Ingresos Generales</button>
-                <button onClick={() => setActiveIngresoTab('extraordinarios')} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeIngresoTab === 'extraordinarios' ? 'border-rose-600 text-rose-700 bg-rose-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Ex├ímenes Extraordinarios</button>
+                <button onClick={() => setActiveIngresoTab('extraordinarios')} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeIngresoTab === 'extraordinarios' ? 'border-rose-600 text-rose-700 bg-rose-50/50' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Exámenes Extraordinarios</button>
               </div>
 
               <div className="flex flex-col lg:flex-row gap-4 items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -1792,7 +1792,7 @@ Esta acci├│n no se puede deshacer.`);
                 </h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[{ name: 'Total Hist├│rico', Ingresos: [...pagosRecientes, ...pagosAdmin, ...pagosExtra].reduce((acc, p) => acc + (Number(p.montoNum || p.monto) || 0), 0), Egresos: gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0) }]}>
+                    <BarChart data={[{ name: 'Total Histórico', Ingresos: [...pagosRecientes, ...pagosAdmin, ...pagosExtra].reduce((acc, p) => acc + (Number(p.montoNum || p.monto) || 0), 0), Egresos: gastos.reduce((acc, g) => acc + (Number(g.monto) || 0), 0) }]}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748B'}} />
                       <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748B'}} tickFormatter={(value) => `${value}`} />
@@ -1806,7 +1806,7 @@ Esta acci├│n no se puede deshacer.`);
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-                  <PieChart as PieChartIcon className="w-5 h-5 mr-2 text-slate-500" /> Distribuci├│n de Egresos
+                  <PieChart as PieChartIcon className="w-5 h-5 mr-2 text-slate-500" /> Distribución de Egresos
                 </h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
@@ -1980,7 +1980,7 @@ Esta acci├│n no se puede deshacer.`);
                   </div>
                 </div>
               )) : (
-                <div className="col-span-full py-6 text-center text-slate-500 italic">No hay art├¡culos nuevos registrados.</div>
+                <div className="col-span-full py-6 text-center text-slate-500 italic">No hay artículos nuevos registrados.</div>
               )}
             </div>
           </div>
@@ -2008,7 +2008,7 @@ Esta acci├│n no se puede deshacer.`);
                   </div>
                 </div>
               )) : (
-                <div className="col-span-full py-6 text-center text-slate-500 italic">No hay art├¡culos en uso registrados.</div>
+                <div className="col-span-full py-6 text-center text-slate-500 italic">No hay artículos en uso registrados.</div>
               )}
             </div>
           </div>
@@ -2017,7 +2017,7 @@ Esta acci├│n no se puede deshacer.`);
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
               <div className="mb-3">
-                <h4 className="font-bold text-blue-900 text-lg">Acta de Recepci├│n (Alta)</h4>
+                <h4 className="font-bold text-blue-900 text-lg">Acta de Recepción (Alta)</h4>
                 <p className="text-blue-700 text-xs mt-1">Alta oficial de bienes nuevos o donaciones.</p>
               </div>
               <button onClick={() => openModal('recepcion')} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
@@ -2027,7 +2027,7 @@ Esta acci├│n no se puede deshacer.`);
             <div className="bg-gradient-to-r from-indigo-50 to-orange-50 border border-indigo-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
               <div className="mb-3">
                 <h4 className="font-bold text-indigo-900 text-lg">Carta de Resguardo</h4>
-                <p className="text-indigo-700 text-xs mt-1">Asignar bienes a maestros o ├íreas.</p>
+                <p className="text-indigo-700 text-xs mt-1">Asignar bienes a maestros o áreas.</p>
               </div>
               <button onClick={() => openModal('resguardo')} className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
                 <Printer className="w-4 h-4 mr-2" /> Generar
@@ -2044,10 +2044,10 @@ Esta acci├│n no se puede deshacer.`);
             </div>
           </div>
 
-          {/* BARRA DE B├ÜSQUEDA Y FILTRADO */}
+          {/* BARRA DE BÚSQUEDA Y FILTRADO */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Buscar por Art├¡culo o C├│digo</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Buscar por Artículo o Código</label>
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                 <input 
@@ -2062,10 +2062,10 @@ Esta acci├│n no se puede deshacer.`);
             <div className="w-full md:w-auto flex flex-col sm:flex-row gap-2">
               <button 
                 onClick={migrateToInitials}
-                title="Actualiza los c├│digos al nuevo formato de Iniciales (VDT-0001)."
+                title="Actualiza los códigos al nuevo formato de Iniciales (VDT-0001)."
                 className="w-full md:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 border border-indigo-600 rounded-lg text-sm font-bold shadow-sm transition-colors"
               >
-                Regenerar C├│digos (VDT-0001)
+                Regenerar Códigos (VDT-0001)
               </button>
               
               <button 
@@ -2077,7 +2077,7 @@ Esta acci├│n no se puede deshacer.`);
                 Limpiar Fantasmas
               </button>
             </div>            <div className="w-full md:w-48">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ubicaci├│n</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Ubicación</label>
               <select 
                 className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
                 value={locationFilter} 
@@ -2090,7 +2090,7 @@ Esta acci├│n no se puede deshacer.`);
               </select>
             </div>
             <div className="w-full md:w-48">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Estado F├¡sico</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Estado Físico</label>
               <select 
                 className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
                 value={statusFilter} 
@@ -2107,7 +2107,7 @@ Esta acci├│n no se puede deshacer.`);
 
           <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-              <h3 className="font-semibold text-slate-700">Cat├ílogo de Bienes Activos</h3>
+              <h3 className="font-semibold text-slate-700">Catálogo de Bienes Activos</h3>
               <div className="flex gap-2">
                 {selectedItems.length > 0 && (
                   <>
@@ -2135,7 +2135,7 @@ Esta acci├│n no se puede deshacer.`);
                   <ScanLine className="w-4 h-4 mr-2" /> Escanear Lista (OCR)
                 </button>
                 <button onClick={() => setModalOpen('recepcion')} className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-sm transition-colors">
-                  <Plus className="w-4 h-4 mr-1" /> A├▒adir Art├¡culo
+                  <Plus className="w-4 h-4 mr-1" /> Añadir Artículo
                 </button>
               </div>
             </div>
@@ -2150,11 +2150,11 @@ Esta acci├│n no se puede deshacer.`);
                     onChange={toggleSelectAll}
                   />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">C├│digo</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Art├¡culo</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Código</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículo</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Marca / Modelo</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">No. Serie</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Ubicaci├│n</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Ubicación</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Cantidad</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
@@ -2198,7 +2198,7 @@ Esta acci├│n no se puede deshacer.`);
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="9" className="px-6 py-8 text-center text-slate-500 italic">No se encontraron art├¡culos en el inventario que coincidan con la b├║squeda.</td>
+                    <td colSpan="9" className="px-6 py-8 text-center text-slate-500 italic">No se encontraron artículos en el inventario que coincidan con la búsqueda.</td>
                   </tr>
                 )}
               </tbody>
@@ -2219,7 +2219,7 @@ Esta acci├│n no se puede deshacer.`);
                 <input 
                   type="text" 
                   className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                  placeholder="Ej. Profr. Juan P├®rez, Folio 002..." 
+                  placeholder="Ej. Profr. Juan Pérez, Folio 002..." 
                   value={resguardoSearch} 
                   onChange={e => setResguardoSearch(e.target.value)} 
                 />
@@ -2234,8 +2234,8 @@ Esta acci├│n no se puede deshacer.`);
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Folio</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Fecha</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Resguardante</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">├ürea / Cargo</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Art├¡culos</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Área / Cargo</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículos</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
                 </tr>
               </thead>
@@ -2251,7 +2251,7 @@ Esta acci├│n no se puede deshacer.`);
                     <td className="px-6 py-4 text-sm text-slate-600 font-bold">{r.resguardante || 'Desconocido'}</td>
                     <td className="px-6 py-4 text-sm text-slate-600">{r.area || r.cargo || 'N/A'}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">
-                      {r.articulos ? r.articulos.length : 0} art├¡culos
+                      {r.articulos ? r.articulos.length : 0} artículos
                     </td>
                     <td className="px-6 py-4 text-sm text-right">
                         <button 
@@ -2285,7 +2285,7 @@ Esta acci├│n no se puede deshacer.`);
         <div className={`bg-white rounded-xl shadow-2xl w-full my-8 ${(modalOpen === 'editItem' || modalOpen === 'editResguardo') ? 'max-w-lg' : 'max-w-4xl'}`}>
           <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
             <h3 className="font-bold text-xl text-slate-800">
-              {modalOpen === 'recepcion' ? 'Generar Acta de Recepci├│n' : 
+              {modalOpen === 'recepcion' ? 'Generar Acta de Recepción' : 
                modalOpen === 'resguardo' ? 'Generar Carta de Resguardo' : 
                modalOpen === 'editResguardo' ? 'Editar Carta de Resguardo' : 
                modalOpen === 'history' ? 'Historial de Movimientos' : 'Editar Bien del Inventario'}
@@ -2301,11 +2301,11 @@ Esta acci├│n no se puede deshacer.`);
                 <div className="space-y-4 mb-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">C├│digo de Inventario</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Código de Inventario</label>
                       <input type="text" value={editingItem.codigo || ''} onChange={e => setEditingItem({...editingItem, codigo: e.target.value})} className="w-full p-2 border rounded font-mono text-sm bg-slate-50" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Nombre / Concepto del art├¡culo</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Nombre / Concepto del artículo</label>
                       <input type="text" value={editingItem.articulo || editingItem.descripcion || ''} onChange={e => setEditingItem({...editingItem, articulo: e.target.value, descripcion: e.target.value})} className="w-full p-2 border rounded text-sm" />
                     </div>
                   </div>
@@ -2331,7 +2331,7 @@ Esta acci├│n no se puede deshacer.`);
                       <input type="number" value={editingItem.cantidad || ''} onChange={e => setEditingItem({...editingItem, cantidad: e.target.value})} className="w-full p-2 border rounded text-sm" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Estado F├¡sico</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Estado Físico</label>
                       <select 
                         value={editingItem.estado || 'Bueno'} 
                         onChange={e => setEditingItem({...editingItem, estado: e.target.value})} 
@@ -2344,7 +2344,7 @@ Esta acci├│n no se puede deshacer.`);
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Ubicaci├│n Actual</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Ubicación Actual</label>
                       {(() => {
                         const isKnown = uniqueUbicaciones.includes(editingItem.ubicacion);
                         const isCustom = !isKnown && editingItem.ubicacion !== '' && editingItem.ubicacion !== undefined && editingItem.ubicacion !== '---NUEVA---';
@@ -2355,16 +2355,16 @@ Esta acci├│n no se puede deshacer.`);
                               value={isKnown ? editingItem.ubicacion : (editingItem.ubicacion === '---NUEVA---' || isCustom ? '---NUEVA---' : '')}
                               onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})}
                             >
-                              <option value="">Selecciona una ubicaci├│n...</option>
+                              <option value="">Selecciona una ubicación...</option>
                               {uniqueUbicaciones.map(ub => (
                                 <option key={ub} value={ub}>{ub}</option>
                               ))}
-                              <option value="---NUEVA---">Ô×ò Agregar nueva ├írea...</option>
+                              <option value="---NUEVA---">Ô×ò Agregar nueva área...</option>
                             </select>
                             {(editingItem.ubicacion === '---NUEVA---' || isCustom) && (
                               <input 
                                 type="text" 
-                                placeholder="Escribe el nombre de la nueva ├írea..." 
+                                placeholder="Escribe el nombre de la nueva área..." 
                                 value={editingItem.ubicacion === '---NUEVA---' ? '' : (editingItem.ubicacion || '')}
                                 onChange={e => setEditingItem({...editingItem, ubicacion: e.target.value})}
                                 className="w-full p-2 border rounded text-sm border-indigo-400 focus:ring-1 focus:ring-indigo-500 bg-indigo-50"
@@ -2403,20 +2403,20 @@ Esta acci├│n no se puede deshacer.`);
                     <input type="text" value={editingResguardo.nombreResguardante} onChange={e => setEditingResguardo({...editingResguardo, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">├ürea o Cargo</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Área o Cargo</label>
                     <input type="text" value={editingResguardo.areaResguardante} onChange={e => setEditingResguardo({...editingResguardo, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
-                    <textarea rows="2" value={editingResguardo.observaciones || ''} onChange={e => setEditingResguardo({...editingResguardo, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Da├▒os visibles, faltantes..."></textarea>
+                    <textarea rows="2" value={editingResguardo.observaciones || ''} onChange={e => setEditingResguardo({...editingResguardo, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, faltantes..."></textarea>
                   </div>
                 </div>
 
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold text-slate-700">Art├¡culos incluidos</h4>
+                    <h4 className="font-semibold text-slate-700">Artículos incluidos</h4>
                     <button type="button" onClick={() => setEditingResguardo({ ...editingResguardo, articulos: [...editingResguardo.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: 'Bueno', codigo: '' }] })} className="text-sm text-primary-600 hover:text-primary-700 font-medium font-bold">
-                      + A├▒adir fila
+                      + Añadir fila
                     </button>
                   </div>
                   <div className="space-y-3">
@@ -2431,14 +2431,14 @@ Esta acci├│n no se puede deshacer.`);
                             }} />
                           </div>
                           <div className="flex-1">
-                            <input type="text" placeholder="Nombre/Concepto del art├¡culo" className="w-full rounded-md border-slate-300 text-sm font-bold" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                            <input type="text" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold" value={art.descripcion || art.articulo || ''} onChange={(e) => {
                               const newArts = [...editingResguardo.articulos];
                               newArts[idx].descripcion = e.target.value;
                               setEditingResguardo({...editingResguardo, articulos: newArts});
                             }} />
                           </div>
                           <div className="w-1/4">
-                            <input type="text" placeholder="C├│digo Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                            <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
                               const newArts = [...editingResguardo.articulos];
                               newArts[idx].codigo = e.target.value;
                               setEditingResguardo({...editingResguardo, articulos: newArts});
@@ -2513,7 +2513,7 @@ Esta acci├│n no se puede deshacer.`);
               <div className="space-y-4">
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
                   <h4 className="font-bold text-slate-800">{historyItem.articulo}</h4>
-                  <p className="text-sm text-slate-500">C├│digo: {historyItem.codigo} | Ubicaci├│n Actual: {historyItem.ubicacion}</p>
+                  <p className="text-sm text-slate-500">Código: {historyItem.codigo} | Ubicación Actual: {historyItem.ubicacion}</p>
                 </div>
                 
                 {historyItem.historial && historyItem.historial.length > 0 ? (
@@ -2533,7 +2533,7 @@ Esta acci├│n no se puede deshacer.`);
                   </div>
                 ) : (
                   <div className="py-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
-                    No hay historial de movimientos para este art├¡culo.
+                    No hay historial de movimientos para este artículo.
                   </div>
                 )}
                 
@@ -2554,7 +2554,7 @@ Esta acci├│n no se puede deshacer.`);
                 {modalOpen === 'recepcion' && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Hora de Recepci├│n</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Hora de Recepción</label>
                       <input type="time" value={formData.hora} onChange={e => setFormData({...formData, hora: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div><label className="block text-sm font-medium text-slate-700 mb-1">Doc. de Origen (Factura, etc.)</label><input type="text" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.origen} onChange={e => setFormData({...formData, origen: e.target.value})} /></div>
@@ -2570,16 +2570,16 @@ Esta acci├│n no se puede deshacer.`);
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Resguardante</label>
-                      <input type="text" placeholder="Profr. Juan P├®rez" value={formData.nombreResguardante} onChange={e => setFormData({...formData, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
+                      <input type="text" placeholder="Profr. Juan Pérez" value={formData.nombreResguardante} onChange={e => setFormData({...formData, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">├ürea o Cargo</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Área o Cargo</label>
                       <input type="text" placeholder="Ej. Aula 3 / Maestro de Historia" value={formData.areaResguardante} onChange={e => setFormData({...formData, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div className="md:col-span-2 mt-2">
                       <label className="flex items-center space-x-3 text-sm font-medium text-slate-700 cursor-pointer p-4 bg-indigo-50 rounded-xl border border-indigo-200 hover:bg-indigo-100 transition-colors">
                         <input type="checkbox" checked={formData.guardarEnInventario} onChange={e => setFormData({...formData, guardarEnInventario: e.target.checked})} className="rounded text-indigo-600 focus:ring-indigo-500 w-5 h-5" />
-                        <span>Guardar estos art├¡culos autom├íticamente en el <strong>Inventario General</strong> de la escuela.</span>
+                        <span>Guardar estos artículos automáticamente en el <strong>Inventario General</strong> de la escuela.</span>
                       </label>
                     </div>
                   </>
@@ -2588,17 +2588,17 @@ Esta acci├│n no se puede deshacer.`);
                 {modalOpen === 'baja' && (
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Motivo de Baja</label>
-                    <input type="text" placeholder="Ej. Da├▒o irreparable, Obsolescencia tecnol├│gica" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} required />
+                    <input type="text" placeholder="Ej. Daño irreparable, Obsolescencia tecnológica" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} required />
                   </div>
                 )}
               </div>
 
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold text-slate-700">Art├¡culos a incluir</h4>
+                    <h4 className="font-semibold text-slate-700">Artículos a incluir</h4>
                     {modalOpen !== 'baja' && (
                       <button type="button" onClick={handleAddRow} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                        + A├▒adir fila
+                        + Añadir fila
                       </button>
                     )}
                   </div>
@@ -2614,7 +2614,7 @@ Esta acci├│n no se puede deshacer.`);
                             }} />
                           </div>
                           <div className="flex-1">
-                            <input type="text" placeholder="Nombre/Concepto del art├¡culo" className="w-full rounded-md border-slate-300 text-sm font-bold" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                            <input type="text" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold" value={art.descripcion || art.articulo || ''} onChange={(e) => {
                               const newArts = [...formData.articulos];
                               newArts[idx].descripcion = e.target.value;
                               setFormData({...formData, articulos: newArts});
@@ -2623,16 +2623,16 @@ Esta acci├│n no se puede deshacer.`);
                           
                           {modalOpen === 'recepcion' && (
                             <div className="w-1/4">
-                              <input type="text" placeholder="C├│digo Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600" value={art.codigo || ''} onChange={(e) => {
+                              <input type="text" placeholder="Código Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600" value={art.codigo || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].codigo = e.target.value;
                                 setFormData({...formData, articulos: newArts});
-                              }} title="El sistema generar├í los siguientes folios de forma consecutiva autom├íticamente." />
+                              }} title="El sistema generará los siguientes folios de forma consecutiva automáticamente." />
                             </div>
                           )}
                           {(modalOpen === 'resguardo' || modalOpen === 'baja') && (
                             <div className="w-1/4">
-                              <input type="text" placeholder="C├│digo Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                              <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].codigo = e.target.value;
                                 setFormData({...formData, articulos: newArts});
@@ -2673,7 +2673,7 @@ Esta acci├│n no se puede deshacer.`);
                            </div>
                            {modalOpen === 'baja' ? (
                              <div className="w-1/4">
-                               <input type="text" list="ubicaciones-list" placeholder="Ubicaci├│n" className="w-full rounded-md border-slate-300 text-sm" value={art.ubicacion || ''} onChange={(e) => { const newArts = [...formData.articulos]; newArts[idx].ubicacion = e.target.value; setFormData({...formData, articulos: newArts}); }} />
+                               <input type="text" list="ubicaciones-list" placeholder="Ubicación" className="w-full rounded-md border-slate-300 text-sm" value={art.ubicacion || ''} onChange={(e) => { const newArts = [...formData.articulos]; newArts[idx].ubicacion = e.target.value; setFormData({...formData, articulos: newArts}); }} />
                              </div>
                            ) : (
                              <div className="w-32">
@@ -2709,7 +2709,7 @@ Esta acci├│n no se puede deshacer.`);
               {modalOpen === 'recepcion' && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
-                  <textarea rows="2" value={formData.observaciones} onChange={e => setFormData({...formData, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Da├▒os visibles, faltantes..."></textarea>
+                  <textarea rows="2" value={formData.observaciones} onChange={e => setFormData({...formData, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, faltantes..."></textarea>
                 </div>
               )}
 
@@ -2784,12 +2784,12 @@ Esta acci├│n no se puede deshacer.`);
                 <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl text-center">
                   <div className="text-xs font-bold text-slate-500 uppercase">Ingresos Generales</div>
                   <div className="text-2xl font-black text-slate-800">${totalAdmin.toFixed(2)}</div>
-                  <div className="text-xs text-slate-400 font-bold">${filtered.filter(p => p.sysTipo === 'Admin').length} Tr├ímites</div>
+                  <div className="text-xs text-slate-400 font-bold">${filtered.filter(p => p.sysTipo === 'Admin').length} Trámites</div>
                 </div>
                 <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl text-center">
-                  <div className="text-xs font-bold text-slate-500 uppercase">Ex├ímenes Extraordinarios</div>
+                  <div className="text-xs font-bold text-slate-500 uppercase">Exámenes Extraordinarios</div>
                   <div className="text-2xl font-black text-slate-800">${totalExtra.toFixed(2)}</div>
-                  <div className="text-xs text-slate-400 font-bold">${filtered.filter(p => p.sysTipo === 'Extra').length} Tr├ímites</div>
+                  <div className="text-xs text-slate-400 font-bold">${filtered.filter(p => p.sysTipo === 'Extra').length} Trámites</div>
                 </div>
                 <div className="bg-emerald-50 p-4 border-2 border-emerald-200 rounded-xl text-center">
                   <div className="text-xs font-bold text-emerald-600 uppercase">Total Neto</div>
@@ -2842,7 +2842,7 @@ Esta acci├│n no se puede deshacer.`);
         <div className="mt-20 pt-8 grid grid-cols-2 gap-12 text-center">
           <div>
             <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sello de la Instituci├│n</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sello de la Institución</span>
           </div>
           <div>
             <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
@@ -2873,7 +2873,7 @@ Esta acci├│n no se puede deshacer.`);
                   <label className="block text-sm font-bold text-slate-700 mb-1">Tipo de Ingreso</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'administrativo', detalles: [{concepto: '', monto: ''}]})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'administrativo' ? 'bg-primary-50 border-primary-500 text-primary-700 ring-1 ring-primary-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
-                      <FileText className="w-5 h-5" /> Tr├ímites Generales
+                      <FileText className="w-5 h-5" /> Trámites Generales
                     </button>
                     <button type="button" onClick={() => setPagoFormData({...pagoFormData, tipo: 'extraordinario', detalles: [{concepto: 'Examen Extraordinario de ', monto: ''}]})} className={`p-3 border rounded-xl text-sm font-bold flex flex-col items-center justify-center gap-1 transition-all ${pagoFormData.tipo === 'extraordinario' ? 'bg-rose-50 border-rose-500 text-rose-700 ring-1 ring-rose-500' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
                       <AlertTriangle className="w-5 h-5" /> Examen Extraordinario
@@ -2945,9 +2945,9 @@ Esta acci├│n no se puede deshacer.`);
                             }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm">
                               <option value="">Selecciona un concepto...</option>
                               <option value="Constancia de Estudios">Constancia de Estudios</option>
-                              <option value="Reposici├│n de Credencial">Reposici├│n de Credencial</option>
+                              <option value="Reposición de Credencial">Reposición de Credencial</option>
                               <option value="Paquete Escolar">Paquete Escolar</option>
-                              <option value="Donaci├│n / Aportaci├│n">Donaci├│n / Aportaci├│n Voluntaria</option>
+                              <option value="Donación / Aportación">Donación / Aportación Voluntaria</option>
                               <option value="Otro">Otro (Especificar en notas)</option>
                             </select>
                           ) : (
@@ -2955,7 +2955,7 @@ Esta acci├│n no se puede deshacer.`);
                                 const newDetalles = [...pagoFormData.detalles];
                                 newDetalles[index].concepto = e.target.value;
                                 setPagoFormData({...pagoFormData, detalles: newDetalles});
-                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm" placeholder="Ej. Examen Extraordinario de Matem├íticas" />
+                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 text-sm" placeholder="Ej. Examen Extraordinario de Matemáticas" />
                           )}
                         </div>
                         <div className="w-28 relative">
@@ -2994,11 +2994,11 @@ Esta acci├│n no se puede deshacer.`);
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">M├®todo de Pago</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Método de Pago</label>
                     <select value={pagoFormData.metodo} onChange={e => setPagoFormData({...pagoFormData, metodo: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
                       <option value="Efectivo">Efectivo</option>
                       <option value="Transferencia">Transferencia</option>
-                      <option value="Dep├│sito">Dep├│sito Bancario</option>
+                      <option value="Depósito">Depósito Bancario</option>
                     </select>
                   </div>
                 </div>
@@ -3034,7 +3034,7 @@ Esta acci├│n no se puede deshacer.`);
                     <Archive className="w-16 h-16 opacity-50" />
                   </div>
                   <h1 className="text-2xl font-black text-slate-900 tracking-tight font-serif">ESC. SEC. GRAL. "RENACIMIENTO"</h1>
-                  <h2 className="text-sm font-bold text-slate-600 mt-1 uppercase tracking-widest bg-slate-100 inline-block px-3 py-1 rounded-full border border-slate-200">Recibo Oficial de Tr´┐¢mite Interno</h2>
+                  <h2 className="text-sm font-bold text-slate-600 mt-1 uppercase tracking-widest bg-slate-100 inline-block px-3 py-1 rounded-full border border-slate-200">Recibo Oficial de Trámite Interno</h2>
                   <div className="mt-6 flex justify-between items-center text-sm font-mono">
                     <div className="font-bold text-rose-700 bg-rose-50 px-3 py-1.5 rounded-md border border-rose-200 flex items-center">
                       FOLIO: {(() => {
@@ -3116,7 +3116,7 @@ Esta acci├│n no se puede deshacer.`);
                 <div className="mt-20 pt-8 grid grid-cols-2 gap-12 text-center">
                   <div>
                     <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sello de la Instituci´┐¢n</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sello de la Institución</span>
                   </div>
                   <div>
                     <div className="border-b-2 border-slate-400 mb-2 h-12"></div>
@@ -3125,8 +3125,8 @@ Esta acci├│n no se puede deshacer.`);
                 </div>
                 <div className="mt-12 text-center border-t border-dashed border-slate-300 pt-4">
                   <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-                    *** Este recibo es v´┐¢lido ´┐¢nicamente para tr´┐¢mites administrativos internos ***<br/>
-                    No representa un comprobante fiscal. Conserve este documento para cualquier aclaraci´┐¢n.
+                    *** Este recibo es válido únicamente para trámites administrativos internos ***<br/>
+                    No representa un comprobante fiscal. Conserve este documento para cualquier aclaración.
                   </p>
                 </div>
                 <div className="hidden print:block absolute inset-0 -z-10 flex items-center justify-center opacity-[0.03] pointer-events-none">
