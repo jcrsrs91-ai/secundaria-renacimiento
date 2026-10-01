@@ -6,6 +6,7 @@ const replacements = {
     '├│': 'ó',
     '├í': 'á',
     '├⌐': 'é',
+    '├®': 'é',
     '├¡': 'í',
     '├║': 'ú',
     '├▒': 'ñ',
@@ -16,15 +17,20 @@ const replacements = {
     '├ü': 'Á',
     '├Ü': 'Ú',
     '┬í': '¡',
-    '┬¿': '¿'
+    '┬┐': '¿',
+    '┬¿': '¿',
+    '´┐¢nicamente': 'únicamente',
+    'Instituci´┐¢n': 'Institución',
+    'v´┐¢lido': 'válido',
+    'tr´┐¢mites': 'trámites',
+    'Tr´┐¢mite': 'Trámite',
+    'aclaraci´┐¢n': 'aclaración',
+    '´┐¢': 'ó' // Fallback
 };
 
 for (const [bad, good] of Object.entries(replacements)) {
     text = text.split(bad).join(good);
 }
-
-// Special case: Sometimes quotes are messed up too
-// '┬┤' or '┬¿'
 
 fs.writeFileSync(path, text, 'utf8');
 console.log('Fixed encoding issues in Inventario.jsx');

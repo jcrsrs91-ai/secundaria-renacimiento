@@ -242,7 +242,7 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
           <div className="text-center flex-1 px-4">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-sm print:leading-tight">ESTADÍSTICA DE MATRÍCULA POR GRUPOS</h1>
             <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-[10px] print:mt-0 print:leading-tight">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
-            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[9px] print:mt-0 print:leading-tight">Segundo Momento de Valoración • Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}</p>
+            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[9px] print:mt-0 print:leading-tight">Segundo Momento de Valoración - Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}</p>
           </div>
           <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-10" />
         </div>

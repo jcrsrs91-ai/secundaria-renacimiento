@@ -90,7 +90,7 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
           <div className="text-center flex-1 px-4">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-lg print:leading-tight">RELACIÓN DE ALUMNOS DESERTORES</h1>
             <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-xs print:mt-0 print:leading-tight">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
-            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[10px] print:mt-0 print:leading-tight">Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'} • Formato E6</p>
+            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[10px] print:mt-0 print:leading-tight">Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'} - Formato E6</p>
           </div>
           <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-14" />
         </div>

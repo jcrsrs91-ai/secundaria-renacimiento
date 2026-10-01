@@ -65,7 +65,7 @@ export default function BuscadorAlumnos({ onStudentSelect, title = "Buscador de 
                       {student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}
                     </h4>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {student.grado} Grupo "{student.grupo}" • {student.matricula || 'Sin matrícula'}
+                      {student.grado} Grupo "{student.grupo}" - {student.matricula || 'Sin matrícula'}
                     </p>
                   </div>
                 </div>

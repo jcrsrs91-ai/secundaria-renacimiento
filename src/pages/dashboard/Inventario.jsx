@@ -1975,7 +1975,7 @@ Esta acción no se puede deshacer.`);
                   <span className="text-2xl font-black text-indigo-600 mb-2">{item.cantidad}</span>
                   <div className="w-full text-left text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 flex-1 overflow-y-auto custom-scrollbar min-h-[3rem]">
                     {item.detalles.map((det, i) => (
-                      <div key={i} className="truncate" title={det}>ÔÇó {det}</div>
+                      <div key={i} className="truncate" title={det}>- {det}</div>
                     ))}
                   </div>
                 </div>
@@ -2003,7 +2003,7 @@ Esta acción no se puede deshacer.`);
                   <span className="text-2xl font-black text-indigo-600 mb-2">{item.cantidad}</span>
                   <div className="w-full text-left text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 flex-1 overflow-y-auto custom-scrollbar min-h-[3rem]">
                     {item.detalles.map((det, i) => (
-                      <div key={i} className="truncate" title={det}>ÔÇó {det}</div>
+                      <div key={i} className="truncate" title={det}>- {det}</div>
                     ))}
                   </div>
                 </div>
@@ -2359,7 +2359,7 @@ Esta acción no se puede deshacer.`);
                               {uniqueUbicaciones.map(ub => (
                                 <option key={ub} value={ub}>{ub}</option>
                               ))}
-                              <option value="---NUEVA---">Ô×ò Agregar nueva área...</option>
+                              <option value="---NUEVA---">+ Agregar nueva área...</option>
                             </select>
                             {(editingItem.ubicacion === '---NUEVA---' || isCustom) && (
                               <input 

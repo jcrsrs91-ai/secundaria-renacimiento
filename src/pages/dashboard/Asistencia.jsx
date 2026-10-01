@@ -272,9 +272,9 @@ export default function Asistencia() {
                     <h3 className="font-bold text-slate-800 text-lg">{registro.nombre}</h3>
                     <div className="flex gap-3 text-sm text-slate-500 font-medium">
                       <span>MAT: {registro.matricula}</span>
-                      <span>•</span>
+                      <span>-</span>
                       <span>{registro.grado?.substring(0,1)}° "{registro.grupo}"</span>
-                      <span>•</span>
+                      <span>-</span>
                       <span className="uppercase">{registro.turno?.substring(0,4)}</span>
                     </div>
                   </div>

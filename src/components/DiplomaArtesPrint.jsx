@@ -114,7 +114,7 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
                      <p className="text-[10px] font-bold text-slate-700 uppercase tracking-[0.2em] mb-1">Secretaría de Educación Pública</p>
                      <h2 className="text-sm font-black text-sky-900 uppercase tracking-[0.15em]">Escuela Secundaria Técnica No. 68 "Renacimiento"</h2>
                      <p className="text-[10px] font-bold text-slate-600 tracking-widest mt-1.5">
-                       C.C.T. 12DST0077B <span className="mx-2 text-sky-300">•</span> Zona Escolar 24
+                       C.C.T. 12DST0077B <span className="mx-2 text-sky-300">-</span> Zona Escolar 24
                      </p>
                   </div>
                   <div className="w-40 flex justify-end">

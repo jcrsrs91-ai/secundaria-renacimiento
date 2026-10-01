@@ -273,7 +273,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
           <div className="text-center flex-1 px-4">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-base">ESTADÍSTICA DE APROBACIÓN (FORMATO E2)</h1>
             <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-[10px]">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
-            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[9px]">Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'} • Cierre del 3er Periodo</p>
+            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[9px]">Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'} - Cierre del 3er Periodo</p>
           </div>
           <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-12" />
         </div>
