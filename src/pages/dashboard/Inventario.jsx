@@ -2242,14 +2242,14 @@ Esta acción no se puede deshacer.`);
               
                             <tbody className="divide-y divide-slate-200">
                 {resguardos.length > 0 ? resguardos.filter(r => 
-                    searchIncludes(r.resguardante, resguardoSearch) ||
+                    searchIncludes(r.resguardante || r.nombreResguardante, resguardoSearch) ||
                     searchIncludes(r.folio, resguardoSearch)
                 ).map(r => (
                   <tr key={r.id}>
                     <td className="px-6 py-4 text-sm font-medium text-slate-900">{r.folio || 'N/A'}</td>
                     <td className="px-6 py-4 text-sm text-slate-600">{r.fecha ? (r.fecha.toDate ? r.fecha.toDate().toLocaleDateString() : r.fecha) : 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{r.resguardante || 'Desconocido'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{r.area || r.cargo || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{r.resguardante || r.nombreResguardante || 'Desconocido'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{r.area || r.areaResguardante || r.cargo || 'N/A'}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">
                       {r.articulos ? r.articulos.length : 0} artículos
                     </td>

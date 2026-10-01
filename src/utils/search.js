@@ -9,11 +9,11 @@ export const normalizeText = (text) => {
 };
 
 export const searchIncludes = (source, query) => {
-  if (!source) return false;
-  const normSource = normalizeText(source);
   const normQuery = normalizeText(query);
-  if (!normQuery) return true;
+  if (!normQuery) return true; // If no query, everything matches
+  if (!source) return false; // If there is a query but no source, no match
   
+  const normSource = normalizeText(source);
   const queryWords = normQuery.split(/\s+/);
   return queryWords.every(word => normSource.includes(word));
 };
