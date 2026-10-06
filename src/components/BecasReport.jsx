@@ -5,12 +5,31 @@ import { Printer, X, GraduationCap, Users, UserRound, Award } from 'lucide-react
 export default function BecasReport({ activos = [], onClose }) {
   const { config } = useGlobalConfig();
 
-  // Filtrar solo los que tienen beca (case insensitive check for 'SÍ' or '!NO')
+  // Filtrar solo los que tienen beca
   const becados = useMemo(() => {
     return activos.filter(s => {
-      const tiene = s.tieneBeca?.toUpperCase() || '';
-      return (tiene.includes('S') && tiene.includes('I')) || (tiene !== 'NO' && tiene !== '' && tiene !== 'A' && tiene !== 'B' && tiene !== 'C' && tiene !== 'MATUTINO' && tiene !== 'VESPERTINO' && tiene !== 'HERMANO(A)' && s.nombreBeca);
-    }).filter(s => s.tieneBeca && s.tieneBeca.toUpperCase() !== 'NO');
+      // Si no hay dato en tieneBeca, no descartamos inmediatamente, evaluamos nombreBeca más abajo
+      const tiene = (s.tieneBeca || '').toUpperCase().trim();
+      
+
+      
+      // Si explícitamente seleccionaron NO, descartar
+      if (tiene === 'NO') return false;
+      
+      // Si empieza con S (SÍ, SI, S?), es un rotundo sí
+      if (tiene.startsWith('S')) return true;
+      
+      // ¿Qué pasa si se saltaron la primera pregunta pero sí escribieron un nombre de beca válido?
+      // Lo incluimos si el texto en nombreBeca es válido
+      if (s.nombreBeca) {
+        const nombreStr = s.nombreBeca.toUpperCase().trim();
+        if (nombreStr !== '' && nombreStr !== 'NO' && nombreStr !== 'NINGUNA' && nombreStr !== 'N/A') {
+          return true;
+        }
+      }
+      
+      return false;
+    });
   }, [activos]);
 
   const stats = useMemo(() => {
@@ -23,30 +42,56 @@ export default function BecasReport({ activos = [], onClose }) {
     };
 
     becados.forEach(s => {
-      const isM = s.sexo?.toUpperCase().startsWith('M');
-      if (isM) data.mujeres++; else data.hombres++;
+      // Determinar género (M = Mujer, H = Hombre)
+      const sexoUpper = s.sexo?.toUpperCase() || '';
+      const isM = sexoUpper.startsWith('M');
+      const isH = sexoUpper.startsWith('H');
+      
+      // Contar globales
+      if (isM) {
+        data.mujeres++;
+      } else {
+        // Por defecto o si es H, contamos como hombre para cuadrar el 100%
+        data.hombres++;
+      }
 
       // Normalizar nombre de beca
       let rawTipo = (s.nombreBeca || 'NO ESPECIFICADO').trim();
-      if (rawTipo.toUpperCase() === 'NO' || rawTipo.toUpperCase() === 'NINGUNA' || rawTipo === '') {
+      if (rawTipo.toUpperCase() === 'NO' || rawTipo.toUpperCase() === 'NINGUNA' || rawTipo.toUpperCase() === 'N/A' || rawTipo === '') {
         rawTipo = 'NO ESPECIFICADO';
       }
       
-      let tipo = rawTipo.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      // Quitar acentos para la comparación y agrupación
+      let tipoNormalized = rawTipo.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      let tipo = rawTipo.toUpperCase();
       
-      // Agrupar nombres comunes
-      if (tipo.includes('RITA') || tipo.includes('CETINA')) tipo = 'BECA RITA CETINA';
-      else if (tipo.includes('ESTATAL') || tipo.includes('ESTADO')) tipo = 'BECA ESTATAL';
-      else if (tipo.includes('BENITO') || tipo.includes('JUAREZ')) tipo = 'BECA BENITO JUÁREZ';
-      else tipo = rawTipo.toUpperCase(); // Restore original uppercase if no match
+      // Agrupar nombres comunes (incluyendo errores ortográficos comunes)
+      if (tipoNormalized.includes('RITA') || tipoNormalized.includes('CETINA') || tipoNormalized.includes('SETINA')) {
+        tipo = 'BECA RITA CETINA';
+      } else if (tipoNormalized.includes('ESTATAL') || tipoNormalized.includes('ESTADO') || tipoNormalized.includes('IGUALDAD')) {
+        tipo = 'BECA ESTATAL';
+      } else if (tipoNormalized.includes('BENITO') || tipoNormalized.includes('JUAREZ')) {
+        tipo = 'BECA BENITO JUÁREZ';
+      } else if (tipoNormalized.includes('DISCAPACIDAD') || tipoNormalized.includes('DIF')) {
+        tipo = 'BECA POR DISCAPACIDAD / DIF';
+      } else if (tipoNormalized.includes('MUNICIPAL') || tipoNormalized.includes('AYUNTAMIENTO') || tipoNormalized.includes('ACAPULCO')) {
+        tipo = 'BECA MUNICIPAL';
+      } else if (tipoNormalized.includes('PROSPERA') || tipoNormalized.includes('OPORTUNIDADES')) {
+        tipo = 'BECA PROSPERA (SEDATU)';
+      }
 
       if (!data.porTipo[tipo]) data.porTipo[tipo] = { total: 0, h: 0, m: 0 };
       data.porTipo[tipo].total++;
       if (isM) data.porTipo[tipo].m++; else data.porTipo[tipo].h++;
 
-      // Grado y grupo
-      const gkey = `${s.grado}° "${s.grupo || '-'}" ${s.turno === 'Vespertino' ? 'Vesp.' : 'Mat.'}`;
-      if (!data.porGrupo[gkey]) data.porGrupo[gkey] = { total: 0, h: 0, m: 0, grado: s.grado, grupo: s.grupo, turno: s.turno };
+      // Grado y grupo a prueba de errores
+      const grado = s.grado || '?';
+      const grupo = s.grupo || '?';
+      const turnoStr = s.turno === 'Vespertino' ? 'Vesp.' : (s.turno === 'Matutino' ? 'Mat.' : 'Sin Turno');
+      
+      const gkey = `${grado}° "${grupo}" ${turnoStr}`;
+      
+      if (!data.porGrupo[gkey]) data.porGrupo[gkey] = { total: 0, h: 0, m: 0 };
       data.porGrupo[gkey].total++;
       if (isM) data.porGrupo[gkey].m++; else data.porGrupo[gkey].h++;
     });
@@ -60,9 +105,11 @@ export default function BecasReport({ activos = [], onClose }) {
     return becados.filter(s => 
       `${s.nombre} ${s.apellidos} ${s.nombreBeca} ${s.grado} ${s.grupo}`.toLowerCase().includes(searchTerm.toLowerCase())
     ).sort((a,b) => {
-        const ga = `${a.grado}${a.grupo}${a.turno}`;
-        const gb = `${b.grado}${b.grupo}${b.turno}`;
+        // Ordenar primero por grado, grupo y turno
+        const ga = `${a.grado || '?'}${a.grupo || '?'}${a.turno || '?'}`;
+        const gb = `${b.grado || '?'}${b.grupo || '?'}${b.turno || '?'}`;
         if (ga !== gb) return ga.localeCompare(gb);
+        // Luego alfabéticamente por apellidos
         return (a.apellidos || '').localeCompare(b.apellidos || '');
     });
   }, [becados, searchTerm]);
