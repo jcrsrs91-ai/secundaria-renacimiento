@@ -11,7 +11,7 @@ export default function BecasReport({ activos = [], onClose }) {
   // Filtrar por grado primero
   const activosFiltrados = useMemo(() => {
     if (selectedGrado === 'TODOS') return activos;
-    return activos.filter(a => String(a.grado) === selectedGrado);
+    return activos.filter(a => String(a.grado).startsWith(selectedGrado));
   }, [activos, selectedGrado]);
 
   // Filtrar solo los que tienen beca
@@ -80,7 +80,7 @@ export default function BecasReport({ activos = [], onClose }) {
       data.porTipo[tipo].total++;
       if (isM) data.porTipo[tipo].m++; else data.porTipo[tipo].h++;
 
-      const grado = s.grado || '?';
+      const grado = s.grado ? String(s.grado).charAt(0) : '?';
       const grupo = s.grupo || '?';
       const turnoStr = s.turno === 'Vespertino' ? 'Vesp.' : (s.turno === 'Matutino' ? 'Mat.' : 'Sin Turno');
       
@@ -294,7 +294,7 @@ export default function BecasReport({ activos = [], onClose }) {
                            <tr key={s.id} className="hover:bg-slate-50 print:break-inside-avoid">
                              <td className="p-3 text-center text-slate-400">{i + 1}</td>
                              <td className="p-3 font-bold text-slate-800">{s.apellidos} {s.nombre}</td>
-                             <td className="p-3 text-center text-slate-600">{s.grado}°</td>
+                             <td className="p-3 text-center text-slate-600">{s.grado ? String(s.grado).charAt(0) : '?'}°</td>
                              <td className="p-3 text-center font-bold text-slate-700">"{s.grupo || '-'}"</td>
                              <td className="p-3 text-center text-xs uppercase tracking-wider text-slate-500">{s.turno}</td>
                              <td className="p-3 text-center text-slate-600">{s.sexo ? String(s.sexo).toUpperCase().startsWith('M') ? 'M' : 'H' : 'H'}</td>
