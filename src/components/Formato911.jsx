@@ -1,9 +1,76 @@
 import React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import toast from 'react-hot-toast';
 import { FileText, Download, Filter } from 'lucide-react';
 
 export default function Formato911({ rawActivos }) {
+  
   const [shiftFilter, setShiftFilter] = useState('Ambos');
+  const [isSaving, setIsSaving] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    // Load saved data
+    const loadData = async () => {
+      try {
+        const docSnap = await getDoc(doc(db, 'configuracion', 'formato911_historico'));
+        if (docSnap.exists() && containerRef.current) {
+          const { tablesData } = docSnap.data();
+          const tables = containerRef.current.querySelectorAll('table');
+          tablesData.forEach((tableData, tIdx) => {
+            const table = tables[tIdx];
+            if (table) {
+              const trs = table.querySelectorAll('tbody tr');
+              tableData.forEach((rowData, rIdx) => {
+                const tr = trs[rIdx];
+                if (tr) {
+                  const tds = tr.querySelectorAll('td');
+                  let dataCellIndex = 0;
+                  // Only restore values to the data cells
+                  tds.forEach((td) => {
+                    if (td.classList.contains('data-cell') || td.hasAttribute('contenteditable')) {
+                      if (rowData[dataCellIndex] !== undefined) {
+                        td.innerText = rowData[dataCellIndex];
+                      }
+                      dataCellIndex++;
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error loading 911 data", err);
+      }
+    };
+    loadData();
+  }, []);
+
+  const handleSave = async () => {
+    if (!containerRef.current) return;
+    setIsSaving(true);
+    try {
+      const tables = containerRef.current.querySelectorAll('table');
+      const data = Array.from(tables).map(table => {
+        return Array.from(table.querySelectorAll('tbody tr')).map(tr => {
+          return Array.from(tr.querySelectorAll('td'))
+            .filter(td => td.classList.contains('data-cell') || td.hasAttribute('contenteditable'))
+            .map(td => td.innerText.trim());
+        });
+      });
+      await setDoc(doc(db, 'configuracion', 'formato911_historico'), { tablesData: data, updatedAt: new Date() });
+      toast.success('Datos del Formato 911 guardados correctamente.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al guardar los datos.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
 
   const activos = useMemo(() => {
     if (!rawActivos) return [];
@@ -39,6 +106,9 @@ export default function Formato911({ rawActivos }) {
                 <option value="Vespertino">Vespertino</option>
              </select>
           </div>
+          <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50">
+            {isSaving ? 'Guardando...' : 'Guardar Datos'}
+          </button>
           <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
             <Download className="w-4 h-4" /> Imprimir Formatos
           </button>
@@ -75,17 +145,17 @@ export default function Formato911({ rawActivos }) {
                   {['1o.', '2o.', '3o.', 'Total'].map((g, i) => (
                     <tr key={i} className={g === 'Total' ? 'font-bold bg-slate-50' : ''}>
                       <td className="border border-slate-300 p-2">{g}</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   ))}
                 </tbody>
@@ -116,16 +186,16 @@ export default function Formato911({ rawActivos }) {
                   {['1o.', '2o.', '3o.', 'Total'].map((g, i) => (
                     <tr key={i} className={g === 'Total' ? 'font-bold bg-slate-50' : ''}>
                       <td className="border border-slate-300 p-2">{g}</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   ))}
                 </tbody>
@@ -164,38 +234,38 @@ export default function Formato911({ rawActivos }) {
                 <tbody>
                   <tr>
                     <td className="border border-slate-300 p-2 text-left">1o. Nvo. Ingreso</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                   </tr>
                   <tr>
                     <td className="border border-slate-300 p-2 text-left">1o. Repetidor</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                   </tr>
                   <tr>
                     <td className="border border-slate-300 p-2 text-left">2o.</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                   </tr>
                   <tr>
                     <td className="border border-slate-300 p-2 text-left">3o.</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                   </tr>
                   <tr className="font-bold bg-slate-50">
                     <td className="border border-slate-300 p-2 text-left">Total</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                   </tr>
                 </tbody>
               </table>
@@ -219,9 +289,9 @@ export default function Formato911({ rawActivos }) {
                   {['Estados Unidos', 'Canadá', 'Centroamérica y el Caribe', 'Sudamérica', 'África', 'Asia', 'Europa', 'Oceanía', 'Total'].map((lugar, i) => (
                     <tr key={i} className={lugar === 'Total' ? 'font-bold bg-slate-50' : ''}>
                       <td className="border border-slate-300 p-2 text-left">{lugar}</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   ))}
                 </tbody>
@@ -252,12 +322,12 @@ export default function Formato911({ rawActivos }) {
                   {['Con Beca', 'Sin Beca', 'Total'].map((g, i) => (
                     <tr key={i} className={g === 'Total' ? 'font-bold bg-slate-50' : ''}>
                       <td className="border border-slate-300 p-2 text-left">{g}</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   ))}
                 </tbody>
@@ -322,9 +392,9 @@ export default function Formato911({ rawActivos }) {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                   </tr>
                 </tbody>
               </table>
@@ -371,9 +441,9 @@ export default function Formato911({ rawActivos }) {
                   ].map((motivo, i) => (
                     <tr key={i}>
                       <td className="border border-slate-300 p-2 text-left">{motivo}</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   ))}
                 </tbody>
@@ -417,16 +487,16 @@ export default function Formato911({ rawActivos }) {
                 ].map((row, i) => (
                   <tr key={i} className={row.sub ? 'font-bold bg-slate-50' : ''}>
                     <td className="border border-slate-300 p-2 text-left">{row.label}</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2 bg-slate-100">0</td>
-                    <td className="border border-slate-300 p-2">{row.sub ? '0' : ''}</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable={row.sub} suppressContentEditableWarning>{row.sub ? '0' : ''}</td>
                   </tr>
                 ))}
               </tbody>
@@ -448,9 +518,9 @@ export default function Formato911({ rawActivos }) {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                   </tr>
                 </tbody>
               </table>
@@ -484,19 +554,19 @@ export default function Formato911({ rawActivos }) {
                       <tr>
                         <td className="border border-slate-300 p-2 text-left font-semibold" rowSpan="2">{row.tipo}</td>
                         <td className="border border-slate-300 p-2">Hombres</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                       </tr>
                       <tr>
                         <td className="border border-slate-300 p-2">Mujeres</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                       </tr>
                     </React.Fragment>
                   ))}
@@ -527,9 +597,9 @@ export default function Formato911({ rawActivos }) {
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   </tbody>
                 </table>
@@ -572,10 +642,10 @@ export default function Formato911({ rawActivos }) {
                   ].map((cond, i) => (
                     <tr key={i} className={cond === 'Total' ? 'font-bold bg-slate-50' : ''}>
                       <td className="border border-slate-300 p-2 text-left">{cond}</td>
-                      <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   ))}
                 </tbody>
@@ -599,9 +669,9 @@ export default function Formato911({ rawActivos }) {
                     {['Estados Unidos', 'Canadá', 'Centroamérica y el Caribe', 'Sudamérica', 'África', 'Asia', 'Europa', 'Oceanía', 'Total'].map((lugar, i) => (
                       <tr key={i} className={lugar === 'Total' ? 'font-bold bg-slate-50' : ''}>
                         <td className="border border-slate-300 p-2 text-left">{lugar}</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                       </tr>
                     ))}
                   </tbody>
@@ -631,15 +701,15 @@ export default function Formato911({ rawActivos }) {
                   {['13 años o menos', '14 años', '15 años', '16 años', '17 años', '18 años y más', 'Total'].map((edad, i) => (
                     <tr key={i} className={edad === 'Total' ? 'font-bold bg-slate-50' : ''}>
                       <td className="border border-slate-300 p-2 text-left">{edad}</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   ))}
                 </tbody>
@@ -668,15 +738,15 @@ export default function Formato911({ rawActivos }) {
                   {['1o.', '2o.', '3o.', 'Total'].map((g, i) => (
                     <tr key={i} className={g === 'Total' ? 'font-bold bg-slate-50' : ''}>
                       <td className="border border-slate-300 p-2">{g}</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   ))}
                 </tbody>
@@ -705,15 +775,15 @@ export default function Formato911({ rawActivos }) {
                   {['1o.', '2o.', '3o.', 'Total'].map((g, i) => (
                     <tr key={i} className={g === 'Total' ? 'font-bold bg-slate-50' : ''}>
                       <td className="border border-slate-300 p-2">{g}</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   ))}
                 </tbody>
@@ -740,11 +810,11 @@ export default function Formato911({ rawActivos }) {
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   </tbody>
                 </table>
@@ -764,11 +834,11 @@ export default function Formato911({ rawActivos }) {
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   </tbody>
                 </table>
@@ -789,9 +859,9 @@ export default function Formato911({ rawActivos }) {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2">0</td>
-                    <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                   </tr>
                 </tbody>
               </table>
@@ -813,8 +883,8 @@ export default function Formato911({ rawActivos }) {
                     {['Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Coahuila', 'Colima', 'Chiapas', 'Chihuahua', 'Ciudad de México', 'Durango', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'México', 'Michoacán'].map((estado, i) => (
                       <tr key={i}>
                         <td className="border border-slate-300 p-2 text-left">{estado}</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2">0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                       </tr>
                     ))}
                   </tbody>
@@ -831,14 +901,14 @@ export default function Formato911({ rawActivos }) {
                     {['Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas', 'Fuera de México'].map((estado, i) => (
                       <tr key={i}>
                         <td className="border border-slate-300 p-2 text-left">{estado}</td>
-                        <td className="border border-slate-300 p-2">0</td>
-                        <td className="border border-slate-300 p-2">0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                        <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                       </tr>
                     ))}
                     <tr className="font-bold bg-slate-50">
                       <td className="border border-slate-300 p-2 text-left">Total</td>
-                      <td className="border border-slate-300 p-2">0</td>
-                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
                     </tr>
                   </tbody>
                 </table>
