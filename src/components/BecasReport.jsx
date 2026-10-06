@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { Printer, X, GraduationCap, Users, UserRound, Award } from 'lucide-react';
+import { Printer, X, GraduationCap, Users, User, Award } from 'lucide-react';
 
 export default function BecasReport({ activos = [], onClose }) {
   const { config } = useGlobalConfig();
@@ -8,21 +8,21 @@ export default function BecasReport({ activos = [], onClose }) {
   // Filtrar solo los que tienen beca
   const becados = useMemo(() => {
     return activos.filter(s => {
-      // Si no hay dato en tieneBeca, no descartamos inmediatamente, evaluamos nombreBeca más abajo
-      const tiene = (s.tieneBeca || '').toUpperCase().trim();
+      // Si no hay dato en tieneBeca, no descartamos inmediatamente, evaluamos nombreBeca mÃ¡s abajo
+      const tiene = String(s.tieneBeca || '').toUpperCase().trim();
       
 
       
-      // Si explícitamente seleccionaron NO, descartar
+      // Si explÃ­citamente seleccionaron NO, descartar
       if (tiene === 'NO') return false;
       
-      // Si empieza con S (SÍ, SI, S?), es un rotundo sí
+      // Si empieza con S (SÃ, SI, S?), es un rotundo sÃ­
       if (tiene.startsWith('S')) return true;
       
-      // ¿Qué pasa si se saltaron la primera pregunta pero sí escribieron un nombre de beca válido?
-      // Lo incluimos si el texto en nombreBeca es válido
+      // Â¿QuÃ© pasa si se saltaron la primera pregunta pero sÃ­ escribieron un nombre de beca vÃ¡lido?
+      // Lo incluimos si el texto en nombreBeca es vÃ¡lido
       if (s.nombreBeca) {
-        const nombreStr = s.nombreBeca.toUpperCase().trim();
+        const nombreStr = String(s.nombreBeca).toUpperCase().trim();
         if (nombreStr !== '' && nombreStr !== 'NO' && nombreStr !== 'NINGUNA' && nombreStr !== 'N/A') {
           return true;
         }
@@ -42,8 +42,8 @@ export default function BecasReport({ activos = [], onClose }) {
     };
 
     becados.forEach(s => {
-      // Determinar género (M = Mujer, H = Hombre)
-      const sexoUpper = s.sexo?.toUpperCase() || '';
+      // Determinar gÃ©nero (M = Mujer, H = Hombre)
+      const sexoUpper = s.sexo ? String(s.sexo).toUpperCase() : '';
       const isM = sexoUpper.startsWith('M');
       const isH = sexoUpper.startsWith('H');
       
@@ -56,22 +56,22 @@ export default function BecasReport({ activos = [], onClose }) {
       }
 
       // Normalizar nombre de beca
-      let rawTipo = (s.nombreBeca || 'NO ESPECIFICADO').trim();
+      let rawTipo = String(s.nombreBeca || 'NO ESPECIFICADO').trim();
       if (rawTipo.toUpperCase() === 'NO' || rawTipo.toUpperCase() === 'NINGUNA' || rawTipo.toUpperCase() === 'N/A' || rawTipo === '') {
         rawTipo = 'NO ESPECIFICADO';
       }
       
-      // Quitar acentos para la comparación y agrupación
+      // Quitar acentos para la comparaciÃ³n y agrupaciÃ³n
       let tipoNormalized = rawTipo.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       let tipo = rawTipo.toUpperCase();
       
-      // Agrupar nombres comunes (incluyendo errores ortográficos comunes)
+      // Agrupar nombres comunes (incluyendo errores ortogrÃ¡ficos comunes)
       if (tipoNormalized.includes('RITA') || tipoNormalized.includes('CETINA') || tipoNormalized.includes('SETINA')) {
         tipo = 'BECA RITA CETINA';
       } else if (tipoNormalized.includes('ESTATAL') || tipoNormalized.includes('ESTADO') || tipoNormalized.includes('IGUALDAD')) {
         tipo = 'BECA ESTATAL';
       } else if (tipoNormalized.includes('BENITO') || tipoNormalized.includes('JUAREZ')) {
-        tipo = 'BECA BENITO JUÁREZ';
+        tipo = 'BECA BENITO JUÃREZ';
       } else if (tipoNormalized.includes('DISCAPACIDAD') || tipoNormalized.includes('DIF')) {
         tipo = 'BECA POR DISCAPACIDAD / DIF';
       } else if (tipoNormalized.includes('MUNICIPAL') || tipoNormalized.includes('AYUNTAMIENTO') || tipoNormalized.includes('ACAPULCO')) {
@@ -89,7 +89,7 @@ export default function BecasReport({ activos = [], onClose }) {
       const grupo = s.grupo || '?';
       const turnoStr = s.turno === 'Vespertino' ? 'Vesp.' : (s.turno === 'Matutino' ? 'Mat.' : 'Sin Turno');
       
-      const gkey = `${grado}° "${grupo}" ${turnoStr}`;
+      const gkey = `${grado}Â° "${grupo}" ${turnoStr}`;
       
       if (!data.porGrupo[gkey]) data.porGrupo[gkey] = { total: 0, h: 0, m: 0 };
       data.porGrupo[gkey].total++;
@@ -109,8 +109,8 @@ export default function BecasReport({ activos = [], onClose }) {
         const ga = `${a.grado || '?'}${a.grupo || '?'}${a.turno || '?'}`;
         const gb = `${b.grado || '?'}${b.grupo || '?'}${b.turno || '?'}`;
         if (ga !== gb) return ga.localeCompare(gb);
-        // Luego alfabéticamente por apellidos
-        return (a.apellidos || '').localeCompare(b.apellidos || '');
+        // Luego alfabÃ©ticamente por apellidos
+        return String(a.apellidos || '').localeCompare(String(b.apellidos || ''));
     });
   }, [becados, searchTerm]);
 
@@ -121,9 +121,9 @@ export default function BecasReport({ activos = [], onClose }) {
             <div>
               <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
                 <Award className="text-emerald-600" />
-                Control y Padrón de Becas
+                Control y PadrÃ³n de Becas
               </h2>
-              <p className="text-sm text-slate-500 mt-1">Desglose de alumnos beneficiarios por programa, género y grupo.</p>
+              <p className="text-sm text-slate-500 mt-1">Desglose de alumnos beneficiarios por programa, gÃ©nero y grupo.</p>
             </div>
             <div className="flex gap-3">
               <button 
@@ -154,12 +154,12 @@ export default function BecasReport({ activos = [], onClose }) {
             
             <div className="print-section max-w-5xl mx-auto space-y-8">
                 
-                {/* Cabecera de impresión */}
+                {/* Cabecera de impresiÃ³n */}
                 <div className="hidden print:flex items-center justify-between border-b-2 border-slate-800 pb-4 mb-8">
                   <div className="flex-1">
-                    <h1 className="text-2xl font-black text-slate-900 uppercase">Padrón de Becas Escolar</h1>
+                    <h1 className="text-2xl font-black text-slate-900 uppercase">PadrÃ³n de Becas Escolar</h1>
                     <h2 className="text-sm font-bold text-slate-600 uppercase mt-1">{config?.escuela || "Escuela Secundaria"} - CCT: {config?.cct || "N/A"}</h2>
-                    <p className="text-xs text-slate-500 mt-2">Fecha de emisión: {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <p className="text-xs text-slate-500 mt-2">Fecha de emisiÃ³n: {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                   </div>
                 </div>
 
@@ -176,7 +176,7 @@ export default function BecasReport({ activos = [], onClose }) {
                   </div>
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-5 print:shadow-none print:border-slate-300">
                     <div className="p-4 bg-blue-100 text-blue-600 rounded-full print:bg-transparent print:p-0 print:text-slate-800">
-                      <UserRound size={32} />
+                      <User size={32} />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Hombres</p>
@@ -185,7 +185,7 @@ export default function BecasReport({ activos = [], onClose }) {
                   </div>
                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-5 print:shadow-none print:border-slate-300">
                     <div className="p-4 bg-pink-100 text-pink-600 rounded-full print:bg-transparent print:p-0 print:text-slate-800">
-                      <UserRound size={32} />
+                      <User size={32} />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Mujeres</p>
@@ -228,7 +228,7 @@ export default function BecasReport({ activos = [], onClose }) {
                   <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden print:shadow-none print:border-slate-300">
                     <div className="p-4 bg-slate-50 border-b border-slate-200 print:bg-slate-100">
                       <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                         <Users size={18}/> Distribución por Grupo
+                         <Users size={18}/> DistribuciÃ³n por Grupo
                       </h3>
                     </div>
                     <div className="max-h-[300px] overflow-y-auto print:max-h-none print:overflow-visible">
@@ -260,7 +260,7 @@ export default function BecasReport({ activos = [], onClose }) {
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8 print:shadow-none print:border-none print:mt-12">
                    
                    <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center print:hidden">
-                      <h3 className="font-bold text-slate-800">Padrón Detallado de Beneficiarios</h3>
+                      <h3 className="font-bold text-slate-800">PadrÃ³n Detallado de Beneficiarios</h3>
                       <input 
                         type="text" 
                         placeholder="Buscar alumno o beca..." 
@@ -270,9 +270,9 @@ export default function BecasReport({ activos = [], onClose }) {
                       />
                    </div>
 
-                   {/* Encabezado alternativo para impresión */}
+                   {/* Encabezado alternativo para impresiÃ³n */}
                    <div className="hidden print:block p-2 border-b-2 border-slate-400 mb-4 mt-8 break-before-page">
-                     <h3 className="font-black text-lg text-slate-800 uppercase text-center">Relación Nominal de Becarios</h3>
+                     <h3 className="font-black text-lg text-slate-800 uppercase text-center">RelaciÃ³n Nominal de Becarios</h3>
                    </div>
 
                    <table className="w-full text-sm text-left">
@@ -283,7 +283,7 @@ export default function BecasReport({ activos = [], onClose }) {
                           <th className="p-3 text-center">Grado</th>
                           <th className="p-3 text-center">Grupo</th>
                           <th className="p-3 text-center">Turno</th>
-                          <th className="p-3 text-center">Género</th>
+                          <th className="p-3 text-center">GÃ©nero</th>
                           <th className="p-3">Programa / Tipo de Beca</th>
                         </tr>
                       </thead>
@@ -292,16 +292,16 @@ export default function BecasReport({ activos = [], onClose }) {
                            <tr key={s.id} className="hover:bg-slate-50 print:break-inside-avoid">
                              <td className="p-3 text-center text-slate-400">{i + 1}</td>
                              <td className="p-3 font-bold text-slate-800">{s.apellidos} {s.nombre}</td>
-                             <td className="p-3 text-center text-slate-600">{s.grado}°</td>
+                             <td className="p-3 text-center text-slate-600">{s.grado}Â°</td>
                              <td className="p-3 text-center font-bold text-slate-700">"{s.grupo || '-'}"</td>
                              <td className="p-3 text-center text-xs uppercase tracking-wider text-slate-500">{s.turno}</td>
-                             <td className="p-3 text-center text-slate-600">{s.sexo?.toUpperCase().startsWith('M') ? 'M' : 'H'}</td>
-                             <td className="p-3 font-medium text-emerald-700">{s.nombreBeca ? s.nombreBeca.toUpperCase() : 'NO ESPECIFICADO'}</td>
+                             <td className="p-3 text-center text-slate-600">{s.sexo ? String(s.sexo).toUpperCase().startsWith('M') ? 'M' : 'H' : 'H'}</td>
+                             <td className="p-3 font-medium text-emerald-700">{s.nombreBeca ? String(s.nombreBeca).toUpperCase() : 'NO ESPECIFICADO'}</td>
                            </tr>
                         ))}
                         {filteredBecados.length === 0 && (
                           <tr>
-                            <td colSpan="7" className="p-8 text-center text-slate-500">No se encontraron beneficiarios que coincidan con la búsqueda.</td>
+                            <td colSpan="7" className="p-8 text-center text-slate-500">No se encontraron beneficiarios que coincidan con la bÃºsqueda.</td>
                           </tr>
                         )}
                       </tbody>
