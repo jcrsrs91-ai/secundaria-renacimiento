@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ExternalLink, Download, AlertTriangle } from 'lucide-react';
+import { X, ExternalLink, Download, AlertTriangle, Award } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { PDFDocument } from 'pdf-lib';
@@ -118,6 +118,20 @@ export default function ExpedienteModal({ student, onClose }) {
         </div>
 
         <div className="p-6 flex-1 overflow-y-auto">
+          <div className="mb-6 bg-slate-50 border border-slate-200 p-4 rounded-lg flex items-center gap-4">
+             <div className={`p-3 rounded-full ${(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-500'}`}>
+               <Award size={24} />
+             </div>
+             <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Estatus de Beca</p>
+                <p className={`text-sm font-bold ${(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) ? 'text-emerald-700' : 'text-slate-700'}`}>
+                  {(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) 
+                    ? `SÍ - ${student.nombreBeca ? String(student.nombreBeca).toUpperCase().trim() : 'PROGRAMA NO ESPECIFICADO'}` 
+                    : 'NO CUENTA CON BECA'}
+                </p>
+             </div>
+          </div>
+
           {errorMsg && (
             <div className="mb-4 bg-red-50 text-red-700 p-4 rounded-lg flex items-start gap-3 text-sm">
               <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />

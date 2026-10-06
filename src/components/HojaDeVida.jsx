@@ -519,11 +519,19 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tight">{student.apellidoPaterno} {student.apellidoMaterno}</h3>
                     <h4 className="text-xl font-medium text-slate-600 uppercase mb-6">{student.nombres}</h4>
                     
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm bg-slate-50 p-4 rounded-xl border border-slate-200">
                       <div><p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Grado</p><p className="font-bold text-slate-800 text-lg">{student.grado}</p></div>
                       <div><p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Grupo</p><p className="font-bold text-primary-700 text-lg">{student.grupo || 'Por Asignar'}</p></div>
                       <div><p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Turno</p><p className="font-bold text-slate-800 text-lg">{student.turno || '-'}</p></div>
                       <div><p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Taller</p><p className="font-bold text-slate-800 text-sm mt-1">{student.taller || '-'}</p></div>
+                      <div>
+                         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Beca</p>
+                         <p className={`font-bold text-sm mt-1 ${(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) ? 'text-emerald-600' : 'text-slate-500'}`}>
+                            {(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) 
+                              ? student.nombreBeca ? String(student.nombreBeca).toUpperCase() : 'SÍ' 
+                              : 'NO'}
+                         </p>
+                      </div>
                     </div>
                  </div>
               </div>
