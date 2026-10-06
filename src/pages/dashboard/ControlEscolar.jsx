@@ -2060,7 +2060,13 @@ export default function ControlEscolar() {
         <NoInscritosPrint bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja === 'No Inscrito')} onClose={() => setActiveTab('activos')} />
       )}
 
-      {/* IMPRESIÓN MODALES INDIVIDUALES */}
+      
+        {/* Sección Becas */}
+        {!loading && activeTab === 'becas' && !printMode && (
+          <BecasReport activos={activos} onClose={() => setActiveTab('activos')} />
+        )}
+
+        {/* IMPRESIÓN MODALES INDIVIDUALES */}
       {printMode === 'acuseRec' && printData && <AcuseRecepcionPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'acuse' && printData && <AcuseDocumentosPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
