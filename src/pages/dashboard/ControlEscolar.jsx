@@ -25,6 +25,7 @@ import EficienciaTerminalPrint from '../../components/EficienciaTerminalPrint';
 import DesempenoAlcanzadoPrint from '../../components/DesempenoAlcanzadoPrint';
 import DesertoresPrint from '../../components/DesertoresPrint';
 import NoInscritosPrint from '../../components/NoInscritosPrint';
+import BecasReport from '../../components/BecasReport';
 import RegularizacionPrint from '../../components/RegularizacionPrint';
 import KardexPrint from '../../components/KardexPrint';
 import ListaClausuraPrint from '../../components/ListaClausuraPrint';
@@ -905,7 +906,13 @@ export default function ControlEscolar() {
           </button>
           
           {/* Activos */}
-          <button onClick={() => setActiveTab('activos')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'activos' ? 'bg-primary-600 text-white shadow-primary-200 ring-2 ring-primary-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+          
+          {/* Becas */}
+          <button onClick={() => setActiveTab('becas')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'becas' ? 'bg-emerald-600 text-white shadow-emerald-200 ring-2 ring-emerald-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+            Control de Becas
+          </button>
+  
+<button onClick={() => setActiveTab('activos')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'activos' ? 'bg-primary-600 text-white shadow-primary-200 ring-2 ring-primary-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Directorio / Expedientes <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-bold ${activeTab === 'activos' ? 'bg-primary-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{activos.length}</span>
           </button>
           
