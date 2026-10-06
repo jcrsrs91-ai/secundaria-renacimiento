@@ -61,11 +61,13 @@ export default function Formato911({ rawActivos }) {
             .map(td => td.innerText.trim());
         });
       });
-      await setDoc(doc(db, 'configuracion', 'formato911_historico'), { tablesData: data, updatedAt: new Date() });
-      toast.success('Datos del Formato 911 guardados correctamente.');
+      await setDoc(doc(db, 'configuracion', 'formato911_historico'), { tablesData: data, updatedAt: new Date().toISOString() });
+      toast.success('Datos guardados correctamente.');
+        alert('¡Los datos manuales de la 911 se han guardado con éxito en la nube!');
     } catch (err) {
       console.error(err);
       toast.error('Error al guardar los datos.');
+        alert('Hubo un error al guardar. Revisa tu conexión a internet.');
     } finally {
       setIsSaving(false);
     }
@@ -921,5 +923,5 @@ export default function Formato911({ rawActivos }) {
 
       </div>
     </div>
-  );
+  ), [shiftFilter, isSaving]);
 }
