@@ -590,6 +590,24 @@ export default function PreInscripcion() {
                             <option>NO</option><option>SÍ</option>
                           </select>
                         </div>
+                          <div>
+                            <label className="block text-sm font-medium">Discapacidad o Condición</label>
+                            <select name="discapacidad" className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.discapacidad || 'Ninguna'}>
+                              <option>Ninguna</option>
+                              <option>Ceguera</option>
+                              <option>Baja visión</option>
+                              <option>Sordera</option>
+                              <option>Hipoacusia</option>
+                              <option>Sordoceguera</option>
+                              <option>Discapacidad motriz</option>
+                              <option>Discapacidad intelectual</option>
+                              <option>Discapacidad psicosocial</option>
+                              <option>Discapacidad múltiple</option>
+                              <option>Trastorno del Espectro Autista (TEA)</option>
+                              <option>Trastorno por Déficit de Atención (TDAH)</option>
+                              <option>Aptitudes Sobresalientes</option>
+                            </select>
+                          </div>
                         <div id="nombreBecaContainer" style={{display: studentData?.tieneBeca && studentData?.tieneBeca !== 'NO' ? 'block' : 'none'}}>
                           <label className="block text-sm font-medium">Nombre de la Beca</label>
                           <input type="text" name="nombreBeca" className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.nombreBeca} />
@@ -627,7 +645,32 @@ export default function PreInscripcion() {
                         <div>
                           <label className="block text-sm font-medium">Fecha de Nacimiento</label>
                           <input type="date" name="fechaNacimiento" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.fechaNacimiento} />
-                        </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium">Nacionalidad (País de Nacimiento)</label>
+                            <select name="nacionalidad" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nacionalidad || 'MEXICANA'}>
+                              <option value="MEXICANA">Mexicana</option>
+                              <option value="EXTRANJERA">Extranjera</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium">¿Habla alguna Lengua Indígena?</label>
+                            <select name="lenguaIndigena" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.lenguaIndigena || 'NO'} onChange={(e) => {
+                               const input = document.getElementById('nombreLenguaContainer');
+                               if (e.target.value === 'SÍ') {
+                                 input.style.display = 'block';
+                               } else {
+                                 input.style.display = 'none';
+                               }
+                            }}>
+                              <option>NO</option>
+                              <option>SÍ</option>
+                            </select>
+                          </div>
+                          <div id="nombreLenguaContainer" style={{display: studentData?.lenguaIndigena === 'SÍ' ? 'block' : 'none'}}>
+                            <label className="block text-sm font-medium">¿Cuál lengua indígena?</label>
+                            <input type="text" name="nombreLenguaIndigena" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nombreLenguaIndigena} placeholder="Ej. Náhuatl, Maya..." />
+                          </div>
 
                         <div className="md:col-span-2">
                           <label className="block text-sm font-medium text-slate-700">Calle</label>
