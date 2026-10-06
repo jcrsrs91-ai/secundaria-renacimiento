@@ -528,7 +528,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                          <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Beca</p>
                          <p className={`font-bold text-sm mt-1 ${(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) ? 'text-emerald-600' : 'text-slate-500'}`}>
                             {(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) 
-                              ? student.nombreBeca ? String(student.nombreBeca).toUpperCase() : 'SÍ' 
+                              ? `S\u00cd - ${student.nombreBeca ? String(student.nombreBeca).toUpperCase().trim() : 'NO ESPECIFICADO'}` 
                               : 'NO'}
                          </p>
                       </div>

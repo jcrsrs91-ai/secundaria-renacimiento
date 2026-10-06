@@ -126,7 +126,7 @@ export default function ExpedienteModal({ student, onClose }) {
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Estatus de Beca</p>
                 <p className={`text-sm font-bold ${(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) ? 'text-emerald-700' : 'text-slate-700'}`}>
                   {(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) 
-                    ? `SÍ - ${student.nombreBeca ? String(student.nombreBeca).toUpperCase().trim() : 'PROGRAMA NO ESPECIFICADO'}` 
+                    ? `S\u00cd - ${student.nombreBeca ? String(student.nombreBeca).toUpperCase().trim() : 'PROGRAMA NO ESPECIFICADO'}` 
                     : 'NO CUENTA CON BECA'}
                 </p>
              </div>
