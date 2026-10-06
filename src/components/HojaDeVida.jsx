@@ -330,10 +330,28 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                         <option value="Mujer">Mujer</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500">Fecha de Nacimiento</label>
-                      <input type="date" name="fechaNacimiento" defaultValue={student.fechaNacimiento} className="mt-1 w-full p-2 border rounded" />
-                    </div>
+                                          <div>
+                        <label className="block text-xs font-medium text-slate-500">Fecha de Nacimiento</label>
+                        <input type="date" name="fechaNacimiento" defaultValue={student.fechaNacimiento} className="mt-1 w-full p-2 border rounded" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500">Nacionalidad</label>
+                        <select name="nacionalidad" defaultValue={student.nacionalidad || 'MEXICANA'} className="mt-1 w-full p-2 border rounded">
+                          <option value="MEXICANA">Mexicana</option>
+                          <option value="EXTRANJERA">Extranjera</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500">Lengua Indígena</label>
+                        <select name="lenguaIndigena" defaultValue={student.lenguaIndigena || 'NO'} className="mt-1 w-full p-2 border rounded">
+                          <option value="NO">NO</option>
+                          <option value="SÍ">SÍ</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500">¿Cuál lengua?</label>
+                        <input type="text" name="nombreLenguaIndigena" defaultValue={student.nombreLenguaIndigena} placeholder="Si aplica..." className="mt-1 w-full p-2 border rounded" />
+                      </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-medium text-slate-500">Calle y Número</label>
                       <div className="flex gap-2">
@@ -365,8 +383,26 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                         <option value="NO">NO</option><option value="SÍ">SÍ</option>
                       </select>
                     </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-slate-500">Alergias</label>
+                                          <div>
+                        <label className="block text-xs font-medium text-slate-500">Discapacidad (911)</label>
+                        <select name="discapacidad" defaultValue={student.discapacidad || 'Ninguna'} className="mt-1 w-full p-2 border rounded">
+                          <option>Ninguna</option>
+                          <option>Ceguera</option>
+                          <option>Baja visión</option>
+                          <option>Sordera</option>
+                          <option>Hipoacusia</option>
+                          <option>Sordoceguera</option>
+                          <option>Discapacidad motriz</option>
+                          <option>Discapacidad intelectual</option>
+                          <option>Discapacidad psicosocial</option>
+                          <option>Discapacidad múltiple</option>
+                          <option>Trastorno del Espectro Autista (TEA)</option>
+                          <option>Trastorno por Déficit de Atención (TDAH)</option>
+                          <option>Aptitudes Sobresalientes</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-slate-500">Alergias</label>
                       <input type="text" name="alergias" defaultValue={student.alergias} className="mt-1 w-full p-2 border rounded" />
                     </div>
                     <div className="md:col-span-2">
@@ -543,7 +579,9 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                   <div className="space-y-4 text-sm">
                     <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">CURP</span><span className="font-bold text-slate-700 uppercase tracking-widest">{student.curp}</span></div>
                     <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Género</span><span className="font-bold text-slate-700">{student.genero}</span></div>
-                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Fecha Nacimiento</span><span className="font-bold text-slate-700">{student.fechaNacimiento}</span></div>
+                                          <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Fecha Nacimiento</span><span className="font-bold text-slate-700">{student.fechaNacimiento}</span></div>
+                      <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Nacionalidad</span><span className="font-bold text-slate-700">{student.nacionalidad || 'MEXICANA'}</span></div>
+                      <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Lengua Indígena</span><span className="font-bold text-slate-700">{student.lenguaIndigena === 'SÍ' ? `SÍ (${student.nombreLenguaIndigena || 'Especificada'})` : 'NO'}</span></div>
                     <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Escuela Procedencia</span><span className="font-bold text-slate-700 text-right">{student.escuelaProcedencia || '-'}</span></div>
                     <div className="pt-4 border-t border-slate-100">
                       <span className="text-slate-500 font-medium block mb-2">Domicilio Completo</span>
