@@ -2069,6 +2069,9 @@ export default function ControlEscolar() {
         {!loading && activeTab === 'becas' && !printMode && (
           <BecasReport activos={activos} onClose={() => setActiveTab('activos')} />
         )}
+        {!loading && activeTab === 'estadistica911' && !printMode && (
+          <Formato911 activos={activos} />
+        )}
 
         {/* IMPRESIÓN MODALES INDIVIDUALES */}
       {printMode === 'acuseRec' && printData && <AcuseRecepcionPrint data={printData} onClose={() => setPrintMode(null)} />}
