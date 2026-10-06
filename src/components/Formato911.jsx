@@ -1,0 +1,277 @@
+import React from 'react';
+import { FileText, Download } from 'lucide-react';
+
+export default function Formato911({ activos }) {
+  // En la Fase 2, aquí irán todas las lógicas matemáticas para procesar "activos"
+  
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-slate-200 pb-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+            <FileText className="w-7 h-7 text-emerald-600" />
+            Estadística 911 (Secundaria 911.5)
+          </h2>
+          <p className="text-slate-500 text-sm mt-1">
+            Formatos oficiales para captura. En esta fase los datos están en ceros.
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0">
+          <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+            <Download className="w-4 h-4" /> Imprimir Formatos
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-12">
+        
+        {/* I. EXISTENCIA Y PROMOVIDOS */}
+        <section>
+          <h3 className="text-xl font-bold text-slate-800 mb-4 bg-slate-100 p-2 rounded">I. EXISTENCIA Y PROMOVIDOS</h3>
+          
+          <div className="mb-6">
+            <p className="text-sm font-semibold mb-2">1. Existentes al final del ciclo (por grado, sexo, y condiciones)</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[800px]">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="border border-slate-300 p-2">Grado</th>
+                    <th className="border border-slate-300 p-2">Hombres</th>
+                    <th className="border border-slate-300 p-2">Mujeres</th>
+                    <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
+                    <th className="border border-slate-300 p-2">Grupos</th>
+                    <th className="border border-slate-300 p-2">Hablantes Indígenas</th>
+                    <th className="border border-slate-300 p-2">Nacidos fuera MX</th>
+                    <th className="border border-slate-300 p-2">Afrodescendientes</th>
+                    <th className="border border-slate-300 p-2">Con discapacidad</th>
+                    <th className="border border-slate-300 p-2">Con trastorno</th>
+                    <th className="border border-slate-300 p-2">Aptitudes Sobresal.</th>
+                    <th className="border border-slate-300 p-2">Otras condiciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {['1o.', '2o.', '3o.', 'Total'].map((g, i) => (
+                    <tr key={i} className={g === 'Total' ? 'font-bold bg-slate-50' : ''}>
+                      <td className="border border-slate-300 p-2">{g}</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold mb-2">2. Promovidos (por grado, sexo, y condiciones)</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[800px]">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="border border-slate-300 p-2">Grado</th>
+                    <th className="border border-slate-300 p-2">Hombres</th>
+                    <th className="border border-slate-300 p-2">Mujeres</th>
+                    <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
+                    <th className="border border-slate-300 p-2">Hablantes Indígenas</th>
+                    <th className="border border-slate-300 p-2">Nacidos fuera MX</th>
+                    <th className="border border-slate-300 p-2">Afrodescendientes</th>
+                    <th className="border border-slate-300 p-2">Con discapacidad</th>
+                    <th className="border border-slate-300 p-2">Con trastorno</th>
+                    <th className="border border-slate-300 p-2">Aptitudes Sobresal.</th>
+                    <th className="border border-slate-300 p-2">Otras condiciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {['1o.', '2o.', '3o.', 'Total'].map((g, i) => (
+                    <tr key={i} className={g === 'Total' ? 'font-bold bg-slate-50' : ''}>
+                      <td className="border border-slate-300 p-2">{g}</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* II. ALUMNADO QUE PROVIENE DE OTRA ESCUELA */}
+        <section>
+          <h3 className="text-xl font-bold text-slate-800 mb-4 bg-slate-100 p-2 rounded">II. ALUMNADO QUE PROVIENE DE OTRA ESCUELA</h3>
+          
+          <div className="mb-6">
+            <p className="text-sm font-semibold mb-2">1. Procedencia por grado y sexo</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[700px]">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="border border-slate-300 p-2" rowSpan="2">Grado / Tipo</th>
+                    <th className="border border-slate-300 p-2" colSpan="2">Misma entidad</th>
+                    <th className="border border-slate-300 p-2" colSpan="2">Otra entidad</th>
+                    <th className="border border-slate-300 p-2" colSpan="2">Otro país</th>
+                    <th className="border border-slate-300 p-2 bg-slate-100" colSpan="2">Total</th>
+                  </tr>
+                  <tr>
+                    <th className="border border-slate-300 p-1">Hombres</th>
+                    <th className="border border-slate-300 p-1">Mujeres</th>
+                    <th className="border border-slate-300 p-1">Hombres</th>
+                    <th className="border border-slate-300 p-1">Mujeres</th>
+                    <th className="border border-slate-300 p-1">Hombres</th>
+                    <th className="border border-slate-300 p-1">Mujeres</th>
+                    <th className="border border-slate-300 p-1 bg-slate-100">Hombres</th>
+                    <th className="border border-slate-300 p-1 bg-slate-100">Mujeres</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border border-slate-300 p-2 text-left">1o. Nvo. Ingreso</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-300 p-2 text-left">1o. Repetidor</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-300 p-2 text-left">2o.</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-300 p-2 text-left">3o.</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                  </tr>
+                  <tr className="font-bold bg-slate-50">
+                    <td className="border border-slate-300 p-2 text-left">Total</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td><td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100">0</td><td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* III. BECAS */}
+        <section>
+          <h3 className="text-xl font-bold text-slate-800 mb-4 bg-slate-100 p-2 rounded">III. BECAS</h3>
+          
+          <div className="mb-6">
+            <p className="text-sm font-semibold mb-2">1. Alumnado con y sin beca</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-4xl">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="border border-slate-300 p-2">Estatus</th>
+                    <th className="border border-slate-300 p-2">Hombres</th>
+                    <th className="border border-slate-300 p-2">Mujeres</th>
+                    <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
+                    <th className="border border-slate-300 p-2">Con discapacidad</th>
+                    <th className="border border-slate-300 p-2">Hablantes Indígenas</th>
+                    <th className="border border-slate-300 p-2">Nacidos fuera MX</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {['Con Beca', 'Sin Beca', 'Total'].map((g, i) => (
+                    <tr key={i} className={g === 'Total' ? 'font-bold bg-slate-50' : ''}>
+                      <td className="border border-slate-300 p-2 text-left">{g}</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                      <td className="border border-slate-300 p-2">0</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* V. ALUMNADO Y GRUPOS (Edades) */}
+        <section>
+          <h3 className="text-xl font-bold text-slate-800 mb-4 bg-slate-100 p-2 rounded">V. ALUMNADO Y GRUPOS POR EDAD</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[900px]">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="border border-slate-300 p-2">Grado / Sexo</th>
+                  <th className="border border-slate-300 p-2">Menos 12</th>
+                  <th className="border border-slate-300 p-2">12 años</th>
+                  <th className="border border-slate-300 p-2">13 años</th>
+                  <th className="border border-slate-300 p-2">14 años</th>
+                  <th className="border border-slate-300 p-2">15 años</th>
+                  <th className="border border-slate-300 p-2">16 años</th>
+                  <th className="border border-slate-300 p-2">17 años</th>
+                  <th className="border border-slate-300 p-2">18 o más</th>
+                  <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
+                  <th className="border border-slate-300 p-2">Grupos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { label: "1° Hombres Nvo.", g: '1' }, { label: "1° Hombres Rep.", g: '1' },
+                  { label: "1° Mujeres Nvo.", g: '1' }, { label: "1° Mujeres Rep.", g: '1' },
+                  { label: "Subtotal 1°", g: '1', sub: true },
+                  { label: "2° Hombres Nvo.", g: '2' }, { label: "2° Hombres Rep.", g: '2' },
+                  { label: "2° Mujeres Nvo.", g: '2' }, { label: "2° Mujeres Rep.", g: '2' },
+                  { label: "Subtotal 2°", g: '2', sub: true },
+                  { label: "3° Hombres Nvo.", g: '3' }, { label: "3° Hombres Rep.", g: '3' },
+                  { label: "3° Mujeres Nvo.", g: '3' }, { label: "3° Mujeres Rep.", g: '3' },
+                  { label: "Subtotal 3°", g: '3', sub: true },
+                ].map((row, i) => (
+                  <tr key={i} className={row.sub ? 'font-bold bg-slate-50' : ''}>
+                    <td className="border border-slate-300 p-2 text-left">{row.label}</td>
+                    <td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2">0</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100">0</td>
+                    <td className="border border-slate-300 p-2">{row.sub ? '0' : ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  );
+}

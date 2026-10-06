@@ -26,6 +26,7 @@ import DesempenoAlcanzadoPrint from '../../components/DesempenoAlcanzadoPrint';
 import DesertoresPrint from '../../components/DesertoresPrint';
 import NoInscritosPrint from '../../components/NoInscritosPrint';
 import BecasReport from '../../components/BecasReport';
+import Formato911 from '../../components/Formato911';
 import RegularizacionPrint from '../../components/RegularizacionPrint';
 import KardexPrint from '../../components/KardexPrint';
 import ListaClausuraPrint from '../../components/ListaClausuraPrint';
