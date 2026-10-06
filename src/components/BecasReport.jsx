@@ -45,7 +45,7 @@ export default function BecasReport({ activos = [], onClose }) {
     };
 
     becados.forEach(s => {
-      const sexoUpper = s.sexo ? String(s.sexo).toUpperCase() : '';
+      const sexoUpper = (s.genero || s.sexo) ? String(s.genero || s.sexo).toUpperCase() : '';
       const isM = sexoUpper.startsWith('M');
       
       if (isM) {
@@ -297,7 +297,7 @@ export default function BecasReport({ activos = [], onClose }) {
                              <td className="p-3 text-center text-slate-600">{s.grado ? String(s.grado).charAt(0) : '?'}°</td>
                              <td className="p-3 text-center font-bold text-slate-700">"{s.grupo || '-'}"</td>
                              <td className="p-3 text-center text-xs uppercase tracking-wider text-slate-500">{s.turno}</td>
-                             <td className="p-3 text-center text-slate-600">{s.sexo ? String(s.sexo).toUpperCase().startsWith('M') ? 'M' : 'H' : 'H'}</td>
+                             <td className="p-3 text-center text-slate-600">{(s.genero || s.sexo) ? String(s.genero || s.sexo).toUpperCase().startsWith('M') ? 'M' : 'H' : 'H'}</td>
                              <td className="p-3 font-medium text-emerald-700">{s.nombreBeca ? String(s.nombreBeca).toUpperCase() : 'NO ESPECIFICADO'}</td>
                            </tr>
                         ))}
