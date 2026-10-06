@@ -81,7 +81,7 @@ export default function Formato911({ rawActivos }) {
   }, [rawActivos, shiftFilter]);
   // En la Fase 2, aquÃ­ irÃ¡n todas las lÃ³gicas matemÃ¡ticas para procesar "activos"
   
-  return (
+  return useMemo(() => (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
       
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-slate-200 pb-4">
