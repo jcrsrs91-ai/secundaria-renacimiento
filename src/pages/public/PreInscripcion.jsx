@@ -677,6 +677,13 @@ export default function PreInscripcion() {
                           <div id="nombreLenguaContainer" style={{display: studentData?.lenguaIndigena === 'SÃ' ? 'block' : 'none'}}>
                             <label className="block text-sm font-medium">Â¿CuÃ¡l lengua indÃ­gena?</label>
                             <input type="text" name="nombreLenguaIndigena" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nombreLenguaIndigena} placeholder="Ej. NÃ¡huatl, Maya..." />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium">¿Además de la lengua indígena, habla español?</label>
+                              <select name="hablaEspanol" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.hablaEspanol || 'SÍ'}>
+                                <option>SÍ</option>
+                                <option>NO</option>
+                              </select>
                           </div>
 
                         <div className="md:col-span-2">

@@ -352,6 +352,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                         <label className="block text-xs font-medium text-slate-500">¿Cuál lengua?</label>
                         <input type="text" name="nombreLenguaIndigena" defaultValue={student.nombreLenguaIndigena} placeholder="Si aplica..." className="mt-1 w-full p-2 border rounded" />
                       </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">¿Además habla español?</label>
+              <select name="hablaEspanol" className="w-full border-b border-slate-300 focus:border-blue-500 outline-none pb-1 font-medium text-slate-800" defaultValue={student?.hablaEspanol || 'SÍ'}>
+                <option>SÍ</option>
+                <option>NO</option>
+              </select>
+            </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-medium text-slate-500">Calle y Número</label>
                       <div className="flex gap-2">
@@ -401,6 +408,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                           <option>Aptitudes Sobresalientes</option>
                         </select>
                       </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">USAER</label>
+              <select name="usaer" className="w-full border-b border-slate-300 focus:border-blue-500 outline-none pb-1 font-medium text-slate-800" defaultValue={student?.usaer || 'NO'}>
+                <option>NO</option>
+                <option>SÍ</option>
+              </select>
+            </div>
                       <div className="md:col-span-2">
                         <label className="block text-xs font-medium text-slate-500">Alergias</label>
                       <input type="text" name="alergias" defaultValue={student.alergias} className="mt-1 w-full p-2 border rounded" />
