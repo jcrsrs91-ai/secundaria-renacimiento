@@ -11,43 +11,23 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
   const [isSaving, setIsSaving] = useState(false);
   const containerRef = useRef(null);
 
+  
+  const [historicoData, setHistoricoData] = useState(null);
+
   useEffect(() => {
-    // Load saved data
-    const loadData = async () => {
+    const fetchHistorico = async () => {
       try {
         const docSnap = await getDoc(doc(db, 'configuracion', 'formato911_historico'));
-        if (docSnap.exists() && containerRef.current) {
-          const { tablesData } = docSnap.data();
-          const tables = containerRef.current.querySelectorAll('table');
-          tablesData.forEach((tableData, tIdx) => {
-            const table = tables[tIdx];
-            if (table) {
-              const trs = table.querySelectorAll('tbody tr');
-              tableData.forEach((rowData, rIdx) => {
-                const tr = trs[rIdx];
-                if (tr) {
-                  const tds = tr.querySelectorAll('td');
-                  let dataCellIndex = 0;
-                  // Only restore values to the data cells
-                  tds.forEach((td) => {
-                    if (td.classList.contains('data-cell') || td.hasAttribute('contenteditable')) {
-                      if (rowData[dataCellIndex] !== undefined) {
-                        td.innerText = rowData[dataCellIndex];
-                      }
-                      dataCellIndex++;
-                    }
-                  });
-                }
-              });
-            }
-          });
+        if (docSnap.exists()) {
+          setHistoricoData(docSnap.data().tablesData);
         }
       } catch (err) {
         console.error("Error loading 911 data", err);
       }
     };
-    loadData();
+    fetchHistorico();
   }, []);
+
 
   const handleSave = async () => {
     if (!containerRef.current) return;
@@ -62,6 +42,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
         });
       });
       await setDoc(doc(db, 'configuracion', 'formato911_historico'), { tablesData: data, updatedAt: new Date().toISOString() });
+      setHistoricoData(data);
       toast.success('Datos guardados correctamente.');
         alert('¡Los datos manuales de la 911 se han guardado con éxito en la nube!');
     } catch (err) {
@@ -1115,5 +1096,35 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
       </div>
     </div>
-  ), [shiftFilter, calculosV1]); return TableGrid;
+  ), [shiftFilter, calculosV1, calculosV2, calculosV5, calculosV6, calculosV7]);
+  
+  useEffect(() => {
+    if (historicoData && containerRef.current) {
+      const tables = containerRef.current.querySelectorAll('table');
+      historicoData.forEach((tableData, tIdx) => {
+        const table = tables[tIdx];
+        if (table) {
+          const trs = table.querySelectorAll('tbody tr');
+          tableData.forEach((rowData, rIdx) => {
+            const tr = trs[rIdx];
+            if (tr) {
+              const tds = tr.querySelectorAll('td');
+              let dataCellIndex = 0;
+              tds.forEach((td) => {
+                if (td.classList.contains('data-cell') || td.hasAttribute('contenteditable')) {
+                  if (rowData[dataCellIndex] !== undefined) {
+                    td.innerText = rowData[dataCellIndex];
+                  }
+                  dataCellIndex++;
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  }, [historicoData, TableGrid]);
+
+  return TableGrid;
 }
+
