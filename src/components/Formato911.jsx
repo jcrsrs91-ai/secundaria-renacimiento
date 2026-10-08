@@ -206,9 +206,6 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
         </div>
         <div className="mt-4 sm:mt-0 flex gap-4 items-center">
           
-          <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50">
-            {isSaving ? 'Guardando...' : 'Guardar Datos'}
-          </button>
           <button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
             <Download className="w-4 h-4" /> Imprimir Formatos
           </button>
@@ -1125,6 +1122,19 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
     }
   }, [historicoData, TableGrid]);
 
-  return TableGrid;
+  return (
+    <>
+      <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-lg shadow-sm">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Estadística 911</h2>
+          <p className="text-sm text-slate-500">Formato de captura de datos</p>
+        </div>
+        <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50">
+          {isSaving ? 'Guardando...' : 'Guardar Datos'}
+        </button>
+      </div>
+      {TableGrid}
+    </>
+  );
 }
 
