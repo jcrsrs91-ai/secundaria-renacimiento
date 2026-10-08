@@ -19,7 +19,14 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
       try {
         const docSnap = await getDoc(doc(db, 'configuracion', 'formato911_historico'));
         if (docSnap.exists()) {
-          setHistoricoData(docSnap.data().tablesData);
+          
+          const d = docSnap.data();
+          if (d.tablesDataJson) {
+            setHistoricoData(JSON.parse(d.tablesDataJson));
+          } else {
+            setHistoricoData(d.tablesData);
+          }
+
         }
       } catch (err) {
         console.error("Error loading 911 data", err);
@@ -41,7 +48,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
             .map(td => td.innerText.trim());
         });
       });
-      await setDoc(doc(db, 'configuracion', 'formato911_historico'), { tablesData: data, updatedAt: new Date().toISOString() });
+      await setDoc(doc(db, 'configuracion', 'formato911_historico'), { tablesDataJson: JSON.stringify(data), updatedAt: new Date().toISOString() });
       setHistoricoData(data);
       toast.success('Datos guardados correctamente.');
         alert('¡Los datos manuales de la 911 se han guardado con éxito en la nube!');
