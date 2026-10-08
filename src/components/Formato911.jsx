@@ -108,9 +108,17 @@ export default function Formato911({ rawActivos }) {
         else if (edad === 16) edadIndex = 5;
         else if (edad === 17) edadIndex = 6;
         else edadIndex = 7;
+      } else {
+        // Fallback estimado si no hay fecha de nacimiento para que cuadre la 911
+        if (a.grado === '1er Grado' || a.grado === '1ero' || a.grado === '1') edadIndex = 1; // 12
+        else if (a.grado === '2do Grado' || a.grado === '2do' || a.grado === '2') edadIndex = 2; // 13
+        else edadIndex = 3; // 14
       }
 
-      const g = a.grado === '1er Grado' ? '1' : a.grado === '2do Grado' ? '2' : '3';
+      let g = '1';
+      if (a.grado === '2do Grado' || a.grado === '2do' || a.grado === '2') g = '2';
+      if (a.grado === '3er Grado' || a.grado === '3ero' || a.grado === '3ro' || a.grado === '3') g = '3';
+
       const isRep = a.repetidor === 'SÍ';
       const isHombre = a.genero === 'Hombre';
 
@@ -970,5 +978,5 @@ export default function Formato911({ rawActivos }) {
 
       </div>
     </div>
-  ), [shiftFilter]); return TableGrid;
+  ), [shiftFilter, calculosV1]); return TableGrid;
 }
