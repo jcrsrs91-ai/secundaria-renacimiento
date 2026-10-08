@@ -135,6 +135,80 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
     return v1;
   }, [activos]);
 
+  const calculosV2 = useMemo(() => {
+    let h = 0, m = 0;
+    activos.forEach(a => {
+      if (a.lenguaIndigena === 'SÍ' || a.lenguaIndigena === 'SÃ ') {
+        if (a.genero === 'Hombre') h++; else m++;
+      }
+    });
+    return { h, m, t: h + m };
+  }, [activos]);
+
+  const calculosV5 = useMemo(() => {
+    let h = 0, m = 0;
+    activos.forEach(a => {
+      if (a.usaer === 'SÍ' || a.usaer === 'SÃ ') {
+        if (a.genero === 'Hombre') h++; else m++;
+      }
+    });
+    return { h, m, t: h + m };
+  }, [activos]);
+
+  const calculosV7 = useMemo(() => {
+    let h = 0, m = 0;
+    activos.forEach(a => {
+      if (a.nacionalidad === 'EXTRANJERA') {
+        if (a.genero === 'Hombre') h++; else m++;
+      }
+    });
+    return { h, m, t: h + m };
+  }, [activos]);
+
+  const calculosV6 = useMemo(() => {
+    const keys = [
+      'Ceguera', 'Baja visión', 'Sordera', 'Hipoacusia', 'Sordoceguera',
+      'Discapacidad motriz', 'Discapacidad intelectual', 'Discapacidad psicosocial',
+      'Trastorno del espectro autista', 'Discapacidad múltiple', 'TDAH*',
+      'Aptitudes sobresalientes', 'Otras condiciones'
+    ];
+    const map = {};
+    keys.forEach(k => {
+      map[k] = { '1': { h: 0, m: 0 }, '2': { h: 0, m: 0 }, '3': { h: 0, m: 0 } };
+    });
+
+    activos.forEach(a => {
+      let d = a.discapacidad;
+      if (!d || d === 'Ninguna' || d === 'NO') return;
+      
+      let k = null;
+      if (d === 'Ceguera') k = 'Ceguera';
+      if (d.includes('Baja')) k = 'Baja visión';
+      if (d === 'Sordera') k = 'Sordera';
+      if (d === 'Hipoacusia') k = 'Hipoacusia';
+      if (d === 'Sordoceguera') k = 'Sordoceguera';
+      if (d === 'Discapacidad motriz') k = 'Discapacidad motriz';
+      if (d === 'Discapacidad intelectual' || d === 'SÍ' || d === 'SÃ ') k = 'Discapacidad intelectual';
+      if (d === 'Discapacidad psicosocial') k = 'Discapacidad psicosocial';
+      if (d.includes('TEA') || d.includes('Autista')) k = 'Trastorno del espectro autista';
+      if (d.includes('TDAH') || d.includes('Déficit')) k = 'TDAH*';
+      if (d.includes('Aptitudes')) k = 'Aptitudes sobresalientes';
+      if (d.includes('múltiple') || d.includes('mÃºltiple') || d.includes('mǧltiple')) k = 'Discapacidad múltiple';
+
+      if (!k) k = 'Otras condiciones';
+
+      let g = '1';
+      if (a.grado?.includes('2do') || a.grado === '2') g = '2';
+      if (a.grado?.includes('3er') || a.grado?.includes('3ro') || a.grado === '3ero' || a.grado === '3') g = '3';
+
+      if (a.genero === 'Hombre') map[k][g].h++;
+      else map[k][g].m++;
+    });
+
+    return { map, keys };
+  }, [activos]);
+
+
   
   const TableGrid = useMemo(() => (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
@@ -610,12 +684,13 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                   </tr>
                 </thead>
                 <tbody>
+
                   <tr>
-                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                    <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                    <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                    <td className="border border-slate-300 p-2 font-bold">{calculosV2.h}</td>
+                    <td className="border border-slate-300 p-2 font-bold">{calculosV2.m}</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 font-bold">{calculosV2.t}</td>
                   </tr>
-                </tbody>
+</tbody>
               </table>
             </div>
 
@@ -689,12 +764,13 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                    </tr>
-                  </tbody>
+
+                  <tr>
+                    <td className="border border-slate-300 p-2 font-bold">{calculosV5.h}</td>
+                    <td className="border border-slate-300 p-2 font-bold">{calculosV5.m}</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100 font-bold">{calculosV5.t}</td>
+                  </tr>
+</tbody>
                 </table>
               </div>
             </div>
@@ -727,21 +803,46 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    'Ceguera', 'Baja visión', 'Sordera', 'Hipoacusia', 'Sordoceguera',
-                    'Discapacidad motriz', 'Discapacidad intelectual', 'Discapacidad psicosocial',
-                    'Trastorno del espectro autista', 'Discapacidad míºltiple', 'TDAH*',
-                    'Aptitudes sobresalientes', 'Otras condiciones', 'Total'
-                  ].map((cond, i) => (
-                    <tr key={i} className={cond === 'Total' ? 'font-bold bg-slate-50' : ''}>
-                      <td className="border border-slate-300 p-2 text-left">{cond}</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td><td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                    </tr>
-                  ))}
-                </tbody>
+
+                  {calculosV6.keys.map((cond, i) => {
+                    const d = calculosV6.map[cond];
+                    const rowHom = d['1'].h + d['2'].h + d['3'].h;
+                    const rowMuj = d['1'].m + d['2'].m + d['3'].m;
+                    const rowTotal = rowHom + rowMuj;
+                    return (
+                      <tr key={i}>
+                        <td className="border border-slate-300 p-2 text-left">{cond}</td>
+                        <td className="border border-slate-300 p-2 font-bold">{d['1'].h}</td>
+                        <td className="border border-slate-300 p-2 font-bold">{d['1'].m}</td>
+                        <td className="border border-slate-300 p-2 bg-slate-50 font-bold">{d['1'].h + d['1'].m}</td>
+                        <td className="border border-slate-300 p-2 font-bold">{d['2'].h}</td>
+                        <td className="border border-slate-300 p-2 font-bold">{d['2'].m}</td>
+                        <td className="border border-slate-300 p-2 bg-slate-50 font-bold">{d['2'].h + d['2'].m}</td>
+                        <td className="border border-slate-300 p-2 font-bold">{d['3'].h}</td>
+                        <td className="border border-slate-300 p-2 font-bold">{d['3'].m}</td>
+                        <td className="border border-slate-300 p-2 bg-slate-50 font-bold">{d['3'].h + d['3'].m}</td>
+                        <td className="border border-slate-300 p-2 bg-slate-100 font-bold">{rowHom}</td>
+                        <td className="border border-slate-300 p-2 bg-slate-100 font-bold">{rowMuj}</td>
+                        <td className="border border-slate-300 p-2 bg-slate-200 font-bold">{rowTotal}</td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="font-bold bg-slate-50">
+                    <td className="border border-slate-300 p-2 text-left">Total</td>
+                    <td className="border border-slate-300 p-2">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['1'].h, 0)}</td>
+                    <td className="border border-slate-300 p-2">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['1'].m, 0)}</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['1'].h + calculosV6.map[k]['1'].m, 0)}</td>
+                    <td className="border border-slate-300 p-2">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['2'].h, 0)}</td>
+                    <td className="border border-slate-300 p-2">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['2'].m, 0)}</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['2'].h + calculosV6.map[k]['2'].m, 0)}</td>
+                    <td className="border border-slate-300 p-2">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['3'].h, 0)}</td>
+                    <td className="border border-slate-300 p-2">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['3'].m, 0)}</td>
+                    <td className="border border-slate-300 p-2 bg-slate-100">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['3'].h + calculosV6.map[k]['3'].m, 0)}</td>
+                    <td className="border border-slate-300 p-2 bg-slate-200">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['1'].h + calculosV6.map[k]['2'].h + calculosV6.map[k]['3'].h, 0)}</td>
+                    <td className="border border-slate-300 p-2 bg-slate-200">{calculosV6.keys.reduce((s, k) => s + calculosV6.map[k]['1'].m + calculosV6.map[k]['2'].m + calculosV6.map[k]['3'].m, 0)}</td>
+                    <td className="border border-slate-300 p-2 bg-slate-300">{calculosV6.keys.reduce((s, k) => { const x=calculosV6.map[k]; return s+x['1'].h+x['1'].m+x['2'].h+x['2'].m+x['3'].h+x['3'].m; }, 0)}</td>
+                  </tr>
+</tbody>
               </table>
             </div>
 
