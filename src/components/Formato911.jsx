@@ -5,9 +5,9 @@ import { db } from '../firebase';
 import toast from 'react-hot-toast';
 import { FileText, Download, Filter } from 'lucide-react';
 
-export default function Formato911({ rawActivos }) {
+export default function Formato911({ rawActivos, globalShiftFilter }) {
   
-  const [shiftFilter, setShiftFilter] = useState('Ambos');
+  const shiftFilter = globalShiftFilter === 'Todos' ? 'Ambos' : globalShiftFilter;
   const [isSaving, setIsSaving] = useState(false);
   const containerRef = useRef(null);
 
@@ -150,19 +150,7 @@ export default function Formato911({ rawActivos }) {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 flex gap-4 items-center">
-          <div className="flex items-center bg-white rounded-lg border border-slate-300 p-1 shadow-sm">
-             <Filter className="w-4 h-4 text-slate-400 mx-2" />
-             <span className="text-xs font-medium text-slate-500 pr-2 border-r border-slate-200">Turno de Reporte:</span>
-             <select 
-               className="bg-transparent border-none text-sm font-bold text-slate-700 outline-none cursor-pointer pl-2 pr-4 py-1"
-               value={shiftFilter}
-               onChange={e => setShiftFilter(e.target.value)}
-             >
-                <option value="Ambos">Global (Ambos Turnos)</option>
-                <option value="Matutino">Matutino</option>
-                <option value="Vespertino">Vespertino</option>
-             </select>
-          </div>
+          
           <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50">
             {isSaving ? 'Guardando...' : 'Guardar Datos'}
           </button>
