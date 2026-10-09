@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 
 export default function ActaRecepcionPrint({ data }) {
+  const [viewMode, setViewMode] = useState('desglosada'); // 'desglosada' | 'global'
+
   if (!data) return null;
 
   const formatDate = (dateString) => {
@@ -12,6 +14,32 @@ export default function ActaRecepcionPrint({ data }) {
     const d = new Date(dateString + 'T00:00:00');
     return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
   };
+
+  const articulosMostrados = useMemo(() => {
+    if (!data.articulos) return [];
+    
+    if (viewMode === 'desglosada') {
+      return data.articulos;
+    } else {
+      // Global mode: group by articulo + descripcion
+      const agrupados = data.articulos.reduce((acc, art) => {
+        const key = (art.articulo || '') + '|' + (art.descripcion || '');
+        if (!acc[key]) {
+          acc[key] = {
+            ...art,
+            cantidad: Number(art.cantidad) || 1,
+            serie: '', // clear specific fields
+            codigo: '',
+            observaciones: 'NUEVOS EN GENERAL'
+          };
+        } else {
+          acc[key].cantidad += (Number(art.cantidad) || 1);
+        }
+        return acc;
+      }, {});
+      return Object.values(agrupados);
+    }
+  }, [data.articulos, viewMode]);
 
   return (
     <div className="print-acta-only bg-white min-h-screen font-sans text-black">
@@ -30,9 +58,25 @@ export default function ActaRecepcionPrint({ data }) {
         }
       `}</style>
       
-      <div className="no-print flex justify-end gap-4 mb-6 border-b border-slate-200 pb-4">
-        <button onClick={() => window.location.reload()} className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Volver a Inventario</button>
-        <button onClick={() => window.print()} className="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-bold shadow-sm">Imprimir Documento</button>
+      <div className="no-print flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 border-b border-slate-200 pb-4">
+        <div className="flex bg-slate-100 p-1 rounded-lg">
+          <button 
+            onClick={() => setViewMode('global')}
+            className={`px-4 py-2 text-sm font-bold rounded-md transition ${viewMode === 'global' ? 'bg-white text-indigo-600 shadow' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Vista Global (Agrupada)
+          </button>
+          <button 
+            onClick={() => setViewMode('desglosada')}
+            className={`px-4 py-2 text-sm font-bold rounded-md transition ${viewMode === 'desglosada' ? 'bg-white text-indigo-600 shadow' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Vista Desglosada (1 por 1)
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => window.location.reload()} className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Volver</button>
+          <button onClick={() => window.print()} className="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-bold shadow-sm">Imprimir</button>
+        </div>
       </div>
       
       {/* HEADER LOGOS AND TITLES */}
@@ -108,18 +152,18 @@ export default function ActaRecepcionPrint({ data }) {
           </tr>
         </thead>
         <tbody className="align-top">
-          {data.articulos && data.articulos.map((art, idx) => (
+          {articulosMostrados.map((art, idx) => (
             <tr key={idx} className="h-8">
               <td className="border-r-2 border-black p-2 uppercase font-bold text-left">{art.articulo}</td>
               <td className="border-r-2 border-black p-2 uppercase text-[8px] text-justify leading-tight">
-                {[art.descripcion, art.marca && `MARCA: ${art.marca}`, art.modelo && `MOD: ${art.modelo}`, art.serie && `S/N: ${art.serie}`].filter(Boolean).join(' | ')}
+                {[art.descripcion, art.marca && `MARCA: ${art.marca}`, art.modelo && `MOD: ${art.modelo}`, viewMode === 'desglosada' && art.serie && `S/N: ${art.serie}`, viewMode === 'desglosada' && art.codigo && `FOLIO: ${art.codigo}`].filter(Boolean).join(' | ')}
               </td>
               <td className="border-r-2 border-black p-2 uppercase font-bold">{art.cantidad}</td>
               <td className="p-2 uppercase text-[8px]">{art.observaciones || art.estado || ''}</td>
             </tr>
           ))}
           {/* Empty rows to fill space */}
-          {[...Array(Math.max(0, 15 - (data.articulos?.length || 0)))].map((_, idx) => (
+          {[...Array(Math.max(0, 15 - articulosMostrados.length))].map((_, idx) => (
             <tr key={'empty-'+idx}>
               <td className="border-r-2 border-black p-2"></td>
               <td className="border-r-2 border-black p-2"></td>
