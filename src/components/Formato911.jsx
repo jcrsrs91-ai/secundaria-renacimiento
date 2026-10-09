@@ -1177,7 +1177,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
             {/* Pregunta 11 y 12 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <p className="text-sm font-semibold mb-2">11. De las alumnas y alumnos reportados en la pregunta 9, escriba la cantidad de ellos que están inscritos en el presente ciclo escolar y continíºan como irregulares (adeudan asignaturas)...</p>
+                <p className="text-sm font-semibold mb-2">11. De las alumnas y alumnos reportados en la pregunta 9, escriba la cantidad de ellos que están inscritos en el presente ciclo escolar y continúan como irregulares (adeudan asignaturas)...</p>
                 <table className="w-full text-xs text-center border-collapse border border-slate-300">
                   <thead className="bg-slate-50">
                     <tr>
