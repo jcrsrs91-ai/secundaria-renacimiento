@@ -1,4 +1,4 @@
-﻿import React from 'react';
+�import React from 'react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -51,11 +51,11 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
       await setDoc(doc(db, 'configuracion', 'formato911_historico'), { tablesDataJson: JSON.stringify(data), updatedAt: new Date().toISOString() });
       setHistoricoData(data);
       toast.success('Datos guardados correctamente.');
-        alert('¡Los datos manuales de la 911 se han guardado con éxito en la nube!');
+        alert('�Los datos manuales de la 911 se han guardado con �xito en la nube!');
     } catch (err) {
       console.error(err);
       toast.error('Error al guardar los datos.');
-        alert('Hubo un error al guardar. Revisa tu conexión a internet.');
+        alert('Hubo un error al guardar. Revisa tu conexi�n a internet.');
     } finally {
       setIsSaving(false);
     }
@@ -107,7 +107,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
         if (a.grado?.includes('2do') || a.grado === '2') g = '2';
         if (a.grado?.includes('3er') || a.grado?.includes('3ro') || a.grado === '3ero' || a.grado === '3') g = '3';
 
-      const isRep = a.repetidor === 'SÍ';
+      const isRep = a.repetidor === 'S�';
       const isHombre = a.genero === 'Hombre';
 
       if (a.grupo) v1[g].grupos.add(a.grupo);
@@ -126,7 +126,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
   const calculosV2 = useMemo(() => {
     let h = 0, m = 0;
     activos.forEach(a => {
-      if (a.lenguaIndigena === 'SÍ' || a.lenguaIndigena === 'SÃ ') {
+      if (a.lenguaIndigena === 'S�' || a.lenguaIndigena === 'S� ') {
         if (a.genero === 'Hombre') h++; else m++;
       }
     });
@@ -136,7 +136,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
   const calculosV5 = useMemo(() => {
     let h = 0, m = 0;
     activos.forEach(a => {
-      if (a.usaer === 'SÍ' || a.usaer === 'SÃ ') {
+      if (a.usaer === 'S�' || a.usaer === 'S� ') {
         if (a.genero === 'Hombre') h++; else m++;
       }
     });
@@ -155,9 +155,9 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
   const calculosV6 = useMemo(() => {
     const keys = [
-      'Ceguera', 'Baja visión', 'Sordera', 'Hipoacusia', 'Sordoceguera',
+      'Ceguera', 'Baja visi�n', 'Sordera', 'Hipoacusia', 'Sordoceguera',
       'Discapacidad motriz', 'Discapacidad intelectual', 'Discapacidad psicosocial',
-      'Trastorno del espectro autista', 'Discapacidad múltiple', 'TDAH*',
+      'Trastorno del espectro autista', 'Discapacidad m�ltiple', 'TDAH*',
       'Aptitudes sobresalientes', 'Otras condiciones'
     ];
     const map = {};
@@ -171,17 +171,17 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
       
       let k = null;
       if (d === 'Ceguera') k = 'Ceguera';
-      if (d.includes('Baja')) k = 'Baja visión';
+      if (d.includes('Baja')) k = 'Baja visi�n';
       if (d === 'Sordera') k = 'Sordera';
       if (d === 'Hipoacusia') k = 'Hipoacusia';
       if (d === 'Sordoceguera') k = 'Sordoceguera';
       if (d === 'Discapacidad motriz') k = 'Discapacidad motriz';
-      if (d === 'Discapacidad intelectual' || d === 'SÍ' || d === 'SÃ ') k = 'Discapacidad intelectual';
+      if (d === 'Discapacidad intelectual' || d === 'S�' || d === 'S� ') k = 'Discapacidad intelectual';
       if (d === 'Discapacidad psicosocial') k = 'Discapacidad psicosocial';
       if (d.includes('TEA') || d.includes('Autista')) k = 'Trastorno del espectro autista';
-      if (d.includes('TDAH') || d.includes('Déficit')) k = 'TDAH*';
+      if (d.includes('TDAH') || d.includes('D�ficit')) k = 'TDAH*';
       if (d.includes('Aptitudes')) k = 'Aptitudes sobresalientes';
-      if (d.includes('múltiple') || d.includes('mÃºltiple') || d.includes('mǧltiple')) k = 'Discapacidad múltiple';
+      if (d.includes('m�ltiple') || d.includes('múltiple') || d.includes('m�ltiple')) k = 'Discapacidad m�ltiple';
 
       if (!k) k = 'Otras condiciones';
 
@@ -205,7 +205,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
         <div>
           <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
             <FileText className="w-7 h-7 text-emerald-600" />
-            Estadística 911 (Secundaria 911.5)
+            Estad�stica 911 (Secundaria 911.5)
           </h2>
           <p className="text-slate-500 text-sm mt-1">
             Formatos oficiales para captura. Selecciona el turno a consultar.
@@ -236,7 +236,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     <th className="border border-slate-300 p-2">Mujeres</th>
                     <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
                     <th className="border border-slate-300 p-2">Grupos</th>
-                    <th className="border border-slate-300 p-2">Hablantes Indígenas</th>
+                    <th className="border border-slate-300 p-2">Hablantes Ind�genas</th>
                     <th className="border border-slate-300 p-2">Nacidos fuera MX</th>
                     <th className="border border-slate-300 p-2">Afrodescendientes</th>
                     <th className="border border-slate-300 p-2">Con discapacidad</th>
@@ -277,7 +277,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     <th className="border border-slate-300 p-2">Hombres</th>
                     <th className="border border-slate-300 p-2">Mujeres</th>
                     <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
-                    <th className="border border-slate-300 p-2">Hablantes Indígenas</th>
+                    <th className="border border-slate-300 p-2">Hablantes Ind�genas</th>
                     <th className="border border-slate-300 p-2">Nacidos fuera MX</th>
                     <th className="border border-slate-300 p-2">Afrodescendientes</th>
                     <th className="border border-slate-300 p-2">Con discapacidad</th>
@@ -321,7 +321,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     <th className="border border-slate-300 p-2" rowSpan="2">Grado / Tipo</th>
                     <th className="border border-slate-300 p-2" colSpan="2">Misma entidad</th>
                     <th className="border border-slate-300 p-2" colSpan="2">Otra entidad</th>
-                    <th className="border border-slate-300 p-2" colSpan="2">Otro país</th>
+                    <th className="border border-slate-300 p-2" colSpan="2">Otro pa�s</th>
                     <th className="border border-slate-300 p-2 bg-slate-100" colSpan="2">Total</th>
                   </tr>
                   <tr>
@@ -378,19 +378,19 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
         </section>
 
           <div className="mt-8 mb-6">
-            <p className="text-sm font-semibold mb-2">2. De las alumnas y alumnos provenientes de escuelas de otro país reportados en la pregunta anterior, desglóselos segíºn el país o lugar y sexo.</p>
+            <p className="text-sm font-semibold mb-2">2. De las alumnas y alumnos provenientes de escuelas de otro pa�s reportados en la pregunta anterior, desgl�selos seg��n el pa�s o lugar y sexo.</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-2xl">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="border border-slate-300 p-2 text-left">País o lugar</th>
+                    <th className="border border-slate-300 p-2 text-left">Pa�s o lugar</th>
                     <th className="border border-slate-300 p-2">Hombres</th>
                     <th className="border border-slate-300 p-2">Mujeres</th>
                     <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {['Estados Unidos', 'Canadá', 'Centroamérica y el Caribe', 'Sudamérica', 'ífrica', 'Asia', 'Europa', 'Oceanía', 'Total'].map((lugar, i) => (
+                  {['Estados Unidos', 'Canad�', 'Centroam�rica y el Caribe', 'Sudam�rica', '�frica', 'Asia', 'Europa', 'Ocean�a', 'Total'].map((lugar, i) => (
                     <tr key={i} className={lugar === 'Total' ? 'font-bold bg-slate-50' : ''}>
                       <td className="border border-slate-300 p-2 text-left">{lugar}</td>
                       <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
@@ -418,7 +418,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     <th className="border border-slate-300 p-2">Mujeres</th>
                     <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
                     <th className="border border-slate-300 p-2">Con discapacidad</th>
-                    <th className="border border-slate-300 p-2">Hablantes Indígenas</th>
+                    <th className="border border-slate-300 p-2">Hablantes Ind�genas</th>
                     <th className="border border-slate-300 p-2">Nacidos fuera MX</th>
                   </tr>
                 </thead>
@@ -440,7 +440,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
           </div>
 
           <div className="mt-8 mb-6">
-            <p className="text-sm font-semibold mb-2">2. Escriba por sexo, el níºmero de alumnas y alumnos con beca reportados en la pregunta anterior, y desglóselos segíºn el origen de la beca.</p>
+            <p className="text-sm font-semibold mb-2">2. Escriba por sexo, el n��mero de alumnas y alumnos con beca reportados en la pregunta anterior, y desgl�selos seg��n el origen de la beca.</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-4xl">
                 <thead className="bg-slate-50">
@@ -484,7 +484,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
           <h3 className="text-xl font-bold text-slate-800 mb-4 bg-slate-100 p-2 rounded">IV. ABANDONO ESCOLAR Y SUS CAUSAS</h3>
           
           <div className="mb-6">
-            <p className="text-sm font-semibold mb-2">1. Escriba por sexo el níºmero de alumnos que no concluyeron el ciclo escolar en esta escuela.</p>
+            <p className="text-sm font-semibold mb-2">1. Escriba por sexo el n��mero de alumnos que no concluyeron el ciclo escolar en esta escuela.</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-lg">
                 <thead className="bg-slate-50">
@@ -506,12 +506,12 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
           </div>
 
           <div className="mb-6">
-            <p className="text-sm font-semibold mb-2">2. Escriba por sexo, el níºmero de alumnos reportados en la pregunta anterior, segíºn el motivo principal por el que no concluyeron el ciclo escolar. (Registre a cada alumno en un solo motivo).</p>
+            <p className="text-sm font-semibold mb-2">2. Escriba por sexo, el n��mero de alumnos reportados en la pregunta anterior, seg��n el motivo principal por el que no concluyeron el ciclo escolar. (Registre a cada alumno en un solo motivo).</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-4xl">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="border border-slate-300 p-2 text-left">Motivo por el que no concluyó el ciclo escolar</th>
+                    <th className="border border-slate-300 p-2 text-left">Motivo por el que no concluy� el ciclo escolar</th>
                     <th className="border border-slate-300 p-2">Hombres</th>
                     <th className="border border-slate-300 p-2">Mujeres</th>
                     <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
@@ -525,17 +525,17 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     'Cambio de escuela',
                     'Cambio de residencia',
                     'Consumo y/o abuso de sustancias',
-                    'Desinterés/falta de motivación',
+                    'Desinter�s/falta de motivaci�n',
                     'Desplazamiento forzado o crisis humanitaria',
-                    'Desvinculación de la familia con la escuela',
+                    'Desvinculaci�n de la familia con la escuela',
                     'Distancia o dificultad para llegar a la escuela',
-                    'Embarazo o unión conyugal temprana',
+                    'Embarazo o uni�n conyugal temprana',
                     'Enfermedad o incapacidad sin apoyo suficiente',
-                    'Falta de recursos para transporte, uniforme, materiales o alimentación',
-                    'Falta de tiempo para brindar atención diferenciada',
+                    'Falta de recursos para transporte, uniforme, materiales o alimentaci�n',
+                    'Falta de tiempo para brindar atenci�n diferenciada',
                     'Malas condiciones de las instalaciones escolares',
-                    'Migración del alumno o de la familia',
-                    'Necesidad de trabajar para apoyar la economía familiar',
+                    'Migraci�n del alumno o de la familia',
+                    'Necesidad de trabajar para apoyar la econom�a familiar',
                     'Problemas con el bienestar emocional o autoestima',
                     'Problemas familiares/violencia intrafamiliar',
                     'Rezago en los aprendizajes',
@@ -566,34 +566,34 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                   <tr>
                     <th className="border border-slate-300 p-2">Grado / Sexo</th>
                     <th className="border border-slate-300 p-2">Menos 12</th>
-                    <th className="border border-slate-300 p-2">12 años</th>
-                    <th className="border border-slate-300 p-2">13 años</th>
-                    <th className="border border-slate-300 p-2">14 años</th>
-                    <th className="border border-slate-300 p-2">15 años</th>
-                    <th className="border border-slate-300 p-2">16 años</th>
-                    <th className="border border-slate-300 p-2">17 años</th>
-                    <th className="border border-slate-300 p-2">18 o más</th>
+                    <th className="border border-slate-300 p-2">12 a�os</th>
+                    <th className="border border-slate-300 p-2">13 a�os</th>
+                    <th className="border border-slate-300 p-2">14 a�os</th>
+                    <th className="border border-slate-300 p-2">15 a�os</th>
+                    <th className="border border-slate-300 p-2">16 a�os</th>
+                    <th className="border border-slate-300 p-2">17 a�os</th>
+                    <th className="border border-slate-300 p-2">18 o m�s</th>
                     <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
                     <th className="border border-slate-300 p-2">Grupos</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { label: "1° Hombres Nvo.", g: '1', key: 'NvoHombres' }, 
-                    { label: "1° Hombres Rep.", g: '1', key: 'RepHombres' },
-                    { label: "1° Mujeres Nvo.", g: '1', key: 'NvoMujeres' }, 
-                    { label: "1° Mujeres Rep.", g: '1', key: 'RepMujeres' },
-                    { label: "Subtotal 1°", g: '1', sub: true },
-                    { label: "2° Hombres Nvo.", g: '2', key: 'NvoHombres' }, 
-                    { label: "2° Hombres Rep.", g: '2', key: 'RepHombres' },
-                    { label: "2° Mujeres Nvo.", g: '2', key: 'NvoMujeres' }, 
-                    { label: "2° Mujeres Rep.", g: '2', key: 'RepMujeres' },
-                    { label: "Subtotal 2°", g: '2', sub: true },
-                    { label: "3° Hombres Nvo.", g: '3', key: 'NvoHombres' }, 
-                    { label: "3° Hombres Rep.", g: '3', key: 'RepHombres' },
-                    { label: "3° Mujeres Nvo.", g: '3', key: 'NvoMujeres' }, 
-                    { label: "3° Mujeres Rep.", g: '3', key: 'RepMujeres' },
-                    { label: "Subtotal 3°", g: '3', sub: true },
+                    { label: "1� Hombres Nvo.", g: '1', key: 'NvoHombres' }, 
+                    { label: "1� Hombres Rep.", g: '1', key: 'RepHombres' },
+                    { label: "1� Mujeres Nvo.", g: '1', key: 'NvoMujeres' }, 
+                    { label: "1� Mujeres Rep.", g: '1', key: 'RepMujeres' },
+                    { label: "Subtotal 1�", g: '1', sub: true },
+                    { label: "2� Hombres Nvo.", g: '2', key: 'NvoHombres' }, 
+                    { label: "2� Hombres Rep.", g: '2', key: 'RepHombres' },
+                    { label: "2� Mujeres Nvo.", g: '2', key: 'NvoMujeres' }, 
+                    { label: "2� Mujeres Rep.", g: '2', key: 'RepMujeres' },
+                    { label: "Subtotal 2�", g: '2', sub: true },
+                    { label: "3� Hombres Nvo.", g: '3', key: 'NvoHombres' }, 
+                    { label: "3� Hombres Rep.", g: '3', key: 'RepHombres' },
+                    { label: "3� Mujeres Nvo.", g: '3', key: 'NvoMujeres' }, 
+                    { label: "3� Mujeres Rep.", g: '3', key: 'RepMujeres' },
+                    { label: "Subtotal 3�", g: '3', sub: true },
                     { label: "Total", sub: true, isGlobalTotal: true }
                   ].map((row, i) => {
                     const renderCells = () => {
@@ -655,11 +655,11 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
               </table>
             </div>
 
-          {/* CONTINUACIí“N SECCIí“N V (Páginas 6 a 11) */}
+          {/* CONTINUACI�N SECCI�N V (P�ginas 6 a 11) */}
           <div className="mt-8 space-y-12">
             {/* Pregunta 2 */}
             <div>
-              <p className="text-sm font-semibold mb-2">2. Escriba por sexo, la cantidad de alumnas y alumnos indígenas o hablantes de lengua indígena.</p>
+              <p className="text-sm font-semibold mb-2">2. Escriba por sexo, la cantidad de alumnas y alumnos ind�genas o hablantes de lengua ind�gena.</p>
               <table className="text-xs text-center border-collapse border border-slate-300 w-full max-w-sm">
                 <thead className="bg-slate-50">
                   <tr>
@@ -681,7 +681,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
             {/* Pregunta 3 */}
             <div className="overflow-x-auto">
-              <p className="text-sm font-semibold mb-2">3. Escriba el níºmero de alumnas y alumnos que proceden de escuela primaria general, indígena y/o comunitaria desglosándolo por grado y sexo.</p>
+              <p className="text-sm font-semibold mb-2">3. Escriba el n��mero de alumnas y alumnos que proceden de escuela primaria general, ind�gena y/o comunitaria desglos�ndolo por grado y sexo.</p>
               <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[600px]">
                 <thead className="bg-slate-50">
                   <tr>
@@ -700,7 +700,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                 <tbody>
                   {[
                     {tipo: 'Primaria General'},
-                    {tipo: 'Primaria Indígena'},
+                    {tipo: 'Primaria Ind�gena'},
                     {tipo: 'Primaria Comunitaria'}
                   ].map((row, i) => (
                     <React.Fragment key={i}>
@@ -730,7 +730,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
             {/* Pregunta 4 y 5 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <p className="text-sm font-semibold mb-2">4. Escriba el nombre de la lengua materna que hablan las alumnas y alumnos procedentes de escuela primaria indígena.</p>
+                <p className="text-sm font-semibold mb-2">4. Escriba el nombre de la lengua materna que hablan las alumnas y alumnos procedentes de escuela primaria ind�gena.</p>
                 <div className="flex gap-2 items-center">
                   <span className="text-sm">Clave</span>
                   <input type="text" className="w-16 border border-slate-300 rounded px-2 py-1" />
@@ -739,7 +739,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                 </div>
               </div>
               <div>
-                <p className="text-sm font-semibold mb-2">5. Escriba la cantidad de alumnas y alumnos que son atendidos por la Unidad de Servicios de Apoyo a la Educación Regular (USAER), desglosándola por sexo.</p>
+                <p className="text-sm font-semibold mb-2">5. Escriba la cantidad de alumnas y alumnos que son atendidos por la Unidad de Servicios de Apoyo a la Educaci�n Regular (USAER), desglos�ndola por sexo.</p>
                 <table className="text-xs text-center border-collapse border border-slate-300 w-full max-w-xs">
                   <thead className="bg-slate-50">
                     <tr>
@@ -762,11 +762,11 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
             {/* Pregunta 6 */}
             <div className="overflow-x-auto">
-              <p className="text-sm font-semibold mb-2">6. Escriba la cantidad de alumnas y alumnos con discapacidades, neurodivergencia u otras condiciones, desglosándolos por grado y sexo.</p>
+              <p className="text-sm font-semibold mb-2">6. Escriba la cantidad de alumnas y alumnos con discapacidades, neurodivergencia u otras condiciones, desglos�ndolos por grado y sexo.</p>
               <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[900px]">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="border border-slate-300 p-2" rowSpan="2">Condición del alumnado</th>
+                    <th className="border border-slate-300 p-2" rowSpan="2">Condici�n del alumnado</th>
                     <th className="border border-slate-300 p-2" colSpan="3">Primero</th>
                     <th className="border border-slate-300 p-2" colSpan="3">Segundo</th>
                     <th className="border border-slate-300 p-2" colSpan="3">Tercero</th>
@@ -833,19 +833,19 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
             {/* Pregunta 7 */}
             <div>
-              <p className="text-sm font-semibold mb-2">7. Escriba el níºmero de alumnas y alumnos nacidos fuera de México, desglosándolos por sexo.</p>
+              <p className="text-sm font-semibold mb-2">7. Escriba el n��mero de alumnas y alumnos nacidos fuera de M�xico, desglos�ndolos por sexo.</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-lg">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="border border-slate-300 p-2 text-left">País o lugar</th>
+                      <th className="border border-slate-300 p-2 text-left">Pa�s o lugar</th>
                       <th className="border border-slate-300 p-2">Hombres</th>
                       <th className="border border-slate-300 p-2">Mujeres</th>
                       <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {['Estados Unidos', 'Canadá', 'Centroamérica y el Caribe', 'Sudamérica', 'ífrica', 'Asia', 'Europa', 'Oceanía', 'Total'].map((lugar, i) => (
+                    {['Estados Unidos', 'Canad�', 'Centroam�rica y el Caribe', 'Sudam�rica', '�frica', 'Asia', 'Europa', 'Ocean�a', 'Total'].map((lugar, i) => (
                       <tr key={i} className={lugar === 'Total' ? 'font-bold bg-slate-50' : ''}>
                         <td className="border border-slate-300 p-2 text-left">{lugar}</td>
                         <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
@@ -860,7 +860,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
             {/* Pregunta 8 */}
             <div className="overflow-x-auto">
-              <p className="text-sm font-semibold mb-2">8. Escriba el níºmero de alumnas y alumnos egresados de 3er. grado durante el ciclo escolar, desglosándolos por edad, sexo...</p>
+              <p className="text-sm font-semibold mb-2">8. Escriba el n��mero de alumnas y alumnos egresados de 3er. grado durante el ciclo escolar, desglos�ndolos por edad, sexo...</p>
               <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[900px]">
                 <thead className="bg-slate-50">
                   <tr>
@@ -868,7 +868,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     <th className="border border-slate-300 p-2">Hombres</th>
                     <th className="border border-slate-300 p-2">Mujeres</th>
                     <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
-                    <th className="border border-slate-300 p-2">Hablantes Indígenas</th>
+                    <th className="border border-slate-300 p-2">Hablantes Ind�genas</th>
                     <th className="border border-slate-300 p-2">Nacidos fuera MX</th>
                     <th className="border border-slate-300 p-2">Con discapacidad</th>
                     <th className="border border-slate-300 p-2">Con trastorno</th>
@@ -877,7 +877,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {['13 años o menos', '14 años', '15 años', '16 años', '17 años', '18 años y más', 'Total'].map((edad, i) => (
+                  {['13 a�os o menos', '14 a�os', '15 a�os', '16 a�os', '17 a�os', '18 a�os y m�s', 'Total'].map((edad, i) => (
                     <tr key={i} className={edad === 'Total' ? 'font-bold bg-slate-50' : ''}>
                       <td className="border border-slate-300 p-2 text-left">{edad}</td>
                       <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
@@ -897,7 +897,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
             {/* Pregunta 9 */}
             <div className="overflow-x-auto">
-              <p className="text-sm font-semibold mb-2">9. Escriba el níºmero de alumnas y alumnos que reprobaron una o más asignaturas durante el ciclo escolar...</p>
+              <p className="text-sm font-semibold mb-2">9. Escriba el n��mero de alumnas y alumnos que reprobaron una o m�s asignaturas durante el ciclo escolar...</p>
               <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[900px]">
                 <thead className="bg-slate-50">
                   <tr>
@@ -905,7 +905,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     <th className="border border-slate-300 p-2">Hombres</th>
                     <th className="border border-slate-300 p-2">Mujeres</th>
                     <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
-                    <th className="border border-slate-300 p-2">Hablantes Indígenas</th>
+                    <th className="border border-slate-300 p-2">Hablantes Ind�genas</th>
                     <th className="border border-slate-300 p-2">Nacidos fuera MX</th>
                     <th className="border border-slate-300 p-2">Con discapacidad</th>
                     <th className="border border-slate-300 p-2">Con trastorno</th>
@@ -934,7 +934,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
             {/* Pregunta 10 */}
             <div className="overflow-x-auto">
-              <p className="text-sm font-semibold mb-2">10. De las alumnas y alumnos reportados en la pregunta anterior, escriba cuántos se regularizaron (aprobaron todas las asignaturas) al 30 de septiembre...</p>
+              <p className="text-sm font-semibold mb-2">10. De las alumnas y alumnos reportados en la pregunta anterior, escriba cu�ntos se regularizaron (aprobaron todas las asignaturas) al 30 de septiembre...</p>
               <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[900px]">
                 <thead className="bg-slate-50">
                   <tr>
@@ -942,7 +942,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     <th className="border border-slate-300 p-2">Hombres</th>
                     <th className="border border-slate-300 p-2">Mujeres</th>
                     <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
-                    <th className="border border-slate-300 p-2">Hablantes Indígenas</th>
+                    <th className="border border-slate-300 p-2">Hablantes Ind�genas</th>
                     <th className="border border-slate-300 p-2">Nacidos fuera MX</th>
                     <th className="border border-slate-300 p-2">Con discapacidad</th>
                     <th className="border border-slate-300 p-2">Con trastorno</th>
@@ -972,7 +972,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
             {/* Pregunta 11 y 12 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <p className="text-sm font-semibold mb-2">11. De las alumnas y alumnos reportados en la pregunta 9, escriba la cantidad de ellos que están inscritos en el presente ciclo escolar y continíºan como irregulares (adeudan asignaturas)...</p>
+                <p className="text-sm font-semibold mb-2">11. De las alumnas y alumnos reportados en la pregunta 9, escriba la cantidad de ellos que est�n inscritos en el presente ciclo escolar y contin��an como irregulares (adeudan asignaturas)...</p>
                 <table className="w-full text-xs text-center border-collapse border border-slate-300">
                   <thead className="bg-slate-50">
                     <tr>
@@ -1000,14 +1000,14 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
               </div>
               
               <div>
-                <p className="text-sm font-semibold mb-2">12. Escriba, por grado, el níºmero de directivos con grupo y docentes.</p>
+                <p className="text-sm font-semibold mb-2">12. Escriba, por grado, el n��mero de directivos con grupo y docentes.</p>
                 <table className="w-full text-xs text-center border-collapse border border-slate-300">
                   <thead className="bg-slate-50">
                     <tr>
                       <th className="border border-slate-300 p-2">Primero</th>
                       <th className="border border-slate-300 p-2">Segundo</th>
                       <th className="border border-slate-300 p-2">Tercero</th>
-                      <th className="border border-slate-300 p-2">Más de un grado</th>
+                      <th className="border border-slate-300 p-2">M�s de un grado</th>
                       <th className="border border-slate-300 p-2 bg-slate-100">Total</th>
                     </tr>
                   </thead>
@@ -1021,13 +1021,13 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     </tr>
                   </tbody>
                 </table>
-                <p className="text-xs text-slate-500 mt-2 italic">*íšnicamente para Telesecundarias.</p>
+                <p className="text-xs text-slate-500 mt-2 italic">*�anicamente para Telesecundarias.</p>
               </div>
             </div>
 
             {/* Pregunta 13 */}
             <div>
-              <p className="text-sm font-semibold mb-2">13. Escriba el níºmero de alumnas y alumnos afromexicanos o afrodescendientes por autoadscripción de los padres...</p>
+              <p className="text-sm font-semibold mb-2">13. Escriba el n��mero de alumnas y alumnos afromexicanos o afrodescendientes por autoadscripci�n de los padres...</p>
               <table className="w-full max-w-xs text-xs text-center border-collapse border border-slate-300">
                 <thead className="bg-slate-50">
                   <tr>
@@ -1048,7 +1048,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
             {/* Pregunta 14 */}
             <div>
-              <p className="text-sm font-semibold mb-2">14. Escriba el níºmero de alumnas y alumnos, segíºn su lugar de residencia y desglóselos por sexo.</p>
+              <p className="text-sm font-semibold mb-2">14. Escriba el n��mero de alumnas y alumnos, seg��n su lugar de residencia y desgl�selos por sexo.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl">
                 <table className="w-full text-xs text-center border-collapse border border-slate-300">
                   <thead className="bg-slate-50">
@@ -1059,7 +1059,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {['Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Coahuila', 'Colima', 'Chiapas', 'Chihuahua', 'Ciudad de México', 'Durango', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'México', 'Michoacán'].map((estado, i) => (
+                    {['Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Coahuila', 'Colima', 'Chiapas', 'Chihuahua', 'Ciudad de M�xico', 'Durango', 'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'M�xico', 'Michoac�n'].map((estado, i) => (
                       <tr key={i}>
                         <td className="border border-slate-300 p-2 text-left">{estado}</td>
                         <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
@@ -1077,7 +1077,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {['Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas', 'Fuera de México'].map((estado, i) => (
+                    {['Morelos', 'Nayarit', 'Nuevo Le�n', 'Oaxaca', 'Puebla', 'Quer�taro', 'Quintana Roo', 'San Luis Potos�', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucat�n', 'Zacatecas', 'Fuera de M�xico'].map((estado, i) => (
                       <tr key={i}>
                         <td className="border border-slate-300 p-2 text-left">{estado}</td>
                         <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
@@ -1133,7 +1133,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
     <>
       <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-lg shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Estadística 911</h2>
+          <h2 className="text-xl font-bold text-slate-800">Estad�stica 911</h2>
           <p className="text-sm text-slate-500">Formato de captura de datos</p>
         </div>
         <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50">

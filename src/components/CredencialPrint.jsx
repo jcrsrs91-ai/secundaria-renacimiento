@@ -2,7 +2,7 @@ import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { QRCodeSVG } from 'qrcode.react';
 
-// TamaÃ±o CR80 (54mm x 85.6mm)
+// Tamaño CR80 (54mm x 85.6mm)
 export default function CredencialPrint({ students = [] }) {
   const { config } = useGlobalConfig();
   const getGradeColor = (grado) => {
@@ -76,9 +76,9 @@ export default function CredencialPrint({ students = [] }) {
               
               <div className="flex flex-col justify-center items-center text-center z-10 mx-[13mm]">
                 <h1 className="text-[5.5px] font-extrabold uppercase leading-none tracking-wide whitespace-nowrap">
-                  Secretaría de Educación Pública
+                  Secretar�a de Educaci�n P�blica
                 </h1>
-                <h2 className="text-[7px] font-black leading-none tracking-tight mt-[1px]">Esc. Sec. Téc. N°68</h2>
+                <h2 className="text-[7px] font-black leading-none tracking-tight mt-[1px]">Esc. Sec. T�c. N�68</h2>
                 <h3 className="text-[8px] font-black leading-none mt-[1px] tracking-[0.15em] text-yellow-300 drop-shadow-md">RENACIMIENTO</h3>
                 <p className="text-[4.5px] font-bold tracking-widest mt-[1px] opacity-90">
                   C.C.T. 12DST0077B
@@ -104,7 +104,7 @@ export default function CredencialPrint({ students = [] }) {
                   )}
                 </div>
                 
-                {/* Nombres y Matrícula */}
+                {/* Nombres y Matr�cula */}
                 <div className="flex-1 flex flex-col justify-center leading-none mt-0">
                   <p className={`text-[12.5px] font-black uppercase leading-[1.0] tracking-tight ${getTextColor(student.grado)}`}>
                     {student.apellidoPaterno} <br/> {student.apellidoMaterno}
@@ -126,12 +126,12 @@ export default function CredencialPrint({ students = [] }) {
                 </div>
               </div>
 
-              {/* Datos Académicos y Sangre */}
+              {/* Datos Acad�micos y Sangre */}
               <div className="grid grid-cols-3 gap-x-1 px-1 w-full z-10 mt-0">
                 <div>
                   <p className="text-[6px] font-bold text-slate-500 uppercase tracking-widest">Grado / Grupo / Turno</p>
                   <p className="text-[11px] font-black text-slate-900 leading-tight">
-                    {student.grado?.substring(0,1)}° "{student.grupo || '-'}" <span className="text-[7px] font-bold text-slate-500">{student.turno?.substring(0,4) || 'MATU'}</span>
+                    {student.grado?.substring(0,1)}� "{student.grupo || '-'}" <span className="text-[7px] font-bold text-slate-500">{student.turno?.substring(0,4) || 'MATU'}</span>
                   </p>
                 </div>
                 <div>
@@ -156,7 +156,7 @@ export default function CredencialPrint({ students = [] }) {
               {/* Leyenda Oficial SEP */}
               <div className="px-1 mt-0 text-center">
                  <p className="text-[5.5px] font-bold text-slate-700 leading-tight text-center px-1">
-                   Esta credencial acredita al portador como alumno(a) regular de esta Institución incorporada a la SEP. Es personal e intransferible.
+                   Esta credencial acredita al portador como alumno(a) regular de esta Instituci�n incorporada a la SEP. Es personal e intransferible.
                  </p>
               </div>
             </div>
@@ -190,7 +190,7 @@ export default function CredencialPrint({ students = [] }) {
                 <p className="text-[3.5px] font-bold text-slate-600 uppercase text-center leading-tight">Director</p>
               </div>
 
-              {/* QR 2: Para Escáner (Matrícula) */}
+              {/* QR 2: Para Esc�ner (Matr�cula) */}
               <div className="flex flex-col items-center justify-end">
                 <div className="flex-shrink-0 bg-white border border-slate-300 shadow-sm self-center flex items-center justify-center overflow-hidden p-[1mm]" style={{ width: '17mm', height: '17mm' }}>
                   <QRCodeSVG 
