@@ -2269,7 +2269,7 @@ Esta acción no se puede deshacer.`);
                         >
                           Ver / Editar
                         </button>
-                        <button onClick={() => { setPrintData(r); setPrintMode("resguardo"); setTimeout(() => window.print(), 500); }} className="ml-4 text-indigo-600 hover:text-indigo-800 font-medium text-xs">Imprimir PDF</button>
+                        <button onClick={() => { setPrintData(r); setPrintMode(r.tipo === 'Alta' ? 'recepcion' : (r.tipo === 'Baja' ? 'baja' : 'resguardo')); setTimeout(() => window.print(), 500); }} className="ml-4 text-indigo-600 hover:text-indigo-800 font-medium text-xs">Imprimir PDF</button>
                     </td>
                   </tr>
                 )) : (
