@@ -2070,7 +2070,7 @@ export default function ControlEscolar() {
           <BecasReport activos={activos} onClose={() => setActiveTab('activos')} />
         )}
         {!loading && activeTab === 'estadistica911' && !printMode && (
-          <Formato911 rawActivos={_rawDirectorio} globalShiftFilter={globalShiftFilter} />
+          <Formato911 rawActivos={_rawDirectorio} globalShiftFilter={globalShiftFilter} materiasPorGrado={materiasPorGrado} />
         )}
 
         {/* IMPRESIÓN MODALES INDIVIDUALES */}
