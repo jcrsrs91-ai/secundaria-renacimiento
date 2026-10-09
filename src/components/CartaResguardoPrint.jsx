@@ -29,16 +29,16 @@ export default function CartaResguardoPrint({ data, onBack }) {
         }
       `}</style>
       
-      <div className="no-print flex justify-end gap-4 mb-6 border-b border-slate-200 pb-4">
+      <div className="no-print flex justify-end gap-4 mb-2 border-b border-slate-200 pb-4">
         <button onClick={onBack} className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Volver a Inventario</button>
         <button onClick={() => window.print()} className="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-bold shadow-sm">Imprimir Documento</button>
       </div>
       
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-2">
         <div className="w-1/4">
            {/* Replace with exact left logo if you have it */}
-           <img src="/logo-sep.png" alt="Guerrero" className="h-16 object-contain" />
+           <img src="/logo-sep.png" alt="Guerrero" className="h-12 object-contain" />
         </div>
         <div className="w-2/4 text-center">
           <h1 className="font-bold text-[12px] leading-tight">
@@ -58,12 +58,12 @@ export default function CartaResguardoPrint({ data, onBack }) {
       </div>
 
       {/* TITULO */}
-      <div className="bg-gray-300 border border-black text-center py-1 mb-6">
+      <div className="bg-gray-300 border border-black text-center py-1 mb-2">
         <h2 className="font-bold text-[14px]">RESGUARDO DE BIENES MUEBLES Y EQUIPOS DE CÓMPUTO.</h2>
       </div>
 
       {/* DATOS */}
-      <div className="flex w-full border border-black mb-4">
+      <div className="flex w-full border border-black mb-2">
         {/* IZQUIERDA */}
         <div className="w-1/2 border-r border-black flex flex-col">
           <div className="text-center font-bold text-[11px] py-1 border-b border-black">
@@ -161,7 +161,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
       <div className="bg-gray-300 border border-black text-center py-0.5">
         <h3 className="font-bold text-[10px]">DESCRIPCIÓN GENERAL DEL ACTIVO FIJO</h3>
       </div>
-      <table className="w-full text-[9px] text-center border-collapse border border-black mb-4">
+      <table className="w-full text-[9px] text-center border-collapse border border-black mb-2">
         <thead>
           <tr>
             <th className="border border-black p-1 w-12">CANT.</th>
@@ -190,20 +190,20 @@ export default function CartaResguardoPrint({ data, onBack }) {
           {/* Fill remaining rows to make it look like a standard format */}
           {[...Array(Math.max(0, 10 - (data.articulos?.length || 0)))].map((_, idx) => (
             <tr key={'empty-'+idx}>
-              <td className="border border-black p-3"></td>
-              <td className="border border-black p-3"></td>
-              <td className="border border-black p-3"></td>
-              <td className="border border-black p-3"></td>
-              <td className="border border-black p-3"></td>
-              <td className="border border-black p-3"></td>
-              <td className="border border-black p-3"></td>
+              <td className="border border-black p-1.5"></td>
+              <td className="border border-black p-1.5"></td>
+              <td className="border border-black p-1.5"></td>
+              <td className="border border-black p-1.5"></td>
+              <td className="border border-black p-1.5"></td>
+              <td className="border border-black p-1.5"></td>
+              <td className="border border-black p-1.5"></td>
             </tr>
           ))}
         </tbody>
       </table>
 
       {/* FECHA Y FIRMAS */}
-      <div className="flex mb-8 text-[10px]">
+      <div className="flex mb-4 text-[10px]">
         <span className="font-bold whitespace-nowrap">FECHA DE ASIGNACIÓN:</span>
         <span className="border-b border-black flex-1 ml-2 text-center uppercase tracking-widest">{formatDate(data.fecha)}</span>
       </div>
@@ -213,7 +213,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
         <div className="w-1/3 border-r border-black flex flex-col justify-between">
           <div className="text-center font-bold text-[10px] mt-2">Vo. Bo.</div>
           <div className="text-center font-bold text-[10px] mb-2 px-2 uppercase">
-            <div className="border-t border-black pt-1 mt-12 w-3/4 mx-auto"></div>
+            <div className="border-t border-black pt-1 mt-10 w-3/4 mx-auto"></div>
             PROFR. JUAN CARLOS TABOADA BARAJAS<br/>
             DIRECTOR DE LA ESCUELA
           </div>
@@ -225,7 +225,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
             NOMBRE, FIRMA<br/>DEL RESPONSABLE
           </div>
           <div className="text-center font-bold text-[10px] mb-2 px-2 uppercase">
-            <div className="border-t border-black pt-1 mt-12 w-3/4 mx-auto"></div>
+            <div className="border-t border-black pt-1 mt-10 w-3/4 mx-auto"></div>
             {data.nombreResguardante || ''}
           </div>
         </div>
@@ -236,7 +236,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
             JEFE DE INVENTARIOS
           </div>
           <div className="text-center font-bold text-[10px] mb-2 px-2 leading-tight uppercase">
-            <div className="border-t border-black pt-1 mt-12 w-3/4 mx-auto"></div>
+            <div className="border-t border-black pt-1 mt-10 w-3/4 mx-auto"></div>
             PROFR. JOSE ELIAS SILVA POLANCO.<br/>
             REPRESENTANTE DE RECURSOS MATERIALES Y SERVICIOS<br/>
             REGIÓN ACAPULCO – COYUCA DE BENITEZ.
