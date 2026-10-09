@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import toast from 'react-hot-toast';
-import { FileText, Download, Filter } from 'lucide-react';
+import { FileText, Download, Filter, AlertTriangle, Info } from 'lucide-react';
 
 export default function Formato911({ rawActivos, globalShiftFilter, materiasPorGrado }) {
   
