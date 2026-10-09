@@ -2,7 +2,7 @@ import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { QRCodeSVG } from 'qrcode.react';
 
-// TamaÃ±o CR80 (54mm x 85.6mm)
+// Tamaño CR80 (54mm x 85.6mm)
 export default function CredencialPrint({ students = [] }) {
   const { config } = useGlobalConfig();
   const getGradeColor = (grado) => {

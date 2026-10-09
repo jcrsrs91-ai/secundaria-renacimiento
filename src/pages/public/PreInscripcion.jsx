@@ -20,7 +20,7 @@ export default function PreInscripcion() {
     }
   }, [config, activeTab]);
 
-  // Estados de bÃºsqueda
+  // Estados de búsqueda
   const [lookupCurp, setLookupCurp] = useState('');
   const [lookupError, setLookupError] = useState('');
   const [studentData, setStudentData] = useState(null);
@@ -48,7 +48,7 @@ export default function PreInscripcion() {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
-        setLookupError('No se encontrÃ³ ningÃºn expediente con esos datos.');
+        setLookupError('No se encontró ningún expediente con esos datos.');
         setIsSubmitting(false);
         return;
       }
@@ -57,7 +57,7 @@ export default function PreInscripcion() {
       const id = querySnapshot.docs[0].id;
 
       if (data.grado === '3er Grado' || data.grado === '3ero') {
-        setLookupError('Â¡Felicidades por graduarte! Los alumnos de 3er Grado ya no pueden reinscribirse.');
+        setLookupError('¡Felicidades por graduarte! Los alumnos de 3er Grado ya no pueden reinscribirse.');
         setIsSubmitting(false);
         return;
       }
@@ -67,7 +67,7 @@ export default function PreInscripcion() {
 
       setStudentData({ id, ...data, grado: nextGrado });
     } catch (error) {
-      setLookupError('Error de conexiÃ³n: ' + error.message);
+      setLookupError('Error de conexión: ' + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -86,7 +86,7 @@ export default function PreInscripcion() {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
-        setLookupError('No se encontrÃ³ ninguna ficha generada con esa CURP.');
+        setLookupError('No se encontró ninguna ficha generada con esa CURP.');
         setIsSubmitting(false);
         return;
       }
@@ -95,7 +95,7 @@ export default function PreInscripcion() {
       setFinalData(querySnapshot.docs[0].data());
       setIsSubmitted(true);
     } catch (error) {
-      setLookupError('Error de conexiÃ³n: ' + error.message);
+      setLookupError('Error de conexión: ' + error.message);
       setIsSubmitting(false);
     }
   };
@@ -113,14 +113,14 @@ export default function PreInscripcion() {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
-        setLookupError('No se encontrÃ³ ningÃºn expediente con esa CURP.');
+        setLookupError('No se encontró ningún expediente con esa CURP.');
         setIsSubmitting(false);
         return;
       }
       
       setStudentData({ id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() });
     } catch (error) {
-      setLookupError('Error de conexiÃ³n: ' + error.message);
+      setLookupError('Error de conexión: ' + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -132,7 +132,7 @@ export default function PreInscripcion() {
     if (!file) return;
     
     if (file.type.startsWith('image/')) {
-      const confirmMsg = "Has seleccionado una imagen. Verifica que sea TOTALMENTE LEGIBLE (sin brillos, sin borrosidad y con buena luz). Si el personal de la escuela no puede leer los datos, tu trÃ¡mite SERÃ CANCELADO automÃ¡ticamente.\n\nÂ¿Confirmas que la foto es clara y legible?";
+      const confirmMsg = "Has seleccionado una imagen. Verifica que sea TOTALMENTE LEGIBLE (sin brillos, sin borrosidad y con buena luz). Si el personal de la escuela no puede leer los datos, tu trámite SERÁ CANCELADO automáticamente.\n\n¿Confirmas que la foto es clara y legible?";
       if (!window.confirm(confirmMsg)) {
         e.target.value = '';
         setter(null);
@@ -189,7 +189,7 @@ export default function PreInscripcion() {
         if (dateInput && !dateInput.value) {
           dateInput.value = fnac;
         } else if (dateInput) {
-          dateInput.value = fnac; // Forzar actualizaciÃ³n aunque haya algo
+          dateInput.value = fnac; // Forzar actualización aunque haya algo
         }
       }
     } else if (val.length > 0) {
@@ -202,7 +202,7 @@ export default function PreInscripcion() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setLoadingMessage(activeTab === 'completar' ? 'Guardando actualizaciÃ³n de datos...' : 'Trabajando en subir los documentos...');
+    setLoadingMessage(activeTab === 'completar' ? 'Guardando actualización de datos...' : 'Trabajando en subir los documentos...');
     
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
@@ -254,7 +254,7 @@ export default function PreInscripcion() {
         ineContacto2Url,
         documentos,
         curp: currentCurp,
-        tipoTramite: activeTab === 'reinscripcion' ? "ReinscripciÃ³n" : (studentData?.tipoTramite || "Nuevo Ingreso"),
+        tipoTramite: activeTab === 'reinscripcion' ? "Reinscripción" : (studentData?.tipoTramite || "Nuevo Ingreso"),
         updatedAt: serverTimestamp()
       };
 
@@ -304,8 +304,8 @@ export default function PreInscripcion() {
     <div className="min-h-screen bg-slate-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Portal de TrÃ¡mites Escolares</h2>
-          <p className="mt-2 text-lg text-slate-600">Esc. Sec. TÃ©c. NÂ°68 "RENACIMIENTO"</p>
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Portal de Trámites Escolares</h2>
+          <p className="mt-2 text-lg text-slate-600">Esc. Sec. Téc. N°68 "RENACIMIENTO"</p>
         </div>
 
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-200">
@@ -323,7 +323,7 @@ export default function PreInscripcion() {
               className={`flex-1 py-4 px-2 sm:px-6 text-center font-medium text-sm transition-colors ${activeTab === 'reinscripcion' ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
               onClick={() => changeTab('reinscripcion')}
             >
-              <ClipboardList className="inline-block w-5 h-5 sm:mr-2 -mt-1" /> <span className="hidden sm:inline">ReinscripciÃ³n</span>
+              <ClipboardList className="inline-block w-5 h-5 sm:mr-2 -mt-1" /> <span className="hidden sm:inline">Reinscripción</span>
             </button>
             <button 
               type="button"
@@ -351,7 +351,7 @@ export default function PreInscripcion() {
                 <div className="text-center mb-6">
                   <Upload className="w-12 h-12 text-slate-400 mx-auto mb-2" />
                   <h3 className="text-lg font-bold">Actualizar Datos del Alumno</h3>
-                  <p className="text-sm text-slate-500 mt-1">Ingresa la CURP del alumno para actualizar su informaciÃ³n personal, escolar o de contacto.</p>
+                  <p className="text-sm text-slate-500 mt-1">Ingresa la CURP del alumno para actualizar su información personal, escolar o de contacto.</p>
                 </div>
                 {lookupError && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center">{lookupError}</div>}
                 <form onSubmit={handleLookupCompletar} className="space-y-4">
@@ -371,8 +371,8 @@ export default function PreInscripcion() {
               <div className="max-w-md mx-auto py-8">
                 <div className="text-center mb-6">
                   <Printer className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                  <h3 className="text-lg font-bold">Recupera tu Ficha de InscripciÃ³n</h3>
-                  <p className="text-sm text-slate-500 mt-1">Si ya habÃ­as hecho tu trÃ¡mite y no guardaste la hoja, ingresa la CURP del alumno para descargarla de nuevo.</p>
+                  <h3 className="text-lg font-bold">Recupera tu Ficha de Inscripción</h3>
+                  <p className="text-sm text-slate-500 mt-1">Si ya habías hecho tu trámite y no guardaste la hoja, ingresa la CURP del alumno para descargarla de nuevo.</p>
                 </div>
                 {lookupError && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center">{lookupError}</div>}
                 <form onSubmit={handleReimprimir} className="space-y-4">
@@ -387,7 +387,7 @@ export default function PreInscripcion() {
               </div>
             )}
 
-            {/* Buscador para ReinscripciÃ³n */}
+            {/* Buscador para Reinscripción */}
             {activeTab === 'reinscripcion' && !studentData && (
               <div className="max-w-md mx-auto py-8">
                 <h3 className="text-lg font-bold text-center mb-4">Busca tu Expediente</h3>
@@ -411,8 +411,8 @@ export default function PreInscripcion() {
                 {activeTab === 'reinscripcion' && (
                   <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg flex items-start">
                     <div className="flex-1">
-                      <h4 className="font-bold text-emerald-800">Â¡Hola, {studentData.nombres}!</h4>
-                      <p className="text-sm text-emerald-700 mt-1">Tus datos han sido cargados. EstÃ¡s siendo reinscrito(a) a <b>{studentData.grado}</b>. Por favor, revisa tus datos y actualiza los que hayan cambiado (ej. telÃ©fonos, domicilio o temas mÃ©dicos).</p>
+                      <h4 className="font-bold text-emerald-800">¡Hola, {studentData.nombres}!</h4>
+                      <p className="text-sm text-emerald-700 mt-1">Tus datos han sido cargados. Estás siendo reinscrito(a) a <b>{studentData.grado}</b>. Por favor, revisa tus datos y actualiza los que hayan cambiado (ej. teléfonos, domicilio o temas médicos).</p>
                     </div>
                   </div>
                 )}
@@ -421,7 +421,7 @@ export default function PreInscripcion() {
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex items-start mb-6">
                     <div className="flex-1">
                       <h4 className="font-bold text-blue-800">Actualizar Expediente de {studentData.nombres}</h4>
-                      <p className="text-sm text-blue-700 mt-1">Revisa y actualiza la informaciÃ³n personal, escolar o de contacto y guarda los cambios.</p>
+                      <p className="text-sm text-blue-700 mt-1">Revisa y actualiza la información personal, escolar o de contacto y guarda los cambios.</p>
                     </div>
                   </div>
                 )}
@@ -439,7 +439,7 @@ export default function PreInscripcion() {
                         </h3>
                         <div className="mt-2 text-sm text-sky-700 space-y-2">
                           <p>
-                            Para realizar la inscripciÃ³n de manera exitosa, deberÃ¡s subir en este formulario los siguientes documentos en formato PDF y entregar los fÃ­sicos antes del <strong>30 de septiembre</strong> (fecha lÃ­mite oficial de la SEP):
+                            Para realizar la inscripción de manera exitosa, deberás subir en este formulario los siguientes documentos en formato PDF y entregar los físicos antes del <strong>30 de septiembre</strong> (fecha límite oficial de la SEP):
                           </p>
                           <ul className="list-disc pl-5 space-y-1 font-medium">
                             <li><strong>Para 1er Grado:</strong> Acta de Nacimiento, CURP, y Certificado de Primaria.</li>
@@ -447,7 +447,7 @@ export default function PreInscripcion() {
                             <li><strong>Para 3er Grado:</strong> Lo anterior + Boletas de 1er y 2do Grado de Secundaria.</li>
                           </ul>
                           <p className="italic mt-2 opacity-80">
-                            Nota: Si eres alumno de reinscripciÃ³n, por favor selecciona la pestaÃ±a de "ReinscripciÃ³n" arriba.
+                            Nota: Si eres alumno de reinscripción, por favor selecciona la pestaña de "Reinscripción" arriba.
                           </p>
                         </div>
                       </div>
@@ -458,7 +458,7 @@ export default function PreInscripcion() {
                 {/* Ciclo Escolar */}
                   <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 mb-6">
                     <h3 className="text-lg font-bold text-slate-800 mb-2">Ciclo Escolar</h3>
-                    <p className="text-sm text-slate-500 mb-4">Selecciona el ciclo escolar para este trÃ¡mite.</p>
+                    <p className="text-sm text-slate-500 mb-4">Selecciona el ciclo escolar para este trámite.</p>
                     <select name="cicloEscolar" className="block w-full rounded-md shadow-sm p-3 border border-slate-300 font-medium" required defaultValue="2026-2027">
                       <option value="">Seleccionar ciclo...</option>
                       <option value="2024-2025">2024-2025</option>
@@ -469,13 +469,13 @@ export default function PreInscripcion() {
                     </select>
                   </div>
 
-                {/* FotografÃ­a (Oculta al actualizar datos) */}
+                {/* Fotografía (Oculta al actualizar datos) */}
                 {activeTab !== 'completar' && (
                   <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 text-center">
-                    <h3 className="text-lg font-bold text-slate-800 mb-2">FotografÃ­a del Alumno</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">Fotografía del Alumno</h3>
                     <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
-                      <h4 className="text-red-800 font-bold text-sm mb-1">FOTOGRAFÃA RECIENTE PARA CREDENCIAL ESCOLAR</h4>
-                      <p className="text-xs text-red-700">Esta fotografÃ­a se imprimirÃ¡ directamente en la credencial oficial del alumno, por lo que debe cumplir <b>estrictamente</b> con las normas de la SEP:</p>
+                      <h4 className="text-red-800 font-bold text-sm mb-1">FOTOGRAFÍA RECIENTE PARA CREDENCIAL ESCOLAR</h4>
+                      <p className="text-xs text-red-700">Esta fotografía se imprimirá directamente en la credencial oficial del alumno, por lo que debe cumplir <b>estrictamente</b> con las normas de la SEP:</p>
                       <ul className="list-disc pl-4 text-xs text-red-700 mt-1 space-y-1">
                         <li>Tomada de frente, rostro serio y orejas descubiertas.</li>
                         <li>Fondo completamente blanco o muy claro (sin sombras).</li>
@@ -485,7 +485,7 @@ export default function PreInscripcion() {
                       </ul>
                     </div>
 
-                    <p className="text-sm text-slate-500 mb-4">Sube una fotografÃ­a reciente, tamaÃ±o infantil, con fondo claro y rostro descubierto.</p>
+                    <p className="text-sm text-slate-500 mb-4">Sube una fotografía reciente, tamaño infantil, con fondo claro y rostro descubierto.</p>
                     <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
                       <Upload className="w-5 h-5 mr-2 text-slate-400" />
                       Seleccionar Archivo de Imagen
@@ -497,9 +497,9 @@ export default function PreInscripcion() {
                 )}
                 {/* Secciones 1 a 4 */}
                   <>
-                    {/* 1. Datos AcadÃ©micos */}
+                    {/* 1. Datos Académicos */}
                     <div>
-                      <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">1. Datos AcadÃ©micos</h3>
+                      <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">1. Datos Académicos</h3>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         {activeTab === 'nuevo' ? (
                           <div>
@@ -520,18 +520,18 @@ export default function PreInscripcion() {
                             onChange={(e) => {
                               const val = e.target.value;
                               const talleresMap = {
-                                'A': 'ClimatizaciÃ³n y RefrigeraciÃ³n (3181)',
-                                'B': 'AdministraciÃ³n Contable (6011)',
-                                'C': 'DiseÃ±o de Circuitos ElÃ©ctricos (4021)',
-                                'D': 'AdministraciÃ³n Contable (6011)',
-                                'E': 'DiseÃ±o y MecÃ¡nica Automotriz (3081)',
-                                'F': 'OfimÃ¡tica (6031)',
-                                'G': 'ClimatizaciÃ³n y RefrigeraciÃ³n (3181)',
-                                'H': 'AdministraciÃ³n Contable (6011)',
-                                'I': 'DiseÃ±o de Circuitos ElÃ©ctricos (4021)',
-                                'J': 'AdministraciÃ³n Contable (6011)',
-                                'K': 'DiseÃ±o y MecÃ¡nica Automotriz (3081)',
-                                'L': 'OfimÃ¡tica (6031)'
+                                'A': 'Climatización y Refrigeración (3181)',
+                                'B': 'Administración Contable (6011)',
+                                'C': 'Diseño de Circuitos Eléctricos (4021)',
+                                'D': 'Administración Contable (6011)',
+                                'E': 'Diseño y Mecánica Automotriz (3081)',
+                                'F': 'Ofimática (6031)',
+                                'G': 'Climatización y Refrigeración (3181)',
+                                'H': 'Administración Contable (6011)',
+                                'I': 'Diseño de Circuitos Eléctricos (4021)',
+                                'J': 'Administración Contable (6011)',
+                                'K': 'Diseño y Mecánica Automotriz (3081)',
+                                'L': 'Ofimática (6031)'
                               };
                               const input = document.getElementById('tallerInput');
                               if (input) {
@@ -569,7 +569,7 @@ export default function PreInscripcion() {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">Taller / TecnologÃ­a</label>
+                          <label className="block text-sm font-medium">Taller / Tecnología</label>
                           <input id="tallerInput" type="text" name="taller" className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-gray-100" required defaultValue={studentData?.taller} placeholder="Se asigna por grupo..." readOnly />
                         </div>
                         {activeTab === 'nuevo' && (
@@ -589,29 +589,29 @@ export default function PreInscripcion() {
                           </>
                         )}
                         <div>
-                          <label className="block text-sm font-medium">Â¿Cuenta con alguna beca?</label>
+                          <label className="block text-sm font-medium">¿Cuenta con alguna beca?</label>
                           <select name="tieneBeca" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.tieneBeca || 'NO'} onChange={(e) => {
                             const input = document.getElementById('nombreBecaContainer');
                             if(input) input.style.display = e.target.value !== 'NO' ? 'block' : 'none';
                           }}>
-                            <option>NO</option><option>SÃ</option>
+                            <option>NO</option><option>SÍ</option>
                           </select>
                         </div>
                           <div>
-                            <label className="block text-sm font-medium">Discapacidad o CondiciÃ³n</label>
+                            <label className="block text-sm font-medium">Discapacidad o Condición</label>
                             <select name="discapacidad" className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.discapacidad || 'Ninguna'}>
                               <option>Ninguna</option>
                               <option>Ceguera</option>
-                              <option>Baja visiÃ³n</option>
+                              <option>Baja visión</option>
                               <option>Sordera</option>
                               <option>Hipoacusia</option>
                               <option>Sordoceguera</option>
                               <option>Discapacidad motriz</option>
                               <option>Discapacidad intelectual</option>
                               <option>Discapacidad psicosocial</option>
-                              <option>Discapacidad mÃºltiple</option>
+                              <option>Discapacidad múltiple</option>
                               <option>Trastorno del Espectro Autista (TEA)</option>
-                              <option>Trastorno por DÃ©ficit de AtenciÃ³n (TDAH)</option>
+                              <option>Trastorno por Déficit de Atención (TDAH)</option>
                               <option>Aptitudes Sobresalientes</option>
                             </select>
                           </div>
@@ -644,7 +644,7 @@ export default function PreInscripcion() {
                           <input type="text" name="curp" required maxLength="18" minLength="18" onChange={handleCurpInput} className="mt-1 block w-full rounded-md p-2 border uppercase" defaultValue={studentData?.curp} />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">GÃ©nero</label>
+                          <label className="block text-sm font-medium">Género</label>
                           <select name="genero" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.genero}>
                             <option>Seleccionar</option><option>Hombre</option><option>Mujer</option>
                           </select>
@@ -654,29 +654,29 @@ export default function PreInscripcion() {
                           <input type="date" name="fechaNacimiento" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.fechaNacimiento} />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium">Nacionalidad (PaÃ­s de Nacimiento)</label>
+                            <label className="block text-sm font-medium">Nacionalidad (País de Nacimiento)</label>
                             <select name="nacionalidad" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nacionalidad || 'MEXICANA'}>
                               <option value="MEXICANA">Mexicana</option>
                               <option value="EXTRANJERA">Extranjera</option>
                             </select>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium">Â¿Habla alguna Lengua IndÃ­gena?</label>
+                            <label className="block text-sm font-medium">¿Habla alguna Lengua Indígena?</label>
                             <select name="lenguaIndigena" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.lenguaIndigena || 'NO'} onChange={(e) => {
                                const input = document.getElementById('nombreLenguaContainer');
-                               if (e.target.value === 'SÃ') {
+                               if (e.target.value === 'SÍ') {
                                  input.style.display = 'block';
                                } else {
                                  input.style.display = 'none';
                                }
                             }}>
                               <option>NO</option>
-                              <option>SÃ</option>
+                              <option>SÍ</option>
                             </select>
                           </div>
-                          <div id="nombreLenguaContainer" style={{display: studentData?.lenguaIndigena === 'SÃ' ? 'block' : 'none'}}>
-                            <label className="block text-sm font-medium">Â¿CuÃ¡l lengua indÃ­gena?</label>
-                            <input type="text" name="nombreLenguaIndigena" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nombreLenguaIndigena} placeholder="Ej. NÃ¡huatl, Maya..." />
+                          <div id="nombreLenguaContainer" style={{display: studentData?.lenguaIndigena === 'SÍ' ? 'block' : 'none'}}>
+                            <label className="block text-sm font-medium">¿Cuál lengua indígena?</label>
+                            <input type="text" name="nombreLenguaIndigena" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nombreLenguaIndigena} placeholder="Ej. Náhuatl, Maya..." />
                             </div>
                             <div>
                               <label className="block text-sm font-medium">¿Además de la lengua indígena, habla español?</label>
@@ -691,7 +691,7 @@ export default function PreInscripcion() {
                           <input type="text" name="calle" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.calle} />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-slate-700">NÃºmero</label>
+                          <label className="block text-sm font-medium text-slate-700">Número</label>
                           <input type="text" name="numero" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.numero} />
                         </div>
                         <div className="md:col-span-2">
@@ -699,15 +699,15 @@ export default function PreInscripcion() {
                           <input type="text" name="colonia" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.colonia} />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-slate-700">CÃ³digo Postal</label>
+                          <label className="block text-sm font-medium text-slate-700">Código Postal</label>
                           <input type="text" name="cp" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.cp} />
                         </div>
                       </div>
                     </div>
 
-                    {/* 3. CÃ©dula de Salud */}
+                    {/* 3. Cédula de Salud */}
                     <div>
-                      <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">3. CÃ©dula de Referencia de Salud</h3>
+                      <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">3. Cédula de Referencia de Salud</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <label className="block text-sm font-medium">Tipo de Sangre</label>
@@ -724,9 +724,9 @@ export default function PreInscripcion() {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">Â¿Usa lentes?</label>
+                          <label className="block text-sm font-medium">¿Usa lentes?</label>
                           <select name="lentes" className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.lentes || "NO"}>
-                            <option>NO</option><option>SÃ</option>
+                            <option>NO</option><option>SÍ</option>
                           </select>
                         </div>
                         <div className="md:col-span-2">
@@ -734,7 +734,7 @@ export default function PreInscripcion() {
                           <input type="text" name="alergias" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.alergias || "Ninguna"} />
                         </div>
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-medium">Enfermedades CrÃ³nicas / Padecimientos (Especifique, o escriba "Ninguno")</label>
+                          <label className="block text-sm font-medium">Enfermedades Crónicas / Padecimientos (Especifique, o escriba "Ninguno")</label>
                           <input type="text" name="padecimientos" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.padecimientos || "Ninguno"} />
                         </div>
                       </div>
@@ -755,20 +755,20 @@ export default function PreInscripcion() {
                             <option>Madre</option>
                             <option>Padre</option>
                             <option>Abuelo(a)</option>
-                            <option>TÃ­o(a)</option>
+                            <option>Tío(a)</option>
                             <option>Hermano(a)</option>
                             <option>Primo(a)</option>
-                            <option>CuÃ±ado(a)</option>
+                            <option>Cuñado(a)</option>
                             <option>Tutor Legal (No familiar)</option>
                             <option>Otro</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">Correo ElectrÃ³nico (Opcional)</label>
+                          <label className="block text-sm font-medium">Correo Electrónico (Opcional)</label>
                           <input type="email" name="correo" className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.correo} />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">TelÃ©fono Celular / WhatsApp</label>
+                          <label className="block text-sm font-medium">Teléfono Celular / WhatsApp</label>
                           <input type="tel" name="telefono" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.telefono} />
                         </div>
                       </div>
@@ -783,11 +783,11 @@ export default function PreInscripcion() {
                         <div>
                           <label className="block text-sm font-medium">Parentesco (C1)</label>
                           <select name="emergenciaParentesco1" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.emergenciaParentesco1}>
-                            <option value="">Seleccionar</option><option>Madre</option><option>Padre</option><option>Abuelo(a)</option><option>TÃ­o(a)</option><option>Hermano(a)</option><option>Primo(a)</option><option>CuÃ±ado(a)</option><option>Amigo/Vecino</option><option>Otro</option>
+                            <option value="">Seleccionar</option><option>Madre</option><option>Padre</option><option>Abuelo(a)</option><option>Tío(a)</option><option>Hermano(a)</option><option>Primo(a)</option><option>Cuñado(a)</option><option>Amigo/Vecino</option><option>Otro</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">TelÃ©fono de Contacto 1</label>
+                          <label className="block text-sm font-medium">Teléfono de Contacto 1</label>
                           <input type="tel" name="emergenciaTel1" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.emergenciaTel1} />
                         </div>
                         <div>
@@ -797,21 +797,21 @@ export default function PreInscripcion() {
                         <div>
                           <label className="block text-sm font-medium">Parentesco (C2)</label>
                           <select name="emergenciaParentesco2" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.emergenciaParentesco2}>
-                            <option value="">Seleccionar</option><option>Madre</option><option>Padre</option><option>Abuelo(a)</option><option>TÃ­o(a)</option><option>Hermano(a)</option><option>Primo(a)</option><option>CuÃ±ado(a)</option><option>Amigo/Vecino</option><option>Otro</option>
+                            <option value="">Seleccionar</option><option>Madre</option><option>Padre</option><option>Abuelo(a)</option><option>Tío(a)</option><option>Hermano(a)</option><option>Primo(a)</option><option>Cuñado(a)</option><option>Amigo/Vecino</option><option>Otro</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">TelÃ©fono de Contacto 2</label>
+                          <label className="block text-sm font-medium">Teléfono de Contacto 2</label>
                           <input type="tel" name="emergenciaTel2" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.emergenciaTel2} />
                         </div>
                       </div>
                     </div>
                   </>
 
-                {/* 5. DocumentaciÃ³n Digital (Oculta al actualizar datos) */}
+                {/* 5. Documentación Digital (Oculta al actualizar datos) */}
                 {activeTab !== 'completar' && (
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">5. DocumentaciÃ³n Digital en PDF</h3>
+                    <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">5. Documentación Digital en PDF</h3>
                     <p className="text-sm text-slate-500 mb-4">Solo se aceptan archivos en formato PDF.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       
@@ -819,7 +819,7 @@ export default function PreInscripcion() {
                         <label className="block text-sm font-bold mb-1">
                           Acta de Nacimiento <span className="text-red-500">*</span>
                           <p className="text-xs text-slate-500 font-normal mt-1 leading-tight">
-                            SerÃ¡n vÃ¡lidos los formatos oficiales vigentes (tanto en formato tradicional sepia/cafÃ© como el formato verde).
+                            Serán válidos los formatos oficiales vigentes (tanto en formato tradicional sepia/café como el formato verde).
                           </p>
                         </label>
                         <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setActaFile)} className="w-full text-sm" required={!studentData?.actaUrl} />
@@ -835,21 +835,21 @@ export default function PreInscripcion() {
                       </div>
 
                       <div className="bg-slate-50 p-4 border rounded-lg">
-                        <label className="block text-sm font-bold mb-1">Certificado de educaciÃ³n primaria o constancia de 6to <span className="text-slate-400 font-normal">(Opcional por ahora)</span></label>
+                        <label className="block text-sm font-bold mb-1">Certificado de educación primaria o constancia de 6to <span className="text-slate-400 font-normal">(Opcional por ahora)</span></label>
                         <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setCertificadoFile)} className="w-full text-sm" />
                         {certificadoFile && <p className="text-xs text-emerald-600 mt-1">{certificadoFile.name}</p>}
                         {studentData?.certificadoUrl && !certificadoFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
                       </div>
 
                       <div className="bg-slate-50 p-4 border rounded-lg">
-                        <label className="block text-sm font-bold mb-1">Comprobante de AsignaciÃ³n (Portal SEP) <span className="text-slate-400 font-normal">(Si aplica)</span></label>
+                        <label className="block text-sm font-bold mb-1">Comprobante de Asignación (Portal SEP) <span className="text-slate-400 font-normal">(Si aplica)</span></label>
                         <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setAsignacionFile)} className="w-full text-sm" />
                         {asignacionFile && <p className="text-xs text-emerald-600 mt-1">{asignacionFile.name}</p>}
                         {studentData?.asignacionUrl && !asignacionFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
                       </div>
 
                       <div className="bg-slate-50 p-4 border rounded-lg">
-                        <label className="block text-sm font-bold mb-1">IdentificaciÃ³n oficial del Tutor (INE) <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-bold mb-1">Identificación oficial del Tutor (INE) <span className="text-red-500">*</span></label>
                         <input type="file" accept="application/pdf,image/*" onChange={e => handleDocFileChange(e, setIneFile)} className="w-full text-sm" required={!studentData?.ineUrl} />
                         {ineFile && <p className="text-xs text-emerald-600 mt-1">{ineFile.name}</p>}
                         {studentData?.ineUrl && !ineFile && <p className="text-xs text-blue-600 mt-1">Ya cargado previamente.</p>}
@@ -883,7 +883,7 @@ export default function PreInscripcion() {
           <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full text-center animate-in fade-in zoom-in duration-300">
             <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mb-6"></div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">{loadingMessage || 'Cargando...'}</h3>
-            <p className="text-slate-500 text-sm">Por favor, no cierres esta ventana ni des clic de nuevo. Esto puede tomar unos segundos dependiendo de tu conexiÃ³n.</p>
+            <p className="text-slate-500 text-sm">Por favor, no cierres esta ventana ni des clic de nuevo. Esto puede tomar unos segundos dependiendo de tu conexión.</p>
           </div>
         </div>
       )}
