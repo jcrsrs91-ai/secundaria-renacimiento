@@ -171,9 +171,9 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
     // V9: Reprobaron durante el ciclo escolar
     // V10: Se regularizaron
     // V11: Continúan como irregulares
-    const rows9 = Array(3).fill(null).map(() => Array(8).fill(0));
-    const rows10 = Array(3).fill(null).map(() => Array(8).fill(0));
-    const rows11 = Array(3).fill(null).map(() => Array(8).fill(0));
+    const rows9 = Array(3).fill(null).map(() => Array(9).fill(0));
+    const rows10 = Array(3).fill(null).map(() => Array(9).fill(0));
+    const rows11 = Array(3).fill(null).map(() => Array(9).fill(0));
 
     // Combine all students that need to be checked
     // Current Activos (1er, 2do, 3er) + Egresados
@@ -574,7 +574,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
         </section>
 
           <div className="mt-8 mb-6">
-            <p className="text-sm font-semibold mb-2">2. De las alumnas y alumnos provenientes de escuelas de otro país reportados en la pregunta anterior, desglóselos segíºn el país o lugar y sexo.</p>
+            <p className="text-sm font-semibold mb-2">2. De las alumnas y alumnos provenientes de escuelas de otro país reportados en la pregunta anterior, desglóselos según el país o lugar y sexo.</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-2xl">
                 <thead className="bg-slate-50">
@@ -636,7 +636,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
           </div>
 
           <div className="mt-8 mb-6">
-            <p className="text-sm font-semibold mb-2">2. Escriba por sexo, el níºmero de alumnas y alumnos con beca reportados en la pregunta anterior, y desglóselos segíºn el origen de la beca.</p>
+            <p className="text-sm font-semibold mb-2">2. Escriba por sexo, el número de alumnas y alumnos con beca reportados en la pregunta anterior, y desglóselos según el origen de la beca.</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-4xl">
                 <thead className="bg-slate-50">
@@ -680,7 +680,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
           <h3 className="text-xl font-bold text-slate-800 mb-4 bg-slate-100 p-2 rounded">IV. ABANDONO ESCOLAR Y SUS CAUSAS</h3>
           
           <div className="mb-6">
-            <p className="text-sm font-semibold mb-2">1. Escriba por sexo el níºmero de alumnos que no concluyeron el ciclo escolar en esta escuela.</p>
+            <p className="text-sm font-semibold mb-2">1. Escriba por sexo el número de alumnos que no concluyeron el ciclo escolar en esta escuela.</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-lg">
                 <thead className="bg-slate-50">
@@ -702,7 +702,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
           </div>
 
           <div className="mb-6">
-            <p className="text-sm font-semibold mb-2">2. Escriba por sexo, el níºmero de alumnos reportados en la pregunta anterior, segíºn el motivo principal por el que no concluyeron el ciclo escolar. (Registre a cada alumno en un solo motivo).</p>
+            <p className="text-sm font-semibold mb-2">2. Escriba por sexo, el número de alumnos reportados en la pregunta anterior, según el motivo principal por el que no concluyeron el ciclo escolar. (Registre a cada alumno en un solo motivo).</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-4xl">
                 <thead className="bg-slate-50">
@@ -877,7 +877,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
 
             {/* Pregunta 3 */}
             <div className="overflow-x-auto">
-              <p className="text-sm font-semibold mb-2">3. Escriba el níºmero de alumnas y alumnos que proceden de escuela primaria general, indígena y/o comunitaria desglosándolo por grado y sexo.</p>
+              <p className="text-sm font-semibold mb-2">3. Escriba el número de alumnas y alumnos que proceden de escuela primaria general, indígena y/o comunitaria desglosándolo por grado y sexo.</p>
               <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[600px]">
                 <thead className="bg-slate-50">
                   <tr>
@@ -1029,7 +1029,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
 
             {/* Pregunta 7 */}
             <div>
-              <p className="text-sm font-semibold mb-2">7. Escriba el níºmero de alumnas y alumnos nacidos fuera de México, desglosándolos por sexo.</p>
+              <p className="text-sm font-semibold mb-2">7. Escriba el número de alumnas y alumnos nacidos fuera de México, desglosándolos por sexo.</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-center border-collapse border border-slate-300 max-w-lg">
                   <thead className="bg-slate-50">
@@ -1056,7 +1056,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
 
             {/* Pregunta 8 */}
             <div className="overflow-x-auto">
-              <p className="text-sm font-semibold mb-2">8. Escriba el níºmero de alumnas y alumnos egresados de 3er. grado durante el ciclo escolar, desglosándolos por edad, sexo...</p>
+              <p className="text-sm font-semibold mb-2">8. Escriba el número de alumnas y alumnos egresados de 3er. grado durante el ciclo escolar, desglosándolos por edad, sexo...</p>
               <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[900px]">
                 <thead className="bg-slate-50">
                   <tr>
@@ -1096,7 +1096,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
 
             {/* Pregunta 9 */}
             <div className="overflow-x-auto">
-              <p className="text-sm font-semibold mb-2">9. Escriba el níºmero de alumnas y alumnos que reprobaron una o más asignaturas durante el ciclo escolar...</p>
+              <p className="text-sm font-semibold mb-2">9. Escriba el número de alumnas y alumnos que reprobaron una o más asignaturas durante el ciclo escolar...</p>
               <table className="w-full text-xs text-center border-collapse border border-slate-300 min-w-[900px]">
                 <thead className="bg-slate-50">
                   <tr>
@@ -1215,7 +1215,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
               </div>
               
               <div>
-                <p className="text-sm font-semibold mb-2">12. Escriba, por grado, el níºmero de directivos con grupo y docentes.</p>
+                <p className="text-sm font-semibold mb-2">12. Escriba, por grado, el número de directivos con grupo y docentes.</p>
                 <table className="w-full text-xs text-center border-collapse border border-slate-300">
                   <thead className="bg-slate-50">
                     <tr>
@@ -1242,7 +1242,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
 
             {/* Pregunta 13 */}
             <div>
-              <p className="text-sm font-semibold mb-2">13. Escriba el níºmero de alumnas y alumnos afromexicanos o afrodescendientes por autoadscripción de los padres...</p>
+              <p className="text-sm font-semibold mb-2">13. Escriba el número de alumnas y alumnos afromexicanos o afrodescendientes por autoadscripción de los padres...</p>
               <table className="w-full max-w-xs text-xs text-center border-collapse border border-slate-300">
                 <thead className="bg-slate-50">
                   <tr>
@@ -1263,7 +1263,7 @@ export default function Formato911({ rawActivos, globalShiftFilter, materiasPorG
 
             {/* Pregunta 14 */}
             <div>
-              <p className="text-sm font-semibold mb-2">14. Escriba el níºmero de alumnas y alumnos, segíºn su lugar de residencia y desglóselos por sexo.</p>
+              <p className="text-sm font-semibold mb-2">14. Escriba el número de alumnas y alumnos, según su lugar de residencia y desglóselos por sexo.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl">
                 <table className="w-full text-xs text-center border-collapse border border-slate-300">
                   <thead className="bg-slate-50">
