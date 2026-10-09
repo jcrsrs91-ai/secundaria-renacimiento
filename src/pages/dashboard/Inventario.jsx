@@ -1549,7 +1549,7 @@ Esta acción no se puede deshacer.`);
 
   // Desglose por tipo de artículo (Nuevos vs Usados)
   const inventarioNuevos = inventario.filter(i => i.estado === 'Nuevo');
-  const inventarioUsados = inventario.filter(i => i.estado !== 'Nuevo');
+  const inventarioUsados = inventario; // Now this acts as GLOBAL inventory
 
   const crearDesglose = (inv) => {
     const agrupado = inv.reduce((acc, item) => {
@@ -1995,7 +1995,7 @@ Esta acción no se puede deshacer.`);
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
               <h4 className="text-lg font-bold text-slate-800 flex items-center">
-                <Archive className="w-6 h-6 mr-2 text-indigo-600" /> Bienes en Uso (Bueno, Regular, Malo)
+                <Archive className="w-6 h-6 mr-2 text-indigo-600" /> Inventario Global Consolidado (Nuevos + En Uso)
               </h4>
             </div>
             
