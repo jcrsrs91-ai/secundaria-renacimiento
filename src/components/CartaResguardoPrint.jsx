@@ -25,7 +25,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
           .no-print { display: none !important; }
         }
         @media screen {
-          .print-resguardo-only { padding: 2rem; max-width: 1000px; margin: 2rem auto; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); border-radius: 0.5rem; }
+          .print-resguardo-only { padding: 2rem; max-width: 1050px; margin: 2rem auto; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); border-radius: 0.5rem; }
         }
       `}</style>
       
@@ -114,7 +114,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
             <div className="flex gap-2">
               <div className="flex w-1/3">
                 <span className="font-bold w-12">C.C.T.:</span>
-                <span className="border-b border-black flex-1 uppercase">{data.cct || '12DST0068Y'}</span>
+                <span className="border-b border-black flex-1 uppercase">12DST0077B</span>
               </div>
               <div className="flex w-1/3">
                 <span className="font-bold w-16">SECTOR:</span>
@@ -122,7 +122,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
               </div>
               <div className="flex w-1/3">
                 <span className="font-bold w-12">ZONA:</span>
-                <span className="border-b border-black flex-1 uppercase">10</span>
+                <span className="border-b border-black flex-1 uppercase">24</span>
               </div>
             </div>
             <div className="flex gap-4">
@@ -147,7 +147,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
             </div>
             <div className="flex w-1/2">
               <span className="font-bold w-20">TELEFONO:</span>
-              <span className="border-b border-black flex-1 uppercase"></span>
+              <span className="border-b border-black flex-1 uppercase">7444415678</span>
             </div>
           </div>
         </div>
@@ -214,6 +214,7 @@ export default function CartaResguardoPrint({ data, onBack }) {
           <div className="text-center font-bold text-[10px] mt-2">Vo. Bo.</div>
           <div className="text-center font-bold text-[10px] mb-2 px-2 uppercase">
             <div className="border-t border-black pt-1 mt-12 w-3/4 mx-auto"></div>
+            PROFR. JUAN CARLOS TABOADA BARAJAS<br/>
             DIRECTOR DE LA ESCUELA
           </div>
         </div>
