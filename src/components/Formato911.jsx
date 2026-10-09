@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -64,8 +64,20 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
   const activos = useMemo(() => {
     if (!rawActivos) return [];
-    if (shiftFilter === 'Ambos') return rawActivos;
-    return rawActivos.filter(a => a.turno === shiftFilter);
+    let filtrados = rawActivos.filter(a => (a.status || 'Activo') === 'Activo');
+    if (shiftFilter !== 'Ambos') {
+      filtrados = filtrados.filter(a => a.turno === shiftFilter);
+    }
+    return filtrados;
+  }, [rawActivos, shiftFilter]);
+
+  const egresadosList = useMemo(() => {
+    if (!rawActivos) return [];
+    let filtrados = rawActivos.filter(a => a.status === 'Egresado');
+    if (shiftFilter !== 'Ambos') {
+      filtrados = filtrados.filter(a => a.turno === shiftFilter);
+    }
+    return filtrados;
   }, [rawActivos, shiftFilter]);
   
   const calculosV1 = useMemo(() => {
@@ -152,6 +164,56 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
     });
     return { h, m, t: h + m };
   }, [activos]);
+
+
+  const calculosV8 = useMemo(() => {
+    const rows = Array(6).fill(null).map(() => Array(9).fill(0));
+
+    egresadosList.forEach(a => {
+      let edadIndex = -1;
+      if (a.fechaNacimiento) {
+        const fn = new Date(a.fechaNacimiento + 'T12:00:00Z');
+        const sep1 = new Date('2026-09-01T12:00:00Z');
+        let edad = sep1.getFullYear() - fn.getFullYear();
+        const m = sep1.getMonth() - fn.getMonth();
+        if (m < 0 || (m === 0 && sep1.getDate() < fn.getDate())) {
+          edad--;
+        }
+        
+        if (edad <= 13) edadIndex = 0;
+        else if (edad === 14) edadIndex = 1;
+        else if (edad === 15) edadIndex = 2;
+        else if (edad === 16) edadIndex = 3;
+        else if (edad === 17) edadIndex = 4;
+        else edadIndex = 5; // 18 o más
+      } else {
+        edadIndex = 1; // Fallback to 14
+      }
+
+      const isHombre = a.genero === 'Hombre';
+      
+      if (isHombre) rows[edadIndex][0]++;
+      else rows[edadIndex][1]++;
+      rows[edadIndex][2]++;
+
+      if (a.lenguaIndigena === 'SÍ' || a.lenguaIndigena === 'SÃ ') rows[edadIndex][3]++;
+      if (a.nacionalidad === 'EXTRANJERA') rows[edadIndex][4]++;
+
+      if (a.discapacidad && a.discapacidad !== 'Ninguna' && a.discapacidad !== 'NO') {
+        let d = a.discapacidad;
+        let esTrastorno = d.includes('Trastorno') || d.includes('TDAH');
+        let esSobresaliente = d.includes('Aptitudes sobresalientes');
+        let esOtra = d.includes('Otras');
+
+        if (!esTrastorno && !esSobresaliente && !esOtra) rows[edadIndex][5]++;
+        else if (esTrastorno) rows[edadIndex][6]++;
+        else if (esSobresaliente) rows[edadIndex][7]++;
+        else if (esOtra) rows[edadIndex][8]++;
+      }
+    });
+
+    return rows;
+  }, [egresadosList]);
 
   const calculosV6 = useMemo(() => {
     const keys = [
@@ -877,20 +939,23 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {['13 años o menos', '14 años', '15 años', '16 años', '17 años', '18 años y más', 'Total'].map((edad, i) => (
-                    <tr key={i} className={edad === 'Total' ? 'font-bold bg-slate-50' : ''}>
+{['13 años o menos', '14 años', '15 años', '16 años', '17 años', '18 años y más', 'Total'].map((edad, i) => {
+                    const rowData = i < 6 ? calculosV8[i] : calculosV8.reduce((acc, row) => acc.map((v, j) => v + row[j]), Array(9).fill(0));
+                    return (
+                    <tr key={i} className={edad === 'Total' ? 'font-bold bg-emerald-50 text-emerald-900' : ''}>
                       <td className="border border-slate-300 p-2 text-left">{edad}</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 bg-slate-100 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
-                      <td className="border border-slate-300 p-2 outline-none focus:bg-emerald-100 cursor-text hover:bg-slate-100 data-cell" contentEditable suppressContentEditableWarning>0</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 font-medium">{rowData[0]}</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 font-medium">{rowData[1]}</td>
+                      <td className="border border-slate-300 p-2 bg-slate-200 font-bold">{rowData[2]}</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 font-medium">{rowData[3]}</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 font-medium">{rowData[4]}</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 font-medium">{rowData[5]}</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 font-medium">{rowData[6]}</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 font-medium">{rowData[7]}</td>
+                      <td className="border border-slate-300 p-2 bg-slate-100 font-medium">{rowData[8]}</td>
                     </tr>
-                  ))}
+                  )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1100,7 +1165,7 @@ export default function Formato911({ rawActivos, globalShiftFilter }) {
 
       </div>
     </div>
-  ), [shiftFilter, calculosV1, calculosV2, calculosV5, calculosV6, calculosV7]);
+  ), [shiftFilter, calculosV1, calculosV2, calculosV5, calculosV6, calculosV7, calculosV8]);
   
   useEffect(() => {
     if (historicoData && containerRef.current) {
