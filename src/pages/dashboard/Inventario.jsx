@@ -589,7 +589,7 @@ export default function Inventario() {
     setModalOpen(type);
     
     let articulosIniciales = [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }];
-    if ((type === 'baja' || type === 'resguardo') && selectedItems.length > 0) {
+    if ((type === 'baja' || type === 'resguardo' || type === 'recepcion') && selectedItems.length > 0) {
       articulosIniciales = inventario.filter(i => selectedItems.includes(i.id));
     }
 
@@ -650,7 +650,13 @@ export default function Inventario() {
             const prefix = generatePrefix(art.descripcion || art.articulo || art.marca);
             autoCodeOffsets[prefix] = (autoCodeOffsets[prefix] || 0) + qty;
             
-            const { codes, display } = generateCodeRange(tempCode, qty);
+            let codes = [];
+            let display = art.codigo || '';
+            if (!art.id) {
+              const gen = generateCodeRange(tempCode, qty);
+              codes = gen.codes;
+              display = gen.display;
+            }
             
             for (const code of codes) {
               await addDoc(collection(db, 'inventario'), {
