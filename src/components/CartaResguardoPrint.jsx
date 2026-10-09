@@ -49,11 +49,8 @@ export default function CartaResguardoPrint({ data, onBack }) {
             OFICINA DE INVENTARIOS
           </h1>
         </div>
-        <div className="w-1/4 flex justify-end">
-           {/* Replace with exact right logo if you have it */}
-           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">
-              Secretaría de Educación
-           </div>
+        <div className="w-1/4 flex justify-end items-center">
+           <img src="/logo-educacion.png" alt="Educación" className="h-14 object-contain" />
         </div>
       </div>
 
