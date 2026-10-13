@@ -52,6 +52,18 @@ export default function ControlEscolar() {
   const [selectedExpediente, setSelectedExpediente] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [constanciaPromedio, setConstanciaPromedio] = useState('');
+  const [constanciaTramiteOption, setConstanciaTramiteOption] = useState('fines_legales');
+  const [constanciaTramiteCustom, setConstanciaTramiteCustom] = useState('');
+
+  const getConstanciaTramiteTexto = () => {
+    if (constanciaTramiteOption === 'fines_legales') return 'LOS FINES LEGALES QUE A LA MISMA CONVENGAN';
+    if (constanciaTramiteOption === 'beca') return 'EFECTOS DE TRÁMITE DE BECA';
+    if (constanciaTramiteOption === 'imss') return 'EFECTOS DE TRÁMITE DE AFILIACIÓN AL SEGURO SOCIAL (IMSS / ISSSTE)';
+    if (constanciaTramiteOption === 'pasaporte') return 'EFECTOS DE TRÁMITE DE PASAPORTE / VISA';
+    if (constanciaTramiteOption === 'laboral') return 'EFECTOS DE TRÁMITE LABORAL DE SUS PADRES O TUTORES';
+    if (constanciaTramiteOption === 'custom') return constanciaTramiteCustom.trim() || 'LOS FINES LEGALES QUE A LA MISMA CONVENGAN';
+    return 'LOS FINES LEGALES QUE A LA MISMA CONVENGAN';
+  };
   const [showPrintDir, setShowPrintDir] = useState(false);
   
   // Estados para Modal de Extraordinarios
@@ -360,6 +372,8 @@ export default function ControlEscolar() {
     setModalType(null);
     setSelectedStudent(null);
     setConstanciaPromedio('');
+    setConstanciaTramiteOption('fines_legales');
+    setConstanciaTramiteCustom('');
     setExtraStudent(null);
     setExtraSubjects([]);
     setExtraData({});
@@ -464,7 +478,7 @@ export default function ControlEscolar() {
     toast.success("Generando constancia...", { icon: '📝' });
     setConstanciaType(type);
     setPrintMode('constancia');
-    setPrintData({ ...selectedStudent, manualPromedio: constanciaPromedio });
+    setPrintData({ ...selectedStudent, manualPromedio: constanciaPromedio, tramite: getConstanciaTramiteTexto() });
     // Aumentamos el tiempo para dar oportunidad al navegador de cargar/decodificar la imagen
     setTimeout(() => window.print(), 800);
     closeModal();
@@ -1805,13 +1819,61 @@ export default function ControlEscolar() {
               </div>
 
             <div className="space-y-3">
+              {/* SELECTOR DE TRÁMITE PARA CONSTANCIA SIMPLE */}
+              <div className="mb-4 bg-blue-50/70 border border-blue-200 p-3.5 rounded-xl">
+                <label className="block text-xs font-bold text-blue-900 mb-1 flex items-center justify-between">
+                  <span>🏛️ Tipo de Trámite (Para Constancia Simple)</span>
+                  <span className="text-[10px] text-blue-600 font-semibold bg-blue-100/70 px-2 py-0.5 rounded-full">En Mayúsculas</span>
+                </label>
+                <p className="text-[11px] text-blue-700 mb-2 leading-tight">
+                  Selecciona para qué trámite se expide la constancia o escribe uno personalizado:
+                </p>
+                <select 
+                  value={constanciaTramiteOption}
+                  onChange={(e) => setConstanciaTramiteOption(e.target.value)}
+                  className="w-full border-blue-300 rounded-lg shadow-sm p-2 text-xs font-medium focus:border-primary-500 focus:ring-primary-500 bg-white"
+                >
+                  <option value="fines_legales">Fines legales o escolares que a la misma convengan (General)</option>
+                  <option value="beca">Trámite de Beca (Beca Benito Juárez, transporte, etc.)</option>
+                  <option value="imss">Trámite de Afiliación al Seguro Social (IMSS / ISSSTE)</option>
+                  <option value="pasaporte">Trámite de Pasaporte / Visa</option>
+                  <option value="laboral">Trámite Laboral de Padres o Tutores</option>
+                  <option value="custom">Otro Trámite Personalizado (Escribir a mano)...</option>
+                </select>
+
+                {constanciaTramiteOption === 'custom' && (
+                  <div className="mt-2.5">
+                    <input 
+                      type="text"
+                      value={constanciaTramiteCustom}
+                      onChange={(e) => setConstanciaTramiteCustom(e.target.value.toUpperCase())}
+                      placeholder="Ej. TRÁMITE DE CARTILLA MILITAR / TORNEO DEPORTIVO"
+                      className="w-full border-blue-300 rounded-lg shadow-sm p-2 text-xs uppercase font-bold focus:border-primary-500 focus:ring-primary-500 bg-white"
+                      autoFocus
+                    />
+                    <p className="text-[10px] text-blue-600 mt-1 italic">
+                      Se redactará como: "Y PARA EFECTOS DE {constanciaTramiteCustom.trim() || '...'}"
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <button onClick={() => executePrintConstancia('simple')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition text-left group">
                 <div className="bg-primary-100 text-primary-600 p-2 rounded-lg mr-4 group-hover:bg-primary-500 group-hover:text-white transition">
                   <FileText className="w-6 h-6" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-800">Constancia Simple</h3>
-                  <p className="text-xs text-slate-500 mt-1">Formato tradicional certificando la inscripción y el grado cursado.</p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-slate-800">Constancia Simple (En Mayúsculas)</h3>
+                    <span className="text-[10px] font-bold bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full uppercase">
+                      {constanciaTramiteOption === 'fines_legales' ? 'Fines Legales' : 
+                       constanciaTramiteOption === 'beca' ? 'Beca' : 
+                       constanciaTramiteOption === 'imss' ? 'Seguro Social' : 
+                       constanciaTramiteOption === 'pasaporte' ? 'Pasaporte/Visa' : 
+                       constanciaTramiteOption === 'laboral' ? 'Laboral' : 'Personalizado'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">Formato tradicional 100% en mayúsculas certificando la inscripción y el grado cursado.</p>
                 </div>
               </button>
 
@@ -2077,7 +2139,7 @@ export default function ControlEscolar() {
       {printMode === 'acuseRec' && printData && <AcuseRecepcionPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'acuse' && printData && <AcuseDocumentosPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
-      {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} extraordinarioSelected={extraordinarioToPrint} />}
+      {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} extraordinarioSelected={extraordinarioToPrint} tramite={printData?.tramite} />}
       {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'constancia_eer' && eerToPrint && <ConstanciaEERPrint student={printData} regularizadas={eerToPrint.regularizadas} adeudos={eerToPrint.adeudos} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
       {printMode === 'constancia_eer_batch' && eerToPrint && <BatchConstanciaEERPrint data={printData} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
