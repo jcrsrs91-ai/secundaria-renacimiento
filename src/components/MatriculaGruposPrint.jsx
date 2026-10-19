@@ -46,15 +46,15 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
          data[groupKey] = { inicial: { h:0, m:0, t:0 }, altas: { h:0, m:0, t:0 }, bajas: { h:0, m:0, t:0 }, existencia: { h:0, m:0, t:0 } };
       }
 
-      if (status === 'activo') {
+      const isBaja = status === 'baja' && a.motivoBaja !== 'No Inscrito';
+      const isActivo = status === 'activo';
+      const isAlta = a.tipoIngreso === 'Alta' && (isActivo || isBaja);
+
+      if (isActivo || isBaja) {
         data[key].grupos.add(grupo);
         data[grado].grupos.add(`${turno}-${grupo}`);
         data.global.grupos.add(`${grado}-${turno}-${grupo}`);
       }
-
-      const isAlta = a.tipoIngreso === 'Alta';
-      const isBaja = status === 'baja';
-      const isActivo = status === 'activo';
 
       const updateStats = (target) => {
          if (isAlta) {

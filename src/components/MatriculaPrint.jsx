@@ -25,7 +25,10 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
     });
 
     alumnos.forEach(a => {
-      const grado = a.grado || '1er Grado';
+      let grado = a.grado || '1er Grado';
+      if (grado.includes('1er')) grado = '1er Grado';
+      else if (grado.includes('2do')) grado = '2do Grado';
+      else if (grado.includes('3er') || grado.includes('3ro')) grado = '3er Grado';
       const turno = a.turno || 'Matutino';
       const grupo = a.grupo || 'A';
       const status = (a.status || 'Activo').toLowerCase();
@@ -37,16 +40,16 @@ export default function MatriculaPrint({ alumnos = [], onClose }) {
       const key = `${grado}-${turno}`;
       if (!data[key]) return;
 
+      const isBaja = status === 'baja' && a.motivoBaja !== 'No Inscrito';
+      const isActivo = status === 'activo';
+      const isAlta = a.tipoIngreso === 'Alta' && (isActivo || isBaja);
+
       // Registrar grupo
-      if (status === 'activo') {
+      if (isActivo || isBaja) {
         data[key].grupos.add(grupo);
         data[grado].grupos.add(`${turno}-${grupo}`);
         data.global.grupos.add(`${grado}-${turno}-${grupo}`);
       }
-
-      const isAlta = a.tipoIngreso === 'Alta';
-      const isBaja = status === 'baja' && a.motivoBaja !== 'No Inscrito';
-      const isActivo = status === 'activo';
 
       if (isAlta) {
         data[key].altas[genero.toLowerCase()]++;
