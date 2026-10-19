@@ -73,9 +73,10 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
         </div>
 
         {/* Metadatos del Grupo y Docente */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-3 font-semibold text-[10px] px-2">
-          <div>Docente: <span className="font-normal border-b border-black inline-block w-64"></span></div>
-          <div>Asignatura: <span className="font-normal border-b border-black inline-block w-48 text-center">{taller}</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-3 font-semibold text-[10px] px-2">
+          <div>Docente: <span className="font-normal border-b border-black inline-block w-52"></span></div>
+          <div>Asignatura: <span className="font-normal border-b border-black inline-block w-44"></span></div>
+          <div>Taller / Tecnología: <span className="font-normal border-b border-black inline-block px-2 text-center">{taller}</span></div>
           <div>Grado: <span className="font-bold text-[12px] underline">{grado}</span></div>
           <div>Grupo: <span className="font-bold text-[12px] underline">"{grupo}"</span></div>
           <div>Turno: <span className="font-normal">{turno}</span></div>
