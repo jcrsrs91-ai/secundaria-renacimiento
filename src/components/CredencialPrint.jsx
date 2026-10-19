@@ -148,7 +148,7 @@ export default function CredencialPrint({ students = [] }) {
               <div className="px-1 mt-0 border-t-[0.5px] border-slate-300 pt-[1px] bg-red-50/40">
                 <p className="text-[6px] font-bold text-red-600 uppercase tracking-widest">En caso de emergencia avisar a:</p>
                 <div className="flex justify-between items-end mt-0">
-                  <p className="text-[7.5px] font-black text-slate-800 leading-[1.1] flex-1 pr-1">{student.tutorNombre || student.tutor || student.nombreTutor || 'No registrado'}</p>
+                  <p className="text-[7.5px] font-black text-slate-800 uppercase truncate leading-[1.1] flex-1 pr-1">{student.tutorNombre || student.tutor || student.nombreTutor || 'NO REGISTRADO'}</p>
                   <p className="text-[7.5px] font-black text-slate-900 leading-[1.1] flex-shrink-0">Tel: {student.telefono || student.celularTutor || student.telefonoTutor || 'N/A'}</p>
                 </div>
               </div>
