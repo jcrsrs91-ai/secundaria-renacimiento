@@ -26,10 +26,7 @@ export default function MatriculaGruposPrint({ alumnos = [], onClose }) {
     });
 
     alumnos.forEach(a => {
-      let grado = a.grado || '1er Grado';
-      if (grado.includes('1er')) grado = '1er Grado';
-      else if (grado.includes('2do')) grado = '2do Grado';
-      else if (grado.includes('3er') || grado.includes('3ro')) grado = '3er Grado';
+      const grado = a.grado || '1er Grado';
       const turno = a.turno || 'Matutino';
       const grupo = a.grupo || 'A';
       const status = (a.status || 'Activo').toLowerCase();
