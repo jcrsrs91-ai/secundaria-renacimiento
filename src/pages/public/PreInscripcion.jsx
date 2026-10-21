@@ -244,6 +244,13 @@ export default function PreInscripcion() {
       const ineContacto1Url = await uploadDoc(ineContacto1File, 'ineContacto1');
       const ineContacto2Url = await uploadDoc(ineContacto2File, 'ineContacto2');
 
+      if (activeTab === 'completar' && studentData) {
+        data.grado = studentData.grado;
+        data.grupo = studentData.grupo;
+        data.turno = studentData.turno;
+        data.taller = studentData.taller;
+      }
+
       const submissionData = {
         ...studentData,
         ...data,
@@ -526,48 +533,52 @@ export default function PreInscripcion() {
                         ) : (
                           <div>
                             <label className="block text-sm font-medium">Grado al que Ingresa</label>
-                            <input type="text" name="grado" className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-gray-100" readOnly value={studentData?.grado || ''} />
+                            <input type="text" name="grado" className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-gray-100 text-slate-600 cursor-not-allowed" readOnly value={studentData?.grado || ''} />
                           </div>
                         )}
                         <div>
                           <label className="block text-sm font-medium">Grupo</label>
-                          <select name="grupo" className="mt-1 block w-full rounded-md shadow-sm p-2 border notranslate" required defaultValue={studentData?.grupo}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const talleresMap = {
-                                'A': 'Climatización y Refrigeración (3181)',
-                                'B': 'Administración Contable (6011)',
-                                'C': 'Diseño de Circuitos Eléctricos (4021)',
-                                'D': 'Administración Contable (6011)',
-                                'E': 'Diseño y Mecánica Automotriz (3081)',
-                                'F': 'Ofimática (6031)',
-                                'G': 'Climatización y Refrigeración (3181)',
-                                'H': 'Administración Contable (6011)',
-                                'I': 'Diseño de Circuitos Eléctricos (4021)',
-                                'J': 'Administración Contable (6011)',
-                                'K': 'Diseño y Mecánica Automotriz (3081)',
-                                'L': 'Ofimática (6031)'
-                              };
-                              const input = document.getElementById('tallerInput');
-                              if (input) {
-                                input.value = talleresMap[val] || '';
-                              }
-                            }}
-                          >
-                            <option value="">Seleccionar</option>
-                            <option value="A" translate="no">A</option>
-                            <option value="B" translate="no">B</option>
-                            <option value="C" translate="no">C</option>
-                            <option value="D" translate="no">D</option>
-                            <option value="E" translate="no">E</option>
-                            <option value="F" translate="no">F</option>
-                            <option value="G" translate="no">G</option>
-                            <option value="H" translate="no">H</option>
-                            <option value="I" translate="no">I</option>
-                            <option value="J" translate="no">J</option>
-                            <option value="K" translate="no">K</option>
-                            <option value="L" translate="no">L</option>
-                          </select>
+                          {activeTab === 'completar' ? (
+                            <input type="text" name="grupo" className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-gray-100 text-slate-600 cursor-not-allowed notranslate" readOnly value={studentData?.grupo || ''} />
+                          ) : (
+                            <select name="grupo" className="mt-1 block w-full rounded-md shadow-sm p-2 border notranslate" required defaultValue={studentData?.grupo}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const talleresMap = {
+                                  'A': 'Climatización y Refrigeración (3181)',
+                                  'B': 'Administración Contable (6011)',
+                                  'C': 'Diseño de Circuitos Eléctricos (4021)',
+                                  'D': 'Administración Contable (6011)',
+                                  'E': 'Diseño y Mecánica Automotriz (3081)',
+                                  'F': 'Ofimática (6031)',
+                                  'G': 'Climatización y Refrigeración (3181)',
+                                  'H': 'Administración Contable (6011)',
+                                  'I': 'Diseño de Circuitos Eléctricos (4021)',
+                                  'J': 'Administración Contable (6011)',
+                                  'K': 'Diseño y Mecánica Automotriz (3081)',
+                                  'L': 'Ofimática (6031)'
+                                };
+                                const input = document.getElementById('tallerInput');
+                                if (input) {
+                                  input.value = talleresMap[val] || '';
+                                }
+                              }}
+                            >
+                              <option value="">Seleccionar</option>
+                              <option value="A" translate="no">A</option>
+                              <option value="B" translate="no">B</option>
+                              <option value="C" translate="no">C</option>
+                              <option value="D" translate="no">D</option>
+                              <option value="E" translate="no">E</option>
+                              <option value="F" translate="no">F</option>
+                              <option value="G" translate="no">G</option>
+                              <option value="H" translate="no">H</option>
+                              <option value="I" translate="no">I</option>
+                              <option value="J" translate="no">J</option>
+                              <option value="K" translate="no">K</option>
+                              <option value="L" translate="no">L</option>
+                            </select>
+                          )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium">¿Es alumno repetidor de este grado?</label>
@@ -578,10 +589,14 @@ export default function PreInscripcion() {
                           </div>
                           <div>
                             <label className="block text-sm font-medium">Turno</label>
-                          <select name="turno" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.turno}>
-                            <option value="">Seleccionar</option>
-                            <option>Matutino</option><option>Vespertino</option>
-                          </select>
+                          {activeTab === 'completar' ? (
+                            <input type="text" name="turno" className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-gray-100 text-slate-600 cursor-not-allowed" readOnly value={studentData?.turno || ''} />
+                          ) : (
+                            <select name="turno" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.turno}>
+                              <option value="">Seleccionar</option>
+                              <option>Matutino</option><option>Vespertino</option>
+                            </select>
+                          )}
                         </div>
                         <div>
                           <label className="block text-sm font-medium">Taller / Tecnología</label>
