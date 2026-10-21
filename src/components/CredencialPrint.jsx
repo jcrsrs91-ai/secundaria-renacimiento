@@ -45,12 +45,18 @@ export default function CredencialPrint({ students = [] }) {
           .print-only { display: block !important; }
           .credencial-page { 
             page-break-after: always; 
+            break-after: page;
             width: 54mm; 
-            height: 85.6mm; 
+            height: 85.5mm; 
+            max-height: 85.5mm;
             overflow: hidden !important; 
             position: relative; 
             font-family: sans-serif; 
             box-sizing: border-box; 
+          }
+          .credencial-page:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
           img {
             image-rendering: -webkit-optimize-contrast;
