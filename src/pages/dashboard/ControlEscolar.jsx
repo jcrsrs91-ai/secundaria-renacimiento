@@ -475,11 +475,11 @@ export default function ControlEscolar() {
   };
 
   const executePrintConstancia = (type) => {
-    if (type === 'terminacion' && selectedStudent?.grado !== '3er Grado') {
+    if (type === 'terminacion' && !String(selectedStudent?.grado || '').includes('3')) {
       alert("La Constancia de Terminación de Estudios es exclusiva para alumnos de 3er Grado.");
       return;
     }
-    if (type === 'inscripcion_primero' && selectedStudent?.grado !== '1er Grado') {
+    if (type === 'inscripcion_primero' && !String(selectedStudent?.grado || '').includes('1')) {
       alert("Esta constancia es exclusiva para alumnos de 1er Grado.");
       return;
     }
@@ -1842,7 +1842,7 @@ export default function ControlEscolar() {
               {/* SELECTOR DE TRÁMITE PARA CONSTANCIA SIMPLE */}
               <div className="mb-4 bg-blue-50/70 border border-blue-200 p-3.5 rounded-xl">
                 <label className="block text-xs font-bold text-blue-900 mb-1 flex items-center justify-between">
-                  <span>🏛️ Tipo de Trámite (Para Constancia Simple)</span>
+                  <span>🏛️ Tipo de Trámite (Aplica para las constancias)</span>
                   <span className="text-[10px] text-blue-600 font-semibold bg-blue-100/70 px-2 py-0.5 rounded-full">En Mayúsculas</span>
                 </label>
                 <p className="text-[11px] text-blue-700 mb-2 leading-tight">
@@ -1906,7 +1906,7 @@ export default function ControlEscolar() {
                   <p className="text-xs text-slate-500 mt-1">Incluye el promedio general acumulado y la tabla de calificaciones.</p>
                 </div>
               </button>
-<button onClick={() => { executePrintConstancia('terminacion_tramite'); closeModal(); }} className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all flex items-start group">
+<button onClick={() => executePrintConstancia('terminacion_tramite')} className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all flex items-start group">
                   <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg mr-3 group-hover:scale-110 transition-transform">
                     <FileText className="w-5 h-5" />
                   </div>

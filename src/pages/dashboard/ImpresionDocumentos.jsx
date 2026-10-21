@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
-import { Printer, Save, CheckCircle, Users } from 'lucide-react';
+import { Printer, Save, Users } from 'lucide-react';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 
 const numeroALetras = (numStr) => {
@@ -32,6 +32,18 @@ const extraerFechaDeCurp = (curp) => {
   return `${dd}/${mm}/${fullYear}`;
 };
 
+const formatearFechaNacimiento = (fechaNacimiento, curp) => {
+  if (fechaNacimiento && typeof fechaNacimiento === 'string') {
+    const trimmed = fechaNacimiento.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [yyyy, mm, dd] = trimmed.split('-');
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    if (trimmed) return trimmed;
+  }
+  return extraerFechaDeCurp(curp) || '___/___/_____';
+};
+
 const ImpresionDocumentos = () => {
   const { config } = useGlobalConfig();
   const [students, setStudents] = useState([]);
@@ -47,6 +59,16 @@ const ImpresionDocumentos = () => {
     zona: '24',
     direccion: 'Calle alta quebradora y and. 24 febrero s/n cd. renacimiento c.p.39715 Tel. 7444415678'
   });
+
+  useEffect(() => {
+    if (config) {
+      setGlobalData(prev => ({
+        ...prev,
+        nombre_director: config.directorName || prev.nombre_director,
+        cct: config.cct || prev.cct
+      }));
+    }
+  }, [config]);
 
   // Cargar estudiantes de 3er grado desde Firebase
   useEffect(() => {
@@ -232,6 +254,7 @@ const ImpresionDocumentos = () => {
         {filteredStudents.map((student, index) => {
           const nombreCompleto = `${student.nombres} ${student.apellidoPaterno} ${student.apellidoMaterno}`.toUpperCase();
           const promedioLetra = numeroALetras(student.promedio_certificado);
+          const fechaNacFormateada = formatearFechaNacimiento(student.fechaNacimiento, student.curp);
           
           // Ocultar todas las páginas excepto la primera en vista previa de pantalla (para no saturar la vista)
           // Al imprimir (print:block) se mostrarán todas y los page-breaks harán su trabajo.
@@ -245,7 +268,7 @@ const ImpresionDocumentos = () => {
               <div className={`page-container relative print-page-break ${screenVisibility}`}>
                 <div className="page-border"></div>
                 
-                <div className="relative z-10 block font-sans text-gray-800">
+                <div className="relative z-10 block font-sans text-gray-800 uppercase">
                   {/* Encabezado con Logos Reales */}
                   <div className="flex items-center justify-between mb-4">
                     <img src="/logo-sep.png" alt="Logo SEP / Guerrero" className="h-16 w-auto object-contain" />
@@ -294,7 +317,7 @@ const ImpresionDocumentos = () => {
                     </div>
 
                     <p>
-                      Con Clave Única de Registro de Población (CURP): <strong>{student.curp || '__________________'}</strong> y fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, cursó y concluyó satisfactoriamente el <strong>Tercer</strong> grado de educación secundaria, grupo <strong>"{student.grupo}"</strong>, durante el Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}.
+                      Con Clave Única de Registro de Población (CURP): <strong>{student.curp || '__________________'}</strong> y fecha de nacimiento <strong>{fechaNacFormateada}</strong>, cursó y concluyó satisfactoriamente el <strong>Tercer</strong> grado de educación secundaria, grupo <strong>"{student.grupo}"</strong>, durante el Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}.
                     </p>
 
                     <p>
@@ -336,7 +359,7 @@ const ImpresionDocumentos = () => {
               <div className={`page-container relative print-page-break ${screenVisibility}`}>
                 <div className="page-border"></div>
                 
-                <div className="relative z-10 block font-sans text-gray-800">
+                <div className="relative z-10 block font-sans text-gray-800 uppercase">
                   <div className="flex items-center justify-between mb-4">
                     <img src="/logo-sep.png" alt="Logo SEP / Guerrero" className="h-16 w-auto object-contain" />
                     <div className="flex-1 text-center px-4">
@@ -382,7 +405,7 @@ const ImpresionDocumentos = () => {
                     </div>
 
                     <p>
-                      Con Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, quien cursó y concluyó sus estudios de educación secundaria en esta institución durante el Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}, en el <strong>Tercer</strong> grado, grupo <strong>"{student.grupo}"</strong>.
+                      Con Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y fecha de nacimiento <strong>{fechaNacFormateada}</strong>, quien cursó y concluyó sus estudios de educación secundaria en esta institución durante el Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}, en el <strong>Tercer</strong> grado, grupo <strong>"{student.grupo}"</strong>.
                     </p>
 
                     <p>
