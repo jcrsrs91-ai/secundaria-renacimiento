@@ -6,7 +6,8 @@ export function useGlobalConfig() {
   const [config, setConfig] = useState({
     cicloEscolarActual: '2026-2027',
     leyendaOficial: '"2026, Año de Margarita Maza"',
-    inscripcionesAbiertas: true
+    inscripcionesAbiertas: true,
+    reinscripcionesAbiertas: false
   });
   const [loading, setLoading] = useState(true);
 
@@ -16,12 +17,14 @@ export function useGlobalConfig() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.inscripcionesAbiertas === undefined) data.inscripcionesAbiertas = true;
+        if (data.reinscripcionesAbiertas === undefined) data.reinscripcionesAbiertas = false;
         setConfig(prev => ({ ...prev, ...data }));
       } else {
         setDoc(docRef, {
           cicloEscolarActual: '2026-2027',
           leyendaOficial: '"2026, Año de Margarita Maza"',
-          inscripcionesAbiertas: true
+          inscripcionesAbiertas: true,
+          reinscripcionesAbiertas: false
         });
       }
       setLoading(false);

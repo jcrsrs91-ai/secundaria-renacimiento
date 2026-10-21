@@ -1615,6 +1615,17 @@ export default function ControlEscolar() {
                     Permitir que los alumnos "Actualicen" su expediente libremente
                   </label>
                 </div>
+                <div className="flex items-center mt-3">
+                  <input 
+                    type="checkbox" 
+                    id="input-reinscripciones" 
+                    defaultChecked={config?.reinscripcionesAbiertas === true}
+                    className="w-5 h-5 text-primary-600 border-slate-300 rounded focus:ring-primary-500" 
+                  />
+                  <label htmlFor="input-reinscripciones" className="ml-2 block text-sm font-bold text-slate-700">
+                    Habilitar botón de "Reinscripción" en el portal de admisiones
+                  </label>
+                </div>
               </div>
 
               <div className="mt-8">
@@ -1622,7 +1633,8 @@ export default function ControlEscolar() {
                   const c = document.getElementById('input-ciclo').value;
                   const l = document.getElementById('input-leyenda').value;
                   const a = document.getElementById('input-abiertas').checked;
-                  updateConfig({ cicloEscolarActual: c, leyendaOficial: l, inscripcionesAbiertas: a });
+                  const r = document.getElementById('input-reinscripciones').checked;
+                  updateConfig({ cicloEscolarActual: c, leyendaOficial: l, inscripcionesAbiertas: a, reinscripcionesAbiertas: r });
                   toast.success('Configuración Global actualizada con éxito');
                   closeModal();
                 }} className="w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 flex justify-center items-center shadow-lg transition-colors">

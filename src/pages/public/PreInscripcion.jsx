@@ -1,6 +1,7 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
-import { UserPlus, ClipboardList, Search, Upload, Printer } from 'lucide-react';
+import { UserPlus, ClipboardList, Search, Upload, Printer, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { db, storage } from '../../firebase';
 import { collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -16,6 +17,9 @@ export default function PreInscripcion() {
 
   useEffect(() => {
     if (config && config.inscripcionesAbiertas === false && activeTab === 'completar') {
+      setActiveTab('nuevo');
+    }
+    if (config && config.reinscripcionesAbiertas !== true && activeTab === 'reinscripcion') {
       setActiveTab('nuevo');
     }
   }, [config, activeTab]);
@@ -318,13 +322,24 @@ export default function PreInscripcion() {
             >
               <UserPlus className="inline-block w-5 h-5 sm:mr-2 -mt-1" /> <span className="hidden sm:inline">Nuevo Ingreso</span>
             </button>
-            <button 
-              type="button"
-              className={`flex-1 py-4 px-2 sm:px-6 text-center font-medium text-sm transition-colors ${activeTab === 'reinscripcion' ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
-              onClick={() => changeTab('reinscripcion')}
-            >
-              <ClipboardList className="inline-block w-5 h-5 sm:mr-2 -mt-1" /> <span className="hidden sm:inline">Reinscripción</span>
-            </button>
+            {config?.reinscripcionesAbiertas === true ? (
+              <button 
+                type="button"
+                className={`flex-1 py-4 px-2 sm:px-6 text-center font-medium text-sm transition-colors ${activeTab === 'reinscripcion' ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+                onClick={() => changeTab('reinscripcion')}
+              >
+                <ClipboardList className="inline-block w-5 h-5 sm:mr-2 -mt-1" /> <span className="hidden sm:inline">Reinscripción</span>
+              </button>
+            ) : (
+              <button 
+                type="button"
+                title="El periodo de reinscripciones ha concluido"
+                className="flex-1 py-4 px-2 sm:px-6 text-center font-medium text-sm text-slate-400 bg-slate-100/80 cursor-not-allowed select-none"
+                onClick={() => toast.error('El periodo de reinscripciones ha concluido (cerró el 30 de septiembre).')}
+              >
+                <Lock className="inline-block w-4 h-4 sm:mr-1.5 -mt-0.5 text-slate-400" /> <span className="hidden sm:inline">Reinscripción (Cerrado)</span>
+              </button>
+            )}
             <button 
               type="button"
               className={`flex-1 py-4 px-2 sm:px-4 text-center font-medium text-xs sm:text-sm transition-colors ${activeTab === 'reimprimir' ? 'bg-primary-50 text-primary-700 border-b-2 border-primary-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
