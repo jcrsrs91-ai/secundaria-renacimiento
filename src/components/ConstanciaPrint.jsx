@@ -163,14 +163,15 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
           con este formato (px-10 py-6 leading-relaxed 11pt) para que quepa en una sola hoja. 
           Cualquier cambio futuro a las demás constancias NO DEBE afectar a 'terminacion'.
         */}
-        <div className={`bg-white text-slate-800 font-serif text-justify relative z-10 watermark 
-          ${type === 'terminacion' ? 'px-10 py-6 leading-relaxed' : 
-            type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 
+        <div className={`bg-white text-slate-800 font-serif text-justify relative z-10 watermark uppercase
+          ${type === 'terminacion' ? 'px-10 py-5 leading-relaxed' : 
+            type === 'terminacion_tramite' ? 'px-10 py-5 leading-normal' : 
+            type === 'calificaciones' ? 'px-10 py-4 leading-snug' : 
             type === 'acreditacion_extraordinario' ? 'px-10 py-4 leading-normal' : 
-            type === 'simple' ? 'px-12 py-6 leading-relaxed uppercase' : 'px-10 py-6 leading-relaxed'}`} 
-          style={{ fontSize: type === 'calificaciones' ? '10pt' : (type === 'acreditacion_extraordinario' && Array.isArray(extraordinarioSelected) && extraordinarioSelected.length > 2) ? '10.5pt' : type === 'simple' ? '11.5pt' : '11pt' }}>
+            type === 'simple' ? 'px-12 py-5 leading-relaxed' : 'px-10 py-5 leading-relaxed'}`} 
+          style={{ fontSize: type === 'calificaciones' ? '9.5pt' : type === 'terminacion_tramite' ? '10.5pt' : (type === 'acreditacion_extraordinario' && Array.isArray(extraordinarioSelected) && extraordinarioSelected.length > 2) ? '10.5pt' : type === 'simple' ? '11.5pt' : '11pt' }}>
          {/* HEADER LOGOS AND TITLE */}
-         <div className={`flex items-center justify-between ${type === 'acreditacion_extraordinario' ? 'mb-2' : 'mb-4'}`}>
+         <div className={`flex items-center justify-between ${type === 'acreditacion_extraordinario' || type === 'calificaciones' ? 'mb-2' : 'mb-4'}`}>
             <img src="/logo-sep.png" alt="Logo SEP / Guerrero" className="w-24 h-20 object-contain shrink-0" />
             <div className="flex-1 text-center px-4">
               <h1 className="font-black text-[14pt] tracking-widest text-slate-900 uppercase font-sans">SISTEMA EDUCATIVO NACIONAL</h1>
@@ -180,41 +181,41 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
             </div>
             <img src="/logo-escuela.png" alt="EST 68" className="w-24 h-20 object-contain shrink-0" />
          </div>
-         <hr className="border-t-[1.5px] border-gray-800 mb-6" />
+         <hr className={`border-t-[1.5px] border-gray-800 ${type === 'calificaciones' ? 'mb-3' : 'mb-5'}`} />
 
-         <div className={`text-right font-bold uppercase text-[11pt] ${type === 'calificaciones' ? 'mb-4' : type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'simple' ? 'mb-8' : 'mb-6'}`}>
+         <div className={`text-right font-bold uppercase text-[11pt] ${type === 'calificaciones' ? 'mb-2' : type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'simple' ? 'mb-6' : type === 'terminacion_tramite' ? 'mb-4' : 'mb-5'}`}>
             <p className={`${type === 'simple' ? 'text-[12pt]' : ''}`}>ASUNTO: CONSTANCIA DE ESTUDIOS {type === 'calificaciones' && 'CON CALIFICACIONES'}</p>
             
             {/* LEYENDA OFICIAL DEL AÑO */}
-            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-4' : 'mt-4'} text-center font-bold text-[9pt] uppercase tracking-widest text-slate-500`}>
+            <p className={`${type === 'acreditacion_extraordinario' || type === 'calificaciones' ? 'mt-1.5' : type === 'simple' ? 'mt-4' : 'mt-3'} text-center font-bold text-[9pt] uppercase tracking-widest text-slate-500`}>
                {(config?.leyendaOficial || '"2026, Año de Margarita Maza"').toUpperCase()}
             </p>
 
-            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-8 text-[12pt] font-bold uppercase' : 'mt-4 text-[12pt] normal-case font-normal'} text-left`}>
-              {type === 'simple' ? 'A QUIEN CORRESPONDA:' : 'A quien corresponda:'}
+            <p className={`${type === 'acreditacion_extraordinario' || type === 'calificaciones' ? 'mt-2' : type === 'simple' ? 'mt-6 text-[12pt] font-bold uppercase' : 'mt-3 text-[11.5pt] font-bold uppercase'} text-left`}>
+              A QUIEN CORRESPONDA:
             </p>
          </div>
 
          {type === 'simple' ? (
-           <p className="mb-8 indent-12">
+           <p className="mb-6 indent-12">
              EL QUE SUSCRIBE, <strong>PROFR. JUAN CARLOS TABOADA BARAJAS</strong>, DIRECTOR DE LA ESCUELA SECUNDARIA TÉCNICA N° 68 "RENACIMIENTO", CON DOMICILIO EN CALLE ALTA QUEBRADORA Y ANDADOR 24 DE FEBRERO S/N, CD. RENACIMIENTO, C.P. 39715, TEL. 744 441 5678, POR MEDIO DE LA PRESENTE:
            </p>
          ) : (
-           <p className={`${type === 'acreditacion_extraordinario' ? 'mb-3' : 'mb-6'} indent-12`}>
+           <p className={`${type === 'acreditacion_extraordinario' || type === 'calificaciones' ? 'mb-2' : type === 'terminacion_tramite' || type === 'tutor' || type === 'promedio_anterior' ? 'mb-4' : 'mb-5'} indent-12`}>
              El que suscribe, <strong>Profr. Juan Carlos Taboada Barajas</strong>, Director de la Escuela Secundaria Técnica N° 68 "Renacimiento", con domicilio en Calle Alta Quebradora y Andador 24 de Febrero S/N, Cd. Renacimiento, C.P. 39715, Tel. 744 441 5678, por medio de la presente:
            </p>
          )}
 
-         <div className={`text-center ${type === 'acreditacion_extraordinario' ? 'mb-3' : type === 'simple' ? 'mb-8' : 'mb-6'} font-black ${type === 'simple' ? 'text-xl' : 'text-lg'} tracking-[0.3em] uppercase`}>
+         <div className={`text-center ${type === 'acreditacion_extraordinario' || type === 'calificaciones' ? 'mb-2' : type === 'simple' ? 'mb-6' : type === 'terminacion_tramite' || type === 'tutor' || type === 'promedio_anterior' ? 'mb-4' : 'mb-5'} font-black ${type === 'simple' ? 'text-xl' : 'text-lg'} tracking-[0.3em] uppercase`}>
             C E R T I F I C A
          </div>
 
          {type === 'terminacion_tramite' ? (
-           <p className="mb-6 indent-12">
+           <p className="mb-4 indent-12">
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios correspondientes a la Educación Secundaria en el ciclo escolar {config?.cicloEscolarActual || '2025-2026'} en esta Institución Educativa. Por lo anterior, <strong>no adeuda ninguna asignatura</strong> y su Certificado Oficial de Terminación de Estudios se encuentra actualmente <strong>en trámite</strong>.
            </p>
          ) : type === 'terminacion' ? (
-           <p className="mb-6 indent-12">
+           <p className="mb-5 indent-12">
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios correspondientes a la Educación Secundaria en el ciclo escolar {config?.cicloEscolarActual || '2025-2026'} en esta Institución Educativa.
            </p>
          ) : type === 'promedio_generacion' ? (
@@ -242,11 +243,11 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente {config?.cicloEscolarActual || '2025-2026'}. Y de acuerdo con sus documentos originales presentados en esta institución, concluyó su Educación Primaria con un promedio de <strong>{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
            </p>
          ) : type === 'simple' ? (
-           <p className="mb-8 indent-12 uppercase">
+           <p className="mb-6 indent-12 uppercase">
              QUE EL (LA) ALUMNO(A) <strong>{(autoAcentuar(student.apellidoPaterno) + ' ' + autoAcentuar(student.apellidoMaterno) + ' ' + autoAcentuar(student.nombres)).toUpperCase()}</strong>, CON FECHA DE NACIMIENTO <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, CLAVE ÚNICA DE REGISTRO DE POBLACIÓN (CURP) <strong>{(student.curp || '__________________').toUpperCase()}</strong> Y MATRÍCULA ESCOLAR <strong>{(student.matricula || '').toUpperCase()}</strong>, SE ENCUENTRA LEGALMENTE INSCRITO(A) Y CURSANDO EL <strong>{(student.grado || '').toUpperCase()}</strong>, GRUPO <strong>"{(student.grupo || '').toUpperCase()}"</strong>, EN EL TURNO <strong>{(student.turno || 'MATUTINO').toUpperCase()}</strong> DURANTE EL CICLO ESCOLAR VIGENTE <strong>{(config?.cicloEscolarActual || '2025-2026').toUpperCase()}</strong>.
            </p>
          ) : (
-           <p className={`indent-12 ${type === 'tutor' ? 'mb-8' : type === 'promedio_anterior' ? 'mb-8 leading-[2]' : 'mb-6'}`}>
+           <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : type === 'tutor' || type === 'promedio_anterior' ? 'mb-5' : 'mb-6'}`}>
              Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{student.fechaNacimiento || extraerFechaDeCurp(student.curp) || '___/___/_____'}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, se encuentra legalmente inscrito(a) y cursando el <strong>{student.grado}</strong>, Grupo <strong>"{student.grupo}"</strong>, en el turno <strong>{student.turno || 'Matutino'}</strong> durante el ciclo escolar vigente {config?.cicloEscolarActual || '2025-2026'}.
            </p>
          )}
@@ -264,19 +265,19 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
          )}
 
          {type === 'promedio_anterior' && (
-           <p className="mb-8 indent-12 font-medium leading-[2]">
+           <p className="mb-5 indent-12 font-medium leading-relaxed">
              Y de acuerdo con nuestros registros académicos, el ciclo escolar inmediato anterior lo concluyó con un Promedio General de: <strong className="whitespace-nowrap">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
            </p>
          )}
 
          {type === 'tutor' && (
-           <p className="mb-8 indent-12">
+           <p className="mb-5 indent-12">
              Asimismo, se hace constar que el (la) C. <strong>{student.tutorNombre || student.tutor || '__________________'}</strong> funge legalmente como Padre, Madre o Tutor del (de la) alumno(a), siendo el (la) responsable del mismo(a) ante esta Institución Educativa.
            </p>
          )}
 
          {(type === 'terminacion' || type === 'terminacion_tramite' || (type === 'acreditacion_extraordinario' && student.manualPromedio)) && (
-           <p className={`${type === 'acreditacion_extraordinario' ? 'mt-3 mb-3' : 'mt-6 mb-6'} text-center font-medium px-8 text-[12pt]`}>
+           <p className={`${type === 'acreditacion_extraordinario' ? 'mt-3 mb-3' : type === 'terminacion_tramite' ? 'mt-4 mb-4' : 'mt-4 mb-4'} text-center font-medium px-8 text-[12pt]`}>
              Se hace constar que cuenta con un Promedio de Nivel Educativo (Certificado) de: <br/>
              <strong className="whitespace-nowrap text-[14pt] block mt-1">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>
            </p>
@@ -288,7 +289,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
              <p className="mb-1 indent-12">
                A continuación se detalla el historial académico y las calificaciones obtenidas hasta el momento de la expedición de este documento:
              </p>
-             <table className="w-full text-[8.5pt] border-collapse border border-slate-300">
+             <table className="w-full text-[8pt] border-collapse border border-slate-300">
                <thead>
                  <tr className="bg-slate-100">
                    <th className="border border-slate-300 px-2 py-0.5 text-left font-bold w-1/2">Asignatura</th>
@@ -310,39 +311,39 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
                  ))}
                  <tr>
                    <td colSpan="4" className="border border-slate-300 px-2 py-0.5 text-right font-black uppercase">Promedio General:</td>
-                   <td className="border border-slate-300 px-1 py-0.5 text-center font-black text-[10pt]">{promedioGeneral}</td>
+                   <td className="border border-slate-300 px-1 py-0.5 text-center font-black text-[9.5pt]">{promedioGeneral}</td>
                  </tr>
                </tbody>
              </table>
             </div>
          )}
          {type === 'calificaciones' && calificacionesData.some(m => m.isRegularizacion) && (
-           <p className="text-[8pt] text-slate-500 italic mb-2 -mt-2">
+           <p className="text-[7.5pt] text-slate-500 italic mb-1.5 -mt-1">
              * Calificación obtenida en periodo de regularización.
            </p>
          )}
 
          {type === 'calificaciones' && student.manualPromedio && student.grado === '3er Grado' && (
-           <p className="mt-4 mb-2 indent-12 text-[10pt] text-justify font-bold">
+           <p className="mt-2 mb-1.5 indent-12 text-[9.5pt] text-justify font-bold">
              Adicionalmente, se hace constar que el (la) alumno(a) cuenta con un Promedio de Nivel Educativo (Certificado) de: <span className="whitespace-nowrap">{student.manualPromedio} ({promedioALetras(student.manualPromedio)})</span>.
            </p>
          )}
 
          {type === 'terminacion' ? (
-           <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-6'}`}>
-             A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, <strong>a los 15 días del mes de julio del año 2026</strong>.
+           <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-5'}`}>
+             A petición de la parte interesada y para <strong>{formatearTextoTramite(tramiteToUse)}</strong>, se expide la presente constancia en la ciudad sede, <strong>a los 15 días del mes de julio del año 2026</strong>.
            </p>
          ) : type === 'simple' ? (
-           <p className="indent-12 mb-10 uppercase">
+           <p className="indent-12 mb-8 uppercase">
              A PETICIÓN DE LA PARTE INTERESADA Y PARA <strong>{formatearTextoTramite(tramiteToUse)}</strong>, SE EXPIDE LA PRESENTE CONSTANCIA EN LA CIUDAD SEDE, A LOS {new Date().getDate()} DÍAS DEL MES DE {new Date().toLocaleString('es-MX', { month: 'long' }).toUpperCase()} DEL AÑO {new Date().getFullYear()}.
            </p>
          ) : type !== 'inscripcion_primero' && (
-           <p className={`indent-12 ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'tutor' ? 'mb-10' : type === 'promedio_anterior' ? 'mb-12 leading-[2]' : 'mb-6'}`}>
-             A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
+           <p className={`indent-12 ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'terminacion_tramite' || type === 'tutor' ? 'mb-4' : 'mb-5'}`}>
+             A petición de la parte interesada y para <strong>{formatearTextoTramite(tramiteToUse)}</strong>, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
            </p>
          )}
 
-         <div className={`text-center relative ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mt-2' : (type === 'simple' || type === 'tutor') ? 'mt-10' : type === 'promedio_anterior' ? 'mt-12' : 'mt-6'}`}>
+         <div className={`text-center relative ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-8' : type === 'terminacion_tramite' || type === 'tutor' ? 'mt-4' : 'mt-6'}`}>
             <p className="font-bold tracking-widest text-[11pt]">A T E N T A M E N T E</p>
             <br />
             <br />
