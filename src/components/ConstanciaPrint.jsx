@@ -167,7 +167,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
           ${type === 'terminacion' ? 'px-10 py-6 leading-relaxed' : 
             type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 
             type === 'acreditacion_extraordinario' ? 'px-10 py-4 leading-normal' : 
-            type === 'simple' ? 'px-12 py-6 leading-relaxed uppercase' : 'px-10 py-6 leading-relaxed'}`} 
+            type === 'simple' ? 'px-12 py-6 leading-relaxed' : 'px-10 py-6 leading-relaxed'} uppercase`} 
           style={{ fontSize: type === 'calificaciones' ? '10pt' : (type === 'acreditacion_extraordinario' && Array.isArray(extraordinarioSelected) && extraordinarioSelected.length > 2) ? '10.5pt' : type === 'simple' ? '11.5pt' : '11pt' }}>
          {/* HEADER LOGOS AND TITLE */}
          <div className={`flex items-center justify-between ${type === 'acreditacion_extraordinario' ? 'mb-2' : 'mb-4'}`}>
@@ -190,7 +190,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
                {(config?.leyendaOficial || '"2026, Año de Margarita Maza"').toUpperCase()}
             </p>
 
-            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-8 text-[12pt] font-bold uppercase' : 'mt-4 text-[12pt] normal-case font-normal'} text-left`}>
+            <p className={`${type === 'acreditacion_extraordinario' ? 'mt-2' : type === 'simple' ? 'mt-8 text-[12pt] font-bold uppercase' : 'mt-4 text-[12pt] font-normal'} text-left`}>
               {type === 'simple' ? 'A QUIEN CORRESPONDA:' : 'A quien corresponda:'}
             </p>
          </div>
@@ -330,7 +330,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
 
          {type === 'terminacion' ? (
            <p className={`indent-12 ${type === 'calificaciones' ? 'mb-2' : 'mb-6'}`}>
-             A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, <strong>a los 15 días del mes de julio del año 2026</strong>.
+             A petición de la parte interesada y para {formatearTextoTramite(tramiteToUse)}, se expide la presente constancia en la ciudad sede, <strong>a los 15 días del mes de julio del año 2026</strong>.
            </p>
          ) : type === 'simple' ? (
            <p className="indent-12 mb-10 uppercase">
@@ -338,7 +338,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
            </p>
          ) : type !== 'inscripcion_primero' && (
            <p className={`indent-12 ${type === 'calificaciones' || type === 'acreditacion_extraordinario' ? 'mb-2' : type === 'tutor' ? 'mb-10' : type === 'promedio_anterior' ? 'mb-12 leading-[2]' : 'mb-6'}`}>
-             A petición de la parte interesada y para los fines legales que a la misma convenga, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
+             A petición de la parte interesada y para {formatearTextoTramite(tramiteToUse)}, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
            </p>
          )}
 
