@@ -435,10 +435,18 @@ export default function ControlEscolar() {
   }, [selectedStudent, materiasPorGrado]);
 
   const handleDeleteStudent = async (student) => {
-    if (window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${student.nombres} ${student.apellidoPaterno}? Esta acción no se puede deshacer.`)) {
+    const nombreCompleto = `${student.nombres || ''} ${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''}`.trim();
+    const ubicacion = `${student.grado || 'Sin grado'} - Grupo "${student.grupo || '-'}"`;
+    const msg = `⚠️ ¡ATENCIÓN! ESTÁS A PUNTO DE BORRAR UN EXPEDIENTE DE TODA LA ESCUELA\n\n` +
+      `Alumno(a): ${nombreCompleto}\n` +
+      `Ubicación actual: ${ubicacion}\n\n` +
+      `❗ IMPORTANTE: Si este alumno pertenece a otro grado o grupo (por ejemplo, si es de 2° y aparece en 3°), NO LO ELIMINES porque se borrará también del otro grado. En su lugar, dale en "Cancelar", abre su Hoja de Vida y cámbiale el Grado o Grupo.\n\n` +
+      `¿Estás 100% seguro de que deseas eliminar permanentemente este expediente?`;
+
+    if (window.confirm(msg)) {
       try {
         await deleteDoc(doc(db, "students", student.id));
-        await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Eliminar Alumno', `Se eliminó definitivamente al alumno ${student.nombres} ${student.apellidoPaterno} (${student.matricula || 'Sin matrícula'})`);
+        await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Eliminar Alumno', `Se eliminó definitivamente al alumno ${nombreCompleto} (${ubicacion} | Mat: ${student.matricula || 'Sin matrícula'})`);
         toast.success("Alumno eliminado correctamente.");
       } catch (error) {
         console.error("Error al eliminar alumno:", error);

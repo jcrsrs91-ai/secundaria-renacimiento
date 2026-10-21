@@ -56,9 +56,9 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
         }
       `}</style>
 
-      <div className="p-2 bg-white text-black w-full" style={{ fontSize: '9px' }}>
+      <div className="p-1.5 bg-white text-black w-full" style={{ fontSize: '9px' }}>
         {/* Encabezado Oficial SEP / NEM */}
-        <div className="flex justify-between items-end border-b-[3px] border-black pb-2 mb-3">
+        <div className="flex justify-between items-end border-b-[3px] border-black pb-1.5 mb-2">
           <div className="flex flex-col">
             <h1 className="font-extrabold text-sm uppercase tracking-wide">Esc. Sec. Técnica N° 68 "Renacimiento"</h1>
             <p className="font-bold text-[10px] uppercase text-slate-700">C.C.T: 12DST0077B &bull; Acapulco de Juárez, Gro.</p>
@@ -73,11 +73,12 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
         </div>
 
         {/* Metadatos del Grupo y Docente */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-3 font-semibold text-[10px] px-2">
-          <div>Docente: <span className="font-normal border-b border-black inline-block w-64"></span></div>
-          <div>Asignatura: <span className="font-normal border-b border-black inline-block w-48 text-center">{taller}</span></div>
-          <div>Grado: <span className="font-bold text-[12px] underline">{grado}</span></div>
-          <div>Grupo: <span className="font-bold text-[12px] underline">"{grupo}"</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2 font-semibold text-[10px] px-1">
+          <div>Docente: <span className="font-normal border-b border-black inline-block w-44"></span></div>
+          <div>Asignatura: <span className="font-normal border-b border-black inline-block w-36"></span></div>
+          <div>Taller / Tecnología: <span className="font-normal border-b border-black inline-block px-1.5 text-center">{taller}</span></div>
+          <div>Grado: <span className="font-bold text-[11px] underline">{grado}</span></div>
+          <div>Grupo: <span className="font-bold text-[11px] underline">"{grupo}"</span></div>
           <div>Turno: <span className="font-normal">{turno}</span></div>
         </div>
 
@@ -111,7 +112,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
           </thead>
           <tbody>
             {sortedStudents.map((student, index) => (
-              <tr key={student.id} className="h-[18px] even:bg-slate-50/40">
+              <tr key={student.id} className="h-[17px] even:bg-slate-50/40">
                 <td className="text-center font-bold text-slate-700">{index + 1}</td>
                 <td className="px-2 font-semibold uppercase truncate text-[8.5px] leading-tight" title={student.isEmpty ? '' : `${student.apellidoPaterno} ${student.apellidoMaterno} ${student.nombres}`}>
                   {student.isEmpty ? '' : `${student.apellidoPaterno} ${student.apellidoMaterno} ${student.nombres}`}
@@ -141,7 +142,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
             
             {/* Fila de Promedio General del Grupo al final (Opcional, muy útil) */}
             {sortedStudents.length > 0 && (
-              <tr className="h-[18px] bg-slate-100 font-bold">
+              <tr className="h-[17px] bg-slate-100 font-bold">
                 <td colSpan={2} className="text-right px-2 uppercase text-[9px]">Promedio del Grupo</td>
                 <td colSpan={daysCols.length + 1}></td>
                 <td colSpan={taskCols.length}></td>
@@ -154,13 +155,13 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, mes, pape
         </table>
 
         {/* Simbología */}
-        <div className="mt-2 flex justify-between text-[8px] text-slate-600 font-medium px-2 border-t border-slate-300 pt-1">
+        <div className="mt-1.5 flex justify-between text-[8px] text-slate-600 font-medium px-2 border-t border-slate-300 pt-1">
           <p><strong className="text-black">Simbología Asistencia:</strong> ( . ) Asistencia &nbsp;|&nbsp; ( F ) Falta &nbsp;|&nbsp; ( R ) Retardo &nbsp;|&nbsp; ( J ) Justificante</p>
           <p><strong className="text-black">Simbología Evaluación:</strong> T.F. = Total Faltas &nbsp;|&nbsp; Exam. = Examen o Proyecto &nbsp;|&nbsp; Partic. = Participación</p>
         </div>
 
         {/* Firmas de Autorización - Estilo SEP */}
-        <div className="flex justify-around items-end mt-12 pt-2 px-10">
+        <div className="flex justify-around items-end mt-6 pt-1 px-10">
           <div className="text-center w-56 border-t border-black pt-1">
             <p className="font-bold text-[10px] uppercase">Firma del Docente</p>
           </div>
