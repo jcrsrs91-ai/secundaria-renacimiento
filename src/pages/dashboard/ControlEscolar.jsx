@@ -11,7 +11,7 @@ import ConstanciaPrint from '../../components/ConstanciaPrint';
 import BoletaPrint from '../../components/BoletaPrint';
 import DirectorioEmergenciaPrint from '../../components/DirectorioEmergenciaPrint';
 import Calificaciones from '../../components/Calificaciones';
-import ListaAsistenciaPrint from '../../components/ListaAsistenciaPrint';
+import ListaAsistenciaPrint, { sortAttendanceListStudents } from '../../components/ListaAsistenciaPrint';
 import CuadroFinalPrint from '../../components/CuadroFinalPrint';
 import ConstanciaEERPrint from '../../components/ConstanciaEERPrint';
 import BatchConstanciaEERPrint from '../../components/BatchConstanciaEERPrint';
@@ -274,10 +274,15 @@ export default function ControlEscolar() {
   }).sort(sortStudents);
 
   const asisAlumnos = useMemo(() => {
-    return activos
-      .filter(a => a.grado === asisGrado && a.grupo === asisGrupo)
-      .sort(sortStudents);
-  }, [activos, asisGrado, asisGrupo]);
+    const groupStudents = directorio.filter(a => {
+      if (a.grado !== asisGrado || a.grupo !== asisGrupo) return false;
+      const st = (a.status || 'Activo').toLowerCase();
+      if (st === 'activo') return true;
+      if (st === 'baja' && a.motivoBaja !== 'No Inscrito') return true;
+      return false;
+    });
+    return sortAttendanceListStudents(groupStudents);
+  }, [directorio, asisGrado, asisGrupo]);
 
   const checkIfFailed = (student, materiasPorGradoObj) => {
     if (!materiasPorGradoObj[student.grado]) return false;
@@ -1160,21 +1165,7 @@ export default function ControlEscolar() {
                 <option value="L">L</option>
               </select>
             </div>
-            <div className="w-full md:w-1/5">
-              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Mes de Asistencia</label>
-              <select value={asisMes} onChange={e => setAsisMes(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-primary-700 bg-primary-50">
-                <option value="Septiembre">Septiembre</option>
-                <option value="Octubre">Octubre</option>
-                <option value="Noviembre">Noviembre</option>
-                <option value="Diciembre">Diciembre</option>
-                <option value="Enero">Enero</option>
-                <option value="Febrero">Febrero</option>
-                <option value="Marzo">Marzo</option>
-                <option value="Abril">Abril</option>
-                <option value="Mayo">Mayo</option>
-                <option value="Junio">Junio</option>
-              </select>
-            </div>
+
             <div className="w-full md:w-1/5">
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Tamaño de Hoja</label>
               <select value={asisPaperSize} onChange={e => setAsisPaperSize(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-teal-700 bg-teal-50">
@@ -1218,7 +1209,7 @@ export default function ControlEscolar() {
                       alert("No hay alumnos activos en este grado y grupo.");
                       return;
                     }
-                    setPrintData({ students: asisAlumnos, grado: asisGrado, grupo: asisGrupo, asesor: asesorNombre });
+                    setPrintData({ students: asisAlumnos.filter(s => (s.status || 'Activo') === 'Activo'), grado: asisGrado, grupo: asisGrupo, asesor: asesorNombre });
                     setPrintMode('listaClausura');
                     setTimeout(() => window.print(), 500);
                   }} 
@@ -1233,8 +1224,18 @@ export default function ControlEscolar() {
 
           {/* Listado de Alumnos en la Vista Previa */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-slate-50">
-              <h3 className="font-semibold text-slate-700">Vista Previa de la Lista ({asisAlumnos.length} Alumnos)</h3>
+            <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-semibold text-slate-700">
+                Vista Previa de la Lista ({asisAlumnos.filter(s => (s.status || 'Activo') === 'Activo').length} en Existencia Activa / {asisAlumnos.length} en Lista)
+              </h3>
+              <div className="flex items-center gap-3 text-xs font-semibold">
+                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  Altas al final: {asisAlumnos.filter(s => (s.status || 'Activo') === 'Activo' && s.tipoIngreso === 'Alta').length}
+                </span>
+                <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-800 border border-red-300">
+                  Bajas en lista: {asisAlumnos.filter(s => (s.status || '').toLowerCase() === 'baja').length}
+                </span>
+              </div>
             </div>
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
@@ -1242,6 +1243,7 @@ export default function ControlEscolar() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase w-12">No.</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Matrícula</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Nombre del Alumno</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Movimiento</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Taller</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Turno</th>
                 </tr>
@@ -1249,20 +1251,39 @@ export default function ControlEscolar() {
               <tbody className="divide-y divide-slate-200">
                 {asisAlumnos.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-10 text-center text-slate-500 bg-slate-50">
-                      No hay alumnos activos inscritos en {asisGrado} "{asisGrupo}".
+                    <td colSpan="6" className="px-6 py-10 text-center text-slate-500 bg-slate-50">
+                      No hay alumnos inscritos en {asisGrado} "{asisGrupo}".
                     </td>
                   </tr>
                 ) : (
-                  asisAlumnos.map((al, index) => (
-                    <tr key={al.id} className="hover:bg-slate-50/50">
-                      <td className="px-6 py-4 text-sm font-bold text-slate-400">{index + 1}</td>
-                      <td className="px-6 py-4 text-sm font-semibold text-primary-700">{al.matricula}</td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-700 uppercase">{al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500">{al.taller || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500">{al.turno || '-'}</td>
-                    </tr>
-                  ))
+                  asisAlumnos.map((al, index) => {
+                    const isBaja = (al.status || '').toLowerCase() === 'baja';
+                    const isAlta = !isBaja && al.tipoIngreso === 'Alta';
+                    return (
+                      <tr key={al.id} className={isBaja ? 'bg-slate-100 text-slate-400' : 'hover:bg-slate-50/50'}>
+                        <td className="px-6 py-4 text-sm font-bold text-slate-400">{index + 1}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-primary-700">{al.matricula}</td>
+                        <td className={`px-6 py-4 text-sm font-medium uppercase ${isBaja ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                          {al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}
+                        </td>
+                        <td className="px-6 py-4 text-xs font-bold">
+                          {isAlta && (
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-400 rounded uppercase">
+                              ALTA {al.fechaAlta ? `(${al.fechaAlta})` : ''}
+                            </span>
+                          )}
+                          {isBaja && (
+                            <span className="px-2 py-0.5 bg-red-100 text-red-800 border border-red-400 rounded uppercase">
+                              BAJA {al.fechaBaja ? `(${al.fechaBaja})` : ''}
+                            </span>
+                          )}
+                          {!isAlta && !isBaja && <span className="text-slate-400 font-normal">Inicial</span>}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-500">{al.taller || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-slate-500">{al.turno || '-'}</td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
