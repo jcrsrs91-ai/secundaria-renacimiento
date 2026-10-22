@@ -562,21 +562,25 @@ export default function PreInscripcion() {
                                 if (input) {
                                   input.value = talleresMap[val] || '';
                                 }
+                                const turnoSel = document.getElementById('turnoSelect');
+                                if (turnoSel && val) {
+                                  turnoSel.value = ['G', 'H', 'I', 'J', 'K', 'L'].includes(val) ? 'Vespertino' : 'Matutino';
+                                }
                               }}
                             >
                               <option value="">Seleccionar</option>
-                              <option value="A" translate="no">A</option>
-                              <option value="B" translate="no">B</option>
-                              <option value="C" translate="no">C</option>
-                              <option value="D" translate="no">D</option>
-                              <option value="E" translate="no">E</option>
-                              <option value="F" translate="no">F</option>
-                              <option value="G" translate="no">G</option>
-                              <option value="H" translate="no">H</option>
-                              <option value="I" translate="no">I</option>
-                              <option value="J" translate="no">J</option>
-                              <option value="K" translate="no">K</option>
-                              <option value="L" translate="no">L</option>
+                              <option value="A" translate="no">A (Matutino - Climatización)</option>
+                              <option value="B" translate="no">B (Matutino - Contable)</option>
+                              <option value="C" translate="no">C (Matutino - Electricidad)</option>
+                              <option value="D" translate="no">D (Matutino - Contable)</option>
+                              <option value="E" translate="no">E (Matutino - Mecánica)</option>
+                              <option value="F" translate="no">F (Matutino - Ofimática)</option>
+                              <option value="G" translate="no">G (Vespertino - Climatización)</option>
+                              <option value="H" translate="no">H (Vespertino - Contable)</option>
+                              <option value="I" translate="no">I (Vespertino - Electricidad)</option>
+                              <option value="J" translate="no">J (Vespertino - Contable)</option>
+                              <option value="K" translate="no">K (Vespertino - Mecánica)</option>
+                              <option value="L" translate="no">L (Vespertino - Ofimática)</option>
                             </select>
                           )}
                         </div>
@@ -592,7 +596,7 @@ export default function PreInscripcion() {
                           {activeTab === 'completar' ? (
                             <input type="text" name="turno" className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-gray-100 text-slate-600 cursor-not-allowed" readOnly value={studentData?.turno || ''} />
                           ) : (
-                            <select name="turno" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.turno}>
+                            <select id="turnoSelect" name="turno" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.turno}>
                               <option value="">Seleccionar</option>
                               <option>Matutino</option><option>Vespertino</option>
                             </select>

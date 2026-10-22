@@ -82,6 +82,10 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     if (talleresMap[val]) {
       setTaller(talleresMap[val]);
     }
+    const turnoEl = document.getElementById('hdv-turno-select');
+    if (turnoEl && val) {
+      turnoEl.value = ['G', 'H', 'I', 'J', 'K', 'L'].includes(val) ? 'Vespertino' : 'Matutino';
+    }
   };
 
   
@@ -275,7 +279,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Turno</label>
-                      <select name="turno" defaultValue={student.turno} className="mt-1 w-full p-2 border rounded" required>
+                      <select id="hdv-turno-select" name="turno" defaultValue={student.turno} className="mt-1 w-full p-2 border rounded" required>
                         <option>Matutino</option><option>Vespertino</option>
                       </select>
                     </div>
