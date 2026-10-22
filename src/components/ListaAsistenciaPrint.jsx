@@ -103,7 +103,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
     <div className="print-lista-asistencia-only">
       <style>{`
         @media print {
-          @page { size: ${sizeValue} landscape; margin: 0.28cm 0.35cm; }
+          @page { size: ${sizeValue} landscape; margin: 0.28cm 0.3cm; }
           html, body, #root { height: auto !important; min-height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: white !important; }
           aside, header, nav, .no-print { display: none !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
@@ -120,9 +120,13 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
           .print-lista-asistencia-only { display: none !important; }
         }
         
+        .eval-table {
+          table-layout: fixed;
+          width: 100%;
+        }
         .eval-table th, .eval-table td {
           border: 1.3px solid #1e293b;
-          padding: 1.5px 2px;
+          padding: 1px 1.5px;
         }
         .stats-summary-table th, .stats-summary-table td {
           border: 1.3px solid #1e293b;
@@ -156,54 +160,69 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
           <div>Turno: <span className="font-bold uppercase text-[10px]">{turno}</span></div>
         </div>
 
-        {/* Tabla Principal Integrada */}
+        {/* Tabla Principal Integrada con table-layout: fixed para dar más ancho a los cuadritos de asistencia */}
         <table className="w-full border-collapse eval-table text-[9.5px]">
+          <colgroup>
+            <col style={{ width: '22px' }} />
+            <col style={{ width: '205px' }} />
+            {daysCols.map(col => (
+              <col key={`col-d-${col}`} style={{ width: '23px' }} />
+            ))}
+            <col style={{ width: '25px' }} />
+            {taskCols.map(col => (
+              <col key={`col-t-${col}`} style={{ width: '24px' }} />
+            ))}
+            <col style={{ width: '31px' }} />
+            <col style={{ width: '31px' }} />
+            <col style={{ width: '33px' }} />
+            <col style={{ width: '62px' }} />
+          </colgroup>
           <thead>
             {/* Fila 1: Agrupaciones Principales */}
             <tr className="bg-slate-200 h-[16px]">
-              <th rowSpan={3} className="w-6 font-bold text-center text-[9.5px]">N°</th>
-              <th rowSpan={3} className="w-[245px] font-bold text-left px-2 uppercase tracking-wide text-[9.5px]">
+              <th rowSpan={3} className="font-bold text-center text-[9.5px]">N°</th>
+              <th rowSpan={3} className="font-bold text-left px-1.5 uppercase tracking-wide text-[9.5px]">
                 <div className="flex flex-col justify-between h-full">
                   <span>Nombre del Alumno(a)</span>
-                  <span className="text-[7.5px] font-semibold text-slate-600 text-right pr-1">CONTENIDOS / FECHA &rarr;</span>
+                  <span className="text-[7.5px] font-semibold text-slate-600 text-right pr-0.5">CONTENIDOS / FECHA &rarr;</span>
                 </div>
               </th>
               <th colSpan={daysCols.length + 1} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Asistencias</th>
               <th colSpan={taskCols.length} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Tareas / Trabajos</th>
               <th colSpan={3} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Evaluación</th>
-              <th rowSpan={3} className="w-[84px] font-bold text-center uppercase tracking-wider text-[9px]">Observaciones</th>
+              <th rowSpan={3} className="font-bold text-center uppercase tracking-tight text-[8.5px]">Observaciones</th>
             </tr>
 
             {/* Fila 2: Espacio en blanco para Contenidos / Tema visto ese día (Entre Asistencias y el Número) */}
             <tr className="bg-white h-[34px]">
               {daysCols.map(col => (
-                <th key={`cont-d-${col}`} className="w-[17px] p-0 align-bottom"></th>
+                <th key={`cont-d-${col}`} className="p-0 align-bottom"></th>
               ))}
-              <th className="w-[23px] bg-slate-100 p-0"></th>
+              <th className="bg-slate-100 p-0"></th>
 
               {taskCols.map(col => (
-                <th key={`cont-t-${col}`} className="w-[23px] p-0 align-bottom"></th>
+                <th key={`cont-t-${col}`} className="p-0 align-bottom"></th>
               ))}
 
-              <th className="w-[31px] bg-slate-50 p-0"></th>
-              <th className="w-[31px] bg-slate-50 p-0"></th>
-              <th className="w-[33px] bg-slate-100 p-0"></th>
+              <th className="bg-slate-50 p-0"></th>
+              <th className="bg-slate-50 p-0"></th>
+              <th className="bg-slate-100 p-0"></th>
             </tr>
 
             {/* Fila 3: Numeración de Días y Sub-columnas */}
             <tr className="bg-slate-100 h-[15px]">
               {daysCols.map(col => (
-                <th key={`d-${col}`} className="w-[17px] text-center font-bold text-[8.5px] text-slate-700 leading-none">{col}</th>
+                <th key={`d-${col}`} className="text-center font-bold text-[8.5px] text-slate-700 leading-none">{col}</th>
               ))}
-              <th className="w-[23px] text-center font-extrabold text-[8.5px] bg-slate-200 leading-none" title="Total de Faltas">T.F.</th>
+              <th className="text-center font-extrabold text-[8.5px] bg-slate-200 leading-none" title="Total de Faltas">T.F.</th>
               
               {taskCols.map(col => (
-                <th key={`t-${col}`} className="w-[23px] text-center font-bold text-[8.5px] text-slate-700 leading-none">T{col}</th>
+                <th key={`t-${col}`} className="text-center font-bold text-[8.5px] text-slate-700 leading-none">T{col}</th>
               ))}
               
-              <th className="w-[31px] text-center font-bold text-[8px] leading-none">Exam.</th>
-              <th className="w-[31px] text-center font-bold text-[8px] leading-none" title="Participación">Partic.</th>
-              <th className="w-[33px] text-center font-extrabold text-[8.5px] bg-slate-200 leading-none" title="Promedio Trimestral">Prom.</th>
+              <th className="text-center font-bold text-[8px] leading-none">Exam.</th>
+              <th className="text-center font-bold text-[8px] leading-none" title="Participación">Partic.</th>
+              <th className="text-center font-extrabold text-[8.5px] bg-slate-200 leading-none" title="Promedio Trimestral">Prom.</th>
             </tr>
           </thead>
           <tbody>
@@ -215,10 +234,10 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
 
               return (
                 <tr key={student.id} className={`h-[18.2px] ${isBaja ? 'bg-slate-200/70 text-slate-500' : 'even:bg-slate-50/40'}`}>
-                  <td className="text-center font-bold text-slate-800 text-[9px] leading-none">{index + 1}</td>
-                  <td className="px-1.5 font-bold uppercase text-[9px] leading-none whitespace-nowrap overflow-hidden" title={fullName}>
+                  <td className="text-center font-bold text-slate-800 text-[9.5px] leading-none">{index + 1}</td>
+                  <td className="px-1 font-bold uppercase text-[9.8px] tracking-tight leading-none whitespace-nowrap overflow-hidden" title={fullName}>
                     {!student.isEmpty && (
-                      <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center justify-between gap-0.5">
                         <span className={`truncate ${isBaja ? 'line-through text-slate-500' : ''}`}>
                           {fullName}
                         </span>
@@ -241,7 +260,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
                       <td colSpan={daysCols.length + 1 + taskCols.length + 3} className="text-center font-bold text-[8px] tracking-[0.25em] text-slate-500 bg-slate-100/80 uppercase leading-none">
                         — B A J A {student.fechaBaja ? `(${student.fechaBaja})` : ''} —
                       </td>
-                      <td className="text-center font-bold text-[7.5px] text-red-800 uppercase px-1 truncate leading-none">
+                      <td className="text-center font-bold text-[7px] text-red-800 uppercase px-0.5 truncate leading-none">
                         BAJA {student.fechaBaja ? student.fechaBaja : ''}
                       </td>
                     </>
@@ -265,7 +284,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
                       <td className="bg-slate-100/50"></td>
                       
                       {/* Observaciones */}
-                      <td className="text-center font-bold text-[7.5px] text-emerald-900 uppercase px-1 truncate leading-none">
+                      <td className="text-center font-bold text-[7px] text-emerald-900 uppercase px-0.5 truncate leading-none">
                         {isAlta ? `ALTA${student.fechaAlta ? ' ' + student.fechaAlta : ''}` : ''}
                       </td>
                     </>
