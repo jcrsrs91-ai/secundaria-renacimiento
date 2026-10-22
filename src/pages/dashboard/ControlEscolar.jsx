@@ -676,14 +676,14 @@ export default function ControlEscolar() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      let content = event.target.result;
-      if (content.startsWith("sep=,\n") || content.startsWith("sep=,\r\n")) {
-         content = content.substring(content.indexOf('\n') + 1);
-      } else if (content.startsWith("\uFEFFsep=,\n") || content.startsWith("\uFEFFsep=,\r\n")) {
-         content = "\uFEFF" + content.substring(content.indexOf('\n') + 1);
+      let contentStr = event.target.result;
+      if (contentStr.startsWith("sep=,\n") || contentStr.startsWith("sep=,\r\n")) {
+         contentStr = contentStr.substring(contentStr.indexOf('\n') + 1);
+      } else if (contentStr.startsWith("\uFEFFsep=,\n") || contentStr.startsWith("\uFEFFsep=,\r\n")) {
+         contentStr = "\uFEFF" + contentStr.substring(contentStr.indexOf('\n') + 1);
       }
 
-      Papa.parse(content, {
+      Papa.parse(contentStr, {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header) => header.trim().toLowerCase()
@@ -703,6 +703,13 @@ export default function ControlEscolar() {
         let duplicados = 0;
         let errores = 0;
 
+        const toastId = toast.loading(`Iniciando importación de ${data.length} alumnos... (0/${data.length})`);
+
+        const existingCurps = new Set();
+        [...activos, ...pendientes].forEach(s => {
+          if (s.curp) existingCurps.add(String(s.curp).trim().toUpperCase());
+        });
+
         const getV = (row, ...keys) => {
           for (let k of keys) {
             if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
@@ -712,24 +719,38 @@ export default function ControlEscolar() {
           return '';
         };
 
-        for (const row of data) {
+        const normalizeGradoImport = (rawG) => {
+          const gUpper = String(rawG || '').trim().toUpperCase();
+          if (gUpper.includes('1')) return '1er Grado';
+          if (gUpper.includes('2')) return '2do Grado';
+          if (gUpper.includes('3')) return '3er Grado';
+          return rawG || '1er Grado';
+        };
+
+        for (let idx = 0; idx < data.length; idx++) {
+          const row = data[idx];
           try {
+            toast.loading(`Subiendo alumnos a la base de datos: ${idx + 1} de ${data.length}... (Nuevos: ${importados} | Duplicados: ${duplicados})`, { id: toastId });
+
             const curpVal = getV(row, 'curp').toUpperCase();
             if (!curpVal) {
               errores++;
               continue;
             }
 
-            // Validar duplicado por CURP en Firestore
-            const qCurp = query(collection(db, "students"), where("curp", "==", curpVal));
-            const snapCurp = await getDocs(qCurp);
-
-            if (!snapCurp.empty) {
+            if (existingCurps.has(curpVal)) {
               duplicados++;
               continue; // Omitir duplicado
             }
 
-            const rawGrupo = getV(row, 'grupo', 'grupos');
+            const rawGrupo = getV(row, 'grupo', 'grupos').toUpperCase();
+            const rawGrado = normalizeGradoImport(getV(row, 'grado', 'grados'));
+            const rawTurnoInput = getV(row, 'turno', 'turnos').toUpperCase();
+            const normTurno = ['G', 'H', 'I', 'J', 'K', 'L'].includes(rawGrupo)
+              ? 'Vespertino'
+              : ['A', 'B', 'C', 'D', 'E', 'F'].includes(rawGrupo)
+                ? 'Matutino'
+                : (rawTurnoInput.includes('VESP') ? 'Vespertino' : 'Matutino');
 
             await addDoc(collection(db, "students"), {
               matricula: getV(row, 'matricula', 'matriculas'),
@@ -740,9 +761,9 @@ export default function ControlEscolar() {
               nombres: getV(row, 'nombres', 'nombre', 'nombre(s)', 'alumno'),
               apellidoPaterno: getV(row, 'apellidopaterno', 'paterno', 'apellido paterno'),
               apellidoMaterno: getV(row, 'apellidomaterno', 'materno', 'apellido materno'),
-              grado: getV(row, 'grado', 'grados'),
+              grado: rawGrado,
               grupo: rawGrupo,
-              turno: getV(row, 'turno', 'turnos'),
+              turno: normTurno,
               taller: rawGrupo ? getTallerPorGrupo(rawGrupo) : 'Por asignar',
               calle: getV(row, 'callenumero', 'calle y numero', 'calle', 'direccion', 'domicilio'),
               numero: getV(row, 'numero', 'num', 'no', 'no.'),
@@ -765,13 +786,15 @@ export default function ControlEscolar() {
               status: "Activo",
               fechaRegistro: serverTimestamp()
             });
+            existingCurps.add(curpVal);
             importados++;
           } catch (error) {
             console.error("Error importando fila:", row, error);
             errores++;
           }
         }
-        alert(`Importación completada.\n\nÉxitos: ${importados}\nDuplicados omitidos: ${duplicados}\nErrores: ${errores}`);
+        toast.success(`¡Importación finalizada! Nuevos: ${importados} | Duplicados: ${duplicados} | Errores: ${errores}`, { id: toastId, duration: 7000 });
+        alert(`Importación completada.\n\nÉxitos (Nuevos): ${importados}\nDuplicados omitidos: ${duplicados}\nErrores: ${errores}`);
       },
       error: (error) => {
         alert("Error al leer el archivo CSV: " + error.message);
