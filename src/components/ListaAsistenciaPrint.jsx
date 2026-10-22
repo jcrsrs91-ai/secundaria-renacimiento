@@ -72,8 +72,8 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
   });
   const existenciaT = existenciaH + existenciaM;
 
-  // Asegurar siempre al menos 30 filas
-  const targetRows = 30;
+  // Asegurar siempre hasta 27 filas para que las celdas sean más altas y todo se vea más grande en 1 hoja Carta
+  const targetRows = 27;
   if (sortedStudents.length < targetRows) {
     const padCount = targetRows - sortedStudents.length;
     for (let i = 0; i < padCount; i++) {
@@ -103,7 +103,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
     <div className="print-lista-asistencia-only">
       <style>{`
         @media print {
-          @page { size: ${sizeValue} landscape; margin: 0.35cm 0.4cm; }
+          @page { size: ${sizeValue} landscape; margin: 0.28cm 0.35cm; }
           html, body, #root { height: auto !important; min-height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: white !important; }
           aside, header, nav, .no-print { display: none !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
@@ -121,67 +121,89 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
         }
         
         .eval-table th, .eval-table td {
-          border: 1.2px solid #1e293b;
-          padding: 1px 2px;
+          border: 1.3px solid #1e293b;
+          padding: 1.5px 2px;
         }
         .stats-summary-table th, .stats-summary-table td {
-          border: 1.2px solid #1e293b;
-          padding: 1.5px 5px;
+          border: 1.3px solid #1e293b;
+          padding: 2px 5px;
         }
       `}</style>
 
-      <div className="bg-white text-black w-full" style={{ fontSize: '8.5px' }}>
+      <div className="bg-white text-black w-full" style={{ fontSize: '9.5px' }}>
         {/* Encabezado Oficial SEP / NEM */}
         <div className="flex justify-between items-end border-b-[2px] border-black pb-1 mb-1">
           <div className="flex flex-col">
-            <h1 className="font-extrabold text-[12px] uppercase tracking-wide leading-tight">Esc. Sec. Técnica N° 68 "Renacimiento"</h1>
-            <p className="font-bold text-[9.5px] uppercase text-slate-700 leading-tight">C.C.T: 12DST0077B &bull; Acapulco de Juárez, Gro.</p>
+            <h1 className="font-extrabold text-[13px] uppercase tracking-wide leading-tight">Esc. Sec. Técnica N° 68 "Renacimiento"</h1>
+            <p className="font-bold text-[10px] uppercase text-slate-700 leading-tight">C.C.T: 12DST0077B &bull; Acapulco de Juárez, Gro.</p>
           </div>
           <div className="text-center">
-            <h2 className="font-black text-[12px] uppercase tracking-widest bg-slate-200 px-3 py-0.5 border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">Lista de Asistencia y Evaluación</h2>
+            <h2 className="font-black text-[13px] uppercase tracking-widest bg-slate-200 px-3.5 py-0.5 border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">Lista de Asistencia y Evaluación</h2>
           </div>
           <div className="text-right leading-tight">
-            <p className="font-bold text-[9.5px]">Ciclo Escolar: <span className="underline decoration-slate-400">{config?.cicloEscolarActual || '2025 - 2026'}</span></p>
-            <p className="font-bold text-[9.5px] mt-0.5">Trimestre a Evaluar: <span className="inline-block border-b border-black w-24 text-center"></span></p>
+            <p className="font-bold text-[10px]">Ciclo Escolar: <span className="underline decoration-slate-400">{config?.cicloEscolarActual || '2025 - 2026'}</span></p>
+            <p className="font-bold text-[10px] mt-0.5">Trimestre a Evaluar: <span className="inline-block border-b border-black w-24 text-center"></span></p>
           </div>
         </div>
 
         {/* Metadatos del Grupo y Docente */}
-        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 mb-1 font-semibold text-[9.5px] px-0.5">
-          <div>Docente: <span className="font-normal border-b border-black inline-block w-44"></span></div>
-          <div>Asignatura: <span className="font-normal border-b border-black inline-block w-36"></span></div>
-          <div>Taller / Tecnología: <span className="font-bold border-b border-black inline-block px-1.5 text-center uppercase text-[9px]">{taller}</span></div>
-          <div>Grado: <span className="font-bold text-[10.5px] underline">{grado}</span></div>
-          <div>Grupo: <span className="font-bold text-[10.5px] underline">"{cleanGrupo}"</span></div>
-          <div>Turno: <span className="font-bold uppercase text-[9.5px]">{turno}</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 mb-1 font-semibold text-[10px] px-0.5">
+          <div>Docente: <span className="font-normal border-b border-black inline-block w-48"></span></div>
+          <div>Asignatura: <span className="font-normal border-b border-black inline-block w-40"></span></div>
+          <div>Taller / Tecnología: <span className="font-bold border-b border-black inline-block px-1.5 text-center uppercase text-[9.5px]">{taller}</span></div>
+          <div>Grado: <span className="font-bold text-[11px] underline">{grado}</span></div>
+          <div>Grupo: <span className="font-bold text-[11px] underline">"{cleanGrupo}"</span></div>
+          <div>Turno: <span className="font-bold uppercase text-[10px]">{turno}</span></div>
         </div>
 
         {/* Tabla Principal Integrada */}
-        <table className="w-full border-collapse eval-table text-[8.5px]">
+        <table className="w-full border-collapse eval-table text-[9.5px]">
           <thead>
-            {/* Fila Superior (Agrupaciones) */}
-            <tr className="bg-slate-200">
-              <th rowSpan={2} className="w-5 font-bold text-center">N°</th>
-              <th rowSpan={2} className="w-[235px] font-bold text-left px-1.5 uppercase tracking-wide">Nombre del Alumno(a)</th>
-              <th colSpan={daysCols.length + 1} className="font-bold text-center uppercase tracking-widest border-b border-slate-400 py-0.5">Asistencias</th>
-              <th colSpan={taskCols.length} className="font-bold text-center uppercase tracking-widest border-b border-slate-400">Tareas / Trabajos</th>
-              <th colSpan={3} className="font-bold text-center uppercase tracking-widest border-b border-slate-400">Evaluación</th>
-              <th rowSpan={2} className="w-[82px] font-bold text-center uppercase tracking-wider">Observaciones</th>
+            {/* Fila 1: Agrupaciones Principales */}
+            <tr className="bg-slate-200 h-[16px]">
+              <th rowSpan={3} className="w-6 font-bold text-center text-[9.5px]">N°</th>
+              <th rowSpan={3} className="w-[245px] font-bold text-left px-2 uppercase tracking-wide text-[9.5px]">
+                <div className="flex flex-col justify-between h-full">
+                  <span>Nombre del Alumno(a)</span>
+                  <span className="text-[7.5px] font-semibold text-slate-600 text-right pr-1">CONTENIDOS / FECHA &rarr;</span>
+                </div>
+              </th>
+              <th colSpan={daysCols.length + 1} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Asistencias</th>
+              <th colSpan={taskCols.length} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Tareas / Trabajos</th>
+              <th colSpan={3} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Evaluación</th>
+              <th rowSpan={3} className="w-[84px] font-bold text-center uppercase tracking-wider text-[9px]">Observaciones</th>
             </tr>
-            {/* Fila Inferior (Sub-columnas) */}
-            <tr className="bg-slate-100">
+
+            {/* Fila 2: Espacio en blanco para Contenidos / Tema visto ese día (Entre Asistencias y el Número) */}
+            <tr className="bg-white h-[34px]">
               {daysCols.map(col => (
-                <th key={`d-${col}`} className="w-[16px] text-center font-bold text-[7.5px] text-slate-600">{col}</th>
+                <th key={`cont-d-${col}`} className="w-[17px] p-0 align-bottom"></th>
               ))}
-              <th className="w-[22px] text-center font-extrabold text-[8px] bg-slate-200" title="Total de Faltas">T.F.</th>
+              <th className="w-[23px] bg-slate-100 p-0"></th>
+
+              {taskCols.map(col => (
+                <th key={`cont-t-${col}`} className="w-[23px] p-0 align-bottom"></th>
+              ))}
+
+              <th className="w-[31px] bg-slate-50 p-0"></th>
+              <th className="w-[31px] bg-slate-50 p-0"></th>
+              <th className="w-[33px] bg-slate-100 p-0"></th>
+            </tr>
+
+            {/* Fila 3: Numeración de Días y Sub-columnas */}
+            <tr className="bg-slate-100 h-[15px]">
+              {daysCols.map(col => (
+                <th key={`d-${col}`} className="w-[17px] text-center font-bold text-[8.5px] text-slate-700 leading-none">{col}</th>
+              ))}
+              <th className="w-[23px] text-center font-extrabold text-[8.5px] bg-slate-200 leading-none" title="Total de Faltas">T.F.</th>
               
               {taskCols.map(col => (
-                <th key={`t-${col}`} className="w-[22px] text-center font-bold text-[7.5px] text-slate-600">T{col}</th>
+                <th key={`t-${col}`} className="w-[23px] text-center font-bold text-[8.5px] text-slate-700 leading-none">T{col}</th>
               ))}
               
-              <th className="w-[30px] text-center font-bold text-[7.5px]">Exam.</th>
-              <th className="w-[30px] text-center font-bold text-[7.5px]" title="Participación">Partic.</th>
-              <th className="w-[32px] text-center font-extrabold text-[8px] bg-slate-200" title="Promedio Trimestral">Prom.</th>
+              <th className="w-[31px] text-center font-bold text-[8px] leading-none">Exam.</th>
+              <th className="w-[31px] text-center font-bold text-[8px] leading-none" title="Participación">Partic.</th>
+              <th className="w-[33px] text-center font-extrabold text-[8.5px] bg-slate-200 leading-none" title="Promedio Trimestral">Prom.</th>
             </tr>
           </thead>
           <tbody>
@@ -192,21 +214,21 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
               const fullName = rawName ? autoAcentuar(rawName).toUpperCase() : '';
 
               return (
-                <tr key={student.id} className={`h-[14.5px] ${isBaja ? 'bg-slate-200/70 text-slate-500' : 'even:bg-slate-50/40'}`}>
-                  <td className="text-center font-bold text-slate-700 leading-none">{index + 1}</td>
-                  <td className="px-1.5 font-semibold uppercase text-[8px] leading-none whitespace-nowrap overflow-hidden" title={fullName}>
+                <tr key={student.id} className={`h-[18.2px] ${isBaja ? 'bg-slate-200/70 text-slate-500' : 'even:bg-slate-50/40'}`}>
+                  <td className="text-center font-bold text-slate-800 text-[9px] leading-none">{index + 1}</td>
+                  <td className="px-1.5 font-bold uppercase text-[9px] leading-none whitespace-nowrap overflow-hidden" title={fullName}>
                     {!student.isEmpty && (
                       <div className="flex items-center justify-between gap-1">
                         <span className={`truncate ${isBaja ? 'line-through text-slate-500' : ''}`}>
                           {fullName}
                         </span>
                         {isAlta && (
-                          <span className="shrink-0 px-1 py-0 text-[6px] font-black bg-emerald-100 text-emerald-900 border border-emerald-600 rounded leading-tight">
+                          <span className="shrink-0 px-1 py-0 text-[6.5px] font-black bg-emerald-100 text-emerald-900 border border-emerald-600 rounded leading-tight">
                             ALTA
                           </span>
                         )}
                         {isBaja && (
-                          <span className="shrink-0 px-1 py-0 text-[6px] font-black bg-red-100 text-red-900 border border-red-600 rounded leading-tight">
+                          <span className="shrink-0 px-1 py-0 text-[6.5px] font-black bg-red-100 text-red-900 border border-red-600 rounded leading-tight">
                             BAJA
                           </span>
                         )}
@@ -216,10 +238,10 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
                   
                   {isBaja ? (
                     <>
-                      <td colSpan={daysCols.length + 1 + taskCols.length + 3} className="text-center font-bold text-[7px] tracking-[0.25em] text-slate-500 bg-slate-100/80 uppercase leading-none">
+                      <td colSpan={daysCols.length + 1 + taskCols.length + 3} className="text-center font-bold text-[8px] tracking-[0.25em] text-slate-500 bg-slate-100/80 uppercase leading-none">
                         — B A J A {student.fechaBaja ? `(${student.fechaBaja})` : ''} —
                       </td>
-                      <td className="text-center font-bold text-[7px] text-red-800 uppercase px-1 truncate leading-none">
+                      <td className="text-center font-bold text-[7.5px] text-red-800 uppercase px-1 truncate leading-none">
                         BAJA {student.fechaBaja ? student.fechaBaja : ''}
                       </td>
                     </>
@@ -243,7 +265,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
                       <td className="bg-slate-100/50"></td>
                       
                       {/* Observaciones */}
-                      <td className="text-center font-bold text-[7px] text-emerald-900 uppercase px-1 truncate leading-none">
+                      <td className="text-center font-bold text-[7.5px] text-emerald-900 uppercase px-1 truncate leading-none">
                         {isAlta ? `ALTA${student.fechaAlta ? ' ' + student.fechaAlta : ''}` : ''}
                       </td>
                     </>
@@ -255,23 +277,23 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
         </table>
 
         {/* Simbología */}
-        <div className="mt-0.5 flex justify-between text-[7px] text-slate-600 font-medium px-0.5">
+        <div className="mt-0.5 flex justify-between text-[7.5px] text-slate-600 font-medium px-0.5">
           <p><strong className="text-black">Simbología Asistencia:</strong> ( . ) Asistencia &nbsp;|&nbsp; ( F ) Falta &nbsp;|&nbsp; ( R ) Retardo &nbsp;|&nbsp; ( J ) Justificante &nbsp;|&nbsp; <strong className="text-black">[ALTA]</strong> Ingreso posterior al 30/Sept &nbsp;|&nbsp; <strong className="text-black">[BAJA]</strong> Baja durante el ciclo</p>
           <p><strong className="text-black">Simbología Evaluación:</strong> T.F. = Total Faltas &nbsp;|&nbsp; Exam. = Examen o Proyecto &nbsp;|&nbsp; Partic. = Participación</p>
         </div>
 
         {/* Cuadro Estadístico del Grupo (Justo antes de las firmas) */}
         <div className="mt-1">
-          <table className="w-full border-collapse stats-summary-table text-[8px] text-center">
+          <table className="w-full border-collapse stats-summary-table text-[8.5px] text-center">
             <thead>
-              <tr className="bg-slate-200 font-extrabold uppercase tracking-wider text-[7.5px] leading-tight">
+              <tr className="bg-slate-200 font-extrabold uppercase tracking-wider text-[8px] leading-tight">
                 <th colSpan={3} className="w-[22%]">Existencia (Activos)</th>
                 <th colSpan={3} className="w-[24%]">Alumnos Regulares</th>
                 <th colSpan={3} className="w-[24%]">Alumnos Irregulares</th>
                 <th rowSpan={2} className="w-[15%]">Promedio de<br/>Aprovechamiento</th>
                 <th rowSpan={2} className="w-[15%]">% de<br/>Aprobación</th>
               </tr>
-              <tr className="bg-slate-100 font-bold text-[7px] leading-tight">
+              <tr className="bg-slate-100 font-bold text-[7.5px] leading-tight">
                 <th>Hombres</th>
                 <th>Mujeres</th>
                 <th className="bg-slate-200">Total</th>
@@ -284,7 +306,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
               </tr>
             </thead>
             <tbody>
-              <tr className="h-[16px] font-bold text-[9px] leading-none">
+              <tr className="h-[17px] font-bold text-[9.5px] leading-none">
                 {/* Existencia llenada automáticamente */}
                 <td>{existenciaH}</td>
                 <td>{existenciaM}</td>
@@ -306,7 +328,7 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
         </div>
 
         {/* Firmas de Autorización - Estilo SEP */}
-        <div className="flex justify-around items-end mt-4 pt-1 px-10">
+        <div className="flex justify-around items-end mt-3.5 pt-1 px-10">
           <div className="text-center w-56 border-t border-black pt-0.5">
             <p className="font-bold text-[9.5px] uppercase leading-tight">Firma del Docente</p>
           </div>
