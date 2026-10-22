@@ -103,13 +103,16 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
     <div className="print-lista-asistencia-only">
       <style>{`
         @media print {
-          @page { size: ${sizeValue} landscape; margin: 0.28cm 0.3cm; }
+          @page { size: ${sizeValue} landscape; margin: 0.32cm 0.6cm; }
           html, body, #root { height: auto !important; min-height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: white !important; }
           aside, header, nav, .no-print { display: none !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
           .print-lista-asistencia-only {
             display: block !important;
             width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 0 0.15cm !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
             page-break-after: auto !important;
@@ -123,14 +126,19 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
         .eval-table {
           table-layout: fixed;
           width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
         }
         .eval-table th, .eval-table td {
           border: 1.3px solid #1e293b;
           padding: 1px 1.5px;
+          box-sizing: border-box;
+          overflow: hidden;
         }
         .stats-summary-table th, .stats-summary-table td {
           border: 1.3px solid #1e293b;
           padding: 2px 5px;
+          box-sizing: border-box;
         }
       `}</style>
 
@@ -160,22 +168,22 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
           <div>Turno: <span className="font-bold uppercase text-[10px]">{turno}</span></div>
         </div>
 
-        {/* Tabla Principal Integrada con table-layout: fixed para dar más ancho a los cuadritos de asistencia */}
+        {/* Tabla Principal Integrada con table-layout: fixed en porcentajes exactos (100%) para respetar márgenes de impresora */}
         <table className="w-full border-collapse eval-table text-[9.5px]">
           <colgroup>
-            <col style={{ width: '22px' }} />
-            <col style={{ width: '205px' }} />
+            <col style={{ width: '2.1%' }} />
+            <col style={{ width: '23.5%' }} />
             {daysCols.map(col => (
-              <col key={`col-d-${col}`} style={{ width: '23px' }} />
+              <col key={`col-d-${col}`} style={{ width: '2.15%' }} />
             ))}
-            <col style={{ width: '25px' }} />
+            <col style={{ width: '2.4%' }} />
             {taskCols.map(col => (
-              <col key={`col-t-${col}`} style={{ width: '24px' }} />
+              <col key={`col-t-${col}`} style={{ width: '2.25%' }} />
             ))}
-            <col style={{ width: '31px' }} />
-            <col style={{ width: '31px' }} />
-            <col style={{ width: '33px' }} />
-            <col style={{ width: '62px' }} />
+            <col style={{ width: '3.0%' }} />
+            <col style={{ width: '3.0%' }} />
+            <col style={{ width: '3.2%' }} />
+            <col style={{ width: '6.3%' }} />
           </colgroup>
           <thead>
             {/* Fila 1: Agrupaciones Principales */}
@@ -190,11 +198,11 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
               <th colSpan={daysCols.length + 1} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Asistencias</th>
               <th colSpan={taskCols.length} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Tareas / Trabajos</th>
               <th colSpan={3} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Evaluación</th>
-              <th rowSpan={3} className="font-bold text-center uppercase tracking-tight text-[8.5px]">Observaciones</th>
+              <th rowSpan={3} className="font-bold text-center uppercase tracking-tight text-[8px]">Observaciones</th>
             </tr>
 
             {/* Fila 2: Espacio en blanco para Contenidos / Tema visto ese día (Entre Asistencias y el Número) */}
-            <tr className="bg-white h-[34px]">
+            <tr className="bg-white h-[33px]">
               {daysCols.map(col => (
                 <th key={`cont-d-${col}`} className="p-0 align-bottom"></th>
               ))}
@@ -231,14 +239,20 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
               const isAlta = !student.isEmpty && !isBaja && student.tipoIngreso === 'Alta';
               const rawName = student.isEmpty ? '' : `${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.replace(/\s+/g, ' ').trim();
               const fullName = rawName ? autoAcentuar(rawName).toUpperCase() : '';
+              const effectiveLen = fullName.length + (isAlta || isBaja ? 6 : 0);
+              const nameSizeClass = effectiveLen > 34
+                ? 'text-[8.1px] tracking-tighter'
+                : effectiveLen > 29
+                  ? 'text-[8.8px] tracking-tight'
+                  : 'text-[9.5px] tracking-tight';
 
               return (
-                <tr key={student.id} className={`h-[18.2px] ${isBaja ? 'bg-slate-200/70 text-slate-500' : 'even:bg-slate-50/40'}`}>
+                <tr key={student.id} className={`h-[17.8px] ${isBaja ? 'bg-slate-200/70 text-slate-500' : 'even:bg-slate-50/40'}`}>
                   <td className="text-center font-bold text-slate-800 text-[9.5px] leading-none">{index + 1}</td>
-                  <td className="px-1 font-bold uppercase text-[9.8px] tracking-tight leading-none whitespace-nowrap overflow-hidden" title={fullName}>
+                  <td className={`px-1 font-bold uppercase ${nameSizeClass} leading-none whitespace-nowrap overflow-hidden max-w-0`} title={fullName}>
                     {!student.isEmpty && (
-                      <div className="flex items-center justify-between gap-0.5">
-                        <span className={`truncate ${isBaja ? 'line-through text-slate-500' : ''}`}>
+                      <div className="flex items-center justify-between gap-0.5 w-full max-w-full overflow-hidden">
+                        <span className={`truncate block min-w-0 flex-1 ${isBaja ? 'line-through text-slate-500' : ''}`}>
                           {fullName}
                         </span>
                         {isAlta && (
