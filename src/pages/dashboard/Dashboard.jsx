@@ -1,9 +1,19 @@
 import { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Users, Clock, GraduationCap, Megaphone, Activity } from 'lucide-react';
 import { db } from '../../firebase';
-import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Dashboard() {
+  const { userRole, userPermissions } = useAuth();
+  const isOnlyDocente =
+    userRole === 'docente' ||
+    (Array.isArray(userPermissions) &&
+      userPermissions.includes('portal-docente') &&
+      !userPermissions.includes('all') &&
+      !userPermissions.includes('control-escolar'));
+
   const [stats, setStats] = useState([
     { name: 'Alumnos Activos', value: '...', icon: Users, color: 'bg-sky-500' },
     { name: 'Trámites Pendientes', value: '...', icon: Clock, color: 'bg-indigo-500' },
@@ -14,14 +24,16 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
+    if (isOnlyDocente) return;
+
     // Escuchar estudiantes
     const unsubStudents = onSnapshot(collection(db, 'students'), (snapshot) => {
       let activos = 0;
       let pendientes = 0;
       let egresados = 0;
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
         if (data.status === 'Activo') activos++;
         else if (data.status === 'Pendiente') pendientes++;
         else if (data.status === 'Egresado') egresados++;
@@ -49,11 +61,11 @@ export default function Dashboard() {
     // Escuchar actividad reciente (últimos avisos como "actividad")
     const qAvisos = query(collection(db, 'avisos'), orderBy('createdAt', 'desc'), limit(5));
     const unsubRecent = onSnapshot(qAvisos, (snapshot) => {
-      const activities = snapshot.docs.map(doc => ({
-        id: doc.id,
-        title: doc.data().title,
-        date: doc.data().createdAt?.toDate() || new Date(),
-        type: doc.data().type
+      const activities = snapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        title: docSnap.data().title,
+        date: docSnap.data().createdAt?.toDate() || new Date(),
+        type: docSnap.data().type
       }));
       setRecentActivity(activities);
     });
@@ -63,7 +75,11 @@ export default function Dashboard() {
       unsubAvisos();
       unsubRecent();
     };
-  }, []);
+  }, [isOnlyDocente]);
+
+  if (isOnlyDocente) {
+    return <Navigate to="/panel/portal-docente" replace />;
+  }
 
   return (
     <div className="space-y-6">

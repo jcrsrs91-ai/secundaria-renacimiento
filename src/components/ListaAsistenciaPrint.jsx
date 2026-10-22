@@ -3,7 +3,7 @@ import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { autoAcentuar } from '../utils/format';
 
-const TALLER_POR_GRUPO = {
+export const TALLER_POR_GRUPO = {
   A: 'Climatización y refrigeración',
   B: 'Administración contable',
   C: 'Diseño y circuitos eléctricos',
@@ -18,7 +18,7 @@ const TALLER_POR_GRUPO = {
   L: 'Ofimática'
 };
 
-const getStudentGender = (s) => {
+export const getStudentGender = (s) => {
   const genRaw = (s.genero || s.sexo || '').trim().toUpperCase();
   if (genRaw.startsWith('M') && genRaw !== 'MASCULINO') return 'M';
   if (genRaw.startsWith('F')) return 'M';
@@ -53,7 +53,18 @@ export const sortAttendanceListStudents = (studentsList = []) => {
   return [...iniciales, ...altas];
 };
 
-export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize }) {
+export default function ListaAsistenciaPrint({
+  students,
+  grado,
+  grupo,
+  paperSize,
+  isFilled = false,
+  docente = '',
+  asignatura = '',
+  trimestreLabel = '',
+  evalData = {},
+  stats = null
+}) {
   const { config } = useGlobalConfig();
   if (!students || students.length === 0) return null;
 
@@ -150,18 +161,35 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
             <p className="font-bold text-[10px] uppercase text-slate-700 leading-tight">C.C.T: 12DST0077B &bull; Acapulco de Juárez, Gro.</p>
           </div>
           <div className="text-center">
-            <h2 className="font-black text-[13px] uppercase tracking-widest bg-slate-200 px-3.5 py-0.5 border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">Lista de Asistencia y Evaluación</h2>
+            <h2 className="font-black text-[13px] uppercase tracking-widest bg-slate-200 px-3.5 py-0.5 border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+              Lista de Asistencia y Evaluación
+            </h2>
           </div>
           <div className="text-right leading-tight">
             <p className="font-bold text-[10px]">Ciclo Escolar: <span className="underline decoration-slate-400">{config?.cicloEscolarActual || '2025 - 2026'}</span></p>
-            <p className="font-bold text-[10px] mt-0.5">Trimestre a Evaluar: <span className="inline-block border-b border-black w-24 text-center"></span></p>
+            <p className="font-bold text-[10px] mt-0.5">
+              Trimestre a Evaluar:{' '}
+              <span className="inline-block border-b border-black min-w-[6rem] px-1 text-center font-black uppercase">
+                {isFilled && trimestreLabel ? trimestreLabel : ''}
+              </span>
+            </p>
           </div>
         </div>
 
         {/* Metadatos del Grupo y Docente */}
         <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 mb-1 font-semibold text-[10px] px-0.5">
-          <div>Docente: <span className="font-normal border-b border-black inline-block w-48"></span></div>
-          <div>Asignatura: <span className="font-normal border-b border-black inline-block w-40"></span></div>
+          <div>
+            Docente:{' '}
+            <span className="font-bold border-b border-black inline-block min-w-[12rem] px-1 uppercase text-[9.5px]">
+              {isFilled && docente ? docente : ''}
+            </span>
+          </div>
+          <div>
+            Asignatura:{' '}
+            <span className="font-bold border-b border-black inline-block min-w-[10rem] px-1 uppercase text-[9.5px]">
+              {isFilled && asignatura ? asignatura : ''}
+            </span>
+          </div>
           <div>Taller / Tecnología: <span className="font-bold border-b border-black inline-block px-1.5 text-center uppercase text-[9.5px]">{taller}</span></div>
           <div>Grado: <span className="font-bold text-[11px] underline">{grado}</span></div>
           <div>Grupo: <span className="font-bold text-[11px] underline">"{cleanGrupo}"</span></div>
@@ -246,6 +274,10 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
                   ? 'text-[8.8px] tracking-tight'
                   : 'text-[9.5px] tracking-tight';
 
+              const stEval = (!student.isEmpty && isFilled && evalData[student.id]) ? evalData[student.id] : {};
+              const califNum = parseFloat(stEval.calificacion);
+              const isReprobado = !isNaN(califNum) && califNum < 6;
+
               return (
                 <tr key={student.id} className={`h-[17.8px] ${isBaja ? 'bg-slate-200/70 text-slate-500' : 'even:bg-slate-50/40'}`}>
                   <td className="text-center font-bold text-slate-800 text-[9.5px] leading-none">{index + 1}</td>
@@ -280,26 +312,40 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
                     </>
                   ) : (
                     <>
-                      {/* Columnas de Asistencia vacías para rellenar */}
+                      {/* Columnas de Asistencia */}
                       {daysCols.map(col => (
                         <td key={`cell-d-${student.id}-${col}`}></td>
                       ))}
                       {/* Total de faltas */}
-                      <td className="bg-slate-100/50"></td>
+                      <td className="bg-slate-100/50 text-center font-bold text-[9px] leading-none">
+                        {isFilled && stEval.faltas !== undefined && stEval.faltas !== '' ? stEval.faltas : ''}
+                      </td>
                       
                       {/* Tareas */}
                       {taskCols.map(col => (
-                        <td key={`cell-t-${student.id}-${col}`}></td>
+                        <td key={`cell-t-${student.id}-${col}`} className="text-center text-[8.5px] leading-none">
+                          {isFilled && stEval[`t${col}`] !== undefined ? stEval[`t${col}`] : ''}
+                        </td>
                       ))}
                       
-                      {/* Evaluación */}
-                      <td></td>
-                      <td></td>
-                      <td className="bg-slate-100/50"></td>
+                      {/* Evaluación: Examen, Participación y Promedio Trimestral */}
+                      <td className="text-center text-[8.5px] leading-none">
+                        {isFilled && stEval.examen !== undefined ? stEval.examen : ''}
+                      </td>
+                      <td className="text-center text-[8.5px] leading-none">
+                        {isFilled && stEval.participacion !== undefined ? stEval.participacion : ''}
+                      </td>
+                      <td className={`bg-slate-100/80 text-center font-black text-[9.8px] leading-none ${isReprobado ? 'text-red-700 underline' : 'text-slate-900'}`}>
+                        {isFilled && stEval.calificacion !== undefined && stEval.calificacion !== '' ? stEval.calificacion : ''}
+                      </td>
                       
                       {/* Observaciones */}
-                      <td className="text-center font-bold text-[7px] text-emerald-900 uppercase px-0.5 truncate leading-none">
-                        {isAlta ? `ALTA${student.fechaAlta ? ' ' + student.fechaAlta : ''}` : ''}
+                      <td className="text-center font-bold text-[7px] text-slate-800 uppercase px-0.5 truncate leading-none">
+                        {isFilled && stEval.observaciones
+                          ? stEval.observaciones
+                          : isAlta
+                            ? `ALTA${student.fechaAlta ? ' ' + student.fechaAlta : ''}`
+                            : ''}
                       </td>
                     </>
                   )}
@@ -344,17 +390,19 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
                 <td>{existenciaH}</td>
                 <td>{existenciaM}</td>
                 <td className="bg-slate-100 font-black">{existenciaT}</td>
-                {/* Regulares en blanco */}
-                <td></td>
-                <td></td>
-                <td className="bg-slate-50"></td>
-                {/* Irregulares en blanco */}
-                <td></td>
-                <td></td>
-                <td className="bg-slate-50"></td>
-                {/* Promedio y % de Aprobación en blanco */}
-                <td></td>
-                <td className="text-right pr-2 font-normal text-slate-400">%</td>
+                {/* Regulares: llenos si isFilled, en blanco si es lista vacía */}
+                <td>{isFilled && stats ? stats.regularesH : ''}</td>
+                <td>{isFilled && stats ? stats.regularesM : ''}</td>
+                <td className="bg-slate-50 font-black">{isFilled && stats ? stats.regularesT : ''}</td>
+                {/* Irregulares: llenos si isFilled, en blanco si es lista vacía */}
+                <td>{isFilled && stats ? stats.irregularesH : ''}</td>
+                <td>{isFilled && stats ? stats.irregularesM : ''}</td>
+                <td className="bg-slate-50 font-black">{isFilled && stats ? stats.irregularesT : ''}</td>
+                {/* Promedio y % de Aprobación */}
+                <td className="font-black">{isFilled && stats ? stats.promedioAprovechamiento : ''}</td>
+                <td className={isFilled && stats ? 'text-center font-black' : 'text-right pr-2 font-normal text-slate-400'}>
+                  {isFilled && stats ? `${stats.porcentajeAprobacion} %` : '%'}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -363,7 +411,14 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
         {/* Firmas de Autorización - Estilo SEP */}
         <div className="flex justify-around items-end mt-3.5 pt-1 px-10">
           <div className="text-center w-56 border-t border-black pt-0.5">
-            <p className="font-bold text-[9.5px] uppercase leading-tight">Firma del Docente</p>
+            {isFilled && docente ? (
+              <>
+                <p className="font-bold text-[9.5px] uppercase leading-tight">{docente}</p>
+                <p className="text-[8.5px] text-slate-600 font-semibold uppercase leading-tight">Firma del Docente</p>
+              </>
+            ) : (
+              <p className="font-bold text-[9.5px] uppercase leading-tight">Firma del Docente</p>
+            )}
           </div>
           <div className="text-center w-56 border-t border-black pt-0.5">
             {turno === 'Matutino' ? (

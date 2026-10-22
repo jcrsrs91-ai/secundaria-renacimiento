@@ -13,22 +13,37 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userPermissions, setUserPermissions] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [userName, setUserName] = useState('');
   const [studentSession, setStudentSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Escucha de Firebase Auth para personal administrativo
+    // Escucha de Firebase Auth para personal administrativo y docente
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            setUserPermissions(userDoc.data().permissions || []);
-            setUserRole(userDoc.data().role || 'staff');
+          const emailKey = (user.email || '').toLowerCase().trim();
+          const [userDoc, allowedDoc] = await Promise.all([
+            getDoc(doc(db, 'users', user.uid)),
+            emailKey ? getDoc(doc(db, 'allowed_emails', emailKey)) : Promise.resolve(null)
+          ]);
+
+          if (allowedDoc && allowedDoc.exists()) {
+            const allowedData = allowedDoc.data();
+            const userData = userDoc.exists() ? userDoc.data() : {};
+            setUserPermissions(allowedData.permissions || userData.permissions || []);
+            setUserRole(allowedData.role || userData.role || 'staff');
+            setUserName(userData.nombre || allowedData.nombre || '');
+          } else if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserPermissions(userData.permissions || []);
+            setUserRole(userData.role || 'staff');
+            setUserName(userData.nombre || '');
           } else {
             // Backwards compatibility for the original admin
             setUserPermissions(['all']);
             setUserRole('superadmin');
+            setUserName('Administrador');
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -36,6 +51,7 @@ export function AuthProvider({ children }) {
       } else {
         setUserPermissions(null);
         setUserRole(null);
+        setUserName('');
       }
       setCurrentUser(user);
       setLoading(false);
@@ -65,6 +81,7 @@ export function AuthProvider({ children }) {
     currentUser,
     userPermissions,
     userRole,
+    userName,
     studentSession,
     loginAsStudent,
     logout

@@ -1,13 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { sortStudents } from '../utils/sortUtils';
-import { Download, Upload, Save, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Download, Upload, Save, CheckCircle, AlertTriangle, Grid, GraduationCap } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { truncateTo1Dec } from '../utils/format';
 import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
+import EvaluacionDocenteWidget from './EvaluacionDocenteWidget';
 
 export default function Calificaciones({ activos, materiasPorGrado, onPrintBoleta, onPrintConcentradoFinal, onPrintConcentradoParcial }) {
+  const [subMode, setSubMode] = useState('sabana'); // 'sabana' | 'asignatura'
   const [grado, setGrado] = useState('1er Grado');
   const [grupo, setGrupo] = useState('A');
   const [trimestre, setTrimestre] = useState('t1');
@@ -15,26 +17,23 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   const [successMsg, setSuccessMsg] = useState('');
   const [showConcentradoMenu, setShowConcentradoMenu] = useState(false);
 
-  // Filtrar alumnos por grado y grupo
+  // Filtrar alumnos activos por grado y grupo para la sábana general
   const alumnos = useMemo(() => {
     return activos
-      .filter(a => a.grado === grado && a.grupo === grupo)
+      .filter(a => a.grado === grado && a.grupo === grupo && (a.status || 'Activo') === 'Activo')
       .sort(sortStudents);
   }, [activos, grado, grupo]);
 
   const materias = materiasPorGrado[grado] || [];
 
   // Estado local para editar calificaciones antes de guardar
-  // Estructura: localGrades[studentId][materiaId] = valor
   const [localGrades, setLocalGrades] = useState({});
 
-  // Sincronizar estado local cuando cambia el filtro o los alumnos
-  React.useEffect(() => {
+  useEffect(() => {
     const grades = {};
     alumnos.forEach(al => {
       grades[al.id] = {};
       materias.forEach(mat => {
-        // Asumiendo que guardamos en bd: al.calificaciones.t1.espanol1 = 8
         const calif = al.calificaciones?.[trimestre]?.[mat.id] || '';
         grades[al.id][mat.id] = calif;
       });
@@ -67,13 +66,38 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     return count === 0 ? '-' : truncateTo1Dec(sum / count);
   };
 
+  // Semáforo de avance de captura por asignatura en el grupo actual
+  const semaforoMaterias = useMemo(() => {
+    return materias.map(mat => {
+      let capturados = 0;
+      let docente = '';
+      alumnos.forEach(al => {
+        const val = localGrades[al.id]?.[mat.id];
+        if (val !== undefined && val !== '') {
+          capturados++;
+        }
+        const detDoc = al.evaluacionDetalle?.[trimestre]?.[mat.id]?.docente;
+        if (detDoc && !docente) docente = detDoc;
+      });
+      const completo = alumnos.length > 0 && capturados === alumnos.length;
+      const parcial = capturados > 0 && capturados < alumnos.length;
+      return {
+        ...mat,
+        capturados,
+        total: alumnos.length,
+        completo,
+        parcial,
+        docente
+      };
+    });
+  }, [materias, alumnos, localGrades, trimestre]);
+
   const handleSaveAll = async () => {
     setIsSaving(true);
     try {
       const promises = alumnos.map(al => {
         const docRef = doc(db, 'students', al.id);
         const gradesToSave = localGrades[al.id];
-        // Merge with existing calificaciones
         const currentCalif = al.calificaciones || {};
         const newTrimestreData = { ...currentCalif[trimestre], ...gradesToSave };
         
@@ -229,177 +253,261 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
 
   return (
     <div className="space-y-6">
-      {/* Controles de Filtro */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end">
-        <div className="w-full md:w-1/4">
-          <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Grado</label>
-          <select value={grado} onChange={e => setGrado(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 bg-slate-50">
-            <option value="1er Grado">1er Grado</option>
-            <option value="2do Grado">2do Grado</option>
-            <option value="3er Grado">3er Grado</option>
-          </select>
-        </div>
-        <div className="w-full md:w-1/4">
-          <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Grupo</label>
-          <select value={grupo} onChange={e => setGrupo(e.target.value)} translate="no" className="notranslate w-full p-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 bg-slate-50">
-            <option value="A">A</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
-            <option value="D">D</option>
-            <option value="E">E</option>
-            <option value="F">F</option>
-          </select>
-        </div>
-        <div className="w-full md:w-1/4">
-          <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Trimestre</label>
-          <select value={trimestre} onChange={e => setTrimestre(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-primary-700 bg-primary-50">
-            <option value="t1">Trimestre 1</option>
-            <option value="t2">Trimestre 2</option>
-            <option value="t3">Trimestre 3</option>
-          </select>
-        </div>
-        <div className="flex-1 flex justify-end gap-2">
-          <button onClick={handleDownloadTemplate} className="flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium text-sm">
-            <Download className="w-4 h-4 mr-2 text-slate-500" /> Plantilla
-          </button>
-          <label className="cursor-pointer flex items-center px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition font-medium text-sm">
-            <Upload className="w-4 h-4 mr-2" /> Subir CSV
-            <input type="file" accept=".csv" className="hidden" onChange={handleUploadCSV} />
-          </label>
-        </div>
+      {/* Selector de Vista: Sábana General (Secretarios) vs Por Asignatura (Docentes / Cuadros Coordinación) */}
+      <div className="bg-slate-100 p-1.5 rounded-xl border border-slate-200 inline-flex flex-wrap gap-1.5 no-print">
+        <button
+          type="button"
+          onClick={() => setSubMode('sabana')}
+          className={`flex items-center px-4 py-2 rounded-lg text-sm font-bold transition ${
+            subMode === 'sabana'
+              ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Grid className="w-4 h-4 mr-2 text-primary-600" />
+          Sábana General del Grupo (Todas las Materias)
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubMode('asignatura')}
+          className={`flex items-center px-4 py-2 rounded-lg text-sm font-bold transition ${
+            subMode === 'asignatura'
+              ? 'bg-indigo-600 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <GraduationCap className="w-4 h-4 mr-2" />
+          Captura y Cuadros por Asignatura (Docentes / Coordinación)
+        </button>
       </div>
 
-      {successMsg && (
-        <div className="bg-emerald-50 text-emerald-700 p-3 rounded-lg border border-emerald-200 flex items-center font-medium">
-          <CheckCircle className="w-5 h-5 mr-2" /> {successMsg}
-        </div>
-      )}
-
-      {alumnos.length === 0 ? (
-        <div className="bg-white p-12 rounded-xl border border-slate-200 text-center text-slate-500 flex flex-col items-center">
-          <AlertTriangle className="w-12 h-12 text-slate-300 mb-3" />
-          <p className="text-lg font-medium">No hay alumnos registrados en este grado y grupo.</p>
-          <p className="text-sm mt-1">Intenta seleccionar otro filtro o inscribe alumnos primero.</p>
-        </div>
+      {subMode === 'asignatura' ? (
+        <EvaluacionDocenteWidget students={activos} />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-800">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-200 uppercase tracking-wider sticky left-0 z-10 bg-slate-900 border-r border-slate-700">Alumno</th>
-                  {materias.map(mat => (
-                    <th key={mat.id} className="px-2 py-3 text-center text-[10px] font-bold text-slate-300 uppercase w-16 whitespace-normal leading-tight" title={mat.name}>
-                      {mat.name.replace('Formación Cívica y Ética', 'F.C.E.').replace('Ciencias', 'Cien.')}
-                    </th>
-                  ))}
-                  <th className="px-4 py-3 text-center text-xs font-black text-indigo-400 uppercase tracking-wider bg-slate-900 border-l border-slate-700">PROM</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-300 uppercase tracking-wider bg-slate-900 border-l border-slate-700 w-10"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {alumnos.map((al, idx) => {
-                  const prom = parseFloat(calcularPromedio(al.id));
-                  const isReprobado = !isNaN(prom) && prom < 6.0;
-
-                  return (
-                    <tr key={al.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs font-bold text-slate-800 sticky left-0 z-10 bg-inherit border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                        {al.apellidoPaterno} {al.apellidoMaterno} <span className="font-medium">{al.nombres}</span>
-                      </td>
-                      {materias.map(mat => {
-                        const val = localGrades[al.id]?.[mat.id] || '';
-                        const isFailing = parseFloat(val) < 6.0 && val !== '';
-                        return (
-                          <td key={mat.id} className="px-1 py-2 text-center">
-                            <input 
-                              type="number" 
-                              min="5" max="10" step="0.1"
-                              value={val}
-                              onChange={(e) => handleGradeChange(al.id, mat.id, e.target.value)}
-                              className={`w-14 text-center p-1.5 border rounded font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-colors
-                                ${isFailing ? 'bg-sky-50 border-sky-300 text-sky-700' : 'bg-white border-slate-300 text-slate-700'}
-                              `}
-                            />
-                          </td>
-                        );
-                      })}
-                      <td className="px-4 py-3 text-center bg-inherit border-l border-slate-200">
-                        <span className={`inline-block px-2.5 py-1 rounded-md text-sm font-black ${isReprobado ? 'bg-sky-100 text-sky-700' : 'bg-emerald-100 text-emerald-800'}`}>
-                          {calcularPromedio(al.id)}
-                        </span>
-                      </td>
-                      <td className="px-2 py-3 text-center bg-inherit border-l border-slate-200">
-                        <button onClick={() => onPrintBoleta && onPrintBoleta(al)} className="text-slate-500 hover:text-slate-800 transition" title="Imprimir Boleta">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <>
+          {/* Controles de Filtro Sábana General */}
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end">
+            <div className="w-full md:w-1/4">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Grado</label>
+              <select value={grado} onChange={e => setGrado(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 bg-slate-50">
+                <option value="1er Grado">1er Grado</option>
+                <option value="2do Grado">2do Grado</option>
+                <option value="3er Grado">3er Grado</option>
+              </select>
+            </div>
+            <div className="w-full md:w-1/4">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Grupo</label>
+              <select value={grupo} onChange={e => setGrupo(e.target.value)} translate="no" className="notranslate w-full p-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 bg-slate-50">
+                <optgroup label="Turno Matutino (A - F)">
+                  <option value="A">A (Matutino)</option>
+                  <option value="B">B (Matutino)</option>
+                  <option value="C">C (Matutino)</option>
+                  <option value="D">D (Matutino)</option>
+                  <option value="E">E (Matutino)</option>
+                  <option value="F">F (Matutino)</option>
+                </optgroup>
+                <optgroup label="Turno Vespertino (G - L)">
+                  <option value="G">G (Vespertino)</option>
+                  <option value="H">H (Vespertino)</option>
+                  <option value="I">I (Vespertino)</option>
+                  <option value="J">J (Vespertino)</option>
+                  <option value="K">K (Vespertino)</option>
+                  <option value="L">L (Vespertino)</option>
+                </optgroup>
+              </select>
+            </div>
+            <div className="w-full md:w-1/4">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Trimestre</label>
+              <select value={trimestre} onChange={e => setTrimestre(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-primary-700 bg-primary-50">
+                <option value="t1">Trimestre 1</option>
+                <option value="t2">Trimestre 2</option>
+                <option value="t3">Trimestre 3</option>
+              </select>
+            </div>
+            <div className="flex-1 flex justify-end gap-2">
+              <button onClick={handleDownloadTemplate} className="flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium text-sm">
+                <Download className="w-4 h-4 mr-2 text-slate-500" /> Plantilla
+              </button>
+              <label className="cursor-pointer flex items-center px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition font-medium text-sm">
+                <Upload className="w-4 h-4 mr-2" /> Subir CSV
+                <input type="file" accept=".csv" className="hidden" onChange={handleUploadCSV} />
+              </label>
+            </div>
           </div>
-          
-          {/* Action Bar */}
-          <div className="bg-slate-50 border-t border-slate-200 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-4 relative">
-              <span className="text-sm font-medium text-slate-500">{alumnos.length} alumnos listados</span>
-              
-              <div className="relative">
-                <button 
-                  onClick={() => setShowConcentradoMenu(!showConcentradoMenu)}
-                  className="flex items-center px-4 py-2 border-2 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg font-bold transition text-sm"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                  Generar Cuadro de Concentración
-                </button>
-                
-                {showConcentradoMenu && (
-                  <div className="absolute bottom-full mb-2 left-0 w-72 bg-white rounded-xl shadow-xl border border-slate-200 p-2 z-50 overflow-hidden">
-                    <div className="px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">Tipo de Cuadro</div>
-                    
-                    <div className="mb-2">
-                      <div className="px-3 py-1 text-xs font-bold text-indigo-600">Con Promedios Finales</div>
-                      <button onClick={() => { onPrintConcentradoFinal && onPrintConcentradoFinal(alumnos, grado, grupo); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
-                        <svg className="w-4 h-4 mr-2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> Imprimir PDF
-                      </button>
-                      <button onClick={() => { handleExportarExcelFinales(); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
-                        <svg className="w-4 h-4 mr-2 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg> Exportar Excel
-                      </button>
-                    </div>
 
-                    <div>
-                      <div className="px-3 py-1 text-xs font-bold text-indigo-600">Con Calificaciones Parciales</div>
-                      <button onClick={() => { onPrintConcentradoParcial && onPrintConcentradoParcial(alumnos, grado, grupo); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
-                        <svg className="w-4 h-4 mr-2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> Imprimir PDF
-                      </button>
-                      <button onClick={() => { handleExportarExcelParciales(); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
-                        <svg className="w-4 h-4 mr-2 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg> Exportar Excel
-                      </button>
+          {/* Semáforo de Entrega de Maestros por Asignatura */}
+          {alumnos.length > 0 && (
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-600">
+                  Semáforo de Avance de Captura por Asignatura ({grado} "{grupo}" - {trimestre.toUpperCase()})
+                </h4>
+                <span className="text-xs text-slate-500">
+                  Las calificaciones capturadas por los docentes aparecen aquí automáticamente
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                {semaforoMaterias.map(sm => (
+                  <div
+                    key={sm.id}
+                    className={`p-2 rounded-lg border text-xs flex flex-col justify-between ${
+                      sm.completo
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                        : sm.parcial
+                          ? 'bg-amber-50 border-amber-300 text-amber-900'
+                          : 'bg-slate-50 border-slate-200 text-slate-500'
+                    }`}
+                  >
+                    <div className="font-bold truncate" title={sm.name}>{sm.name}</div>
+                    <div className="flex items-center justify-between mt-1 text-[11px]">
+                      <span className="font-extrabold">
+                        {sm.capturados}/{sm.total} {sm.completo ? '✅' : sm.parcial ? '⏳' : ''}
+                      </span>
+                      {sm.docente && (
+                        <span className="truncate max-w-[110px] text-[10px] opacity-80" title={sm.docente}>
+                          {sm.docente}
+                        </span>
+                      )}
                     </div>
                   </div>
-                )}
+                ))}
               </div>
             </div>
+          )}
 
-            <div className="flex gap-2">
-              <button 
-                onClick={() => onPrintBoleta && onPrintBoleta(alumnos)}
-                className="flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-100 transition shadow-sm text-sm"
-              >
-                 Imprimir Grupo (Boletas)
-              </button>
-              <button 
-                onClick={handleSaveAll}
-                disabled={isSaving}
-                className="flex items-center px-6 py-2.5 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition shadow-md disabled:opacity-50"
-              >
-                <Save className="w-5 h-5 mr-2" /> {isSaving ? 'Guardando...' : 'Guardar Calificaciones'}
-              </button>
+          {successMsg && (
+            <div className="bg-emerald-50 text-emerald-700 p-3 rounded-lg border border-emerald-200 flex items-center font-medium">
+              <CheckCircle className="w-5 h-5 mr-2" /> {successMsg}
             </div>
-          </div>
-        </div>
+          )}
+
+          {alumnos.length === 0 ? (
+            <div className="bg-white p-12 rounded-xl border border-slate-200 text-center text-slate-500 flex flex-col items-center">
+              <AlertTriangle className="w-12 h-12 text-slate-300 mb-3" />
+              <p className="text-lg font-medium">No hay alumnos registrados en este grado y grupo.</p>
+              <p className="text-sm mt-1">Intenta seleccionar otro filtro o inscribe alumnos primero.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-200 uppercase tracking-wider sticky left-0 z-10 bg-slate-900 border-r border-slate-700">Alumno</th>
+                      {materias.map(mat => (
+                        <th key={mat.id} className="px-2 py-3 text-center text-[10px] font-bold text-slate-300 uppercase w-16 whitespace-normal leading-tight" title={mat.name}>
+                          {mat.name.replace('Formación Cívica y Ética', 'F.C.E.').replace('Ciencias', 'Cien.')}
+                        </th>
+                      ))}
+                      <th className="px-4 py-3 text-center text-xs font-black text-indigo-400 uppercase tracking-wider bg-slate-900 border-l border-slate-700">PROM</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-slate-300 uppercase tracking-wider bg-slate-900 border-l border-slate-700 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {alumnos.map((al, idx) => {
+                      const prom = parseFloat(calcularPromedio(al.id));
+                      const isReprobado = !isNaN(prom) && prom < 6.0;
+
+                      return (
+                        <tr key={al.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs font-bold text-slate-800 sticky left-0 z-10 bg-inherit border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                            {al.apellidoPaterno} {al.apellidoMaterno} <span className="font-medium">{al.nombres}</span>
+                          </td>
+                          {materias.map(mat => {
+                            const val = localGrades[al.id]?.[mat.id] || '';
+                            const isFailing = parseFloat(val) < 6.0 && val !== '';
+                            return (
+                              <td key={mat.id} className="px-1 py-2 text-center">
+                                <input 
+                                  type="number" 
+                                  min="5" max="10" step="0.1"
+                                  value={val}
+                                  onChange={(e) => handleGradeChange(al.id, mat.id, e.target.value)}
+                                  className={`w-14 text-center p-1.5 border rounded font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-colors
+                                    ${isFailing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-slate-300 text-slate-700'}
+                                  `}
+                                />
+                              </td>
+                            );
+                          })}
+                          <td className="px-4 py-3 text-center bg-inherit border-l border-slate-200">
+                            <span className={`inline-block px-2.5 py-1 rounded-md text-sm font-black ${isReprobado ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>
+                              {calcularPromedio(al.id)}
+                            </span>
+                          </td>
+                          <td className="px-2 py-3 text-center bg-inherit border-l border-slate-200">
+                            <button onClick={() => onPrintBoleta && onPrintBoleta(al)} className="text-slate-500 hover:text-slate-800 transition" title="Imprimir Boleta">
+                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Action Bar */}
+              <div className="bg-slate-50 border-t border-slate-200 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-4 relative">
+                  <span className="text-sm font-medium text-slate-500">{alumnos.length} alumnos activos listados</span>
+                  
+                  <div className="relative">
+                    <button 
+                      onClick={() => setShowConcentradoMenu(!showConcentradoMenu)}
+                      className="flex items-center px-4 py-2 border-2 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg font-bold transition text-sm"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                      Generar Cuadro de Concentración General
+                    </button>
+                    
+                    {showConcentradoMenu && (
+                      <div className="absolute bottom-full mb-2 left-0 w-72 bg-white rounded-xl shadow-xl border border-slate-200 p-2 z-50 overflow-hidden">
+                        <div className="px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">Tipo de Cuadro General</div>
+                        
+                        <div className="mb-2">
+                          <div className="px-3 py-1 text-xs font-bold text-indigo-600">Con Promedios Finales</div>
+                          <button onClick={() => { onPrintConcentradoFinal && onPrintConcentradoFinal(alumnos, grado, grupo); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
+                            <svg className="w-4 h-4 mr-2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> Imprimir PDF
+                          </button>
+                          <button onClick={() => { handleExportarExcelFinales(); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
+                            <svg className="w-4 h-4 mr-2 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg> Exportar Excel
+                          </button>
+                        </div>
+
+                        <div>
+                          <div className="px-3 py-1 text-xs font-bold text-indigo-600">Con Calificaciones Parciales</div>
+                          <button onClick={() => { onPrintConcentradoParcial && onPrintConcentradoParcial(alumnos, grado, grupo); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
+                            <svg className="w-4 h-4 mr-2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> Imprimir PDF
+                          </button>
+                          <button onClick={() => { handleExportarExcelParciales(); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
+                            <svg className="w-4 h-4 mr-2 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg> Exportar Excel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => onPrintBoleta && onPrintBoleta(alumnos)}
+                    className="flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-100 transition shadow-sm text-sm"
+                  >
+                     Imprimir Grupo (Boletas)
+                  </button>
+                  <button 
+                    onClick={handleSaveAll}
+                    disabled={isSaving}
+                    className="flex items-center px-6 py-2.5 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition shadow-md disabled:opacity-50"
+                  >
+                    <Save className="w-5 h-5 mr-2" /> {isSaving ? 'Guardando...' : 'Guardar Calificaciones'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

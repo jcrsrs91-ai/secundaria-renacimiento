@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Package,  
+import {
+  Package,  
   LayoutDashboard, 
   Users, 
   Calculator, 
@@ -13,15 +14,24 @@ import { Package,
   Printer,
   Megaphone,
   MessageSquare,
-  Key
+  Key,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export default function DashboardLayout() {
-  const { currentUser, userPermissions, userRole, logout } = useAuth();
+  const { currentUser, userPermissions, userRole, userName, logout } = useAuth();
   const location = useLocation();
+
+  const isOnlyDocente =
+    userRole === 'docente' ||
+    (Array.isArray(userPermissions) &&
+      userPermissions.includes('portal-docente') &&
+      !userPermissions.includes('all') &&
+      !userPermissions.includes('control-escolar'));
 
   const menu = currentUser ? [
     { name: 'Panel Principal', path: '/panel', icon: LayoutDashboard, id: 'home' },
+    { name: 'Portal Docente (Calificaciones)', path: '/panel/portal-docente', icon: FileSpreadsheet, id: 'portal-docente' },
     { name: 'Control Escolar', path: '/panel/control-escolar', icon: Users, id: 'control-escolar' },
     { name: 'Contraloría', path: '/panel/contraloria', icon: Calculator, id: 'contraloria' },
     { name: 'Inventario y Resguardos', path: '/panel/inventario', icon: Package, id: 'inventario' },
@@ -34,7 +44,7 @@ export default function DashboardLayout() {
     { name: 'Buzón de Tutores', path: '/panel/buzon', icon: MessageSquare, id: 'buzon' },
     { name: 'Accesos (Admin)', path: '/panel/accesos', icon: Key, id: 'accesos' }
   ].filter(item => {
-    if (item.id === 'home') return true;
+    if (item.id === 'home') return !isOnlyDocente;
     if (userPermissions?.includes('all')) return true;
     if (item.id === 'inventario' && userPermissions?.includes('contraloria')) return true;
     return userPermissions?.includes(item.id);
@@ -46,8 +56,11 @@ export default function DashboardLayout() {
     <div className="flex h-screen print:h-auto bg-slate-50 print:bg-white">
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all print:hidden">
-        <div className="h-16 flex items-center px-6 bg-slate-950 font-bold text-white tracking-wider border-b border-slate-800">
-          EST N°68
+        <div className="h-16 flex flex-col justify-center px-6 bg-slate-950 border-b border-slate-800">
+          <span className="font-bold text-white tracking-wider">EST N°68</span>
+          {userName && (
+            <span className="text-[11px] text-slate-400 truncate font-medium">{userName}</span>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="space-y-1 px-3">
@@ -78,10 +91,15 @@ export default function DashboardLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible">
-        <header className="h-16 bg-white shadow-sm flex items-center px-8 border-b border-slate-200 no-print">
+        <header className="h-16 bg-white shadow-sm flex items-center justify-between px-8 border-b border-slate-200 no-print">
           <h1 className="text-xl font-semibold text-slate-800">
             {menu.find(m => m.path === location.pathname)?.name || 'Panel'}
           </h1>
+          {currentUser && (
+            <div className="text-xs font-medium text-slate-500">
+              {userName ? <span className="font-bold text-slate-700">{userName}</span> : currentUser.email}
+            </div>
+          )}
         </header>
         <main className="flex-1 overflow-y-auto print:overflow-visible p-8 print:p-0">
           <div className="mx-auto max-w-7xl print:max-w-none">
