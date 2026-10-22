@@ -335,11 +335,14 @@ export default function ListaAsistenciaPrint({ students, grado, grupo, paperSize
           <div className="text-center w-56 border-t border-black pt-0.5">
             {turno === 'Matutino' ? (
               <>
-                <p className="font-bold text-[9.5px] uppercase leading-tight">Profra. Lucila Rodriguez Martinez</p>
+                <p className="font-bold text-[9.5px] uppercase leading-tight">{config?.coordinadorMatutino || 'Profra. Lucila Rodríguez Martínez'}</p>
                 <p className="text-[8.5px] text-slate-600 font-semibold uppercase leading-tight">Vo. Bo. Coordinación Académica</p>
               </>
             ) : (
-              <p className="font-bold text-[9.5px] uppercase leading-tight">Vo. Bo. Coordinador Académico</p>
+              <>
+                <p className="font-bold text-[9.5px] uppercase leading-tight">{config?.coordinadorVespertino || 'Profr. José Barrera Vázquez'}</p>
+                <p className="text-[8.5px] text-slate-600 font-semibold uppercase leading-tight">Vo. Bo. Coordinación Académica</p>
+              </>
             )}
           </div>
           <div className="text-center w-56 border-t border-black pt-0.5">

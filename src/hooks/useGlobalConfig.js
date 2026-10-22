@@ -7,7 +7,9 @@ export function useGlobalConfig() {
     cicloEscolarActual: '2026-2027',
     leyendaOficial: '"2026, Año de Margarita Maza"',
     inscripcionesAbiertas: true,
-    reinscripcionesAbiertas: false
+    reinscripcionesAbiertas: false,
+    coordinadorMatutino: 'PROFRA. LUCILA RODRÍGUEZ MARTÍNEZ',
+    coordinadorVespertino: 'PROFR. JOSÉ BARRERA VÁZQUEZ'
   });
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +26,9 @@ export function useGlobalConfig() {
           cicloEscolarActual: '2026-2027',
           leyendaOficial: '"2026, Año de Margarita Maza"',
           inscripcionesAbiertas: true,
-          reinscripcionesAbiertas: false
+          reinscripcionesAbiertas: false,
+          coordinadorMatutino: 'PROFRA. LUCILA RODRÍGUEZ MARTÍNEZ',
+          coordinadorVespertino: 'PROFR. JOSÉ BARRERA VÁZQUEZ'
         });
       }
       setLoading(false);
