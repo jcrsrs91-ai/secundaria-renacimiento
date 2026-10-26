@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Save, Edit, User, Heart, Users, Camera, Upload, StopCircle, Printer } from 'lucide-react';
+import { X, Save, Edit, User, Heart, Users, Camera, Upload, StopCircle, Printer, Award, FileCheck } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
@@ -22,6 +22,28 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
   const [taller, setTaller] = useState(student.taller || '');
   const [historial, setHistorial] = useState(student.historial || {});
   const [extraordinarios, setExtraordinarios] = useState(student.extraordinarios || []);
+
+  // Estado reactivo para Beca (sincronizado con BecasReport y HojaInscripcionPrint)
+  const hasBecaInitial = (
+    String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') ||
+    (student.nombreBeca && String(student.nombreBeca).trim() !== '' && !['NO', 'NINGUNA', 'N/A'].includes(String(student.nombreBeca).toUpperCase().trim()))
+  );
+  const [tieneBeca, setTieneBeca] = useState(hasBecaInitial ? 'SÍ' : 'NO');
+  const [nombreBeca, setNombreBeca] = useState(
+    hasBecaInitial && student.nombreBeca && !['NO', 'NINGUNA', 'N/A'].includes(String(student.nombreBeca).toUpperCase().trim())
+      ? student.nombreBeca
+      : ''
+  );
+
+  // Estado para Documentación entregada
+  const [documentos, setDocumentos] = useState(student.documentos || {});
+
+  const handleDocToggle = (key) => {
+    setDocumentos(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
 
   const handleHistorialChange = (gradoKey, materiaId, trim, value) => {
     setHistorial(prev => ({
@@ -88,7 +110,6 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     }
   };
 
-  
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -146,7 +167,6 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
       try {
         const docRef = doc(db, "students", student.id);
         await updateDoc(docRef, { fotoUrl: dataUrl, lastModifiedBy: currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
-        // alert("Fotografía guardada exitosamente.");
       } catch (err) {
         console.error("Error al guardar foto: ", err);
       }
@@ -168,6 +188,9 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     
     data.historial = historial;
     data.extraordinarios = extraordinarios;
+    data.documentos = documentos;
+    data.tieneBeca = tieneBeca;
+    data.nombreBeca = tieneBeca === 'SÍ' ? (nombreBeca || '').trim().toUpperCase() : '';
 
     // --- NUEVA LÓGICA DE BAJAS Y FECHAS ---
     if (data.status === 'Baja' && student.status !== 'Baja') {
@@ -257,13 +280,23 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
           {isEditing ? (
              <form id="edit-student-form" onSubmit={handleSubmit} className="space-y-6">
                 
-                {/* 1. Datos Académicos */}
+                {/* 1. Datos Académicos, Antecedentes y Beca */}
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Datos Académicos</h3>
+                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">1. Datos Académicos, Antecedentes y Becas</h3>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Matrícula</label>
                       <input type="text" name="matricula" defaultValue={student.matricula} className="mt-1 w-full p-2 border rounded font-bold text-indigo-700 bg-indigo-50" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">Ciclo Escolar</label>
+                      <select name="cicloEscolar" defaultValue={student.cicloEscolar || '2026-2027'} className="mt-1 w-full p-2 border rounded">
+                        <option value="2024-2025">2024-2025</option>
+                        <option value="2025-2026">2025-2026</option>
+                        <option value="2026-2027">2026-2027</option>
+                        <option value="2027-2028">2027-2028</option>
+                        <option value="2028-2029">2028-2029</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Grado</label>
@@ -288,10 +321,18 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                       <input type="text" name="taller" value={taller} onChange={(e) => setTaller(e.target.value)} className="mt-1 w-full p-2 border rounded" />
                     </div>
                     <div>
+                      <label className="block text-xs font-medium text-slate-500">¿Es Repetidor de este Grado?</label>
+                      <select name="repetidor" defaultValue={student.repetidor || 'NO'} className="mt-1 w-full p-2 border rounded">
+                        <option value="NO">NO</option>
+                        <option value="SÍ">SÍ</option>
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-xs font-medium text-slate-500">Estatus</label>
                       <select name="status" defaultValue={student.status || 'Activo'} className="mt-1 w-full p-2 border rounded" required>
                         <option value="Activo">Activo</option>
                         <option value="Baja">Baja</option>
+                        <option value="No Inscrito">No Inscrito</option>
                         <option value="Egresado">Egresado</option>
                         <option value="Pendiente">Pendiente</option>
                       </select>
@@ -303,12 +344,90 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                         <option value="Alta">Alta (Ingresó después)</option>
                       </select>
                     </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-slate-500">Escuela de Procedencia</label>
+                      <input type="text" name="escuelaProcedencia" defaultValue={student.escuelaProcedencia} placeholder="Ej. Esc. Prim. ..." className="mt-1 w-full p-2 border rounded uppercase" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">Promedio Obtenido (Procedencia)</label>
+                      <input type="text" name="promedioEscuela" defaultValue={student.promedioEscuela} placeholder="Ej. 8.9" className="mt-1 w-full p-2 border rounded" />
+                    </div>
+                    <div className="md:col-span-4">
+                      <label className="block text-xs font-medium text-slate-500">Domicilio de la Escuela de Procedencia</label>
+                      <input type="text" name="domicilioEscuela" defaultValue={student.domicilioEscuela} placeholder="Calle, colonia o localidad de la escuela de procedencia" className="mt-1 w-full p-2 border rounded" />
+                    </div>
+
+                    {/* Sub-bloque destacado de Beca */}
+                    <div className="md:col-span-4 mt-2 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                      <div>
+                        <label className="block text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                          <Award className="w-4 h-4 text-emerald-600" /> ¿Cuenta con alguna Beca?
+                        </label>
+                        <select
+                          name="tieneBeca"
+                          value={tieneBeca}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setTieneBeca(val);
+                            if (val === 'NO') setNombreBeca('');
+                            else if (!nombreBeca) setNombreBeca('BECA RITA CETINA');
+                          }}
+                          className="mt-1 w-full p-2 border border-emerald-300 rounded font-bold text-emerald-900 bg-white"
+                        >
+                          <option value="NO">NO</option>
+                          <option value="SÍ">SÍ</option>
+                        </select>
+                      </div>
+                      {tieneBeca === 'SÍ' && (
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-bold text-emerald-800">
+                            Nombre / Programa de la Beca (Selecciona de la lista o escribe el nombre)
+                          </label>
+                          <div className="flex flex-col sm:flex-row gap-2 mt-1">
+                            <input
+                              type="text"
+                              name="nombreBeca"
+                              list="programas-beca-list"
+                              value={nombreBeca}
+                              onChange={(e) => setNombreBeca(e.target.value)}
+                              placeholder="Ej. BECA RITA CETINA, BENITO JUÁREZ, ESTATAL..."
+                              className="flex-1 p-2 border border-emerald-300 rounded font-semibold uppercase bg-white"
+                              required={tieneBeca === 'SÍ'}
+                            />
+                            <datalist id="programas-beca-list">
+                              <option value="BECA RITA CETINA" />
+                              <option value="BECA BENITO JUÁREZ" />
+                              <option value="BECA ESTATAL" />
+                              <option value="BECA POR DISCAPACIDAD / DIF" />
+                              <option value="BECA MUNICIPAL" />
+                              <option value="BECA BIENESTAR" />
+                            </datalist>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {['BECA RITA CETINA', 'BECA BENITO JUÁREZ', 'BECA ESTATAL', 'BECA POR DISCAPACIDAD / DIF'].map((sug) => (
+                              <button
+                                key={sug}
+                                type="button"
+                                onClick={() => setNombreBeca(sug)}
+                                className={`text-[11px] px-2.5 py-1 rounded-full font-bold border transition ${
+                                  nombreBeca.toUpperCase() === sug
+                                    ? 'bg-emerald-600 text-white border-emerald-600'
+                                    : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                                }`}
+                              >
+                                {sug}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* 2. Datos Personales */}
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Datos Personales</h3>
+                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">2. Datos Personales y Domicilio del Alumno</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Nombre(s) *</label>
@@ -324,7 +443,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">CURP</label>
-                      <input type="text" name="curp" defaultValue={student.curp} className="mt-1 w-full p-2 border rounded uppercase" />
+                      <input type="text" name="curp" maxLength="18" defaultValue={student.curp} className="mt-1 w-full p-2 border rounded uppercase" />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Género</label>
@@ -334,47 +453,50 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                         <option value="Mujer">Mujer</option>
                       </select>
                     </div>
-                                          <div>
-                        <label className="block text-xs font-medium text-slate-500">Fecha de Nacimiento</label>
-                        <input type="date" name="fechaNacimiento" defaultValue={student.fechaNacimiento} className="mt-1 w-full p-2 border rounded" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500">Nacionalidad</label>
-                        <select name="nacionalidad" defaultValue={student.nacionalidad || 'MEXICANA'} className="mt-1 w-full p-2 border rounded">
-                          <option value="MEXICANA">Mexicana</option>
-                          <option value="EXTRANJERA">Extranjera</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500">Lengua Indígena</label>
-                        <select name="lenguaIndigena" defaultValue={student.lenguaIndigena || 'NO'} className="mt-1 w-full p-2 border rounded">
-                          <option value="NO">NO</option>
-                          <option value="SÍ">SÍ</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500">¿Cuál lengua?</label>
-                        <input type="text" name="nombreLenguaIndigena" defaultValue={student.nombreLenguaIndigena} placeholder="Si aplica..." className="mt-1 w-full p-2 border rounded" />
-                      </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">¿Además habla español?</label>
-              <select name="hablaEspanol" className="w-full border-b border-slate-300 focus:border-blue-500 outline-none pb-1 font-medium text-slate-800" defaultValue={student?.hablaEspanol || 'SÍ'}>
-                <option>SÍ</option>
-                <option>NO</option>
-              </select>
-            </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">Fecha de Nacimiento</label>
+                      <input type="date" name="fechaNacimiento" defaultValue={student.fechaNacimiento} className="mt-1 w-full p-2 border rounded" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">Nacionalidad (País de Nacimiento)</label>
+                      <select name="nacionalidad" defaultValue={student.nacionalidad || 'MEXICANA'} className="mt-1 w-full p-2 border rounded">
+                        <option value="MEXICANA">Mexicana</option>
+                        <option value="EXTRANJERA">Extranjera</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">¿Habla Lengua Indígena?</label>
+                      <select name="lenguaIndigena" defaultValue={student.lenguaIndigena || 'NO'} className="mt-1 w-full p-2 border rounded">
+                        <option value="NO">NO</option>
+                        <option value="SÍ">SÍ</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">¿Cuál lengua indígena?</label>
+                      <input type="text" name="nombreLenguaIndigena" defaultValue={student.nombreLenguaIndigena} placeholder="Ej. Náhuatl, Mixteco..." className="mt-1 w-full p-2 border rounded" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">¿Además habla español?</label>
+                      <select name="hablaEspanol" className="mt-1 w-full p-2 border rounded" defaultValue={student?.hablaEspanol || 'SÍ'}>
+                        <option value="SÍ">SÍ</option>
+                        <option value="NO">NO</option>
+                      </select>
+                    </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-medium text-slate-500">Calle y Número</label>
                       <div className="flex gap-2">
-                        <input type="text" name="calle" defaultValue={student.calle} className="mt-1 flex-1 p-2 border rounded" />
-                        <input type="text" name="numero" defaultValue={student.numero} className="mt-1 w-24 p-2 border rounded" />
+                        <input type="text" name="calle" defaultValue={student.calle} placeholder="Calle" className="mt-1 flex-1 p-2 border rounded" />
+                        <input type="text" name="numero" defaultValue={student.numero} placeholder="Núm." className="mt-1 w-28 p-2 border rounded" />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500">Colonia y C.P.</label>
-                      <div className="flex gap-2">
-                        <input type="text" name="colonia" defaultValue={student.colonia} className="mt-1 flex-1 p-2 border rounded" />
-                        <input type="text" name="cp" defaultValue={student.cp} className="mt-1 w-24 p-2 border rounded" />
+                    <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-slate-500">Colonia / Localidad</label>
+                        <input type="text" name="colonia" defaultValue={student.colonia} placeholder="Colonia" className="mt-1 w-full p-2 border rounded" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500">Código Postal (C.P.)</label>
+                        <input type="text" name="cp" defaultValue={student.cp || student.codigoPostal} placeholder="C.P." className="mt-1 w-full p-2 border rounded" />
                       </div>
                     </div>
                   </div>
@@ -382,76 +504,162 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
 
                 {/* 3. Salud */}
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Información Médica</h3>
+                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">3. Cédula de Referencia de Salud e Inclusión</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Tipo de Sangre</label>
-                      <input type="text" name="tipoSangre" defaultValue={student.tipoSangre} className="mt-1 w-full p-2 border rounded" />
+                      <input
+                        type="text"
+                        name="tipoSangre"
+                        list="tipos-sangre-list"
+                        defaultValue={student.tipoSangre}
+                        placeholder="Ej. O+, A+, B+..."
+                        className="mt-1 w-full p-2 border rounded uppercase"
+                      />
+                      <datalist id="tipos-sangre-list">
+                        <option value="O+" />
+                        <option value="O-" />
+                        <option value="A+" />
+                        <option value="A-" />
+                        <option value="B+" />
+                        <option value="B-" />
+                        <option value="AB+" />
+                        <option value="AB-" />
+                        <option value="NO ESPECIFICADO" />
+                      </datalist>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500">Usa Lentes</label>
+                      <label className="block text-xs font-medium text-slate-500">¿Usa Lentes?</label>
                       <select name="lentes" defaultValue={student.lentes || 'NO'} className="mt-1 w-full p-2 border rounded">
                         <option value="NO">NO</option><option value="SÍ">SÍ</option>
                       </select>
                     </div>
-                                          <div>
-                        <label className="block text-xs font-medium text-slate-500">Discapacidad (911)</label>
-                        <select name="discapacidad" defaultValue={student.discapacidad || 'Ninguna'} className="mt-1 w-full p-2 border rounded">
-                          <option>Ninguna</option>
-                          <option>Ceguera</option>
-                          <option>Baja visión</option>
-                          <option>Sordera</option>
-                          <option>Hipoacusia</option>
-                          <option>Sordoceguera</option>
-                          <option>Discapacidad motriz</option>
-                          <option>Discapacidad intelectual</option>
-                          <option>Discapacidad psicosocial</option>
-                          <option>Discapacidad múltiple</option>
-                          <option>Trastorno del Espectro Autista (TEA)</option>
-                          <option>Trastorno por Déficit de Atención (TDAH)</option>
-                          <option>Aptitudes Sobresalientes</option>
-                        </select>
-                      </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">USAER</label>
-              <select name="usaer" className="w-full border-b border-slate-300 focus:border-blue-500 outline-none pb-1 font-medium text-slate-800" defaultValue={student?.usaer || 'NO'}>
-                <option>NO</option>
-                <option>SÍ</option>
-              </select>
-            </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-xs font-medium text-slate-500">Alergias</label>
-                      <input type="text" name="alergias" defaultValue={student.alergias} className="mt-1 w-full p-2 border rounded" />
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">Discapacidad o Condición (Estadística 911)</label>
+                      <select name="discapacidad" defaultValue={student.discapacidad || 'Ninguna'} className="mt-1 w-full p-2 border rounded">
+                        <option>Ninguna</option>
+                        <option>Ceguera</option>
+                        <option>Baja visión</option>
+                        <option>Sordera</option>
+                        <option>Hipoacusia</option>
+                        <option>Sordoceguera</option>
+                        <option>Discapacidad motriz</option>
+                        <option>Discapacidad intelectual</option>
+                        <option>Discapacidad psicosocial</option>
+                        <option>Discapacidad múltiple</option>
+                        <option>Trastorno del Espectro Autista (TEA)</option>
+                        <option>Trastorno por Déficit de Atención (TDAH)</option>
+                        <option>Aptitudes Sobresalientes</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500">Atención USAER</label>
+                      <select name="usaer" className="mt-1 w-full p-2 border rounded" defaultValue={student?.usaer || 'NO'}>
+                        <option value="NO">NO</option>
+                        <option value="SÍ">SÍ</option>
+                      </select>
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-slate-500">Padecimientos Crónicos</label>
-                      <input type="text" name="padecimientos" defaultValue={student.padecimientos} className="mt-1 w-full p-2 border rounded" />
+                      <label className="block text-xs font-medium text-slate-500">Alergias (Especifique, o escriba "Ninguna")</label>
+                      <input type="text" name="alergias" defaultValue={student.alergias || 'Ninguna'} className="mt-1 w-full p-2 border rounded" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-slate-500">Enfermedades Crónicas / Padecimientos (Especifique, o escriba "Ninguno")</label>
+                      <input type="text" name="padecimientos" defaultValue={student.padecimientos || 'Ninguno'} className="mt-1 w-full p-2 border rounded" />
                     </div>
                   </div>
                 </div>
 
                 {/* 4. Contactos */}
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Contactos</h3>
+                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">4. Datos del Padre, Madre o Tutor y Contactos de Emergencia</h3>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded border">
-                      <div className="md:col-span-2"><label className="block text-xs font-bold text-slate-600 mb-1">Tutor Principal</label><input type="text" name="tutorNombre" defaultValue={student.tutorNombre} className="w-full p-2 border rounded" /></div>
-                      <div><label className="block text-xs font-bold text-slate-600 mb-1">Parentesco</label><input type="text" name="tutorParentesco" defaultValue={student.tutorParentesco} className="w-full p-2 border rounded" /></div>
-                      <div><label className="block text-xs font-bold text-slate-600 mb-1">Teléfono</label><input type="text" name="telefono" defaultValue={student.telefono} className="w-full p-2 border rounded" /></div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Nombre Completo del Tutor Principal</label>
+                        <input type="text" name="tutorNombre" defaultValue={student.tutorNombre || student.tutor} className="w-full p-2 border rounded" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Parentesco</label>
+                        <input
+                          type="text"
+                          name="tutorParentesco"
+                          list="parentescos-list"
+                          defaultValue={student.tutorParentesco}
+                          placeholder="Madre, Padre, Abuelo(a)..."
+                          className="w-full p-2 border rounded"
+                        />
+                        <datalist id="parentescos-list">
+                          <option value="Madre" />
+                          <option value="Padre" />
+                          <option value="Abuelo(a)" />
+                          <option value="Tío(a)" />
+                          <option value="Hermano(a)" />
+                          <option value="Primo(a)" />
+                          <option value="Cuñado(a)" />
+                          <option value="Tutor Legal (No familiar)" />
+                          <option value="Amigo/Vecino" />
+                          <option value="Otro" />
+                        </datalist>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Teléfono Celular / WhatsApp</label>
+                        <input type="tel" name="telefono" defaultValue={student.telefono || student.celularTutor} className="w-full p-2 border rounded" />
+                      </div>
+                      <div className="md:col-span-4">
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Correo Electrónico del Tutor (Opcional)</label>
+                        <input type="email" name="correo" defaultValue={student.correo} placeholder="ejemplo@correo.com" className="w-full p-2 border rounded" />
+                      </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded">
-                      <div className="md:col-span-2"><label className="block text-xs font-medium text-slate-500 mb-1">Emergencia 1</label><input type="text" name="emergenciaNombre1" defaultValue={student.emergenciaNombre1} className="w-full p-2 border rounded" /></div>
-                      <div><label className="block text-xs font-medium text-slate-500 mb-1">Parentesco 1</label><input type="text" name="emergenciaParentesco1" defaultValue={student.emergenciaParentesco1} className="w-full p-2 border rounded" /></div>
-                      <div><label className="block text-xs font-medium text-slate-500 mb-1">Teléfono 1</label><input type="text" name="emergenciaTel1" defaultValue={student.emergenciaTel1} className="w-full p-2 border rounded" /></div>
+                      <div className="md:col-span-2"><label className="block text-xs font-medium text-slate-500 mb-1">Contacto de Emergencia 1</label><input type="text" name="emergenciaNombre1" defaultValue={student.emergenciaNombre1 || student.referencia1} className="w-full p-2 border rounded" /></div>
+                      <div><label className="block text-xs font-medium text-slate-500 mb-1">Parentesco (C1)</label><input type="text" name="emergenciaParentesco1" list="parentescos-list" defaultValue={student.emergenciaParentesco1} className="w-full p-2 border rounded" /></div>
+                      <div><label className="block text-xs font-medium text-slate-500 mb-1">Teléfono (C1)</label><input type="tel" name="emergenciaTel1" defaultValue={student.emergenciaTel1 || student.celularRef1} className="w-full p-2 border rounded" /></div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded">
-                      <div className="md:col-span-2"><label className="block text-xs font-medium text-slate-500 mb-1">Emergencia 2</label><input type="text" name="emergenciaNombre2" defaultValue={student.emergenciaNombre2} className="w-full p-2 border rounded" /></div>
-                      <div><label className="block text-xs font-medium text-slate-500 mb-1">Parentesco 2</label><input type="text" name="emergenciaParentesco2" defaultValue={student.emergenciaParentesco2} className="w-full p-2 border rounded" /></div>
-                      <div><label className="block text-xs font-medium text-slate-500 mb-1">Teléfono 2</label><input type="text" name="emergenciaTel2" defaultValue={student.emergenciaTel2} className="w-full p-2 border rounded" /></div>
+                      <div className="md:col-span-2"><label className="block text-xs font-medium text-slate-500 mb-1">Contacto de Emergencia 2</label><input type="text" name="emergenciaNombre2" defaultValue={student.emergenciaNombre2 || student.referencia2} className="w-full p-2 border rounded" /></div>
+                      <div><label className="block text-xs font-medium text-slate-500 mb-1">Parentesco (C2)</label><input type="text" name="emergenciaParentesco2" list="parentescos-list" defaultValue={student.emergenciaParentesco2} className="w-full p-2 border rounded" /></div>
+                      <div><label className="block text-xs font-medium text-slate-500 mb-1">Teléfono (C2)</label><input type="tel" name="emergenciaTel2" defaultValue={student.emergenciaTel2 || student.celularRef2} className="w-full p-2 border rounded" /></div>
                     </div>
                   </div>
                 </div>
-                {/* 5. Historial Académico */}
+
+                {/* 5. Control de Documentación Entregada */}
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-3 flex items-center gap-2">
+                    <FileCheck className="w-5 h-5 text-indigo-600" /> 5. Control de Documentación Entregada
+                  </h3>
+                  <p className="text-xs text-slate-500 mb-4">Marca los documentos que el alumno ya entregó físicamente o en el sistema:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      { key: 'acta', label: 'Acta de Nacimiento' },
+                      { key: 'curp', label: 'CURP Actualizada' },
+                      { key: 'certificado', label: 'Certificado de Primaria / Constancia' },
+                      { key: 'asignacion', label: 'Comprobante de Asignación SEP' },
+                      { key: 'ine', label: 'INE / Identificación del Tutor' },
+                      { key: 'domicilio', label: 'Comprobante de Domicilio' }
+                    ].map(docItem => (
+                      <label
+                        key={docItem.key}
+                        className={`flex items-center gap-2.5 p-3 rounded-lg border cursor-pointer transition ${
+                          documentos?.[docItem.key]
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold'
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!documentos?.[docItem.key]}
+                          onChange={() => handleDocToggle(docItem.key)}
+                          className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                        />
+                        <span className="text-xs">{docItem.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 6. Historial Académico */}
                 {(student.grado === '2do Grado' || student.grado === '3er Grado') && (
                   <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">Historial Académico (Para Kárdex)</h3>
@@ -492,41 +700,41 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                   </div>
                 )}
 
-                  {/* 6. Exámenes Extraordinarios (Edit) */}
-                  <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex justify-between items-center border-b pb-2 mb-4">
-                      <h3 className="text-lg font-bold text-slate-800">Exámenes Extraordinarios</h3>
-                      <button type="button" onClick={addExtraordinario} className="px-3 py-1 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700">
-                        + Agregar
-                      </button>
-                    </div>
-                    <div className="space-y-4">
-                      {extraordinarios.length === 0 && <p className="text-sm text-slate-500">No hay registros de extraordinarios.</p>}
-                      {extraordinarios.map((extra) => (
-                        <div key={extra.id} className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-slate-50 p-4 rounded border relative">
-                          <button type="button" onClick={() => removeExtraordinario(extra.id)} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
-                            <X className="w-4 h-4" />
-                          </button>
-                          <div className="md:col-span-2">
-                            <label className="block text-xs font-bold text-slate-600 mb-1">Materia</label>
-                            <input type="text" className="w-full p-2 border rounded text-sm" value={extra.materia} onChange={e => handleExtraordinarioChange(extra.id, 'materia', e.target.value)} placeholder="Ej. Matemáticas 1" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-600 mb-1">Calificación</label>
-                            <input type="number" min="6" max="10" step="0.1" className="w-full p-2 border rounded text-sm" value={extra.calificacion} onChange={e => handleExtraordinarioChange(extra.id, 'calificacion', e.target.value)} />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-600 mb-1">Fecha</label>
-                            <input type="date" className="w-full p-2 border rounded text-sm" value={extra.fecha} onChange={e => handleExtraordinarioChange(extra.id, 'fecha', e.target.value)} />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-600 mb-1">Periodo</label>
-                            <input type="text" className="w-full p-2 border rounded text-sm" value={extra.periodo} onChange={e => handleExtraordinarioChange(extra.id, 'periodo', e.target.value)} placeholder="Ej. Ago 2026" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                {/* 7. Exámenes Extraordinarios (Edit) */}
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="flex justify-between items-center border-b pb-2 mb-4">
+                    <h3 className="text-lg font-bold text-slate-800">Exámenes Extraordinarios</h3>
+                    <button type="button" onClick={addExtraordinario} className="px-3 py-1 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700">
+                      + Agregar
+                    </button>
                   </div>
+                  <div className="space-y-4">
+                    {extraordinarios.length === 0 && <p className="text-sm text-slate-500">No hay registros de extraordinarios.</p>}
+                    {extraordinarios.map((extra) => (
+                      <div key={extra.id} className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-slate-50 p-4 rounded border relative">
+                        <button type="button" onClick={() => removeExtraordinario(extra.id)} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
+                          <X className="w-4 h-4" />
+                        </button>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-bold text-slate-600 mb-1">Materia</label>
+                          <input type="text" className="w-full p-2 border rounded text-sm" value={extra.materia} onChange={e => handleExtraordinarioChange(extra.id, 'materia', e.target.value)} placeholder="Ej. Matemáticas 1" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1">Calificación</label>
+                          <input type="number" min="6" max="10" step="0.1" className="w-full p-2 border rounded text-sm" value={extra.calificacion} onChange={e => handleExtraordinarioChange(extra.id, 'calificacion', e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1">Fecha</label>
+                          <input type="date" className="w-full p-2 border rounded text-sm" value={extra.fecha} onChange={e => handleExtraordinarioChange(extra.id, 'fecha', e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1">Periodo</label>
+                          <input type="text" className="w-full p-2 border rounded text-sm" value={extra.periodo} onChange={e => handleExtraordinarioChange(extra.id, 'periodo', e.target.value)} placeholder="Ej. Ago 2026" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </form>
           ) : (
             <div className="space-y-8">
@@ -557,14 +765,14 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                        </div>
                      ) : (
                        <div className="flex">
-        <button onClick={startCamera} type="button" className="px-4 py-1.5 bg-slate-800 text-white text-xs font-bold rounded shadow hover:bg-slate-900 flex items-center">
-            <Camera className="w-3 h-3 mr-1.5" /> Tomar Foto
-        </button>
-        <label className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 flex items-center cursor-pointer ml-2">
-            <Upload className="w-3 h-3 mr-1.5" /> Subir
-            <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-        </label>
-    </div>
+                         <button onClick={startCamera} type="button" className="px-4 py-1.5 bg-slate-800 text-white text-xs font-bold rounded shadow hover:bg-slate-900 flex items-center">
+                           <Camera className="w-3 h-3 mr-1.5" /> Tomar Foto
+                         </button>
+                         <label className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 flex items-center cursor-pointer ml-2">
+                           <Upload className="w-3 h-3 mr-1.5" /> Subir
+                           <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                         </label>
+                       </div>
                      )}
                    </div>
                  </div>
@@ -582,7 +790,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                          <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Beca</p>
                          <p className={`font-bold text-sm mt-1 ${(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) ? 'text-emerald-600' : 'text-slate-500'}`}>
                             {(String(student.tieneBeca || '').toUpperCase().trim().startsWith('S') || (student.nombreBeca && String(student.nombreBeca).trim() !== '' && String(student.nombreBeca).toUpperCase().trim() !== 'NO')) 
-                              ? `S\u00cd - ${student.nombreBeca ? String(student.nombreBeca).toUpperCase().trim() : 'NO ESPECIFICADO'}` 
+                              ? `SÍ - ${student.nombreBeca ? String(student.nombreBeca).toUpperCase().trim() : 'NO ESPECIFICADO'}` 
                               : 'NO'}
                          </p>
                       </div>
@@ -593,34 +801,43 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Información Personal */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                  <div className="flex items-center mb-6 border-b pb-3"><User className="w-6 h-6 mr-3 text-primary-500" /><h4 className="font-bold text-xl text-slate-800">Información Personal</h4></div>
-                  <div className="space-y-4 text-sm">
+                  <div className="flex items-center mb-6 border-b pb-3"><User className="w-6 h-6 mr-3 text-primary-500" /><h4 className="font-bold text-xl text-slate-800">Información Personal y Antecedentes</h4></div>
+                  <div className="space-y-3.5 text-sm">
                     <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">CURP</span><span className="font-bold text-slate-700 uppercase tracking-widest">{student.curp}</span></div>
                     <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Género</span><span className="font-bold text-slate-700">{student.genero}</span></div>
-                                          <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Fecha Nacimiento</span><span className="font-bold text-slate-700">{student.fechaNacimiento}</span></div>
-                      <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Nacionalidad</span><span className="font-bold text-slate-700">{student.nacionalidad || 'MEXICANA'}</span></div>
-                      <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Lengua Indígena</span><span className="font-bold text-slate-700">{student.lenguaIndigena === 'SÍ' ? `SÍ (${student.nombreLenguaIndigena || 'Especificada'})` : 'NO'}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Fecha Nacimiento</span><span className="font-bold text-slate-700">{student.fechaNacimiento}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Nacionalidad</span><span className="font-bold text-slate-700">{student.nacionalidad || 'MEXICANA'}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Lengua Indígena</span><span className="font-bold text-slate-700">{student.lenguaIndigena === 'SÍ' ? `SÍ (${student.nombreLenguaIndigena || 'Especificada'})` : 'NO'}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Repetidor de Grado</span><span className="font-bold text-slate-700">{student.repetidor || 'NO'}</span></div>
                     <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Escuela Procedencia</span><span className="font-bold text-slate-700 text-right">{student.escuelaProcedencia || '-'}</span></div>
-                    <div className="pt-4 border-t border-slate-100">
+                    {(student.promedioEscuela || student.domicilioEscuela) && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-medium">Promedio / Dom. Esc.</span>
+                        <span className="font-bold text-slate-700 text-right">{student.promedioEscuela ? `Prom: ${student.promedioEscuela}` : ''} {student.domicilioEscuela ? `(${student.domicilioEscuela})` : ''}</span>
+                      </div>
+                    )}
+                    <div className="pt-3 border-t border-slate-100">
                       <span className="text-slate-500 font-medium block mb-2">Domicilio Completo</span>
-                      <p className="font-semibold text-slate-800 bg-slate-50 p-3 rounded-lg border border-slate-100 leading-relaxed">{student.calle} #{student.numero}, Col. {student.colonia}, C.P. {student.cp}</p>
+                      <p className="font-semibold text-slate-800 bg-slate-50 p-3 rounded-lg border border-slate-100 leading-relaxed">{student.calle} #{student.numero}, Col. {student.colonia}, C.P. {student.cp || student.codigoPostal}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Salud */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                  <div className="flex items-center mb-6 border-b pb-3"><Heart className="w-6 h-6 mr-3 text-sky-500" /><h4 className="font-bold text-xl text-slate-800">Ficha Médica</h4></div>
+                  <div className="flex items-center mb-6 border-b pb-3"><Heart className="w-6 h-6 mr-3 text-sky-500" /><h4 className="font-bold text-xl text-slate-800">Ficha Médica e Inclusión</h4></div>
                   <div className="space-y-4 text-sm">
-                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Tipo de Sangre</span><span className="font-black text-sky-600 text-lg">{student.tipoSangre}</span></div>
-                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Usa Lentes</span><span className="font-bold text-slate-700">{student.lentes}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Tipo de Sangre</span><span className="font-black text-sky-600 text-lg">{student.tipoSangre || 'NO ESPECIFICADO'}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Usa Lentes</span><span className="font-bold text-slate-700">{student.lentes || 'NO'}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">Discapacidad / Condición</span><span className="font-bold text-slate-700">{student.discapacidad || 'Ninguna'}</span></div>
+                    <div className="flex justify-between items-center"><span className="text-slate-500 font-medium">USAER</span><span className="font-bold text-slate-700">{student.usaer || 'NO'}</span></div>
                     <div className="pt-2">
                       <span className="text-slate-500 font-medium block mb-2">Alergias Reportadas</span>
-                      <p className="font-bold text-sky-800 bg-sky-50 p-3 rounded-lg border border-sky-100">{student.alergias}</p>
+                      <p className="font-bold text-sky-800 bg-sky-50 p-3 rounded-lg border border-sky-100">{student.alergias || 'Ninguna'}</p>
                     </div>
                     <div className="pt-2">
                       <span className="text-slate-500 font-medium block mb-2">Padecimientos Crónicos</span>
-                      <p className="font-bold text-sky-800 bg-sky-50 p-3 rounded-lg border border-sky-100">{student.padecimientos}</p>
+                      <p className="font-bold text-sky-800 bg-sky-50 p-3 rounded-lg border border-sky-100">{student.padecimientos || 'Ninguno'}</p>
                     </div>
                   </div>
                 </div>
@@ -632,27 +849,27 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                        <div className="bg-indigo-50/50 p-5 rounded-xl border border-indigo-100 shadow-sm relative overflow-hidden">
                           <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
                           <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-3">Tutor Principal</p>
-                          <p className="font-bold text-lg text-slate-800 mb-1">{student.tutorNombre}</p>
+                          <p className="font-bold text-lg text-slate-800 mb-1">{student.tutorNombre || student.tutor}</p>
                           <p className="text-indigo-600 font-medium mb-3">{student.tutorParentesco}</p>
                           <div className="bg-white p-2 rounded border border-indigo-100">
-                             <p className="font-bold text-slate-700">📞 {student.telefono}</p>
+                             <p className="font-bold text-slate-700">📞 {student.telefono || student.celularTutor}</p>
                              {student.correo && <p className="text-slate-500 mt-1 text-xs truncate">✉️ {student.correo}</p>}
                           </div>
                        </div>
                        
-                       {(student.emergenciaNombre1 || student.emergenciaNombre2) && (
+                       {(student.emergenciaNombre1 || student.emergenciaNombre2 || student.referencia1 || student.referencia2) && (
                          <>
                            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
                               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Emergencia 1</p>
-                              <p className="font-bold text-slate-800 mb-1">{student.emergenciaNombre1 || 'N/A'}</p>
+                              <p className="font-bold text-slate-800 mb-1">{student.emergenciaNombre1 || student.referencia1 || 'N/A'}</p>
                               <p className="text-slate-500 mb-3">{student.emergenciaParentesco1 || '-'}</p>
-                              <p className="font-bold text-slate-700 bg-white p-2 rounded border">📞 {student.emergenciaTel1 || '-'}</p>
+                              <p className="font-bold text-slate-700 bg-white p-2 rounded border">📞 {student.emergenciaTel1 || student.celularRef1 || '-'}</p>
                            </div>
                            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
                               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Emergencia 2</p>
-                              <p className="font-bold text-slate-800 mb-1">{student.emergenciaNombre2 || 'N/A'}</p>
+                              <p className="font-bold text-slate-800 mb-1">{student.emergenciaNombre2 || student.referencia2 || 'N/A'}</p>
                               <p className="text-slate-500 mb-3">{student.emergenciaParentesco2 || '-'}</p>
-                              <p className="font-bold text-slate-700 bg-white p-2 rounded border">📞 {student.emergenciaTel2 || '-'}</p>
+                              <p className="font-bold text-slate-700 bg-white p-2 rounded border">📞 {student.emergenciaTel2 || student.celularRef2 || '-'}</p>
                            </div>
                          </>
                        )}
