@@ -6,9 +6,12 @@ import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { truncateTo1Dec } from '../utils/format';
 import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
+import { registrarMovimiento } from '../utils/bitacora';
+import { useAuth } from '../context/AuthContext';
 import EvaluacionDocenteWidget from './EvaluacionDocenteWidget';
 
 export default function Calificaciones({ activos, materiasPorGrado, onPrintBoleta, onPrintConcentradoFinal, onPrintConcentradoParcial }) {
+  const { currentUser } = useAuth();
   const [subMode, setSubMode] = useState('sabana'); // 'sabana' | 'asignatura'
   const [grado, setGrado] = useState('1er Grado');
   const [grupo, setGrupo] = useState('A');
@@ -106,6 +109,12 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         });
       });
       await Promise.all(promises);
+      await registrarMovimiento(
+        currentUser?.email,
+        'Control Escolar (Calificaciones)',
+        'Captura Sábana General',
+        `Guardó la sábana general de calificaciones de ${grado} "${grupo}" (${trimestre.toUpperCase()}) para ${alumnos.length} alumnos.`
+      );
       setSuccessMsg('Calificaciones guardadas exitosamente.');
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (error) {

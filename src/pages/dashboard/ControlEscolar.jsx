@@ -793,6 +793,12 @@ export default function ControlEscolar() {
             errores++;
           }
         }
+        await registrarMovimiento(
+          auth.currentUser?.email,
+          'Control Escolar',
+          'Importación CSV',
+          `Importó archivo CSV (${file.name}): ${importados} alumnos nuevos agregados, ${duplicados} duplicados omitidos, ${errores} errores.`
+        );
         toast.success(`¡Importación finalizada! Nuevos: ${importados} | Duplicados: ${duplicados} | Errores: ${errores}`, { id: toastId, duration: 7000 });
         alert(`Importación completada.\n\nÉxitos (Nuevos): ${importados}\nDuplicados omitidos: ${duplicados}\nErrores: ${errores}`);
       },

@@ -4,6 +4,8 @@ import { db } from '../../firebase';
 import { Key, Plus, Trash2, Check, X, ShieldAlert, Edit2, GraduationCap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { autoAcentuar } from '../../utils/format';
+import { registrarMovimiento } from '../../utils/bitacora';
+import { useAuth } from '../../context/AuthContext';
 
 const AVAILABLE_PERMISSIONS = [
   { id: 'portal-docente', label: 'Portal Docente (Captura de Calificaciones)' },
@@ -20,6 +22,7 @@ const AVAILABLE_PERMISSIONS = [
 ];
 
 export default function GestionAccesos() {
+  const { currentUser } = useAuth();
   const [allowedEmails, setAllowedEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -123,6 +126,12 @@ export default function GestionAccesos() {
         ...(isEditing ? {} : { createdAt: serverTimestamp(), status: 'pending' })
       }, { merge: true });
 
+      await registrarMovimiento(
+        currentUser?.email,
+        'Gestión de Accesos',
+        isEditing ? 'Editar Permisos Usuario' : 'Autorizar Nuevo Usuario',
+        `${isEditing ? 'Actualizó permisos de' : 'Dio de alta a'} ${nombre.trim() || emailKey} (${emailKey}) con rol: ${role} [${selectedPermissions.join(', ')}]`
+      );
       toast.success(isEditing ? 'Permisos actualizados correctamente' : 'Acceso autorizado correctamente');
       closeModal();
       fetchAllowedEmails();
@@ -136,6 +145,12 @@ export default function GestionAccesos() {
     if (window.confirm(`¿Estás seguro de revocar el acceso a ${emailKey}?`)) {
       try {
         await deleteDoc(doc(db, 'allowed_emails', emailKey));
+        await registrarMovimiento(
+          currentUser?.email,
+          'Gestión de Accesos',
+          'Revocar Acceso',
+          `Revocó el acceso del usuario ${emailKey}`
+        );
         toast.success('Acceso revocado');
         fetchAllowedEmails();
       } catch (error) {

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { X, Save, User, GraduationCap, HeartPulse, Users } from 'lucide-react';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { isBeforeSept30 } from '../utils/dateRules';
+import { registrarMovimiento } from '../utils/bitacora';
 
 export default function AddStudentModal({ onClose }) {
   const [loading, setLoading] = useState(false);
@@ -25,7 +26,8 @@ export default function AddStudentModal({ onClose }) {
     promedioEscuela: '',
     status: 'Activo',
     tipoIngreso: 'Nuevo Ingreso',
-    tieneBeca: false,
+    tieneBeca: 'NO',
+    nombreBeca: '',
     
     // Datos Médicos
     tipoSangre: '',
@@ -86,7 +88,6 @@ export default function AddStudentModal({ onClose }) {
       alert("⚠️ AVISO: Al registrar antes del 30 de septiembre, este alumno se clasifica como 'Ordinario (Inicio de Ciclo)' en lugar de 'Alta', de acuerdo con las reglas de Control Escolar.");
     }
 
-
     setLoading(true);
     const idToast = toast.loading('Guardando alumno...');
 
@@ -96,8 +97,18 @@ export default function AddStudentModal({ onClose }) {
       await addDoc(collection(db, "students"), {
         ...formData,
         taller: taller,
+        lastModifiedBy: auth.currentUser?.email || 'Desconocido',
+        lastModifiedAt: new Date().toISOString(),
         fechaRegistro: serverTimestamp()
       });
+
+      const nombreCompleto = `${formData.apellidoPaterno || ''} ${formData.apellidoMaterno || ''} ${formData.nombres || ''}`.trim().toUpperCase();
+      await registrarMovimiento(
+        auth.currentUser?.email,
+        'Control Escolar',
+        'Alta Manual de Alumno',
+        `Registró manualmente al alumno ${nombreCompleto} en ${formData.grado} "${formData.grupo}" (${formData.turno}) | Tipo: ${formData.tipoIngreso} | Estatus: ${formData.status}`
+      );
 
       toast.success('Alumno agregado correctamente al Directorio Activo.', { id: idToast });
       onClose();
@@ -185,7 +196,7 @@ export default function AddStudentModal({ onClose }) {
                 {formData.status === 'Baja' && (
                   <div className="md:col-span-1">
                     <label className="block text-sm font-semibold text-red-600 mb-1">Motivo de Baja</label>
-                    <input type="text" name="motivoBaja" value={formData.motivoBaja} onChange={handleChange} placeholder="Ej. Cambio de domicilio" className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                    <input type="text" name="motivoBaja" value={formData.motivoBaja || ''} onChange={handleChange} placeholder="Ej. Cambio de domicilio" className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
                   </div>
                 )}
                 <div>
@@ -229,15 +240,15 @@ export default function AddStudentModal({ onClose }) {
                 </div>
                 <div className="md:col-span-1">
                   <label className="block text-sm font-semibold text-slate-700 mb-1">¿Cuenta con Beca?</label>
-                  <select name="tieneBeca" value={formData.tieneBeca} onChange={e => setFormData({...formData, tieneBeca: e.target.value === 'true'})} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
-                    <option value="false">NO</option>
-                    <option value="true">SÍ</option>
+                  <select name="tieneBeca" value={formData.tieneBeca} onChange={e => setFormData({...formData, tieneBeca: e.target.value, nombreBeca: e.target.value === 'NO' ? '' : formData.nombreBeca})} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+                    <option value="NO">NO</option>
+                    <option value="SÍ">SÍ</option>
                   </select>
                 </div>
-                {formData.tieneBeca && (
+                {formData.tieneBeca === 'SÍ' && (
                   <div className="md:col-span-4">
                     <label className="block text-sm font-semibold text-slate-700 mb-1">Nombre de la Beca</label>
-                    <input type="text" name="nombreBeca" value={formData.nombreBeca || ''} onChange={handleChange} placeholder="Ej. Beca Benito Juárez" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                    <input type="text" name="nombreBeca" value={formData.nombreBeca || ''} onChange={handleChange} placeholder="Ej. BECA RITA CETINA, BENITO JUÁREZ..." className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none uppercase" />
                   </div>
                 )}
               </div>
@@ -309,7 +320,7 @@ export default function AddStudentModal({ onClose }) {
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Usa Lentes</label>
                   <select name="lentes" value={formData.lentes} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
                     <option value="NO">NO</option>
-                    <option value="SI">SÍ</option>
+                    <option value="SÍ">SÍ</option>
                   </select>
                 </div>
                 <div className="md:col-span-3">

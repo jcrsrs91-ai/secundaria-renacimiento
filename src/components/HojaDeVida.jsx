@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { isBeforeSept30 } from '../utils/dateRules';
+import { registrarMovimiento, detectarCambiosExpediente } from '../utils/bitacora';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
 
@@ -120,6 +121,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
       try {
         const docRef = doc(db, "students", student.id);
         await updateDoc(docRef, { fotoUrl: base64String, lastModifiedBy: currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
+        const nom = `${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.trim().toUpperCase();
+        await registrarMovimiento(
+          currentUser?.email,
+          'Control Escolar (Expediente)',
+          'Actualizar Fotografía',
+          `Subió nueva fotografía de archivo para el alumno ${nom} (${student.grado || ''} "${student.grupo || ''}")`
+        );
         console.log("Foto subida exitosamente");
       } catch (error) {
         console.error("Error al subir foto: ", error);
@@ -167,6 +175,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
       try {
         const docRef = doc(db, "students", student.id);
         await updateDoc(docRef, { fotoUrl: dataUrl, lastModifiedBy: currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
+        const nom = `${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.trim().toUpperCase();
+        await registrarMovimiento(
+          currentUser?.email,
+          'Control Escolar (Expediente)',
+          'Capturar Fotografía',
+          `Tomó fotografía con cámara para el alumno ${nom} (${student.grado || ''} "${student.grupo || ''}")`
+        );
       } catch (err) {
         console.error("Error al guardar foto: ", err);
       }
@@ -205,6 +220,18 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     try {
       const docRef = doc(db, "students", student.id);
       await updateDoc(docRef, { ...data, lastModifiedBy: currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
+      const infoBitacora = detectarCambiosExpediente(student, data);
+      await registrarMovimiento(
+        currentUser?.email,
+        'Control Escolar (Expediente)',
+        infoBitacora.accion,
+        infoBitacora.detalle,
+        {
+          cambios: infoBitacora.cambios,
+          alumnoId: student.id,
+          alumnoNombre: infoBitacora.alumnoNombre
+        }
+      );
       alert("Expediente actualizado exitosamente.");
       onSave({ ...student, ...data });
       setIsEditing(false);

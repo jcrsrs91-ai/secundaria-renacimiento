@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { autoAcentuar, truncateTo1Dec } from '../utils/format';
 import { materiasPorGrado } from '../utils/materias';
+import { registrarMovimiento } from '../utils/bitacora';
 import ListaAsistenciaPrint, { TALLER_POR_GRUPO, getStudentGender, sortAttendanceListStudents } from './ListaAsistenciaPrint';
 import CuadroAsignaturaPrint from './CuadroAsignaturaPrint';
 
@@ -276,6 +277,12 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       );
 
       await Promise.all(promises);
+      await registrarMovimiento(
+        currentUser?.email,
+        userRole === 'docente' ? 'Portal Docente' : 'Control Escolar (Calificaciones)',
+        'Captura por Disciplina',
+        `Guardó calificaciones de ${asignaturaActual} (${grado} "${grupo}" - Trimestre ${TRIMESTRE_LABELS[trimestre] || trimestre}) | Docente: ${docenteNombre.trim() || 'S/N'} | Evaluados: ${stats.totalEvaluados}/${stats.existenciaT} | Prom: ${stats.promedioAprovechamiento || '-'}`
+      );
       setHasUnsavedChanges(false);
       if (!silent) {
         toast.success('¡Calificaciones y estadística guardadas en el sistema!');
