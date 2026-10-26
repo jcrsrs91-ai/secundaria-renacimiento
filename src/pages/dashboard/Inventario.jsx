@@ -18,6 +18,7 @@ import CartaResguardoPrint from '../../components/CartaResguardoPrint';
 import ScannerInventarioModal from '../../components/ScannerInventarioModal';
 import EtiquetasPrint from '../../components/EtiquetasPrint';
 import ActaBajaPrint from '../../components/ActaBajaPrint';
+import CedulaCensalPrint from '../../components/CedulaCensalPrint';
 
 // Funciones auxiliares para el manejo de rangos de folios de inventario
 const generateCodeRange = (baseCode, quantity) => {
@@ -2376,7 +2377,7 @@ Esta acción no se puede deshacer.`);
           </div>
 
           {/* Tarjetas de Formatos Oficiales */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
               <div className="mb-3">
                 <h4 className="font-bold text-blue-900 text-lg">Acta de Recepción (Alta)</h4>
@@ -2401,6 +2402,20 @@ Esta acción no se puede deshacer.`);
                   <Plus className="w-3.5 h-3.5 mr-1.5" /> Capturar / Generar
                 </button>
                 <button onClick={() => handlePrintBlank('resguardo')} className="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir formato de resguardo en blanco para levantamiento físico a mano">
+                  <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
+                </button>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+              <div className="mb-3">
+                <h4 className="font-bold text-emerald-900 text-lg">Cédula Censal (SEG)</h4>
+                <p className="text-emerald-700 text-xs mt-1">Concentrado general de todas las cédulas de resguardo.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => setPrintMode('cedula_censal')} className="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold">
+                  <FileText className="w-3.5 h-3.5 mr-1.5" /> Ver Concentrado
+                </button>
+                <button onClick={() => setPrintMode('cedula_censal_blank')} className="bg-white hover:bg-emerald-100 text-emerald-700 border border-emerald-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir formato oficial de Cédula Censal en blanco">
                   <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
                 </button>
               </div>
@@ -2642,6 +2657,13 @@ Esta acción no se puede deshacer.`);
               </div>
             </div>
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => setPrintMode('cedula_censal')}
+                className="flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 shadow-sm transition-colors whitespace-nowrap"
+                title="Generar Cédula Censal Oficial SEG con el concentrado de todas las cédulas de resguardo"
+              >
+                <FileText className="w-4 h-4 mr-2" /> Cédula Censal (Concentrado)
+              </button>
               <button
                 onClick={() => handlePrintBlank('resguardo')}
                 className="flex items-center justify-center px-4 py-2 bg-white border border-indigo-300 text-indigo-700 rounded-lg text-sm font-bold hover:bg-indigo-50 shadow-sm transition-colors whitespace-nowrap"
@@ -3321,6 +3343,14 @@ Esta acción no se puede deshacer.`);
     {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} onBack={() => setPrintMode(null)} />}
     {printMode === 'baja' && printData && <ActaBajaPrint data={printData} onBack={() => setPrintMode(null)} />}
     {printMode === 'etiquetas' && printData && <EtiquetasPrint items={printData} onBack={() => setPrintMode(null)} />}
+    {(printMode === 'cedula_censal' || printMode === 'cedula_censal_blank') && (
+      <CedulaCensalPrint
+        resguardos={resguardos}
+        inventario={inventario}
+        initialBlank={printMode === 'cedula_censal_blank'}
+        onBack={() => setPrintMode(null)}
+      />
+    )}
 
     {printMode === 'corte' && printData && (
       <div className="hidden print:block page-container relative mx-auto bg-white p-8">
