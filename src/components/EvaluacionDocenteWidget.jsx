@@ -48,11 +48,14 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     return found.name;
   }, [materias, materiaId, grupo]);
 
-  // Filtrar alumnos del grupo (Activos y Bajas para respetar la lista oficial)
+  // Filtrar alumnos del grupo (Activos y Bajas oficiales posteriores al 30 de sept, excluyendo No Inscritos)
   const alumnosGrupo = useMemo(() => {
     const filtered = students.filter(s => {
+      if (s.grado !== grado || s.grupo !== grupo) return false;
       const stStatus = (s.status || 'Activo').toLowerCase();
-      return s.grado === grado && s.grupo === grupo && (stStatus === 'activo' || stStatus === 'baja');
+      if (stStatus === 'activo') return true;
+      if (stStatus === 'baja' && s.motivoBaja !== 'No Inscrito' && s.tipoBaja !== 'No Inscrito') return true;
+      return false;
     });
     return sortAttendanceListStudents(filtered);
   }, [students, grado, grupo]);

@@ -268,7 +268,7 @@ export default function ControlEscolar() {
     const matchesGrade = gradeFilter === 'Todos' || a.grado === gradeFilter;
     const matchesGroup = groupFilter === 'Todos' || a.grupo === groupFilter;
     const matchesShift = globalShiftFilter === 'Todos' || a.turno === globalShiftFilter;
-    const matchesStatus = (statusFilter === 'Todos' && a.status !== 'Egresado') || a.status === statusFilter;
+    const matchesStatus = (statusFilter === 'Todos' && a.status !== 'Egresado' && a.status !== 'No Inscrito') || a.status === statusFilter;
     const matchesCycle = cycleFilter === 'Todos' || a.cicloEscolar === cycleFilter;
     return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus && matchesCycle;
   }).sort(sortStudents);
@@ -278,7 +278,7 @@ export default function ControlEscolar() {
       if (a.grado !== asisGrado || a.grupo !== asisGrupo) return false;
       const st = (a.status || 'Activo').toLowerCase();
       if (st === 'activo') return true;
-      if (st === 'baja' && a.motivoBaja !== 'No Inscrito') return true;
+      if (st === 'baja' && a.motivoBaja !== 'No Inscrito' && a.tipoBaja !== 'No Inscrito') return true;
       return false;
     });
     return sortAttendanceListStudents(groupStudents);
@@ -2172,7 +2172,7 @@ export default function ControlEscolar() {
 
       {/* Sección Eficiencia Terminal */}
       {!loading && activeTab === 'eficiencia' && !printMode && (
-        <EficienciaTerminalPrint activos={directorio.filter(s => s.status === 'Activo' || s.status === 'Egresado')} bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito')} materiasPorGrado={materiasPorGrado} onClose={() => setActiveTab('activos')} />
+        <EficienciaTerminalPrint activos={directorio.filter(s => s.status === 'Activo' || s.status === 'Egresado')} bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito' && s.tipoBaja !== 'No Inscrito')} materiasPorGrado={materiasPorGrado} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* Sección Desempeño Alcanzado */}
@@ -2182,12 +2182,12 @@ export default function ControlEscolar() {
 
       {/* Sección Desertores (Oficiales E6) */}
       {!loading && activeTab === 'desertores' && !printMode && (
-        <DesertoresPrint bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito')} onClose={() => setActiveTab('activos')} />
+        <DesertoresPrint bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito' && s.tipoBaja !== 'No Inscrito')} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* Sección No Inscritos (Uso Interno) */}
       {!loading && activeTab === 'no_inscritos' && !printMode && (
-        <NoInscritosPrint bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja === 'No Inscrito')} onClose={() => setActiveTab('activos')} />
+        <NoInscritosPrint bajas={directorio.filter(s => s.status === 'No Inscrito' || (s.status === 'Baja' && (s.motivoBaja === 'No Inscrito' || s.tipoBaja === 'No Inscrito')))} onClose={() => setActiveTab('activos')} />
       )}
 
       
