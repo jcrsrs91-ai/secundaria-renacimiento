@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function ActaBajaPrint({ data }) {
+export default function ActaBajaPrint({ data, onBack }) {
   if (!data) return null;
 
   const formatDate = (dateString) => {
@@ -10,7 +10,7 @@ export default function ActaBajaPrint({ data }) {
   };
 
   return (
-    <div className="print-baja-only">
+    <div className="print-baja-only bg-white min-h-screen">
       <style>{`
         @media print {
           @page { size: letter; margin: 1.0cm; }
@@ -18,12 +18,35 @@ export default function ActaBajaPrint({ data }) {
           * { overflow: visible !important; }
           aside, header { display: none !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; }
+          .no-print { display: none !important; }
           .print-baja-only { display: block !important; }
         }
         @media screen {
-          .print-baja-only { display: none !important; }
+          .print-baja-only { padding: 2rem; max-width: 850px; margin: 2rem auto; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); border-radius: 0.75rem; display: block !important; }
         }
       `}</style>
+
+      <div className="no-print flex justify-between items-center gap-4 mb-6 border-b border-slate-200 pb-4">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+            Vista Previa — Acta de Baja Oficial
+          </span>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => (onBack ? onBack() : window.location.reload())}
+            className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium text-sm"
+          >
+            Volver al Inventario
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="px-6 py-2 bg-slate-800 text-white hover:bg-slate-900 rounded-lg font-bold shadow-sm text-sm"
+          >
+            Imprimir Formato
+          </button>
+        </div>
+      </div>
       
       <div className="bg-white text-slate-800 font-sans leading-relaxed text-justify relative z-10" style={{ fontSize: '11pt' }}>
          <div className="flex justify-between items-center mb-4 border-b border-slate-300 pb-3">
@@ -40,7 +63,7 @@ export default function ActaBajaPrint({ data }) {
             <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 shadow-sm">
               <p className="font-black text-slate-700 mb-1 uppercase text-[10px] tracking-widest">Información del Acta</p>
               <p><strong>Lugar y Fecha:</strong> Acapulco de Juárez, Gro., a {formatDate(data.fecha)}.</p>
-              <p className="mt-1"><strong>Hora:</strong> {data.hora || '_______ hrs.'}</p>
+              <p className="mt-1"><strong>Hora:</strong> {data.hora || new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) + ' hrs.'}</p>
             </div>
             <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 shadow-sm">
               <p className="font-black text-slate-700 mb-1 uppercase text-[10px] tracking-widest">Motivo de la Baja</p>
@@ -59,6 +82,7 @@ export default function ActaBajaPrint({ data }) {
                   <th className="p-2 w-12 text-center border-r border-slate-300">Cant.</th>
                   <th className="p-2 w-28 border-r border-slate-300">Código</th>
                   <th className="p-2 border-r border-slate-300">Descripción del Artículo</th>
+                  <th className="p-2 w-28 border-r border-slate-300">Marca / Serie</th>
                   <th className="p-2 w-32 border-r border-slate-300">Ubicación Anterior</th>
                   <th className="p-2 w-24 text-center">Estado Final</th>
                 </tr>
@@ -68,16 +92,17 @@ export default function ActaBajaPrint({ data }) {
                 data.articulos.map((art, idx) => (
                   <tr key={idx} className="hover:bg-slate-50">
                     <td className="p-2 text-center font-bold text-slate-800 border-r border-slate-200">{art.cantidad || 1}</td>
-                    <td className="p-2 text-[10px] font-mono text-slate-600 border-r border-slate-200">{art.codigo}</td>
-                    <td className="p-2 text-slate-700 border-r border-slate-200">{art.articulo}</td>
-                    <td className="p-2 text-[10px] text-slate-500 border-r border-slate-200">{art.ubicacion}</td>
-                    <td className="p-2 text-center text-xs font-bold text-sky-700 border-slate-200">BAJA</td>
+                    <td className="p-2 text-[10px] font-mono text-slate-600 border-r border-slate-200">{art.codigo || art.inventario || 'S/C'}</td>
+                    <td className="p-2 text-slate-700 border-r border-slate-200 font-medium">{art.articulo || art.descripcion || 'Sin descripción'}</td>
+                    <td className="p-2 text-[10px] text-slate-500 border-r border-slate-200">{[art.marca, art.modelo, art.serie].filter(Boolean).join(' / ') || 'S/N'}</td>
+                    <td className="p-2 text-[10px] text-slate-500 border-r border-slate-200">{art.ubicacionAnterior || art.ubicacion || 'Bodega Contraloría'}</td>
+                    <td className="p-2 text-center text-xs font-bold text-rose-700 border-slate-200">BAJA</td>
                   </tr>
                 ))
               ) : (
-                // Filas vacías si no hay artículos precargados
-                [...Array(12)].map((_, idx) => (
+                [...Array(10)].map((_, idx) => (
                   <tr key={idx}>
+                    <td className="p-2.5 border-r border-slate-200"></td>
                     <td className="p-2.5 border-r border-slate-200"></td>
                     <td className="p-2.5 border-r border-slate-200"></td>
                     <td className="p-2.5 border-r border-slate-200"></td>
@@ -93,7 +118,7 @@ export default function ActaBajaPrint({ data }) {
          <div className="mb-8 px-2">
             <p className="font-bold text-xs uppercase text-slate-500 tracking-wider mb-1">Observaciones / Dictamen Técnico:</p>
             <div className="w-full min-h-[40px] border border-slate-300 rounded bg-slate-50 p-2 text-sm text-slate-700">
-              {data.observaciones || ''}
+              {data.observaciones || 'Se procede a la baja definitiva de los artículos listados por encontrarse en estado inservible.'}
             </div>
          </div>
 

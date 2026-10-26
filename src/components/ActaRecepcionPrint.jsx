@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 
-export default function ActaRecepcionPrint({ data }) {
+export default function ActaRecepcionPrint({ data, onBack }) {
   const [viewMode, setViewMode] = useState('desglosada'); // 'desglosada' | 'global'
 
   if (!data) return null;
@@ -74,7 +74,7 @@ export default function ActaRecepcionPrint({ data }) {
           </button>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => window.location.reload()} className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Volver</button>
+          <button onClick={() => onBack ? onBack() : window.location.reload()} className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Volver al Inventario</button>
           <button onClick={() => window.print()} className="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-bold shadow-sm">Imprimir</button>
         </div>
       </div>

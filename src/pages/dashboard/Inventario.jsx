@@ -1,6 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useState, useEffect, useMemo } from 'react';
-import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu, Wallet, AlertTriangle, TrendingUp, TrendingDown, BarChart as BarChartIcon, FileSpreadsheet, PieChart as PieChartIcon } from 'lucide-react';
+import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu, Wallet, AlertTriangle, TrendingUp, TrendingDown, BarChart as BarChartIcon, FileSpreadsheet, PieChart as PieChartIcon, Copy } from 'lucide-react';
 
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
@@ -8,6 +8,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { autoAcentuar } from '../../utils/format';
 import { searchIncludes } from '../../utils/search';
 import { downloadExcelFriendlyCsv } from '../../utils/exportCsv';
+import { registrarMovimiento } from '../../utils/bitacora';
 import { useAuth } from '../../context/AuthContext';
 import CajaLockScreen from '../../components/CajaLockScreen';
 import { db } from '../../firebase';
@@ -128,7 +129,8 @@ const getIconForArticulo = (nombre) => {
 
 export default function Inventario() {
 
-  const { currentUser } = useAuth();
+  const { currentUser, userName } = useAuth();
+  const userLabel = userName || currentUser?.email || 'Contraloría';
   const [cajaTurno, setCajaTurno] = useState(null); // { id, turno, fondoInicial }
   
   
@@ -278,11 +280,15 @@ export default function Inventario() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [locationFilter, setLocationFilter] = useState('Todos');
+  const [categoryFilter, setCategoryFilter] = useState('Todas');
 
-  // Estados para resguardos
+  // Estados para resguardos y actas de alta/baja
   const [resguardos, setResguardos] = useState([]);
   const [editingResguardo, setEditingResguardo] = useState(null);
   const [resguardoSearch, setResguardoSearch] = useState('');
+  const [actasRecepcion, setActasRecepcion] = useState([]);
+  const [actasBaja, setActasBaja] = useState([]);
+  const [actasSearch, setActasSearch] = useState('');
 
     // Efecto para Pagos Administrativos y Extraordinarios
 
@@ -528,20 +534,54 @@ export default function Inventario() {
       snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
       setResguardos(items);
     });
-    return () => unsubscribeRes();
+
+    const qRec = query(collection(db, 'actas_recepcion'), orderBy('fechaRegistro', 'desc'));
+    const unsubscribeRec = onSnapshot(qRec, (snapshot) => {
+      const items = [];
+      snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+      setActasRecepcion(items);
+    });
+
+    const qBaja = query(collection(db, 'actas_baja'), orderBy('fechaRegistro', 'desc'));
+    const unsubscribeBaja = onSnapshot(qBaja, (snapshot) => {
+      const items = [];
+      snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+      setActasBaja(items);
+    });
+
+    return () => {
+      unsubscribeRes();
+      unsubscribeRec();
+      unsubscribeBaja();
+    };
   }, []);
 
-  // Extraer ubicaciones únicas dinámicamente
+  // Extraer ubicaciones y categorías únicas dinámicamente
   const ubicacionesUnicas = [...new Set(inventario.map(item => item.ubicacion).filter(Boolean))].sort();
+  const categoriasUnicas = [...new Set(inventario.map(item => getCategoryForArticulo(item.articulo || item.descripcion)).filter(Boolean))].sort();
 
   // Filtrar el inventario de acuerdo con los criterios seleccionados
   const filteredInventario = inventario.filter(item => {
-    const matchesSearch = !searchTerm || searchIncludes(item.codigo, searchTerm) || searchIncludes(item.articulo, searchTerm);
-    
-    const matchesStatus = statusFilter === 'Todos' || item.estado === statusFilter;
+    const matchesSearch = !searchTerm ||
+      searchIncludes(item.codigo, searchTerm) ||
+      searchIncludes(item.articulo, searchTerm) ||
+      searchIncludes(item.descripcion, searchTerm) ||
+      searchIncludes(item.marca, searchTerm) ||
+      searchIncludes(item.modelo, searchTerm) ||
+      searchIncludes(item.serie, searchTerm) ||
+      searchIncludes(item.ubicacion, searchTerm) ||
+      searchIncludes(item.observaciones, searchTerm);
+
+    const itemEstado = item.estadoFisico || item.estado || 'Bueno';
+    const matchesStatus =
+      statusFilter === 'Todos_Incl_Baja' ? true :
+      statusFilter === 'Todos' ? itemEstado !== 'Baja' :
+      itemEstado === statusFilter;
+
     const matchesLocation = locationFilter === 'Todos' || item.ubicacion === locationFilter;
-    
-    return matchesSearch && matchesStatus && matchesLocation;
+    const matchesCategory = categoryFilter === 'Todas' || getCategoryForArticulo(item.articulo || item.descripcion) === categoryFilter;
+
+    return matchesSearch && matchesStatus && matchesLocation && matchesCategory;
   }).sort((a, b) => {
     return (a.codigo || '').localeCompare((b.codigo || ''), undefined, { numeric: true, sensitivity: 'base' });
   });
@@ -588,14 +628,19 @@ export default function Inventario() {
   const openModal = (type) => {
     setModalOpen(type);
     
-    let articulosIniciales = [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }];
-    if ((type === 'baja' || type === 'resguardo' || type === 'recepcion') && selectedItems.length > 0) {
-      articulosIniciales = inventario.filter(i => selectedItems.includes(i.id));
+    let articulosIniciales = [{ cantidad: '1', descripcion: '', marca: '', modelo: '', serie: '', estado: type === 'recepcion' ? 'Nuevo' : 'Bueno', inventario: '', codigo: '' }];
+    if ((type === 'baja' || type === 'resguardo') && selectedItems.length > 0) {
+      articulosIniciales = inventario.filter(i => selectedItems.includes(i.id)).map(i => ({
+        ...i,
+        cantidad: i.cantidad || 1,
+        descripcion: i.descripcion || i.articulo || ''
+      }));
     }
 
     setFormData({ 
       fecha: new Date().toISOString().split('T')[0],
-      hora: '', origen: '', proveedor: '', nombreProveedor: '', nombreContralor: 'Profr. Juan Carlos Taboada B.',
+      hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      origen: '', proveedor: '', nombreProveedor: '', nombreContralor: 'Profr. Juan Carlos Taboada B.',
       folio: '', nombreResguardante: '', areaResguardante: '', observaciones: '', motivo: '',
       guardarEnInventario: false,
       articulos: articulosIniciales
@@ -621,13 +666,79 @@ export default function Inventario() {
     const toastId = toast.loading('Guardando información...');
     let dataToPrint = { ...formData };
     
-    // Guardar en base de datos si es recepción
+    // Guardar en base de datos si es recepción (Alta)
     if (modalOpen === 'recepcion') {
       try {
-        const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca);
+        const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo);
         
         if (validItems.length > 0) {
-          // 1. Guardar el documento general (Acta)
+          let autoCodeOffsets = {};
+          const recepcionArticulos = [];
+          let totalCreated = 0;
+
+          // Verificar códigos manuales duplicados antes de guardar
+          for (const art of validItems) {
+            const qty = Math.max(1, Number(art.cantidad) || 1);
+            const manualBase = (art.codigo || art.inventario || '').trim();
+            if (manualBase && !art.id) {
+              const { codes } = generateCodeRange(manualBase, qty);
+              for (const code of codes) {
+                if (inventario.some(i => i.codigo === code)) {
+                  toast.error(`El código de inventario ${code} ya existe en el sistema. Usa otro folio.`, { id: toastId });
+                  setIsSubmitting(false);
+                  return;
+                }
+              }
+            }
+          }
+
+          // 1. Guardar cada artículo en el inventario
+          for (let i = 0; i < validItems.length; i++) {
+            const art = validItems[i];
+            const qty = Math.max(1, Number(art.cantidad) || 1);
+            const manualBase = (art.codigo || art.inventario || '').trim();
+            const tempCode = manualBase || getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffsets);
+            if (!manualBase) {
+              const prefix = generatePrefix(art.descripcion || art.articulo || art.marca);
+              autoCodeOffsets[prefix] = (autoCodeOffsets[prefix] || 0) + qty;
+            }
+            
+            const gen = generateCodeRange(tempCode, qty);
+            const codes = gen.codes;
+            const display = gen.display;
+            
+            for (const code of codes) {
+              totalCreated++;
+              await addDoc(collection(db, 'inventario'), {
+                codigo: code,
+                articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || 'Sin nombre',
+                descripcion: art.descripcion || art.articulo || '',
+                marca: art.marca || '',
+                modelo: art.modelo || '',
+                serie: art.serie || '',
+                observaciones: art.observaciones || formData.observaciones || '',
+                ubicacion: 'Bodega Contraloría',
+                cantidad: 1,
+                estado: art.estado || 'Nuevo',
+                fechaIngreso: new Date().toISOString(),
+                historial: [{
+                  fecha: new Date().toISOString(),
+                  accion: 'Alta en Inventario (Recepción)',
+                  detalle: `Ingreso inicial a Bodega Contraloría. Doc. Origen: ${formData.origen || 'N/A'}. Proveedor: ${formData.nombreProveedor || 'N/A'}.`,
+                  usuario: userLabel
+                }]
+              });
+            }
+            recepcionArticulos.push({
+              ...art,
+              cantidad: qty,
+              articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || '',
+              descripcion: art.descripcion || art.articulo || '',
+              codigo: display
+            });
+          }
+
+          // 2. Guardar el documento general (Acta de Recepción) con sus artículos para poder reimprimirlo después
           await addDoc(collection(db, 'actas_recepcion'), {
             fecha: formData.fecha,
             hora: formData.hora,
@@ -636,45 +747,17 @@ export default function Inventario() {
             nombreProveedor: formData.nombreProveedor,
             nombreContralor: formData.nombreContralor,
             observaciones: formData.observaciones,
-            articulosTotales: validItems.length,
+            articulos: recepcionArticulos,
+            articulosTotales: totalCreated,
             fechaRegistro: new Date().toISOString()
           });
 
-          let autoCodeOffsets = {};
-          const recepcionArticulos = [];
-          // 2. Guardar cada artículo en el inventario
-          for (let i = 0; i < validItems.length; i++) {
-            const art = validItems[i];
-            const qty = Number(art.cantidad) || 1;
-            const tempCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffsets);
-            const prefix = generatePrefix(art.descripcion || art.articulo || art.marca);
-            autoCodeOffsets[prefix] = (autoCodeOffsets[prefix] || 0) + qty;
-            
-            let codes = [];
-            let display = art.codigo || '';
-            if (!art.id) {
-              const gen = generateCodeRange(tempCode, qty);
-              codes = gen.codes;
-              display = gen.display;
-            }
-            
-            for (const code of codes) {
-              await addDoc(collection(db, 'inventario'), {
-                codigo: code,
-                articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || '',
-                descripcion: art.descripcion || art.articulo || '',
-                marca: art.marca || '',
-                modelo: art.modelo || '',
-                serie: art.serie || '',
-                observaciones: art.observaciones || '',
-                ubicacion: 'Bodega Contraloría',
-                cantidad: 1,
-                estado: art.estado || 'Nuevo',
-                fechaIngreso: new Date().toISOString()
-              });
-            }
-            recepcionArticulos.push({ ...art, codigo: display });
-          }
+          await registrarMovimiento(
+            'Alta de Inventario (Recepción)',
+            `Se dieron de alta ${totalCreated} bienes en Bodega Contraloría. Origen: ${formData.origen || 'S/D'} | Proveedor: ${formData.nombreProveedor || 'S/D'}.`,
+            userLabel
+          );
+
           dataToPrint.articulos = recepcionArticulos;
         }
       } catch (error) {
@@ -800,8 +883,8 @@ export default function Inventario() {
                 historial: [...currentHistorial, {
                   fecha: new Date().toISOString(),
                   accion: "Asignación de Resguardo",
-                  detalle: `Asignado a ${formData.nombreResguardante} (Folio ${formData.folio || 'S/F'}).`,
-                  usuario: "Contraloría"
+                  detalle: `Asignado a ${formData.nombreResguardante} (${formData.areaResguardante || 'Sin área'}, Folio ${formData.folio || 'S/F'}).`,
+                  usuario: userLabel
                 }]
               });
             } else if (formData.guardarEnInventario) {
@@ -822,17 +905,141 @@ export default function Inventario() {
                   ubicacion: formData.areaResguardante || 'En resguardo',
                   cantidad: 1, // Guardado individualmente
                   estado: art.estado || 'Bueno',
-                  fechaIngreso: new Date().toISOString()
+                  fechaIngreso: new Date().toISOString(),
+                  historial: [{
+                    fecha: new Date().toISOString(),
+                    accion: "Alta y Asignación de Resguardo",
+                    detalle: `Creado y asignado a ${formData.nombreResguardante} (${formData.areaResguardante || 'Sin área'}, Folio ${formData.folio || 'S/F'}).`,
+                    usuario: userLabel
+                  }]
                 });
               }
             }
           }
+          await registrarMovimiento(
+            'Carta de Resguardo',
+            `Se generó/actualizó resguardo Folio ${formData.folio || 'S/F'} para ${formData.nombreResguardante || 'S/N'} (${formData.areaResguardante || 'S/A'}) con ${validItems.length} partidas.`,
+            userLabel
+          );
+          setSelectedItems([]);
           // Usar artículos consolidados en la impresión
           dataToPrint.articulos = typeof finalResguardoArticulos !== 'undefined' ? finalResguardoArticulos : resguardoArticulos;
         }
       } catch (error) {
         console.error("Error guardando resguardos en Firebase:", error);
         toast.error("Hubo un error al guardar en la base de datos.", { id: toastId });
+        setIsSubmitting(false);
+        return;
+      }
+    } else if (modalOpen === 'baja') {
+      try {
+        const validItems = formData.articulos.filter(art => art.cantidad || art.descripcion || art.marca || art.articulo || art.codigo || art.id);
+        if (validItems.length > 0) {
+          const bajaArticulos = [];
+          const codigosDadosDeBaja = new Set();
+
+          for (const art of validItems) {
+            const rawCode = (art.codigo || art.inventario || '').trim();
+            const expandedCodes = rawCode ? expandCodeRange(rawCode) : [];
+            let matchedInvItems = [];
+
+            if (art.id) {
+              const found = inventario.find(i => i.id === art.id);
+              if (found) matchedInvItems.push(found);
+            } else if (expandedCodes.length > 0) {
+              matchedInvItems = inventario.filter(i => expandedCodes.includes(i.codigo));
+            }
+
+            if (matchedInvItems.length > 0) {
+              for (const invItem of matchedInvItems) {
+                codigosDadosDeBaja.add(invItem.codigo);
+                const currentHistorial = invItem.historial || [];
+                const ubicacionPrevia = invItem.ubicacion || 'Bodega Contraloría';
+                await updateDoc(doc(db, 'inventario', invItem.id), {
+                  estado: 'Baja',
+                  ubicacion: 'Baja Definitiva',
+                  ubicacionAnterior: ubicacionPrevia,
+                  motivoBaja: formData.motivo || 'Baja administrativa',
+                  fechaBaja: formData.fecha || new Date().toISOString().split('T')[0],
+                  historial: [
+                    ...currentHistorial,
+                    {
+                      fecha: new Date().toISOString(),
+                      accion: 'Baja Definitiva de Inventario',
+                      detalle: `Dado de baja oficialmente. Motivo: ${formData.motivo || 'Deterioro / Obsolescencia'}. Ubicación anterior: ${ubicacionPrevia}.`,
+                      usuario: userLabel
+                    }
+                  ]
+                });
+                bajaArticulos.push({
+                  id: invItem.id,
+                  cantidad: invItem.cantidad || 1,
+                  codigo: invItem.codigo || 'S/C',
+                  articulo: invItem.articulo || invItem.descripcion || 'Sin nombre',
+                  descripcion: invItem.descripcion || invItem.articulo || '',
+                  marca: invItem.marca || '',
+                  modelo: invItem.modelo || '',
+                  serie: invItem.serie || '',
+                  ubicacion: ubicacionPrevia,
+                  ubicacionAnterior: ubicacionPrevia,
+                  estado: 'Baja'
+                });
+              }
+            } else {
+              // Baja libre (artículo capturado manualmente que no estaba vinculado por ID)
+              bajaArticulos.push({
+                cantidad: Number(art.cantidad) || 1,
+                codigo: rawCode || 'S/C',
+                articulo: `${art.descripcion || art.articulo || ''} ${art.marca || ''}`.trim() || 'Artículo',
+                descripcion: art.descripcion || art.articulo || '',
+                marca: art.marca || '',
+                modelo: art.modelo || '',
+                serie: art.serie || '',
+                ubicacion: art.ubicacion || 'Bodega Contraloría',
+                ubicacionAnterior: art.ubicacion || 'Bodega Contraloría',
+                estado: 'Baja'
+              });
+            }
+          }
+
+          // Desvincular automáticamente de cualquier resguardo activo los códigos dados de baja
+          if (codigosDadosDeBaja.size > 0) {
+            for (const res of resguardos) {
+              if (Array.isArray(res.articulos) && res.articulos.length > 0) {
+                const remainingArts = res.articulos.filter(a => {
+                  const codesInRow = expandCodeRange(a.codigo || a.inventario || '');
+                  return !codesInRow.some(c => codigosDadosDeBaja.has(c));
+                });
+                if (remainingArts.length !== res.articulos.length) {
+                  await updateDoc(doc(db, 'resguardos', res.id), { articulos: remainingArts });
+                }
+              }
+            }
+          }
+
+          await addDoc(collection(db, 'actas_baja'), {
+            fecha: formData.fecha || new Date().toISOString().split('T')[0],
+            hora: formData.hora || new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }),
+            motivo: formData.motivo || 'Deterioro / Obsolescencia',
+            observaciones: formData.observaciones || '',
+            nombreContralor: formData.nombreContralor || 'Profr. Juan Carlos Taboada B.',
+            articulos: bajaArticulos,
+            articulosTotales: bajaArticulos.length,
+            fechaRegistro: new Date().toISOString()
+          });
+
+          await registrarMovimiento(
+            'Acta de Baja de Inventario',
+            `Se dieron de baja ${bajaArticulos.length} bienes. Motivo: ${formData.motivo || 'S/M'}. Códigos: ${bajaArticulos.map(a => a.codigo).join(', ')}`,
+            userLabel
+          );
+
+          setSelectedItems([]);
+          dataToPrint.articulos = bajaArticulos;
+        }
+      } catch (error) {
+        console.error("Error guardando Acta de Baja:", error);
+        toast.error("Hubo un error al registrar la baja en la base de datos.", { id: toastId });
         setIsSubmitting(false);
         return;
       }
@@ -1139,6 +1346,20 @@ export default function Inventario() {
       } catch (syncErr) {
         console.error("Error sincronizando con resguardos:", syncErr);
       }
+      const cambios = [];
+      if (originalItem) {
+        if (originalItem.codigo !== editingItem.codigo) cambios.push(`Código: "${originalItem.codigo || 'S/C'}" ➔ "${editingItem.codigo}"`);
+        if ((originalItem.articulo || originalItem.descripcion) !== (editingItem.articulo || editingItem.descripcion)) cambios.push(`Artículo: "${originalItem.articulo || originalItem.descripcion}" ➔ "${editingItem.articulo || editingItem.descripcion}"`);
+        if (originalItem.estado !== editingItem.estado) cambios.push(`Estado: "${originalItem.estado}" ➔ "${editingItem.estado}"`);
+        if (originalItem.ubicacion !== editingItem.ubicacion) cambios.push(`Ubicación: "${originalItem.ubicacion || 'S/U'}" ➔ "${editingItem.ubicacion}"`);
+        if ((originalItem.marca || '') !== (editingItem.marca || '')) cambios.push(`Marca: "${originalItem.marca || 'S/M'}" ➔ "${editingItem.marca || 'S/M'}"`);
+        if ((originalItem.serie || '') !== (editingItem.serie || '')) cambios.push(`Serie: "${originalItem.serie || 'S/N'}" ➔ "${editingItem.serie || 'S/N'}"`);
+      }
+      await registrarMovimiento(
+        'Edición de Bien de Inventario',
+        `Bien [${editingItem.codigo || 'S/C'}] ${editingItem.articulo || ''}. ${cambios.length > 0 ? cambios.join(' | ') : 'Actualización de datos.'}`,
+        userLabel
+      );
       setModalOpen(null);
       setEditingItem(null);
       toast.success("Cambios guardados correctamente.");
@@ -1150,8 +1371,16 @@ export default function Inventario() {
 
   const handleDeleteClick = async (id) => {
     if (window.confirm("¿Estás seguro de eliminar este artículo del inventario de forma permanente?")) {
+      const targetItem = inventario.find(i => i.id === id);
       toast.promise(
-        deleteDoc(doc(db, 'inventario', id)),
+        (async () => {
+          await deleteDoc(doc(db, 'inventario', id));
+          await registrarMovimiento(
+            'Eliminación de Bien de Inventario',
+            `Se eliminó permanentemente el artículo [${targetItem?.codigo || id}] ${targetItem?.articulo || ''} (Ubicación: ${targetItem?.ubicacion || 'N/A'}).`,
+            userLabel
+          );
+        })(),
         {
           loading: 'Eliminando...',
           success: 'Artículo eliminado correctamente.',
@@ -1165,8 +1394,14 @@ export default function Inventario() {
     if (selectedItems.length === 0) return;
     if (window.confirm(`¿Estás seguro de eliminar ${selectedItems.length} artículos seleccionados de forma permanente?`)) {
       try {
+        const deletedCodes = inventario.filter(i => selectedItems.includes(i.id)).map(i => i.codigo).join(', ');
         const promises = selectedItems.map(id => deleteDoc(doc(db, 'inventario', id)));
         await Promise.all(promises);
+        await registrarMovimiento(
+          'Eliminación Masiva de Inventario',
+          `Se eliminaron ${selectedItems.length} bienes de forma permanente. Códigos: ${deletedCodes}`,
+          userLabel
+        );
         setSelectedItems([]); // Limpiar selección tras borrar
         toast.success("Artículos eliminados correctamente.");
       } catch (error) {
@@ -1192,12 +1427,17 @@ export default function Inventario() {
                 fecha: new Date().toISOString(),
                 accion: "Cambio de Estado Masivo",
                 detalle: `Estado modificado de '${originalItem.estado}' a '${newStatus}'.`,
-                usuario: "Contraloría"
+                usuario: userLabel
               }]
             });
           }
         });
         await Promise.all(promises);
+        await registrarMovimiento(
+          'Cambio de Estado Masivo (Inventario)',
+          `Se marcaron ${selectedItems.length} artículos con el estado '${newStatus}'.`,
+          userLabel
+        );
         setSelectedItems([]);
         toast.success(`Artículos actualizados a ${newStatus}.`, { id: toastId });
       } catch (error) {
@@ -1432,6 +1672,11 @@ export default function Inventario() {
           }
         }
       }
+      await registrarMovimiento(
+        'Edición de Carta de Resguardo',
+        `Se editó el resguardo Folio ${editingResguardo.folio || 'S/F'} de ${editingResguardo.nombreResguardante || 'S/N'} (${editingResguardo.areaResguardante || 'S/A'}).`,
+        userLabel
+      );
       setModalOpen(null);
       setEditingResguardo(null);
       };
@@ -1497,6 +1742,11 @@ Esta acción no se puede deshacer.`);
         }
       }
       await deleteDoc(doc(db, 'resguardos', res.id));
+      await registrarMovimiento(
+        'Eliminación de Carta de Resguardo',
+        `Se eliminó el resguardo Folio ${res.folio || 'S/F'} de ${res.nombreResguardante || res.resguardante || 'S/N'} (${res.areaResguardante || res.area || 'S/A'}).`,
+        userLabel
+      );
     };
 
     toast.promise(deletePromise(), {
@@ -1531,25 +1781,77 @@ Esta acción no se puede deshacer.`);
     
     const dataToExport = filteredInventario.map(item => ({
       'Código de Inventario': item.codigo || '',
-      'Artículo/Descripción': item.articulo || '',
-      'Ubicación': item.ubicacion || '',
-      'Cantidad': item.cantidad || 0,
-      'Estado Físico': item.estado || '',
+      'Categoría': getCategoryForArticulo(item.articulo || item.descripcion),
+      'Artículo/Descripción': item.articulo || item.descripcion || '',
+      'Marca': item.marca || '',
+      'Modelo': item.modelo || '',
       'Número de Serie': item.serie || '',
-      'Fecha de Ingreso': item.fechaIngreso ? new Date(item.fechaIngreso).toLocaleDateString() : ''
+      'Ubicación / Área': item.ubicacion || '',
+      'Cantidad': item.cantidad || 1,
+      'Estado Físico': item.estadoFisico || item.estado || 'Bueno',
+      'Observaciones': item.observaciones || '',
+      'Fecha de Ingreso': item.fechaIngreso ? new Date(item.fechaIngreso).toLocaleDateString('es-MX') : ''
     }));
     
     const csv = Papa.unparse(dataToExport, { delimiter: '\t' }).toUpperCase();
     downloadExcelFriendlyCsv(`Inventario_Mobiliario_${new Date().toISOString().split('T')[0]}.csv`, csv);
   };
 
-  // Cálculo de estadísticas generales del inventario
-  const totalArticulos = inventario.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
-  const libres = inventario.filter(i => i.ubicacion === 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+  const handleExportResguardosCSV = () => {
+    if (resguardos.length === 0) {
+      toast.error("No hay actas de resguardo para exportar.");
+      return;
+    }
+    const rows = [];
+    resguardos.forEach(r => {
+      const fechaStr = r.fecha ? (r.fecha.toDate ? r.fecha.toDate().toLocaleDateString('es-MX') : r.fecha) : '';
+      if (Array.isArray(r.articulos) && r.articulos.length > 0) {
+        r.articulos.forEach(art => {
+          rows.push({
+            'Folio Resguardo': r.folio || 'S/F',
+            'Fecha': fechaStr,
+            'Resguardante': r.nombreResguardante || r.resguardante || '',
+            'Área o Cargo': r.areaResguardante || r.area || r.cargo || '',
+            'Cantidad': art.cantidad || 1,
+            'Código(s)': art.codigo || art.inventario || '',
+            'Artículo / Descripción': art.descripcion || art.articulo || '',
+            'Marca': art.marca || '',
+            'No. Serie': art.serie || '',
+            'Estado': art.estado || 'Bueno',
+            'Observaciones': r.observaciones || ''
+          });
+        });
+      } else {
+        rows.push({
+          'Folio Resguardo': r.folio || 'S/F',
+          'Fecha': fechaStr,
+          'Resguardante': r.nombreResguardante || r.resguardante || '',
+          'Área o Cargo': r.areaResguardante || r.area || r.cargo || '',
+          'Cantidad': 0,
+          'Código(s)': '',
+          'Artículo / Descripción': 'SIN ARTÍCULOS',
+          'Marca': '',
+          'No. Serie': '',
+          'Estado': '',
+          'Observaciones': r.observaciones || ''
+        });
+      }
+    });
+    const csv = Papa.unparse(rows, { delimiter: '\t' }).toUpperCase();
+    downloadExcelFriendlyCsv(`Relacion_Resguardos_${new Date().toISOString().split('T')[0]}.csv`, csv);
+  };
 
-  // Desglose por tipo de artículo (Nuevos vs Usados)
-  const inventarioNuevos = inventario.filter(i => i.estado === 'Nuevo');
-  const inventarioUsados = inventario; // Now this acts as GLOBAL inventory
+  // Cálculo de estadísticas generales del inventario
+  const inventarioActivos = inventario.filter(i => (i.estadoFisico || i.estado) !== 'Baja');
+  const totalArticulos = inventarioActivos.reduce((sum, item) => sum + (Number(item.cantidad) || 1), 0);
+  const libres = inventarioActivos.filter(i => i.ubicacion === 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 1), 0);
+  const enResguardoCount = inventarioActivos.filter(i => i.ubicacion && i.ubicacion !== 'Bodega Contraloría').reduce((sum, item) => sum + (Number(item.cantidad) || 1), 0);
+  const porRevisarCount = inventarioActivos.filter(i => ['Regular', 'Malo'].includes(i.estadoFisico || i.estado)).reduce((sum, item) => sum + (Number(item.cantidad) || 1), 0);
+  const bajasCount = inventario.filter(i => (i.estadoFisico || i.estado) === 'Baja').reduce((sum, item) => sum + (Number(item.cantidad) || 1), 0);
+
+  // Desglose por tipo de artículo (Nuevos vs Global Activos)
+  const inventarioNuevos = inventarioActivos.filter(i => (i.estadoFisico || i.estado) === 'Nuevo');
+  const inventarioUsados = inventarioActivos; // Global active inventory
 
   const crearDesglose = (inv) => {
     const agrupado = inv.reduce((acc, item) => {
@@ -1589,28 +1891,32 @@ Esta acción no se puede deshacer.`);
         <>
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Contraloría</h2>
-          <p className="text-slate-500 text-sm">Control de ingresos (trámites) e inventario del mobiliario escolar.</p>
+          <h2 className="text-2xl font-bold text-slate-800">Inventario y Resguardos Escolares</h2>
+          <p className="text-slate-500 text-sm">Control integral de bienes muebles, equipos, resguardos por área y actas oficiales de alta y baja.</p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="border-b border-slate-200">
-        <nav className="-mb-px flex space-x-8">
-          
+        <nav className="-mb-px flex flex-wrap gap-2 space-x-6">
           <button
             onClick={() => setActiveTab('inventario')}
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'inventario' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
-            <PackageOpen className="w-4 h-4 mr-2" /> Inventario de Mobiliario
+            <PackageOpen className="w-4 h-4 mr-2" /> Inventario de Mobiliario ({totalArticulos})
           </button>
           <button
             onClick={() => setActiveTab('resguardos')}
             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'resguardos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
-            <FileText className="w-4 h-4 mr-2" /> Historial de Resguardos
+            <FileText className="w-4 h-4 mr-2" /> Historial de Resguardos ({resguardos.length})
           </button>
-          
+          <button
+            onClick={() => setActiveTab('actas')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'actas' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          >
+            <History className="w-4 h-4 mr-2" /> Actas de Alta y Baja ({actasRecepcion.length + actasBaja.length})
+          </button>
         </nav>
       </div>
 
@@ -1963,6 +2269,35 @@ Esta acción no se puede deshacer.`);
 
       {activeTab === 'inventario' && (
         <div className="space-y-6">
+          {/* Tarjetas Ejecutivas de Resumen de Inventario (KPIs) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div onClick={() => { setStatusFilter('Todos'); setLocationFilter('Todos'); }} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-indigo-300 cursor-pointer transition-all">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Bienes Activos</p>
+              <p className="text-2xl font-black text-slate-800 mt-1">{totalArticulos}</p>
+              <p className="text-[11px] text-indigo-600 font-semibold mt-1">{ubicacionesUnicas.filter(u => u !== 'Baja Definitiva').length} áreas registradas</p>
+            </div>
+            <div onClick={() => { setStatusFilter('Todos'); setLocationFilter('Todos'); }} className="bg-white border border-emerald-200 rounded-xl p-4 shadow-sm hover:border-emerald-400 cursor-pointer transition-all">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">En Resguardo (Asignados)</p>
+              <p className="text-2xl font-black text-emerald-700 mt-1">{enResguardoCount}</p>
+              <p className="text-[11px] text-slate-500 mt-1">{resguardos.length} actas de resguardo</p>
+            </div>
+            <div onClick={() => { setStatusFilter('Todos'); setLocationFilter('Bodega Contraloría'); }} className="bg-white border border-blue-200 rounded-xl p-4 shadow-sm hover:border-blue-400 cursor-pointer transition-all">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-blue-600">Disponibles en Bodega</p>
+              <p className="text-2xl font-black text-blue-700 mt-1">{libres}</p>
+              <p className="text-[11px] text-slate-500 mt-1">Clic para filtrar bodega</p>
+            </div>
+            <div onClick={() => { setStatusFilter('Malo'); setLocationFilter('Todos'); }} className="bg-white border border-amber-200 rounded-xl p-4 shadow-sm hover:border-amber-400 cursor-pointer transition-all">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Regular / Mal Estado</p>
+              <p className="text-2xl font-black text-amber-700 mt-1">{porRevisarCount}</p>
+              <p className="text-[11px] text-slate-500 mt-1">Requieren revisión o baja</p>
+            </div>
+            <div onClick={() => { setStatusFilter('Baja'); setLocationFilter('Todos'); }} className="bg-white border border-rose-200 rounded-xl p-4 shadow-sm hover:border-rose-400 cursor-pointer transition-all">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-rose-600">Bajas Definitivas</p>
+              <p className="text-2xl font-black text-rose-700 mt-1">{bajasCount}</p>
+              <p className="text-[11px] text-slate-500 mt-1">Clic para ver bajas</p>
+            </div>
+          </div>
+
           {/* Desglose de Bienes Nuevos */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
@@ -2051,38 +2386,34 @@ Esta acción no se puede deshacer.`);
           </div>
 
           {/* BARRA DE BÚSQUEDA Y FILTRADO */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-end">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col lg:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Buscar por Artículo o Código</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Buscar por Código, Artículo, Marca, Serie o Área</label>
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                 <input 
                   type="text" 
                   className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                  placeholder="Ej. Silla, Computadora, o INV-..." 
+                  placeholder="Ej. Silla, HP, Serie, Aula 3 o SIL-0001..." 
                   value={searchTerm} 
                   onChange={e => setSearchTerm(e.target.value)} 
                 />
               </div>
             </div>
-            <div className="w-full md:w-auto flex flex-col sm:flex-row gap-2">
-              <button 
-                onClick={migrateToInitials}
-                title="Actualiza los códigos al nuevo formato de Iniciales (VDT-0001)."
-                className="w-full md:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 border border-indigo-600 rounded-lg text-sm font-bold shadow-sm transition-colors"
+            <div className="w-full lg:w-44">
+              <label className="block text-xs font-medium text-slate-500 mb-1">Categoría</label>
+              <select 
+                className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                value={categoryFilter} 
+                onChange={e => setCategoryFilter(e.target.value)}
               >
-                Regenerar Códigos (VDT-0001)
-              </button>
-              
-              <button 
-                onClick={cleanOrphanedItems}
-                disabled={isSubmitting}
-                title="Elimina bienes que perdieron su resguardo y quedaron atrapados."
-                className="w-full md:w-auto bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 border border-sky-600 rounded-lg text-sm font-bold shadow-sm transition-colors disabled:opacity-50"
-              >
-                Limpiar Fantasmas
-              </button>
-            </div>            <div className="w-full md:w-48">
+                <option value="Todas">Todas las categorías</option>
+                {categoriasUnicas.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-full lg:w-44">
               <label className="block text-xs font-medium text-slate-500 mb-1">Ubicación</label>
               <select 
                 className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
@@ -2095,42 +2426,64 @@ Esta acción no se puede deshacer.`);
                 ))}
               </select>
             </div>
-            <div className="w-full md:w-48">
+            <div className="w-full lg:w-44">
               <label className="block text-xs font-medium text-slate-500 mb-1">Estado Físico</label>
               <select 
                 className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
                 value={statusFilter} 
                 onChange={e => setStatusFilter(e.target.value)}
               >
-                <option value="Todos">Todos los estados</option>
+                <option value="Todos">Activos (Sin Bajas)</option>
                 <option value="Nuevo">Nuevo</option>
                 <option value="Bueno">Bueno</option>
                 <option value="Regular">Regular</option>
                 <option value="Malo">Malo</option>
+                <option value="Baja">Baja Definitiva</option>
+                <option value="Todos_Incl_Baja">Todos (Incl. Bajas)</option>
               </select>
+            </div>
+            <div className="w-full lg:w-auto flex flex-col sm:flex-row gap-2">
+              <button 
+                onClick={migrateToInitials}
+                title="Actualiza los códigos al nuevo formato de Iniciales (VDT-0001)."
+                className="w-full lg:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 border border-indigo-600 rounded-lg text-xs font-bold shadow-sm transition-colors"
+              >
+                Regenerar Códigos
+              </button>
+              
+              <button 
+                onClick={cleanOrphanedItems}
+                disabled={isSubmitting}
+                title="Elimina bienes que perdieron su resguardo y quedaron atrapados."
+                className="w-full lg:w-auto bg-sky-500 hover:bg-sky-600 text-white px-3 py-2 border border-sky-600 rounded-lg text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
+              >
+                Limpiar Fantasmas
+              </button>
             </div>
           </div>
 
           <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-              <h3 className="font-semibold text-slate-700">Catálogo de Bienes Activos</h3>
-              <div className="flex flex-col sm:flex-row gap-2">
+            <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+              <h3 className="font-semibold text-slate-700">
+                Catálogo de Bienes ({filteredInventario.length})
+              </h3>
+              <div className="flex flex-wrap gap-2">
                 {selectedItems.length > 0 && (
                   <>
-                    <button onClick={handlePrintEtiquetas} className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 shadow-sm transition-colors mr-1">
-                      <Printer className="w-4 h-4 mr-2" /> Imprimir Etiquetas
+                    <button onClick={handlePrintEtiquetas} className="flex items-center px-3 py-2 bg-slate-800 text-white rounded-lg text-xs font-medium hover:bg-slate-900 shadow-sm transition-colors">
+                      <Printer className="w-4 h-4 mr-1.5" /> Etiquetas QR ({selectedItems.length})
                     </button>
-                    <button onClick={() => openModal('resguardo')} className="flex items-center px-4 py-2 bg-indigo-100 text-indigo-800 rounded-lg text-sm font-medium hover:bg-indigo-200 shadow-sm transition-colors border border-indigo-200 mr-1">
-                      <FileText className="w-4 h-4 mr-2" /> Generar Resguardo
+                    <button onClick={() => openModal('resguardo')} className="flex items-center px-3 py-2 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-medium hover:bg-indigo-200 shadow-sm transition-colors border border-indigo-200">
+                      <FileText className="w-4 h-4 mr-1.5" /> Asignar Resguardo
                     </button>
-                    <button onClick={() => openModal('baja')} className="flex items-center px-4 py-2 bg-sky-100 text-sky-800 rounded-lg text-sm font-medium hover:bg-sky-200 shadow-sm transition-colors border border-sky-200 mr-1">
-                      <FileText className="w-4 h-4 mr-2" /> Generar Baja
+                    <button onClick={() => openModal('baja')} className="flex items-center px-3 py-2 bg-sky-100 text-sky-800 rounded-lg text-xs font-medium hover:bg-sky-200 shadow-sm transition-colors border border-sky-200">
+                      <FileText className="w-4 h-4 mr-1.5" /> Dar de Baja
                     </button>
-                    <button onClick={() => handleBulkStatusChange('Nuevo')} className="flex items-center px-4 py-2 bg-emerald-100 text-emerald-800 rounded-lg text-sm font-medium hover:bg-emerald-200 shadow-sm transition-colors border border-emerald-200 mr-1">
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> Marcar como Nuevo
+                    <button onClick={() => handleBulkStatusChange('Nuevo')} className="flex items-center px-3 py-2 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-medium hover:bg-emerald-200 shadow-sm transition-colors border border-emerald-200">
+                      <CheckCircle2 className="w-4 h-4 mr-1.5" /> Marcar Nuevo
                     </button>
-                    <button onClick={handleBulkDelete} className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 shadow-sm transition-colors border border-red-200 mr-2">
-                      <Trash2 className="w-4 h-4 mr-2" /> Eliminar ({selectedItems.length})
+                    <button onClick={handleBulkDelete} className="flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 shadow-sm transition-colors border border-red-200">
+                      <Trash2 className="w-4 h-4 mr-1.5" /> Eliminar ({selectedItems.length})
                     </button>
                   </>
                 )}
@@ -2140,7 +2493,7 @@ Esta acción no se puede deshacer.`);
                 <button onClick={() => setShowScannerModal(true)} className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors">
                   <ScanLine className="w-4 h-4 mr-2" /> Escanear Lista (OCR)
                 </button>
-                <button onClick={() => setModalOpen('recepcion')} className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-sm transition-colors">
+                <button onClick={() => openModal('recepcion')} className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-sm transition-colors">
                   <Plus className="w-4 h-4 mr-1" /> Añadir Artículo
                 </button>
               </div>
@@ -2187,18 +2540,39 @@ Esta acción no se puede deshacer.`);
                         {item.ubicacion || 'Sin ubicar'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-bold text-slate-800">{item.cantidad || 0}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-slate-800">{item.cantidad || 1}</td>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${item.estadoFisico === 'Nuevo' || item.estado === 'Nuevo' ? 'bg-emerald-100 text-emerald-700' : item.estadoFisico === 'Malo' || item.estado === 'Malo' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${
+                        (item.estadoFisico === 'Baja' || item.estado === 'Baja') ? 'bg-slate-200 text-slate-600 line-through' :
+                        (item.estadoFisico === 'Nuevo' || item.estado === 'Nuevo') ? 'bg-emerald-100 text-emerald-700' :
+                        (item.estadoFisico === 'Malo' || item.estado === 'Malo') ? 'bg-red-100 text-red-700' :
+                        (item.estadoFisico === 'Regular' || item.estado === 'Regular') ? 'bg-amber-100 text-amber-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
                         {item.estadoFisico || item.estado || 'Bueno'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-right space-x-2">
+                    <td className="px-6 py-4 text-sm text-right whitespace-nowrap space-x-2">
+                        <button 
+                          onClick={() => { setHistoryItem(item); setModalOpen('history'); }}
+                          className="text-slate-600 hover:text-indigo-700 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-slate-100"
+                          title="Ver historial de movimientos de este bien"
+                        >
+                          <History className="w-3.5 h-3.5 mr-1" /> Historial
+                        </button>
                         <button 
                           onClick={() => { setEditingItem(item); setModalOpen('editItem'); }}
-                          className="text-primary-600 hover:text-primary-800 font-medium text-xs"
+                          className="text-primary-600 hover:text-primary-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-primary-50"
+                          title="Editar artículo"
                         >
-                          Editar
+                          <Edit2 className="w-3.5 h-3.5 mr-1" /> Editar
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteClick(item.id)}
+                          className="text-rose-600 hover:text-rose-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-rose-50"
+                          title="Eliminar artículo permanentemente"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
                         </button>
                     </td>
                   </tr>
@@ -2217,19 +2591,33 @@ Esta acción no se puede deshacer.`);
 
       {activeTab === 'resguardos' && (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex gap-4 items-end">
-            <div className="flex-grow">
-              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Buscar por Resguardante o Folio</label>
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row gap-4 items-end justify-between">
+            <div className="flex-grow w-full">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Buscar por Resguardante, Área, Folio o Artículo</label>
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                 <input 
                   type="text" 
                   className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                  placeholder="Ej. Profr. Juan Pérez, Folio 002..." 
+                  placeholder="Ej. Profr. Juan Pérez, Aula 3, Folio 002 o código..." 
                   value={resguardoSearch} 
                   onChange={e => setResguardoSearch(e.target.value)} 
                 />
               </div>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                onClick={handleExportResguardosCSV}
+                className="flex items-center justify-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors whitespace-nowrap"
+              >
+                <Download className="w-4 h-4 mr-2 text-primary-600" /> Exportar Relación (CSV)
+              </button>
+              <button
+                onClick={() => openModal('resguardo')}
+                className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4 mr-1.5" /> Nuevo Resguardo
+              </button>
             </div>
           </div>
 
@@ -2246,33 +2634,56 @@ Esta acción no se puede deshacer.`);
                 </tr>
               </thead>
               
-                            <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-200">
                 {resguardos.length > 0 ? resguardos.filter(r => 
+                    !resguardoSearch ||
                     searchIncludes(r.resguardante || r.nombreResguardante, resguardoSearch) ||
-                    searchIncludes(r.folio, resguardoSearch)
-                ).map(r => (
-                  <tr key={r.id}>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-900">{r.folio || 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{r.fecha ? (r.fecha.toDate ? r.fecha.toDate().toLocaleDateString() : r.fecha) : 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 font-bold">{r.resguardante || r.nombreResguardante || 'Desconocido'}</td>
+                    searchIncludes(r.area || r.areaResguardante || r.cargo, resguardoSearch) ||
+                    searchIncludes(r.folio, resguardoSearch) ||
+                    (Array.isArray(r.articulos) && r.articulos.some(a => searchIncludes(a.descripcion || a.articulo, resguardoSearch) || searchIncludes(a.codigo, resguardoSearch)))
+                ).map(r => {
+                  const totalPiezas = Array.isArray(r.articulos) ? r.articulos.reduce((s, a) => s + (Number(a.cantidad) || 1), 0) : 0;
+                  return (
+                  <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-mono font-bold text-slate-900">{r.folio || 'S/F'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{r.fecha ? (r.fecha.toDate ? r.fecha.toDate().toLocaleDateString('es-MX') : r.fecha) : 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-800 font-bold">{r.resguardante || r.nombreResguardante || 'Desconocido'}</td>
                     <td className="px-6 py-4 text-sm text-slate-600">{r.area || r.areaResguardante || r.cargo || 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-500">
-                      {r.articulos ? r.articulos.length : 0} artículos
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      <span className="font-semibold text-slate-800">{r.articulos ? r.articulos.length : 0} partidas</span>
+                      <span className="text-xs text-slate-400 ml-1">({totalPiezas} pzas.)</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-right">
+                    <td className="px-6 py-4 text-sm text-right whitespace-nowrap space-x-2">
                         <button 
-                          onClick={() => {
-                            setEditingResguardo(r);
-                            setModalOpen('editResguardo');
-                          }}
-                          className="text-primary-600 hover:text-primary-800 font-medium text-xs"
+                          onClick={() => handleEditResguardoClick(r)}
+                          className="text-primary-600 hover:text-primary-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-primary-50"
                         >
-                          Ver / Editar
+                          <Edit2 className="w-3.5 h-3.5 mr-1" /> Ver / Editar
                         </button>
-                        <button onClick={() => { setPrintData(r); setPrintMode(r.tipo === 'Alta' ? 'recepcion' : (r.tipo === 'Baja' ? 'baja' : 'resguardo')); setTimeout(() => window.print(), 500); }} className="ml-4 text-indigo-600 hover:text-indigo-800 font-medium text-xs">Imprimir PDF</button>
+                        <button 
+                          onClick={() => handleDuplicateResguardo(r)}
+                          className="text-amber-600 hover:text-amber-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-amber-50"
+                          title="Crear un nuevo resguardo usando esta lista como plantilla"
+                        >
+                          <Copy className="w-3.5 h-3.5 mr-1" /> Duplicar
+                        </button>
+                        <button
+                          onClick={() => { setPrintData(r); setPrintMode(r.tipo === 'Alta' ? 'recepcion' : (r.tipo === 'Baja' ? 'baja' : 'resguardo')); setTimeout(() => window.print(), 500); }}
+                          className="text-indigo-600 hover:text-indigo-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-indigo-50"
+                        >
+                          <Printer className="w-3.5 h-3.5 mr-1" /> Imprimir PDF
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteResguardoClick(r)}
+                          className="text-rose-600 hover:text-rose-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-rose-50"
+                          title="Eliminar acta de resguardo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
+                        </button>
                     </td>
                   </tr>
-                )) : (
+                  );
+                }) : (
                   <tr>
                     <td colSpan="6" className="px-6 py-8 text-center text-slate-500 italic">No hay actas de resguardo registradas.</td>
                   </tr>
@@ -2280,6 +2691,118 @@ Esta acción no se puede deshacer.`);
               </tbody>
 
             </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'actas' && (
+        <div className="space-y-6 animate-in fade-in-50 duration-200">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row gap-4 items-end justify-between">
+            <div className="flex-grow w-full">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Buscar en Actas de Recepción (Altas) y Actas de Baja</label>
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input 
+                  type="text" 
+                  className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
+                  placeholder="Buscar por fecha, proveedor, documento de origen, motivo de baja o artículo..." 
+                  value={actasSearch} 
+                  onChange={e => setActasSearch(e.target.value)} 
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button onClick={() => openModal('recepcion')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm flex items-center whitespace-nowrap">
+                <Plus className="w-4 h-4 mr-1.5" /> Nueva Acta de Recepción
+              </button>
+              <button onClick={() => openModal('baja')} className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium shadow-sm flex items-center whitespace-nowrap">
+                <Plus className="w-4 h-4 mr-1.5" /> Nueva Acta de Baja
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Columna Actas de Recepción (Altas) */}
+            <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
+              <div className="px-5 py-3.5 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
+                <h4 className="font-bold text-blue-900 text-sm uppercase tracking-wider">Actas de Recepción / Altas ({actasRecepcion.length})</h4>
+              </div>
+              <div className="divide-y divide-slate-200 max-h-[520px] overflow-y-auto">
+                {actasRecepcion.filter(a =>
+                  !actasSearch ||
+                  searchIncludes(a.origen, actasSearch) ||
+                  searchIncludes(a.nombreProveedor || a.proveedor, actasSearch) ||
+                  searchIncludes(a.observaciones, actasSearch) ||
+                  searchIncludes(a.fecha, actasSearch)
+                ).map(acta => (
+                  <div key={acta.id} className="p-4 hover:bg-slate-50 flex justify-between items-start gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">ALTA</span>
+                        <span className="text-sm font-bold text-slate-800">{acta.fecha || 'Sin fecha'}</span>
+                        <span className="text-xs text-slate-400">({acta.articulosTotales || (acta.articulos?.length || 0)} bienes)</span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1">
+                        <strong>Origen:</strong> {acta.origen || 'Donación / Compra'} | <strong>Proveedor:</strong> {acta.nombreProveedor || acta.proveedor || 'N/A'}
+                      </p>
+                      {acta.observaciones && <p className="text-xs text-slate-500 mt-0.5 italic">{acta.observaciones}</p>}
+                    </div>
+                    <button
+                      onClick={() => { setPrintData(acta); setPrintMode('recepcion'); setTimeout(() => window.print(), 400); }}
+                      className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex items-center whitespace-nowrap"
+                    >
+                      <Printer className="w-3.5 h-3.5 mr-1" /> Reimprimir
+                    </button>
+                  </div>
+                ))}
+                {actasRecepcion.length === 0 && (
+                  <div className="p-8 text-center text-slate-400 text-sm italic">No hay actas de recepción registradas aún.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Columna Actas de Baja */}
+            <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
+              <div className="px-5 py-3.5 bg-rose-50 border-b border-rose-100 flex justify-between items-center">
+                <h4 className="font-bold text-rose-900 text-sm uppercase tracking-wider">Actas de Baja Definitiva ({actasBaja.length})</h4>
+              </div>
+              <div className="divide-y divide-slate-200 max-h-[520px] overflow-y-auto">
+                {actasBaja.filter(a =>
+                  !actasSearch ||
+                  searchIncludes(a.motivo, actasSearch) ||
+                  searchIncludes(a.observaciones, actasSearch) ||
+                  searchIncludes(a.fecha, actasSearch) ||
+                  (Array.isArray(a.articulos) && a.articulos.some(art => searchIncludes(art.codigo, actasSearch) || searchIncludes(art.articulo, actasSearch)))
+                ).map(acta => (
+                  <div key={acta.id} className="p-4 hover:bg-slate-50 flex justify-between items-start gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-xs font-bold">BAJA</span>
+                        <span className="text-sm font-bold text-slate-800">{acta.fecha || 'Sin fecha'}</span>
+                        <span className="text-xs text-slate-400">({acta.articulosTotales || (acta.articulos?.length || 0)} bienes)</span>
+                      </div>
+                      <p className="text-xs text-slate-700 mt-1">
+                        <strong>Motivo:</strong> {acta.motivo || 'Deterioro / Obsolescencia'}
+                      </p>
+                      {Array.isArray(acta.articulos) && acta.articulos.length > 0 && (
+                        <p className="text-[11px] font-mono text-slate-500 mt-0.5">
+                          Códigos: {acta.articulos.map(x => x.codigo).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => { setPrintData(acta); setPrintMode('baja'); setTimeout(() => window.print(), 400); }}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center whitespace-nowrap"
+                    >
+                      <Printer className="w-3.5 h-3.5 mr-1" /> Reimprimir
+                    </button>
+                  </div>
+                ))}
+                {actasBaja.length === 0 && (
+                  <div className="p-8 text-center text-slate-400 text-sm italic">No hay actas de baja registradas aún.</div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -2292,10 +2815,11 @@ Esta acción no se puede deshacer.`);
         <div className={`bg-white rounded-xl shadow-2xl w-full my-8 ${modalOpen === 'editItem' ? 'max-w-lg' : 'max-w-4xl'}`}>
           <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
             <h3 className="font-bold text-xl text-slate-800">
-              {modalOpen === 'recepcion' ? 'Generar Acta de Recepción' : 
+              {modalOpen === 'recepcion' ? 'Generar Acta de Recepción (Alta de Inventario)' : 
                modalOpen === 'resguardo' ? 'Generar Carta de Resguardo' : 
+               modalOpen === 'baja' ? 'Generar Acta de Baja Oficial' :
                modalOpen === 'editResguardo' ? 'Editar Carta de Resguardo' : 
-               modalOpen === 'history' ? 'Historial de Movimientos' : 'Editar Bien del Inventario'}
+               modalOpen === 'history' ? 'Historial de Movimientos del Bien' : 'Editar Bien del Inventario'}
             </h3>
             <button onClick={() => { setModalOpen(null); setEditingItem(null); setEditingResguardo(null); setHistoryItem(null); }} className="text-slate-400 hover:text-slate-600">
               <X className="w-6 h-6" />
@@ -2348,6 +2872,7 @@ Esta acción no se puede deshacer.`);
                         <option value="Bueno">Bueno</option>
                         <option value="Regular">Regular</option>
                         <option value="Malo">Malo</option>
+                        <option value="Baja">Baja Definitiva</option>
                       </select>
                     </div>
                     <div>
@@ -2534,6 +3059,9 @@ Esta acción no se puede deshacer.`);
                             <span className="text-xs text-slate-400">{new Date(entry.fecha).toLocaleString('es-MX')}</span>
                           </div>
                           <p className="text-sm text-slate-600">{entry.detalle}</p>
+                          {entry.usuario && (
+                            <p className="text-[11px] font-semibold text-indigo-600 mt-1.5">Registrado por: {entry.usuario}</p>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -2603,11 +3131,9 @@ Esta acción no se puede deshacer.`);
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
                   <div className="flex justify-between items-center mb-3">
                     <h4 className="font-semibold text-slate-700">Artículos a incluir</h4>
-                    {modalOpen !== 'baja' && (
-                      <button type="button" onClick={handleAddRow} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                        + Añadir fila
-                      </button>
-                    )}
+                    <button type="button" onClick={handleAddRow} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                      + Añadir fila
+                    </button>
                   </div>
                   <div className="space-y-3">
                     {formData.articulos.map((art, idx) => (
@@ -2647,14 +3173,12 @@ Esta acción no se puede deshacer.`);
                             </div>
                           )}
                           
-                          {modalOpen !== 'baja' && (
-                            <button type="button" onClick={() => {
-                              const newArts = formData.articulos.filter((_, i) => i !== idx);
-                              setFormData({...formData, articulos: newArts.length ? newArts : [{}]});
-                            }} className="p-2 text-slate-400 hover:text-red-500">
-                              <X className="w-5 h-5" />
-                            </button>
-                          )}
+                          <button type="button" onClick={() => {
+                            const newArts = formData.articulos.filter((_, i) => i !== idx);
+                            setFormData({...formData, articulos: newArts.length ? newArts : [{}]});
+                          }} className="p-2 text-slate-400 hover:text-red-500">
+                            <X className="w-5 h-5" />
+                          </button>
                         </div>
                         <div className="flex gap-2 items-center">
                            <div className="flex-1">
@@ -2713,22 +3237,22 @@ Esta acción no se puede deshacer.`);
                   </div>
                 </div>
 
-              {modalOpen === 'recepcion' && (
+              {(modalOpen === 'recepcion' || modalOpen === 'baja') && (
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
-                  <textarea rows="2" value={formData.observaciones} onChange={e => setFormData({...formData, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, faltantes..."></textarea>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones Generales / Dictamen</label>
+                  <textarea rows="2" value={formData.observaciones} onChange={e => setFormData({...formData, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, faltantes, dictamen de baja..."></textarea>
                 </div>
               )}
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
                 <button type="button" onClick={() => setModalOpen(null)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium" disabled={isSubmitting}>Cancelar</button>
-                {modalOpen === 'resguardo' && (
+                {(modalOpen === 'recepcion' || modalOpen === 'resguardo' || modalOpen === 'baja') && (
                   <button type="button" onClick={(e) => handlePrintSubmit(e, 'saveOnly')} className={`px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
                     {isSubmitting ? 'Guardando...' : 'Guardar Solamente'}
                   </button>
                 )}
                 <button type="submit" className={`px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
-                  <Printer className="w-4 h-4 mr-2" /> {isSubmitting ? 'Procesando...' : (modalOpen === 'resguardo' ? 'Guardar y Generar PDF' : 'Imprimir Formato Oficial')}
+                  <Printer className="w-4 h-4 mr-2" /> {isSubmitting ? 'Procesando...' : 'Guardar e Imprimir Formato'}
                 </button>
               </div>
             </form>
@@ -2740,10 +3264,10 @@ Esta acción no se puede deshacer.`);
 </div>
     )}
 
-    {printMode === 'recepcion' && printData && <ActaRecepcionPrint data={printData} />}
+    {printMode === 'recepcion' && printData && <ActaRecepcionPrint data={printData} onBack={() => setPrintMode(null)} />}
     {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} onBack={() => setPrintMode(null)} />}
-    {printMode === 'baja' && printData && <ActaBajaPrint data={printData} />}
-    {printMode === 'etiquetas' && printData && <EtiquetasPrint items={printData} />}
+    {printMode === 'baja' && printData && <ActaBajaPrint data={printData} onBack={() => setPrintMode(null)} />}
+    {printMode === 'etiquetas' && printData && <EtiquetasPrint items={printData} onBack={() => setPrintMode(null)} />}
 
     {printMode === 'corte' && printData && (
       <div className="hidden print:block page-container relative mx-auto bg-white p-8">
@@ -2862,7 +3386,9 @@ Esta acción no se puede deshacer.`);
     
     {showScannerModal && (
       <ScannerInventarioModal 
-        onClose={() => setShowScannerModal(false)} 
+        onClose={() => setShowScannerModal(false)}
+        existingInventario={inventario}
+        userLabel={userLabel}
       />
     )}
     

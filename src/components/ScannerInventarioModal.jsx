@@ -5,11 +5,26 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { db } from '../firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { registrarMovimiento } from '../utils/bitacora';
 
 // Configurar el worker de PDF.js usando Vite
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-export default function ScannerInventarioModal({ onClose, onSaveSuccess }) {
+const generatePrefix = (name) => {
+  if (!name) return 'ART';
+  const cleanName = name
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z\s]/g, "")
+    .trim()
+    .toUpperCase();
+  const words = cleanName.split(/\s+/).filter(w => w.length > 0);
+  if (words.length === 0) return 'ART';
+  if (words.length >= 3) return (words[0][0] + words[1][0] + words[2][0]).toUpperCase();
+  if (words.length === 2) return (words[0].substring(0, 2) + words[1][0]).toUpperCase();
+  return (words[0].substring(0, 3)).toUpperCase().padEnd(3, 'X');
+};
+
+export default function ScannerInventarioModal({ onClose, onSaveSuccess, existingInventario = [], userLabel = 'Contraloría' }) {
   const [image, setImage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState([]); // Array of { cantidad, descripcion, marca, serie, estado, inventario }
@@ -120,10 +135,9 @@ Devuelve EXCLUSIVAMENTE un único arreglo JSON válido donde cada objeto tenga e
 No incluyas texto fuera del JSON. Ni siquiera bloques de código markdown (\`\`\`json). SOLO el arreglo puro con los objetos combinados de todas las páginas.`;
 
       const modelsToTry = [
-        "gemini-3.5-flash", 
-        "gemini-3.0-flash", 
-        "gemini-2.5-flash", 
-        "gemini-1.5-flash-latest", 
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
         "gemini-1.5-pro"
       ];
       
@@ -196,20 +210,63 @@ No incluyas texto fuera del JSON. Ni siquiera bloques de código markdown (\`\`\
     
     setIsSaving(true);
     try {
-      const promises = extractedData.map((item, idx) => {
-        return addDoc(collection(db, 'inventario'), {
-          codigo: item.inventario || `INV-OCR-${Date.now().toString().slice(-4)}${idx}`,
-          articulo: `${item.descripcion || ''} ${item.marca || ''}`.trim(),
-          ubicacion: 'Bodega Contraloría',
-          cantidad: Number(item.cantidad) || 1,
-          estado: item.estado || 'Bueno',
-          serie: item.serie || '',
-          fechaIngreso: new Date().toISOString()
-        });
+      const counters = {};
+      existingInventario.forEach(inv => {
+        const match = (inv.codigo || '').match(/^([A-Z]{3})-(\d+)/);
+        if (match) {
+          const p = match[1];
+          const n = parseInt(match[2], 10);
+          if (!counters[p] || n > counters[p]) counters[p] = n;
+        }
       });
+
+      let totalCreated = 0;
+      const promises = [];
+
+      extractedData.forEach((item) => {
+        const qty = Math.max(1, Number(item.cantidad) || 1);
+        const prefix = generatePrefix(item.descripcion || item.marca || 'ART');
+        if (!counters[prefix]) counters[prefix] = 0;
+
+        for (let i = 0; i < qty; i++) {
+          counters[prefix]++;
+          const autoCode = `${prefix}-${String(counters[prefix]).padStart(4, '0')}`;
+          const finalCode = (item.inventario && qty === 1)
+            ? item.inventario.trim()
+            : (item.inventario && qty > 1 ? `${item.inventario.trim()}-${i + 1}` : autoCode);
+
+          totalCreated++;
+          promises.push(
+            addDoc(collection(db, 'inventario'), {
+              codigo: finalCode,
+              articulo: `${item.descripcion || ''} ${item.marca || ''}`.trim() || 'Artículo Escaneado',
+              descripcion: item.descripcion || '',
+              marca: item.marca || '',
+              modelo: '',
+              ubicacion: 'Bodega Contraloría',
+              cantidad: 1,
+              estado: item.estado || 'Bueno',
+              serie: item.serie || '',
+              fechaIngreso: new Date().toISOString(),
+              historial: [{
+                fecha: new Date().toISOString(),
+                accion: 'Alta por Escáner OCR',
+                detalle: `Registrado mediante escaneo inteligente en Bodega Contraloría.`,
+                usuario: userLabel
+              }]
+            })
+          );
+        }
+      });
+
       await Promise.all(promises);
+      await registrarMovimiento(
+        'Alta de Inventario (OCR)',
+        `Se importaron ${totalCreated} bienes al inventario mediante el escáner OCR con IA.`,
+        userLabel
+      );
       
-      alert(`¡${extractedData.length} bienes guardados exitosamente!`);
+      alert(`¡${totalCreated} bienes guardados exitosamente en el inventario!`);
       if (onSaveSuccess) onSaveSuccess();
       onClose();
     } catch (error) {
