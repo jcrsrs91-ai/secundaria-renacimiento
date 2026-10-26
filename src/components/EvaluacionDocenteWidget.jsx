@@ -77,6 +77,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         t6: det.t6 ?? '',
         examen: det.examen ?? '',
         participacion: det.participacion ?? '',
+        extraEval: det.extraEval ?? '',
         calificacion: savedCalif !== '' ? savedCalif : (det.calificacion ?? ''),
         observaciones: det.observaciones ?? ''
       };
@@ -114,10 +115,10 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     setHasUnsavedChanges(true);
   };
 
-  // Calcular promedio automático desde Tareas (T1..T6), Examen y Participación para un alumno
+  // Calcular promedio automático desde Tareas (T1..T6), Examen, Participación y Columna Extra para un alumno
   const autocalcularFila = (studentId) => {
     const row = evalData[studentId] || {};
-    const vals = ['t1', 't2', 't3', 't4', 't5', 't6', 'examen', 'participacion']
+    const vals = ['t1', 't2', 't3', 't4', 't5', 't6', 'examen', 'participacion', 'extraEval']
       .map(k => parseFloat(row[k]))
       .filter(n => !isNaN(n));
     if (vals.length === 0) return;
@@ -133,7 +134,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       const isBaja = (al.status || '').toLowerCase() === 'baja';
       if (isBaja) return;
       const row = next[al.id] || {};
-      const vals = ['t1', 't2', 't3', 't4', 't5', 't6', 'examen', 'participacion']
+      const vals = ['t1', 't2', 't3', 't4', 't5', 't6', 'examen', 'participacion', 'extraEval']
         .map(k => parseFloat(row[k]))
         .filter(n => !isNaN(n));
       if (vals.length > 0) {
@@ -241,6 +242,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
             t6: row.t6 ?? '',
             examen: row.examen ?? '',
             participacion: row.participacion ?? '',
+            extraEval: row.extraEval ?? '',
             calificacion: row.calificacion ?? '',
             observaciones: row.observaciones ?? '',
             docente: docenteNombre.trim(),
@@ -350,7 +352,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           </div>
 
           <div className="lg:col-span-2">
-            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Asignatura / Materia</label>
+            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Disciplina / Materia</label>
             <select
               value={materiaId}
               onChange={e => setMateriaId(e.target.value)}
@@ -570,6 +572,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                     ))}
                     <th className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-16 text-amber-200">Exam.</th>
                     <th className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-16 text-amber-200">Partic.</th>
+                    <th className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-16 text-amber-200" title="Columna adicional de evaluación">Otro</th>
                   </>
                 )}
                 <th className="px-3 py-3 text-center text-xs font-black uppercase w-28 bg-indigo-950 text-indigo-200">
@@ -622,7 +625,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
 
                     {isBaja ? (
                       <td
-                        colSpan={modoCaptura === 'detallado' ? 12 : 4}
+                        colSpan={modoCaptura === 'detallado' ? 13 : 4}
                         className="px-4 py-2.5 text-center font-bold text-xs tracking-widest text-slate-400 uppercase bg-slate-100"
                       >
                         — B A J A &nbsp; O F I C I A L — (No se evalúa ni cuenta en existencia activa)
@@ -642,7 +645,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                           />
                         </td>
 
-                        {/* Sub-columnas de Tareas, Examen y Participación en Modo Detallado */}
+                        {/* Sub-columnas de Tareas, Examen, Participación y Columna Extra en Modo Detallado */}
                         {modoCaptura === 'detallado' && (
                           <>
                             {[1, 2, 3, 4, 5, 6].map(t => (
@@ -668,6 +671,14 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                                 type="text"
                                 value={row.participacion ?? ''}
                                 onChange={e => handleFieldChange(al.id, 'participacion', e.target.value)}
+                                className="w-14 p-1 text-center border border-amber-300 rounded text-xs font-semibold"
+                              />
+                            </td>
+                            <td className="px-1 py-2 text-center bg-amber-50/30">
+                              <input
+                                type="text"
+                                value={row.extraEval ?? ''}
+                                onChange={e => handleFieldChange(al.id, 'extraEval', e.target.value)}
                                 onBlur={() => {
                                   if (!row.calificacion) autocalcularFila(al.id);
                                 }}

@@ -118,7 +118,7 @@ export default function CuadroAsignaturaPrint({
           </div>
           <div className="text-center">
             <h2 className="font-black text-[13px] uppercase tracking-widest bg-slate-200 px-3.5 py-0.5 border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-              Cuadro de Concentración y Evaluación por Asignatura
+              Cuadro de Concentración y Evaluación por Disciplina
             </h2>
           </div>
           <div className="text-right leading-tight">
@@ -141,7 +141,7 @@ export default function CuadroAsignaturaPrint({
             </span>
           </div>
           <div>
-            Asignatura:{' '}
+            Disciplina:{' '}
             <span className="font-bold border-b border-black inline-block min-w-[11rem] px-1 uppercase text-[9.5px]">
               {asignatura}
             </span>

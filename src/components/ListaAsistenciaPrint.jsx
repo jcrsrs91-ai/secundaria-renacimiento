@@ -185,7 +185,7 @@ export default function ListaAsistenciaPrint({
             </span>
           </div>
           <div>
-            Asignatura:{' '}
+            Disciplina:{' '}
             <span className="font-bold border-b border-black inline-block min-w-[10rem] px-1 uppercase text-[9.5px]">
               {isFilled && asignatura ? asignatura : ''}
             </span>
@@ -202,16 +202,17 @@ export default function ListaAsistenciaPrint({
             <col style={{ width: '2.1%' }} />
             <col style={{ width: '23.5%' }} />
             {daysCols.map(col => (
-              <col key={`col-d-${col}`} style={{ width: '2.15%' }} />
+              <col key={`col-d-${col}`} style={{ width: '2.10%' }} />
             ))}
-            <col style={{ width: '2.4%' }} />
+            <col style={{ width: '2.3%' }} />
             {taskCols.map(col => (
-              <col key={`col-t-${col}`} style={{ width: '2.25%' }} />
+              <col key={`col-t-${col}`} style={{ width: '2.15%' }} />
             ))}
+            <col style={{ width: '2.8%' }} />
+            <col style={{ width: '2.8%' }} />
+            <col style={{ width: '2.8%' }} />
             <col style={{ width: '3.0%' }} />
-            <col style={{ width: '3.0%' }} />
-            <col style={{ width: '3.2%' }} />
-            <col style={{ width: '6.3%' }} />
+            <col style={{ width: '5.8%' }} />
           </colgroup>
           <thead>
             {/* Fila 1: Agrupaciones Principales */}
@@ -225,7 +226,7 @@ export default function ListaAsistenciaPrint({
               </th>
               <th colSpan={daysCols.length + 1} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Asistencias</th>
               <th colSpan={taskCols.length} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Tareas / Trabajos</th>
-              <th colSpan={3} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Evaluación</th>
+              <th colSpan={4} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Evaluación</th>
               <th rowSpan={3} className="font-bold text-center uppercase tracking-tight text-[8px]">Observaciones</th>
             </tr>
 
@@ -240,6 +241,7 @@ export default function ListaAsistenciaPrint({
                 <th key={`cont-t-${col}`} className="p-0 align-bottom"></th>
               ))}
 
+              <th className="bg-slate-50 p-0"></th>
               <th className="bg-slate-50 p-0"></th>
               <th className="bg-slate-50 p-0"></th>
               <th className="bg-slate-100 p-0"></th>
@@ -258,6 +260,7 @@ export default function ListaAsistenciaPrint({
               
               <th className="text-center font-bold text-[8px] leading-none">Exam.</th>
               <th className="text-center font-bold text-[8px] leading-none" title="Participación">Partic.</th>
+              <th className="text-center font-bold text-[8px] leading-none" title="Criterio adicional del docente"></th>
               <th className="text-center font-extrabold text-[8.5px] bg-slate-200 leading-none" title="Promedio Trimestral">Prom.</th>
             </tr>
           </thead>
@@ -303,7 +306,7 @@ export default function ListaAsistenciaPrint({
                   
                   {isBaja ? (
                     <>
-                      <td colSpan={daysCols.length + 1 + taskCols.length + 3} className="text-center font-bold text-[8px] tracking-[0.25em] text-slate-500 bg-slate-100/80 uppercase leading-none">
+                      <td colSpan={daysCols.length + 1 + taskCols.length + 4} className="text-center font-bold text-[8px] tracking-[0.25em] text-slate-500 bg-slate-100/80 uppercase leading-none">
                         — B A J A {student.fechaBaja ? `(${student.fechaBaja})` : ''} —
                       </td>
                       <td className="text-center font-bold text-[7px] text-red-800 uppercase px-0.5 truncate leading-none">
@@ -328,12 +331,15 @@ export default function ListaAsistenciaPrint({
                         </td>
                       ))}
                       
-                      {/* Evaluación: Examen, Participación y Promedio Trimestral */}
+                      {/* Evaluación: Examen, Participación, Columna Extra y Promedio Trimestral */}
                       <td className="text-center text-[8.5px] leading-none">
                         {isFilled && stEval.examen !== undefined ? stEval.examen : ''}
                       </td>
                       <td className="text-center text-[8.5px] leading-none">
                         {isFilled && stEval.participacion !== undefined ? stEval.participacion : ''}
+                      </td>
+                      <td className="text-center text-[8.5px] leading-none">
+                        {isFilled && stEval.extraEval !== undefined ? stEval.extraEval : ''}
                       </td>
                       <td className={`bg-slate-100/80 text-center font-black text-[9.8px] leading-none ${isReprobado ? 'text-red-700 underline' : 'text-slate-900'}`}>
                         {isFilled && stEval.calificacion !== undefined && stEval.calificacion !== '' ? stEval.calificacion : ''}
