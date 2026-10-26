@@ -153,22 +153,22 @@ export default function ActaRecepcionPrint({ data, onBack }) {
         </thead>
         <tbody className="align-top">
           {articulosMostrados.map((art, idx) => (
-            <tr key={idx} className="h-8">
-              <td className="border-r-2 border-black p-2 uppercase font-bold text-left">{art.articulo}</td>
-              <td className="border-r-2 border-black p-2 uppercase text-[8px] text-justify leading-tight">
+            <tr key={idx} className="h-7 border-b border-black">
+              <td className="border-r-2 border-black p-1.5 uppercase font-bold text-left">{art.articulo}</td>
+              <td className="border-r-2 border-black p-1.5 uppercase text-[8px] text-justify leading-tight">
                 {[art.descripcion, art.marca && `MARCA: ${art.marca}`, art.modelo && `MOD: ${art.modelo}`, viewMode === 'desglosada' && art.serie && `S/N: ${art.serie}`, viewMode === 'desglosada' && art.codigo && `FOLIO: ${art.codigo}`].filter(Boolean).join(' | ')}
               </td>
-              <td className="border-r-2 border-black p-2 uppercase font-bold">{art.cantidad}</td>
-              <td className="p-2 uppercase text-[8px]">{art.observaciones || art.estado || ''}</td>
+              <td className="border-r-2 border-black p-1.5 uppercase font-bold">{art.cantidad}</td>
+              <td className="p-1.5 uppercase text-[8px]">{art.observaciones || art.estado || ''}</td>
             </tr>
           ))}
-          {/* Empty rows to fill space */}
-          {[...Array(Math.max(0, 15 - articulosMostrados.length))].map((_, idx) => (
-            <tr key={'empty-'+idx}>
-              <td className="border-r-2 border-black p-2"></td>
-              <td className="border-r-2 border-black p-2"></td>
-              <td className="border-r-2 border-black p-2"></td>
-              <td className="p-2"></td>
+          {/* Filas en blanco con renglón amplio para llenado a mano */}
+          {[...Array(Math.max(0, 16 - articulosMostrados.length))].map((_, idx) => (
+            <tr key={'empty-'+idx} className="h-7 border-b border-black">
+              <td className="border-r-2 border-black p-1.5">&nbsp;</td>
+              <td className="border-r-2 border-black p-1.5">&nbsp;</td>
+              <td className="border-r-2 border-black p-1.5">&nbsp;</td>
+              <td className="p-1.5">&nbsp;</td>
             </tr>
           ))}
         </tbody>

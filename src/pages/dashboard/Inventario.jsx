@@ -655,6 +655,27 @@ export default function Inventario() {
     setTimeout(() => window.print(), 500);
   };
 
+  const handlePrintBlank = (type) => {
+    setPrintData({
+      isBlank: true,
+      fecha: '',
+      hora: '',
+      origen: '',
+      nombreProveedor: '',
+      nombreResguardante: '',
+      areaResguardante: '',
+      folio: '',
+      motivo: '',
+      observaciones: '',
+      nombreContralor: 'Profr. Juan Carlos Taboada B.',
+      articulos: []
+    });
+    setPrintMode(type);
+    setModalOpen(null);
+    toast.success('¡Formato en blanco listo para imprimir y llenar a mano!');
+    setTimeout(() => window.print(), 400);
+  };
+
   const handleAddRow = () => {
     setFormData({ ...formData, articulos: [...formData.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }] });
   };
@@ -2361,27 +2382,42 @@ Esta acción no se puede deshacer.`);
                 <h4 className="font-bold text-blue-900 text-lg">Acta de Recepción (Alta)</h4>
                 <p className="text-blue-700 text-xs mt-1">Alta oficial de bienes nuevos o donaciones.</p>
               </div>
-              <button onClick={() => openModal('recepcion')} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
-                <Printer className="w-4 h-4 mr-2" /> Generar
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => openModal('recepcion')} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold">
+                  <Plus className="w-3.5 h-3.5 mr-1.5" /> Capturar / Generar
+                </button>
+                <button onClick={() => handlePrintBlank('recepcion')} className="bg-white hover:bg-blue-100 text-blue-700 border border-blue-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir formato en blanco con renglones para ir al área y anotar a mano">
+                  <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
+                </button>
+              </div>
             </div>
             <div className="bg-gradient-to-r from-indigo-50 to-orange-50 border border-indigo-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
               <div className="mb-3">
                 <h4 className="font-bold text-indigo-900 text-lg">Carta de Resguardo</h4>
-                <p className="text-indigo-700 text-xs mt-1">Asignar bienes a maestros o áreas.</p>
+                <p className="text-indigo-700 text-xs mt-1">Asignar bienes a maestros, salones o áreas.</p>
               </div>
-              <button onClick={() => openModal('resguardo')} className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
-                <Printer className="w-4 h-4 mr-2" /> Generar
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => openModal('resguardo')} className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold">
+                  <Plus className="w-3.5 h-3.5 mr-1.5" /> Capturar / Generar
+                </button>
+                <button onClick={() => handlePrintBlank('resguardo')} className="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir formato de resguardo en blanco para levantamiento físico a mano">
+                  <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
+                </button>
+              </div>
             </div>
             <div className="bg-gradient-to-r from-sky-50 to-pink-50 border border-sky-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
               <div className="mb-3">
                 <h4 className="font-bold text-sky-900 text-lg">Acta de Baja</h4>
                 <p className="text-sky-700 text-xs mt-1">Desecho oficial de bienes inservibles.</p>
               </div>
-              <button onClick={() => openModal('baja')} className="bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg shadow-md transition flex items-center justify-center text-sm">
-                <Printer className="w-4 h-4 mr-2" /> Generar Libre
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => openModal('baja')} className="bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold">
+                  <Plus className="w-3.5 h-3.5 mr-1.5" /> Capturar / Generar
+                </button>
+                <button onClick={() => handlePrintBlank('baja')} className="bg-white hover:bg-sky-100 text-sky-700 border border-sky-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir acta de baja en blanco para anotar bienes dañados a mano">
+                  <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2605,7 +2641,14 @@ Esta acción no se puede deshacer.`);
                 />
               </div>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => handlePrintBlank('resguardo')}
+                className="flex items-center justify-center px-4 py-2 bg-white border border-indigo-300 text-indigo-700 rounded-lg text-sm font-bold hover:bg-indigo-50 shadow-sm transition-colors whitespace-nowrap"
+                title="Imprimir formato de resguardo en blanco para llenado a mano"
+              >
+                <Printer className="w-4 h-4 mr-2" /> Imprimir en Blanco
+              </button>
               <button
                 onClick={handleExportResguardosCSV}
                 className="flex items-center justify-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors whitespace-nowrap"
@@ -3244,16 +3287,26 @@ Esta acción no se puede deshacer.`);
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-                <button type="button" onClick={() => setModalOpen(null)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium" disabled={isSubmitting}>Cancelar</button>
-                {(modalOpen === 'recepcion' || modalOpen === 'resguardo' || modalOpen === 'baja') && (
-                  <button type="button" onClick={(e) => handlePrintSubmit(e, 'saveOnly')} className={`px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
-                    {isSubmitting ? 'Guardando...' : 'Guardar Solamente'}
-                  </button>
-                )}
-                <button type="submit" className={`px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
-                  <Printer className="w-4 h-4 mr-2" /> {isSubmitting ? 'Procesando...' : 'Guardar e Imprimir Formato'}
+              <div className="flex flex-wrap justify-between items-center gap-3 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => handlePrintBlank(modalOpen)}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 rounded-lg text-sm font-bold flex items-center"
+                  disabled={isSubmitting}
+                >
+                  <Printer className="w-4 h-4 mr-2 text-indigo-600" /> Imprimir Formato en Blanco (Llenar a mano)
                 </button>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setModalOpen(null)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium" disabled={isSubmitting}>Cancelar</button>
+                  {(modalOpen === 'recepcion' || modalOpen === 'resguardo' || modalOpen === 'baja') && (
+                    <button type="button" onClick={(e) => handlePrintSubmit(e, 'saveOnly')} className={`px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
+                      {isSubmitting ? 'Guardando...' : 'Guardar Solamente'}
+                    </button>
+                  )}
+                  <button type="submit" className={`px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
+                    <Printer className="w-4 h-4 mr-2" /> {isSubmitting ? 'Procesando...' : 'Guardar e Imprimir Formato'}
+                  </button>
+                </div>
               </div>
             </form>
             )}

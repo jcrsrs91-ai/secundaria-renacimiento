@@ -63,11 +63,11 @@ export default function ActaBajaPrint({ data, onBack }) {
             <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 shadow-sm">
               <p className="font-black text-slate-700 mb-1 uppercase text-[10px] tracking-widest">Información del Acta</p>
               <p><strong>Lugar y Fecha:</strong> Acapulco de Juárez, Gro., a {formatDate(data.fecha)}.</p>
-              <p className="mt-1"><strong>Hora:</strong> {data.hora || new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) + ' hrs.'}</p>
+              <p className="mt-1"><strong>Hora:</strong> {data.isBlank ? '_______ hrs.' : (data.hora || new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) + ' hrs.')}</p>
             </div>
             <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 shadow-sm">
               <p className="font-black text-slate-700 mb-1 uppercase text-[10px] tracking-widest">Motivo de la Baja</p>
-              <p className="font-bold text-sky-700 mt-1">{data.motivo || 'Deterioro / Obsoleto / Destrucción'}</p>
+              <p className="font-bold text-sky-700 mt-1">{data.isBlank ? '____________________________________________________' : (data.motivo || 'Deterioro / Obsoleto / Destrucción')}</p>
             </div>
          </div>
 
@@ -100,14 +100,14 @@ export default function ActaBajaPrint({ data, onBack }) {
                   </tr>
                 ))
               ) : (
-                [...Array(10)].map((_, idx) => (
-                  <tr key={idx}>
-                    <td className="p-2.5 border-r border-slate-200"></td>
-                    <td className="p-2.5 border-r border-slate-200"></td>
-                    <td className="p-2.5 border-r border-slate-200"></td>
-                    <td className="p-2.5 border-r border-slate-200"></td>
-                    <td className="p-2.5 border-r border-slate-200"></td>
-                    <td className="p-2.5"></td>
+                [...Array(14)].map((_, idx) => (
+                  <tr key={idx} className="h-7">
+                    <td className="p-2 border-r border-slate-200">&nbsp;</td>
+                    <td className="p-2 border-r border-slate-200">&nbsp;</td>
+                    <td className="p-2 border-r border-slate-200">&nbsp;</td>
+                    <td className="p-2 border-r border-slate-200">&nbsp;</td>
+                    <td className="p-2 border-r border-slate-200">&nbsp;</td>
+                    <td className="p-2">&nbsp;</td>
                   </tr>
                 ))
               )}
@@ -117,8 +117,8 @@ export default function ActaBajaPrint({ data, onBack }) {
 
          <div className="mb-8 px-2">
             <p className="font-bold text-xs uppercase text-slate-500 tracking-wider mb-1">Observaciones / Dictamen Técnico:</p>
-            <div className="w-full min-h-[40px] border border-slate-300 rounded bg-slate-50 p-2 text-sm text-slate-700">
-              {data.observaciones || 'Se procede a la baja definitiva de los artículos listados por encontrarse en estado inservible.'}
+            <div className="w-full min-h-[52px] border border-slate-300 rounded bg-slate-50 p-2 text-sm text-slate-700">
+              {data.isBlank ? '' : (data.observaciones || 'Se procede a la baja definitiva de los artículos listados por encontrarse en estado inservible.')}
             </div>
          </div>
 

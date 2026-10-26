@@ -66,13 +66,17 @@ export default function CartaResguardoPrint({ data, onBack }) {
           <div className="text-center font-bold text-[11px] py-1 border-b border-black">
             DATOS PERSONALES DEL RESPONSABLE
           </div>
-          <div className="p-2 text-[10px] space-y-3 relative flex-1">
+          <div className="p-2 text-[10px] space-y-2.5 relative flex-1">
             <div className="flex">
-              <span className="font-bold w-20">NOMBRE:</span>
+              <span className="font-bold w-24">NOMBRE:</span>
               <span className="border-b border-black flex-1 uppercase">{data.nombreResguardante || ''}</span>
             </div>
             <div className="flex">
-              <span className="font-bold w-20">DOMICILIO:</span>
+              <span className="font-bold w-24">ÁREA / CARGO:</span>
+              <span className="border-b border-black flex-1 uppercase">{data.areaResguardante || data.area || data.cargo || ''}</span>
+            </div>
+            <div className="flex">
+              <span className="font-bold w-24">DOMICILIO:</span>
               <span className="border-b border-black flex-1 uppercase">{data.domicilioResguardante || ''}</span>
             </div>
             <div className="flex gap-4">
@@ -184,16 +188,16 @@ export default function CartaResguardoPrint({ data, onBack }) {
               </tr>
             ))
           ) : null}
-          {/* Fill remaining rows to make it look like a standard format */}
-          {[...Array(Math.max(0, 10 - (data.articulos?.length || 0)))].map((_, idx) => (
-            <tr key={'empty-'+idx}>
-              <td className="border border-black p-1"></td>
-              <td className="border border-black p-1"></td>
-              <td className="border border-black p-1"></td>
-              <td className="border border-black p-1"></td>
-              <td className="border border-black p-1"></td>
-              <td className="border border-black p-1"></td>
-              <td className="border border-black p-1"></td>
+          {/* Filas en blanco con altura suficiente para escritura a mano */}
+          {[...Array(Math.max(0, 12 - (data.articulos?.filter(art => art.cantidad || art.descripcion || art.articulo || art.marca).length || 0)))].map((_, idx) => (
+            <tr key={'empty-'+idx} className="h-6">
+              <td className="border border-black p-1">&nbsp;</td>
+              <td className="border border-black p-1">&nbsp;</td>
+              <td className="border border-black p-1">&nbsp;</td>
+              <td className="border border-black p-1">&nbsp;</td>
+              <td className="border border-black p-1">&nbsp;</td>
+              <td className="border border-black p-1">&nbsp;</td>
+              <td className="border border-black p-1">&nbsp;</td>
             </tr>
           ))}
         </tbody>
