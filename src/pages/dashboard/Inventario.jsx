@@ -21,8 +21,13 @@ import ActaBajaPrint from '../../components/ActaBajaPrint';
 import CedulaCensalPrint from '../../components/CedulaCensalPrint';
 
 // Funciones auxiliares para el manejo de rangos de folios de inventario
-const generateCodeRange = (baseCode, quantity) => {
-  const qty = Number(quantity) || 1;
+const generateCodeRange = (rawBaseCode, quantity) => {
+  const qty = Math.max(1, Number(quantity) || 1);
+  // Si el código ya venía como rango (ej. "MES-0001 al MES-0005"), tomar únicamente el código inicial
+  const baseCode = String(rawBaseCode || '').includes(' al ')
+    ? String(rawBaseCode).split(' al ')[0].trim()
+    : String(rawBaseCode || '').trim();
+
   if (qty <= 1) return { codes: [baseCode], display: baseCode };
 
   // Intentar encontrar un número al final del código (ej. "INV-001", "INV-100", "B-5" o "002")
@@ -286,6 +291,7 @@ export default function Inventario() {
   // Estados para resguardos y actas de alta/baja
   const [resguardos, setResguardos] = useState([]);
   const [editingResguardo, setEditingResguardo] = useState(null);
+  const [editingRecepcion, setEditingRecepcion] = useState(null);
   const [resguardoSearch, setResguardoSearch] = useState('');
   const [actasRecepcion, setActasRecepcion] = useState([]);
   const [actasBaja, setActasBaja] = useState([]);
@@ -1397,6 +1403,20 @@ export default function Inventario() {
       toast.promise(
         (async () => {
           await deleteDoc(doc(db, 'inventario', id));
+          // Sincronizar: si el bien eliminado estaba en algún resguardo, quitarlo para no dejar bienes fantasma
+          if (targetItem?.codigo) {
+            for (const res of resguardos) {
+              if (Array.isArray(res.articulos) && res.articulos.length > 0) {
+                const updatedArts = res.articulos.filter(a => {
+                  const codes = expandCodeRange(a.codigo || a.inventario || '');
+                  return !(codes.length === 1 && codes[0] === targetItem.codigo);
+                });
+                if (updatedArts.length !== res.articulos.length) {
+                  await updateDoc(doc(db, 'resguardos', res.id), { articulos: updatedArts });
+                }
+              }
+            }
+          }
           await registrarMovimiento(
             'Eliminación de Bien de Inventario',
             `Se eliminó permanentemente el artículo [${targetItem?.codigo || id}] ${targetItem?.articulo || ''} (Ubicación: ${targetItem?.ubicacion || 'N/A'}).`,
@@ -1416,9 +1436,25 @@ export default function Inventario() {
     if (selectedItems.length === 0) return;
     if (window.confirm(`¿Estás seguro de eliminar ${selectedItems.length} artículos seleccionados de forma permanente?`)) {
       try {
-        const deletedCodes = inventario.filter(i => selectedItems.includes(i.id)).map(i => i.codigo).join(', ');
+        const deletedItems = inventario.filter(i => selectedItems.includes(i.id));
+        const deletedCodesSet = new Set(deletedItems.map(i => i.codigo).filter(Boolean));
+        const deletedCodes = deletedItems.map(i => i.codigo).join(', ');
         const promises = selectedItems.map(id => deleteDoc(doc(db, 'inventario', id)));
         await Promise.all(promises);
+        // Sincronizar con resguardos para quitar códigos eliminados
+        if (deletedCodesSet.size > 0) {
+          for (const res of resguardos) {
+            if (Array.isArray(res.articulos) && res.articulos.length > 0) {
+              const updatedArts = res.articulos.filter(a => {
+                const codes = expandCodeRange(a.codigo || a.inventario || '');
+                return !codes.every(c => deletedCodesSet.has(c));
+              });
+              if (updatedArts.length !== res.articulos.length) {
+                await updateDoc(doc(db, 'resguardos', res.id), { articulos: updatedArts });
+              }
+            }
+          }
+        }
         await registrarMovimiento(
           'Eliminación Masiva de Inventario',
           `Se eliminaron ${selectedItems.length} bienes de forma permanente. Códigos: ${deletedCodes}`,
@@ -1566,7 +1602,9 @@ export default function Inventario() {
           cantidad: qty,
           descripcion: art.descripcion || art.articulo || '',
           marca: art.marca || '',
+          modelo: art.modelo || '',
           serie: art.serie || '',
+          observaciones: art.observaciones || '',
           codigo: finalCode,
           estado: art.estado || 'Bueno'
         };
@@ -1609,7 +1647,13 @@ export default function Inventario() {
             const currentHistorial = invItem.historial || [];
             
             let updateData = {
-              ubicacion: editingResguardo.areaResguardante || 'En resguardo'
+              ubicacion: editingResguardo.areaResguardante || 'En resguardo',
+              articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || invItem.articulo || '',
+              descripcion: art.descripcion || invItem.descripcion || '',
+              marca: art.marca || '',
+              modelo: art.modelo || '',
+              serie: art.serie || '',
+              observaciones: art.observaciones || ''
             };
             
             // Si cambió el código, actualizarlo
@@ -1619,7 +1663,7 @@ export default function Inventario() {
                 fecha: new Date().toISOString(),
                 accion: "Cambio de Código",
                 detalle: `Código actualizado de '${invItem.codigo}' a '${code}' en revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
-                usuario: "Contraloría"
+                usuario: userLabel
               }];
             }
             
@@ -1630,7 +1674,7 @@ export default function Inventario() {
                 fecha: new Date().toISOString(),
                 accion: "Cambio de Estado",
                 detalle: `Estado actualizado a '${updateData.estado}' durante revisión de resguardo Folio ${editingResguardo.folio || 'S/F'}.`,
-                usuario: "Contraloría"
+                usuario: userLabel
               }];
             } else {
                updateData.estado = art.estado || 'Bueno';
@@ -1642,10 +1686,14 @@ export default function Inventario() {
             await addDoc(collection(db, 'inventario'), {
               codigo: code,
               articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim(),
+              descripcion: art.descripcion || '',
+              marca: art.marca || '',
+              modelo: art.modelo || '',
+              serie: art.serie || '',
+              observaciones: art.observaciones || '',
               ubicacion: editingResguardo.areaResguardante || 'En resguardo',
               cantidad: 1,
               estado: art.estado || 'Bueno',
-              serie: art.serie || '',
               fechaIngreso: new Date().toISOString()
             });
           }
@@ -1776,6 +1824,313 @@ Esta acción no se puede deshacer.`);
       success: '¡El acta y los bienes seleccionados fueron eliminados correctamente!',
       error: 'Hubo un error al eliminar el resguardo.'
     });
+  };
+
+  const handleEditRecepcionClick = (acta) => {
+    setEditingRecepcion({
+      ...acta,
+      nombreProveedor: acta.nombreProveedor || acta.proveedor || '',
+      articulos: Array.isArray(acta.articulos) && acta.articulos.length > 0
+        ? acta.articulos.map((art, i) => ({
+            ...art,
+            _uid: i,
+            cantidad: art.cantidad || 1,
+            descripcion: art.descripcion || art.articulo || '',
+            estado: art.estado || 'Nuevo'
+          }))
+        : [{ cantidad: '1', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Nuevo', codigo: '' }]
+    });
+    setModalOpen('editRecepcion');
+    window.scrollTo(0, 0);
+  };
+
+  const handleSaveRecepcionEdit = async (e, actionType = 'save') => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!editingRecepcion || isSubmitting) return;
+
+    const validItems = (editingRecepcion.articulos || []).filter(
+      art => art.cantidad || art.descripcion || art.marca || art.articulo
+    );
+    if (validItems.length === 0) {
+      toast.error('El acta debe contener al menos un artículo válido.');
+      return;
+    }
+
+    const originalActa = actasRecepcion.find(a => a.id === editingRecepcion.id);
+    const originalArticulos = originalActa?.articulos || [];
+
+    // Códigos que ya pertenecen a esta acta de recepción
+    const codesBelongingToThisActa = new Set();
+    originalArticulos.forEach(origArt => {
+      if (origArt.codigo) {
+        expandCodeRange(origArt.codigo).forEach(c => codesBelongingToThisActa.add(c));
+      }
+    });
+
+    // Validar que los códigos manuales nuevos no choquen con otros bienes existentes
+    for (const art of validItems) {
+      const qty = Math.max(1, Number(art.cantidad) || 1);
+      const baseCode = (art.codigo || art.inventario || '').trim();
+      if (baseCode) {
+        const { codes } = generateCodeRange(baseCode, qty);
+        for (const code of codes) {
+          if (inventario.some(i => i.codigo === code && !codesBelongingToThisActa.has(code))) {
+            toast.error(`El código de inventario ${code} ya está ocupado por otro bien. Usa otro folio o déjalo vacío para autogenerarlo.`);
+            return;
+          }
+        }
+      }
+    }
+
+    setIsSubmitting(true);
+    const toastId = toast.loading('Actualizando Acta de Recepción e Inventario...');
+
+    try {
+      const removedItems = originalArticulos.filter(
+        (_, idx) => !validItems.some(vArt => vArt._uid === idx)
+      );
+
+      let autoCodeOffsets = {};
+      const articulosProcesados = [];
+      let totalBienesActa = 0;
+      let nuevosCreados = 0;
+      let actualizadosCount = 0;
+
+      for (const art of validItems) {
+        const qty = Math.max(1, Number(art.cantidad) || 1);
+        totalBienesActa += qty;
+        const origArt = art._uid !== undefined ? originalArticulos[art._uid] : null;
+        const oldCodeStr = origArt ? (origArt.codigo || origArt.inventario || '') : '';
+        const expandedOldCodes = oldCodeStr ? expandCodeRange(oldCodeStr) : [];
+
+        let rawBaseCode = (art.codigo || art.inventario || '').trim();
+        if (!rawBaseCode) {
+          rawBaseCode = getNextAutoCodeBase(art.descripcion || art.articulo || art.marca, autoCodeOffsets);
+          const prefix = generatePrefix(art.descripcion || art.articulo || art.marca);
+          autoCodeOffsets[prefix] = (autoCodeOffsets[prefix] || 0) + qty;
+        }
+
+        const { codes: expandedNewCodes, display: finalDisplayCode } = generateCodeRange(rawBaseCode, qty);
+
+        // Actualizar existentes o crear los nuevos de esta partida
+        for (let i = 0; i < expandedNewCodes.length; i++) {
+          const code = expandedNewCodes[i];
+          const oldCodeMatch = expandedOldCodes[i];
+
+          const invItem = origArt
+            ? inventario.find(inv => (oldCodeMatch && inv.codigo === oldCodeMatch) || inv.codigo === code)
+            : null;
+
+          if (invItem) {
+            const currentHistorial = invItem.historial || [];
+            await updateDoc(doc(db, 'inventario', invItem.id), {
+              codigo: code,
+              articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || invItem.articulo || 'Sin nombre',
+              descripcion: art.descripcion || art.articulo || invItem.descripcion || '',
+              marca: art.marca || '',
+              modelo: art.modelo || '',
+              serie: art.serie || '',
+              observaciones: art.observaciones || editingRecepcion.observaciones || '',
+              estado: art.estado || invItem.estado || 'Nuevo',
+              historial: [
+                ...currentHistorial,
+                {
+                  fecha: new Date().toISOString(),
+                  accion: 'Edición desde Acta de Recepción',
+                  detalle: `Datos actualizados al editar el Acta de Recepción (${editingRecepcion.fecha || 'S/F'}). Se conserva su ubicación actual (${invItem.ubicacion || 'Bodega Contraloría'}).`,
+                  usuario: userLabel
+                }
+              ]
+            });
+            actualizadosCount++;
+          } else {
+            // Es un bien nuevo agregado a la fila o una fila completamente nueva
+            await addDoc(collection(db, 'inventario'), {
+              codigo: code,
+              articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || 'Sin nombre',
+              descripcion: art.descripcion || art.articulo || '',
+              marca: art.marca || '',
+              modelo: art.modelo || '',
+              serie: art.serie || '',
+              observaciones: art.observaciones || editingRecepcion.observaciones || '',
+              ubicacion: 'Bodega Contraloría',
+              cantidad: 1,
+              estado: art.estado || 'Nuevo',
+              fechaIngreso: new Date().toISOString(),
+              historial: [
+                {
+                  fecha: new Date().toISOString(),
+                  accion: 'Alta en Inventario (Anexo a Recepción)',
+                  detalle: `Agregado mediante edición de Acta de Recepción (${editingRecepcion.fecha || 'S/F'}). Doc. Origen: ${editingRecepcion.origen || 'N/A'}. Proveedor: ${editingRecepcion.nombreProveedor || 'N/A'}.`,
+                  usuario: userLabel
+                }
+              ]
+            });
+            nuevosCreados++;
+          }
+        }
+
+        // Si se redujo la cantidad de una partida existente, eliminar del inventario los sobrantes que sigan en Bodega
+        for (let i = expandedNewCodes.length; i < expandedOldCodes.length; i++) {
+          const codeToRemove = expandedOldCodes[i];
+          const invItem = inventario.find(inv => inv.codigo === codeToRemove);
+          if (invItem && invItem.ubicacion === 'Bodega Contraloría') {
+            await deleteDoc(doc(db, 'inventario', invItem.id));
+          }
+        }
+
+        articulosProcesados.push({
+          cantidad: qty,
+          articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || '',
+          descripcion: art.descripcion || art.articulo || '',
+          marca: art.marca || '',
+          modelo: art.modelo || '',
+          serie: art.serie || '',
+          estado: art.estado || 'Nuevo',
+          observaciones: art.observaciones || '',
+          codigo: finalDisplayCode
+        });
+      }
+
+      // Si el usuario quitó una fila completa al editar el acta, borrar sus bienes si siguen en Bodega Contraloría
+      for (const remArt of removedItems) {
+        const remCodes = expandCodeRange(remArt.codigo || remArt.inventario || '');
+        for (const c of remCodes) {
+          const invItem = inventario.find(inv => inv.codigo === c);
+          if (invItem && invItem.ubicacion === 'Bodega Contraloría') {
+            await deleteDoc(doc(db, 'inventario', invItem.id));
+          }
+        }
+      }
+
+      const updatedActaData = {
+        fecha: editingRecepcion.fecha || '',
+        hora: editingRecepcion.hora || '',
+        origen: editingRecepcion.origen || '',
+        proveedor: editingRecepcion.nombreProveedor || editingRecepcion.proveedor || '',
+        nombreProveedor: editingRecepcion.nombreProveedor || editingRecepcion.proveedor || '',
+        nombreContralor: editingRecepcion.nombreContralor || 'Profr. Juan Carlos Taboada B.',
+        observaciones: editingRecepcion.observaciones || '',
+        articulos: articulosProcesados,
+        articulosTotales: totalBienesActa
+      };
+
+      await updateDoc(doc(db, 'actas_recepcion', editingRecepcion.id), updatedActaData);
+
+      await registrarMovimiento(
+        'Edición de Acta de Recepción (Alta)',
+        `Se actualizó el Acta de Recepción del ${editingRecepcion.fecha || 'S/F'} (Origen: ${editingRecepcion.origen || 'S/D'}). Nuevos bienes agregados: ${nuevosCreados}, actualizados: ${actualizadosCount}, total en acta: ${totalBienesActa}.`,
+        userLabel
+      );
+
+      if (actionType === 'print') {
+        setPrintData({ ...editingRecepcion, ...updatedActaData });
+        setPrintMode('recepcion');
+        setModalOpen(null);
+        setEditingRecepcion(null);
+        toast.success('¡Acta actualizada! Preparando impresión...', { id: toastId });
+        setTimeout(() => { window.print(); setIsSubmitting(false); }, 450);
+      } else {
+        setModalOpen(null);
+        setEditingRecepcion(null);
+        setIsSubmitting(false);
+        toast.success(`¡Acta de Recepción actualizada! (${nuevosCreados} bienes nuevos agregados)`, { id: toastId });
+      }
+    } catch (err) {
+      console.error('Error actualizando Acta de Recepción:', err);
+      toast.error('Hubo un error al guardar los cambios del Acta de Recepción.', { id: toastId });
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteRecepcionClick = async (acta) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el Acta de Recepción del ${acta.fecha || 'S/F'} (${acta.origen || 'Sin origen'})?`)) return;
+
+    const eliminarBienesBodega = window.confirm(
+      `¿Deseas eliminar también del Inventario los bienes de esta acta que aún se encuentren en 'Bodega Contraloría'?\n\n(Aceptar = Borrar bienes de bodega y el acta | Cancelar = Borrar solo el registro del acta conservando los bienes)`
+    );
+
+    const toastId = toast.loading('Eliminando Acta de Recepción...');
+    try {
+      let borrados = 0;
+      if (eliminarBienesBodega && Array.isArray(acta.articulos)) {
+        for (const art of acta.articulos) {
+          const codes = expandCodeRange(art.codigo || art.inventario || '');
+          for (const code of codes) {
+            const invItem = inventario.find(i => i.codigo === code);
+            // Solo eliminar si sigue en Bodega Contraloría para no afectar resguardos activos
+            if (invItem && invItem.ubicacion === 'Bodega Contraloría') {
+              await deleteDoc(doc(db, 'inventario', invItem.id));
+              borrados++;
+            }
+          }
+        }
+      }
+      await deleteDoc(doc(db, 'actas_recepcion', acta.id));
+      await registrarMovimiento(
+        'Eliminación de Acta de Recepción (Alta)',
+        `Se eliminó el Acta de Recepción del ${acta.fecha || 'S/F'} (Origen: ${acta.origen || 'S/D'}). Bienes retirados de bodega: ${borrados}.`,
+        userLabel
+      );
+      toast.success('Acta de Recepción eliminada correctamente.', { id: toastId });
+    } catch (err) {
+      console.error('Error al eliminar acta de recepción:', err);
+      toast.error('Error al eliminar el Acta de Recepción.', { id: toastId });
+    }
+  };
+
+  const handleDeleteBajaClick = async (acta) => {
+    if (!window.confirm(`¿Deseas eliminar o revertir el Acta de Baja del ${acta.fecha || 'S/F'} (Motivo: ${acta.motivo || 'S/M'})?`)) return;
+
+    const restaurarBienes = window.confirm(
+      `¿Deseas RESTAURAR los bienes de esta baja para que vuelvan a estar ACTIVOS en el Inventario (en su ubicación anterior o Bodega)?\n\n(Aceptar = Reactivar bienes y borrar acta de baja | Cancelar = Borrar solo el registro del acta)`
+    );
+
+    const toastId = toast.loading('Procesando Acta de Baja...');
+    try {
+      let restaurados = 0;
+      if (restaurarBienes && Array.isArray(acta.articulos)) {
+        for (const art of acta.articulos) {
+          const codes = expandCodeRange(art.codigo || '');
+          for (const code of codes) {
+            const invItem = inventario.find(i => i.id === art.id || i.codigo === code);
+            if (invItem) {
+              const currentHistorial = invItem.historial || [];
+              const ubicacionRestaurada = invItem.ubicacionAnterior || art.ubicacionAnterior || 'Bodega Contraloría';
+              await updateDoc(doc(db, 'inventario', invItem.id), {
+                estado: 'Bueno',
+                ubicacion: ubicacionRestaurada,
+                historial: [
+                  ...currentHistorial,
+                  {
+                    fecha: new Date().toISOString(),
+                    accion: 'Reactivación (Reversión de Baja)',
+                    detalle: `Se revirtió el Acta de Baja del ${acta.fecha || 'S/F'}. El bien regresó activo a '${ubicacionRestaurada}'.`,
+                    usuario: userLabel
+                  }
+                ]
+              });
+              restaurados++;
+            }
+          }
+        }
+      }
+      await deleteDoc(doc(db, 'actas_baja', acta.id));
+      await registrarMovimiento(
+        'Reversión / Eliminación de Acta de Baja',
+        `Se eliminó el Acta de Baja del ${acta.fecha || 'S/F'} (Motivo: ${acta.motivo || 'S/M'}). Bienes reactivados al inventario: ${restaurados}.`,
+        userLabel
+      );
+      toast.success(
+        restaurados > 0
+          ? `¡Acta eliminada y ${restaurados} bien(es) restaurados al inventario activo!`
+          : 'Acta de Baja eliminada correctamente.',
+        { id: toastId }
+      );
+    } catch (err) {
+      console.error('Error al eliminar/revertir acta de baja:', err);
+      toast.error('Error al procesar el Acta de Baja.', { id: toastId });
+    }
   };
 
   const toggleSelectAll = () => {
@@ -2383,13 +2738,24 @@ Esta acción no se puede deshacer.`);
                 <h4 className="font-bold text-blue-900 text-lg">Acta de Recepción (Alta)</h4>
                 <p className="text-blue-700 text-xs mt-1">Alta oficial de bienes nuevos o donaciones.</p>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => openModal('recepcion')} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold">
-                  <Plus className="w-3.5 h-3.5 mr-1.5" /> Capturar / Generar
-                </button>
-                <button onClick={() => handlePrintBlank('recepcion')} className="bg-white hover:bg-blue-100 text-blue-700 border border-blue-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir formato en blanco con renglones para ir al área y anotar a mano">
-                  <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
-                </button>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => openModal('recepcion')} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold">
+                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Capturar / Generar
+                  </button>
+                  <button onClick={() => handlePrintBlank('recepcion')} className="bg-white hover:bg-blue-100 text-blue-700 border border-blue-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir formato en blanco con renglones para ir al área y anotar a mano">
+                    <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
+                  </button>
+                </div>
+                {actasRecepcion.length > 0 && (
+                  <button
+                    onClick={() => handleEditRecepcionClick(actasRecepcion[0])}
+                    className="w-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 p-1.5 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold"
+                    title="Abrir la última Acta de Recepción guardada para corregir datos o agregar bienes faltantes"
+                  >
+                    <Edit2 className="w-3.5 h-3.5 mr-1.5" /> Editar Última Alta (+ Agregar Bienes)
+                  </button>
+                )}
               </div>
             </div>
             <div className="bg-gradient-to-r from-indigo-50 to-orange-50 border border-indigo-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
@@ -2798,26 +3164,49 @@ Esta acción no se puede deshacer.`);
                   searchIncludes(a.origen, actasSearch) ||
                   searchIncludes(a.nombreProveedor || a.proveedor, actasSearch) ||
                   searchIncludes(a.observaciones, actasSearch) ||
-                  searchIncludes(a.fecha, actasSearch)
+                  searchIncludes(a.fecha, actasSearch) ||
+                  (Array.isArray(a.articulos) && a.articulos.some(art => searchIncludes(art.codigo, actasSearch) || searchIncludes(art.descripcion || art.articulo, actasSearch)))
                 ).map(acta => (
-                  <div key={acta.id} className="p-4 hover:bg-slate-50 flex justify-between items-start gap-4">
-                    <div>
+                  <div key={acta.id} className="p-4 hover:bg-slate-50 flex flex-col sm:flex-row justify-between items-start gap-3">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">ALTA</span>
                         <span className="text-sm font-bold text-slate-800">{acta.fecha || 'Sin fecha'}</span>
-                        <span className="text-xs text-slate-400">({acta.articulosTotales || (acta.articulos?.length || 0)} bienes)</span>
+                        <span className="text-xs text-slate-500 font-semibold">({acta.articulosTotales || (acta.articulos?.length || 0)} bienes)</span>
                       </div>
                       <p className="text-xs text-slate-600 mt-1">
                         <strong>Origen:</strong> {acta.origen || 'Donación / Compra'} | <strong>Proveedor:</strong> {acta.nombreProveedor || acta.proveedor || 'N/A'}
                       </p>
+                      {Array.isArray(acta.articulos) && acta.articulos.length > 0 && (
+                        <p className="text-[11px] font-mono text-slate-500 mt-0.5 truncate" title={acta.articulos.map(x => `${x.cantidad || 1}x ${x.descripcion || x.articulo || ''} (${x.codigo || 'S/C'})`).join(', ')}>
+                          Partidas: {acta.articulos.map(x => `${x.cantidad || 1}x ${x.descripcion || x.articulo || ''} [${x.codigo || 'S/C'}]`).join(', ')}
+                        </p>
+                      )}
                       {acta.observaciones && <p className="text-xs text-slate-500 mt-0.5 italic">{acta.observaciones}</p>}
                     </div>
-                    <button
-                      onClick={() => { setPrintData(acta); setPrintMode('recepcion'); setTimeout(() => window.print(), 400); }}
-                      className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex items-center whitespace-nowrap"
-                    >
-                      <Printer className="w-3.5 h-3.5 mr-1" /> Reimprimir
-                    </button>
+                    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => handleEditRecepcionClick(acta)}
+                        className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold flex items-center whitespace-nowrap"
+                        title="Editar esta Acta de Recepción o agregarle más bienes"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 mr-1" /> Editar / + Bienes
+                      </button>
+                      <button
+                        onClick={() => { setPrintData(acta); setPrintMode('recepcion'); setTimeout(() => window.print(), 400); }}
+                        className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex items-center whitespace-nowrap"
+                        title="Reimprimir Acta de Recepción"
+                      >
+                        <Printer className="w-3.5 h-3.5 mr-1" /> Reimprimir
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRecepcionClick(acta)}
+                        className="p-1.5 text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 rounded-lg text-xs font-bold flex items-center"
+                        title="Eliminar esta Acta de Recepción"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {actasRecepcion.length === 0 && (
@@ -2839,8 +3228,8 @@ Esta acción no se puede deshacer.`);
                   searchIncludes(a.fecha, actasSearch) ||
                   (Array.isArray(a.articulos) && a.articulos.some(art => searchIncludes(art.codigo, actasSearch) || searchIncludes(art.articulo, actasSearch)))
                 ).map(acta => (
-                  <div key={acta.id} className="p-4 hover:bg-slate-50 flex justify-between items-start gap-4">
-                    <div>
+                  <div key={acta.id} className="p-4 hover:bg-slate-50 flex flex-col sm:flex-row justify-between items-start gap-3">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-xs font-bold">BAJA</span>
                         <span className="text-sm font-bold text-slate-800">{acta.fecha || 'Sin fecha'}</span>
@@ -2855,12 +3244,21 @@ Esta acción no se puede deshacer.`);
                         </p>
                       )}
                     </div>
-                    <button
-                      onClick={() => { setPrintData(acta); setPrintMode('baja'); setTimeout(() => window.print(), 400); }}
-                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center whitespace-nowrap"
-                    >
-                      <Printer className="w-3.5 h-3.5 mr-1" /> Reimprimir
-                    </button>
+                    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => { setPrintData(acta); setPrintMode('baja'); setTimeout(() => window.print(), 400); }}
+                        className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center whitespace-nowrap"
+                      >
+                        <Printer className="w-3.5 h-3.5 mr-1" /> Reimprimir
+                      </button>
+                      <button
+                        onClick={() => handleDeleteBajaClick(acta)}
+                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-rose-100 text-slate-700 hover:text-rose-800 border border-slate-300 rounded-lg text-xs font-bold flex items-center whitespace-nowrap"
+                        title="Revertir baja (reactivar bienes) o eliminar acta"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Revertir / Eliminar
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {actasBaja.length === 0 && (
@@ -2884,9 +3282,10 @@ Esta acción no se puede deshacer.`);
                modalOpen === 'resguardo' ? 'Generar Carta de Resguardo' : 
                modalOpen === 'baja' ? 'Generar Acta de Baja Oficial' :
                modalOpen === 'editResguardo' ? 'Editar Carta de Resguardo' : 
+               modalOpen === 'editRecepcion' ? 'Editar Acta de Recepción / Agregar Bienes Faltantes' :
                modalOpen === 'history' ? 'Historial de Movimientos del Bien' : 'Editar Bien del Inventario'}
             </h3>
-            <button onClick={() => { setModalOpen(null); setEditingItem(null); setEditingResguardo(null); setHistoryItem(null); }} className="text-slate-400 hover:text-slate-600">
+            <button onClick={() => { setModalOpen(null); setEditingItem(null); setEditingResguardo(null); setEditingRecepcion(null); setHistoryItem(null); }} className="text-slate-400 hover:text-slate-600">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -3103,6 +3502,212 @@ Esta acción no se puede deshacer.`);
                   <button type="button" onClick={() => { setModalOpen(null); setEditingResguardo(null); }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancelar</button>
                   <button type="submit" className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm">
                     Guardar Cambios
+                  </button>
+                </div>
+              </form>
+            ) : modalOpen === 'editRecepcion' && editingRecepcion ? (
+              <form onSubmit={(e) => handleSaveRecepcionEdit(e, 'save')}>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5 mb-5 text-xs text-blue-800">
+                  <strong>Modo Edición Segura de Alta:</strong> Puedes corregir los datos de la factura/entrega, modificar los bienes ya capturados o hacer clic en <strong>+ Añadir Bien / Fila</strong> para agregar los bienes que te faltaron. Los nuevos bienes se darán de alta automáticamente en <em>Bodega Contraloría</em> sin alterar los resguardos actuales.
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha de Recepción</label>
+                    <input type="date" value={editingRecepcion.fecha || ''} onChange={e => setEditingRecepcion({...editingRecepcion, fecha: e.target.value})} className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Hora de Recepción</label>
+                    <input type="time" value={editingRecepcion.hora || ''} onChange={e => setEditingRecepcion({...editingRecepcion, hora: e.target.value})} className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Doc. de Origen (Factura, Donación, etc.)</label>
+                    <input type="text" value={editingRecepcion.origen || ''} onChange={e => setEditingRecepcion({...editingRecepcion, origen: e.target.value})} className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Proveedor / Donador</label>
+                    <input type="text" value={editingRecepcion.nombreProveedor || ''} onChange={e => setEditingRecepcion({...editingRecepcion, nombreProveedor: e.target.value})} className="w-full p-2 border rounded" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones Generales</label>
+                    <textarea rows="2" value={editingRecepcion.observaciones || ''} onChange={e => setEditingRecepcion({...editingRecepcion, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Observaciones de la entrega..."></textarea>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-semibold text-slate-700">Artículos del Acta ({editingRecepcion.articulos.reduce((s, a) => s + (Number(a.cantidad) || 1), 0)} piezas en {editingRecepcion.articulos.length} partidas)</h4>
+                    <button
+                      type="button"
+                      onClick={() => setEditingRecepcion({
+                        ...editingRecepcion,
+                        articulos: [...editingRecepcion.articulos, { cantidad: '1', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Nuevo', codigo: '', observaciones: '' }]
+                      })}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center shadow-sm"
+                    >
+                      <Plus className="w-4 h-4 mr-1" /> Añadir Bien / Fila
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {editingRecepcion.articulos.map((art, idx) => (
+                      <div key={idx} className={`flex flex-col gap-2 p-3 border rounded-lg ${art._uid === undefined ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-slate-200'}`}>
+                        <div className="flex gap-2 items-center">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${art._uid === undefined ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                            {art._uid === undefined ? 'NUEVO' : `#${idx + 1}`}
+                          </span>
+                          <div className="w-16">
+                            <input
+                              type="number"
+                              min="1"
+                              placeholder="Cant"
+                              className="w-full rounded-md border-slate-300 text-sm p-1.5 border"
+                              value={art.cantidad || ''}
+                              onChange={(e) => {
+                                const newArts = [...editingRecepcion.articulos];
+                                newArts[idx] = { ...newArts[idx], cantidad: e.target.value };
+                                setEditingRecepcion({ ...editingRecepcion, articulos: newArts });
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              placeholder="Nombre/Concepto del artículo"
+                              className="w-full rounded-md border-slate-300 text-sm font-bold p-1.5 border"
+                              value={art.descripcion || art.articulo || ''}
+                              onChange={(e) => {
+                                const newArts = [...editingRecepcion.articulos];
+                                newArts[idx] = { ...newArts[idx], descripcion: e.target.value };
+                                setEditingRecepcion({ ...editingRecepcion, articulos: newArts });
+                              }}
+                            />
+                          </div>
+                          <div className="w-1/4">
+                            <input
+                              type="text"
+                              placeholder="Código (vacío = automático)"
+                              className="w-full rounded-md border-slate-300 text-sm font-mono font-bold text-indigo-700 p-1.5 border"
+                              value={art.codigo || art.inventario || ''}
+                              onChange={(e) => {
+                                const newArts = [...editingRecepcion.articulos];
+                                newArts[idx] = { ...newArts[idx], codigo: e.target.value };
+                                setEditingRecepcion({ ...editingRecepcion, articulos: newArts });
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newArts = editingRecepcion.articulos.filter((_, i) => i !== idx);
+                              setEditingRecepcion({
+                                ...editingRecepcion,
+                                articulos: newArts.length ? newArts : [{ cantidad: '1', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Nuevo', codigo: '' }]
+                              });
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-red-500"
+                            title="Quitar esta partida del acta"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              placeholder="Marca"
+                              className="w-full rounded-md border-slate-300 text-sm p-1.5 border"
+                              value={art.marca || ''}
+                              onChange={(e) => {
+                                const newArts = [...editingRecepcion.articulos];
+                                newArts[idx] = { ...newArts[idx], marca: e.target.value };
+                                setEditingRecepcion({ ...editingRecepcion, articulos: newArts });
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              placeholder="Modelo"
+                              className="w-full rounded-md border-slate-300 text-sm p-1.5 border"
+                              value={art.modelo || ''}
+                              onChange={(e) => {
+                                const newArts = [...editingRecepcion.articulos];
+                                newArts[idx] = { ...newArts[idx], modelo: e.target.value };
+                                setEditingRecepcion({ ...editingRecepcion, articulos: newArts });
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              placeholder="No. Serie"
+                              className="w-full rounded-md border-slate-300 text-sm p-1.5 border"
+                              value={art.serie || ''}
+                              onChange={(e) => {
+                                const newArts = [...editingRecepcion.articulos];
+                                newArts[idx] = { ...newArts[idx], serie: e.target.value };
+                                setEditingRecepcion({ ...editingRecepcion, articulos: newArts });
+                              }}
+                            />
+                          </div>
+                          <div className="w-32">
+                            <select
+                              className="w-full rounded-md border border-slate-300 text-sm bg-white p-1.5"
+                              value={art.estado || 'Nuevo'}
+                              onChange={(e) => {
+                                const newArts = [...editingRecepcion.articulos];
+                                newArts[idx] = { ...newArts[idx], estado: e.target.value };
+                                setEditingRecepcion({ ...editingRecepcion, articulos: newArts });
+                              }}
+                            >
+                              <option value="Nuevo">Nuevo</option>
+                              <option value="Bueno">Bueno</option>
+                              <option value="Regular">Regular</option>
+                              <option value="Malo">Malo</option>
+                            </select>
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              placeholder="Observaciones"
+                              className="w-full rounded-md border-slate-300 text-sm p-1.5 border"
+                              value={art.observaciones || ''}
+                              onChange={(e) => {
+                                const newArts = [...editingRecepcion.articulos];
+                                newArts[idx] = { ...newArts[idx], observaciones: e.target.value };
+                                setEditingRecepcion({ ...editingRecepcion, articulos: newArts });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => { setModalOpen(null); setEditingRecepcion(null); }}
+                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                    disabled={isSubmitting}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleSaveRecepcionEdit(e, 'print')}
+                    className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm flex items-center"
+                    disabled={isSubmitting}
+                  >
+                    <Printer className="w-4 h-4 mr-2" /> {isSubmitting ? 'Procesando...' : 'Guardar y Reimprimir Acta'}
                   </button>
                 </div>
               </form>
