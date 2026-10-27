@@ -1,5 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Printer, ArrowLeft, Settings, Layers, List, FileText } from 'lucide-react';
+import { Printer, ArrowLeft, Settings, Layers, List, FileText, Download } from 'lucide-react';
+import Papa from 'papaparse';
+import toast from 'react-hot-toast';
+import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
 
 const DEFAULT_CONFIG = {
   // Datos Personales del Responsable
@@ -185,6 +188,29 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
   // Asegurar mínimo 17 renglones como en el formato oficial de la SEG
   const emptyRowsCount = Math.max(0, 17 - filasMostradas.length);
 
+  const handleExportCedulaExcel = () => {
+    if (filasMostradas.length === 0) {
+      toast.error('No hay partidas para exportar a Excel en el modo seleccionado.');
+      return;
+    }
+    const rowsToExport = filasMostradas.map((f, idx) => ({
+      'N°': idx + 1,
+      'CANT.': f.cantidad || 1,
+      'CONCEPTO': f.concepto || '',
+      'MARCA': f.marca || 'S/M',
+      'MODELO': f.modelo || 'S/M',
+      'SERIE': f.serie || 'S/N',
+      'ESTADO FISICO': f.estado || 'BUENO',
+      'OBSERVACIONES': f.observaciones || '',
+      'ESCUELA': config.nombreEscuela,
+      'C.C.T.': config.cct,
+      'RESPONSABLE': config.nombreResponsable
+    }));
+    const csv = Papa.unparse(rowsToExport, { delimiter: '\t' }).toUpperCase();
+    downloadExcelFriendlyCsv(`Cedula_Censal_SEG_${config.cct}_${new Date().toISOString().split('T')[0]}.csv`, csv);
+    toast.success('¡Cédula Censal descargada para Excel!');
+  };
+
   return (
     <div className="print-cedula-censal bg-white font-sans text-black">
       <style>{`
@@ -228,6 +254,15 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
             >
               <Settings className="w-4 h-4 mr-1.5" /> Editar Datos del Responsable / Escuela
             </button>
+            {modoOrigen !== 'blanco' && (
+              <button
+                onClick={handleExportCedulaExcel}
+                className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg font-bold shadow-sm text-xs flex items-center"
+                title="Descargar las 7 columnas oficiales de la Cédula Censal en formato Excel (.csv)"
+              >
+                <Download className="w-4 h-4 mr-1.5" /> Descargar Excel (.CSV)
+              </button>
+            )}
             <button
               onClick={() => window.print()}
               className="px-5 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-bold shadow-sm text-xs flex items-center"

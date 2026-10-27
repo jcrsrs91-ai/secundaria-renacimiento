@@ -1,6 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useState, useEffect, useMemo } from 'react';
-import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu, Wallet, AlertTriangle, TrendingUp, TrendingDown, BarChart as BarChartIcon, FileSpreadsheet, PieChart as PieChartIcon, Copy } from 'lucide-react';
+import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu, Wallet, AlertTriangle, TrendingUp, TrendingDown, BarChart as BarChartIcon, FileSpreadsheet, PieChart as PieChartIcon, Copy, ArrowRightLeft, ClipboardCheck } from 'lucide-react';
 
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
@@ -296,6 +296,21 @@ export default function Inventario() {
   const [actasRecepcion, setActasRecepcion] = useState([]);
   const [actasBaja, setActasBaja] = useState([]);
   const [actasSearch, setActasSearch] = useState('');
+
+  // Estados para Mejora #1 (Traspaso Rápido de Bienes) y Mejora #2 (Auditoría Física Check-list)
+  const [traspasoItemsIds, setTraspasoItemsIds] = useState([]);
+  const [traspasoData, setTraspasoData] = useState({
+    tipoDestino: 'existente', // 'existente' | 'nuevo' | 'bodega'
+    destinoResguardoId: '',
+    nuevaArea: '',
+    nuevoResguardante: '',
+    nuevoFolio: '',
+    motivo: ''
+  });
+  const [auditoriaArea, setAuditoriaArea] = useState('Todas');
+  const [auditoriaSearch, setAuditoriaSearch] = useState('');
+  const [verificadosHoy, setVerificadosHoy] = useState({});
+  const [notasAuditoria, setNotasAuditoria] = useState({});
 
     // Efecto para Pagos Administrativos y Extraordinarios
 
@@ -650,6 +665,8 @@ export default function Inventario() {
       origen: '', proveedor: '', nombreProveedor: '', nombreContralor: 'Profr. Juan Carlos Taboada B.',
       folio: '', nombreResguardante: '', areaResguardante: '', observaciones: '', motivo: '',
       guardarEnInventario: false,
+      asignarDirectoResguardo: false,
+      resguardoExistenteId: '',
       articulos: articulosIniciales
     });
   };
@@ -720,6 +737,30 @@ export default function Inventario() {
             }
           }
 
+          // Determinar si se asignarán directo a un área/resguardo (Mejora #3)
+          let ubicacionInicial = 'Bodega Contraloría';
+          let targetResguardoExistente = null;
+          let nombreResgDestino = (formData.nombreResguardante || '').trim();
+          let areaResgDestino = (formData.areaResguardante || '').trim();
+          let folioResgDestino = (formData.folio || '').trim();
+
+          if (formData.asignarDirectoResguardo) {
+            if (formData.resguardoExistenteId && formData.resguardoExistenteId !== '---NUEVO---') {
+              targetResguardoExistente = resguardos.find(r => r.id === formData.resguardoExistenteId);
+              if (targetResguardoExistente) {
+                ubicacionInicial = targetResguardoExistente.areaResguardante || targetResguardoExistente.area || 'En resguardo';
+                nombreResgDestino = targetResguardoExistente.nombreResguardante || targetResguardoExistente.resguardante || '';
+                areaResgDestino = ubicacionInicial;
+                folioResgDestino = targetResguardoExistente.folio || '';
+              }
+            } else if (areaResgDestino) {
+              ubicacionInicial = areaResgDestino;
+              targetResguardoExistente = resguardos.find(
+                r => r.areaResguardante === areaResgDestino && r.nombreResguardante === nombreResgDestino
+              );
+            }
+          }
+
           // 1. Guardar cada artículo en el inventario
           for (let i = 0; i < validItems.length; i++) {
             const art = validItems[i];
@@ -745,14 +786,18 @@ export default function Inventario() {
                 modelo: art.modelo || '',
                 serie: art.serie || '',
                 observaciones: art.observaciones || formData.observaciones || '',
-                ubicacion: 'Bodega Contraloría',
+                ubicacion: ubicacionInicial,
                 cantidad: 1,
                 estado: art.estado || 'Nuevo',
                 fechaIngreso: new Date().toISOString(),
                 historial: [{
                   fecha: new Date().toISOString(),
-                  accion: 'Alta en Inventario (Recepción)',
-                  detalle: `Ingreso inicial a Bodega Contraloría. Doc. Origen: ${formData.origen || 'N/A'}. Proveedor: ${formData.nombreProveedor || 'N/A'}.`,
+                  accion: formData.asignarDirectoResguardo && ubicacionInicial !== 'Bodega Contraloría'
+                    ? 'Alta y Asignación Directa a Resguardo'
+                    : 'Alta en Inventario (Recepción)',
+                  detalle: formData.asignarDirectoResguardo && ubicacionInicial !== 'Bodega Contraloría'
+                    ? `Ingreso directo a '${ubicacionInicial}' (Resguardante: ${nombreResgDestino || 'S/N'}). Doc. Origen: ${formData.origen || 'N/A'}.`
+                    : `Ingreso inicial a Bodega Contraloría. Doc. Origen: ${formData.origen || 'N/A'}. Proveedor: ${formData.nombreProveedor || 'N/A'}.`,
                   usuario: userLabel
                 }]
               });
@@ -762,8 +807,35 @@ export default function Inventario() {
               cantidad: qty,
               articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || '',
               descripcion: art.descripcion || art.articulo || '',
+              marca: art.marca || '',
+              modelo: art.modelo || '',
+              serie: art.serie || '',
+              estado: art.estado || 'Nuevo',
+              observaciones: art.observaciones || '',
               codigo: display
             });
+          }
+
+          // Si se marcó Asignar Directamente a Resguardo, crear o actualizar la Carta de Resguardo automáticamente
+          if (formData.asignarDirectoResguardo && ubicacionInicial !== 'Bodega Contraloría') {
+            if (targetResguardoExistente) {
+              const mergedArts = [...(targetResguardoExistente.articulos || []), ...recepcionArticulos];
+              await updateDoc(doc(db, 'resguardos', targetResguardoExistente.id), {
+                articulos: mergedArts,
+                fecha: formData.fecha || targetResguardoExistente.fecha
+              });
+            } else {
+              await addDoc(collection(db, 'resguardos'), {
+                folio: folioResgDestino || '',
+                fecha: formData.fecha || new Date().toISOString().split('T')[0],
+                nombreResguardante: nombreResgDestino || 'Responsable de Área',
+                areaResguardante: areaResgDestino,
+                nombreContralor: formData.nombreContralor || 'Profr. Juan Carlos Taboada B.',
+                observaciones: formData.observaciones || '',
+                articulos: recepcionArticulos,
+                fechaRegistro: new Date().toISOString()
+              });
+            }
           }
 
           // 2. Guardar el documento general (Acta de Recepción) con sus artículos para poder reimprimirlo después
@@ -775,6 +847,7 @@ export default function Inventario() {
             nombreProveedor: formData.nombreProveedor,
             nombreContralor: formData.nombreContralor,
             observaciones: formData.observaciones,
+            ubicacionDestino: ubicacionInicial,
             articulos: recepcionArticulos,
             articulosTotales: totalCreated,
             fechaRegistro: new Date().toISOString()
@@ -782,7 +855,7 @@ export default function Inventario() {
 
           await registrarMovimiento(
             'Alta de Inventario (Recepción)',
-            `Se dieron de alta ${totalCreated} bienes en Bodega Contraloría. Origen: ${formData.origen || 'S/D'} | Proveedor: ${formData.nombreProveedor || 'S/D'}.`,
+            `Se dieron de alta ${totalCreated} bienes en '${ubicacionInicial}'. Origen: ${formData.origen || 'S/D'} | Proveedor: ${formData.nombreProveedor || 'S/D'}.`,
             userLabel
           );
 
@@ -2133,6 +2206,254 @@ Esta acción no se puede deshacer.`);
     }
   };
 
+  // MEJORA #1: Transferencia Rápida de Bienes entre Áreas / Maestros ("Traspaso de Resguardo")
+  const openTraspasoModal = (idsOverride = null) => {
+    const ids = Array.isArray(idsOverride) && idsOverride.length > 0 ? idsOverride : selectedItems;
+    if (ids.length === 0) {
+      toast.error('Selecciona al menos un bien para traspasar.');
+      return;
+    }
+    setTraspasoItemsIds(ids);
+    setTraspasoData({
+      tipoDestino: resguardos.length > 0 ? 'existente' : 'nuevo',
+      destinoResguardoId: resguardos[0]?.id || '',
+      nuevaArea: '',
+      nuevoResguardante: '',
+      nuevoFolio: '',
+      motivo: ''
+    });
+    setModalOpen('traspaso');
+  };
+
+  const handleExecuteTraspaso = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (isSubmitting || traspasoItemsIds.length === 0) return;
+
+    const itemsToMove = inventario.filter(i => traspasoItemsIds.includes(i.id));
+    if (itemsToMove.length === 0) return;
+
+    let destArea = 'Bodega Contraloría';
+    let destResguardante = 'Contraloría';
+    let destFolio = '';
+    let targetResguardo = null;
+
+    if (traspasoData.tipoDestino === 'existente') {
+      targetResguardo = resguardos.find(r => r.id === traspasoData.destinoResguardoId);
+      if (!targetResguardo) {
+        toast.error('Selecciona un resguardo de destino válido.');
+        return;
+      }
+      destArea = targetResguardo.areaResguardante || targetResguardo.area || 'En resguardo';
+      destResguardante = targetResguardo.nombreResguardante || targetResguardo.resguardante || '';
+      destFolio = targetResguardo.folio || '';
+    } else if (traspasoData.tipoDestino === 'nuevo') {
+      if (!traspasoData.nuevaArea.trim() || !traspasoData.nuevoResguardante.trim()) {
+        toast.error('Escribe el Área/Salón y el Nombre del Resguardante de destino.');
+        return;
+      }
+      destArea = traspasoData.nuevaArea.trim();
+      destResguardante = traspasoData.nuevoResguardante.trim();
+      destFolio = traspasoData.nuevoFolio.trim();
+      targetResguardo = resguardos.find(
+        r => r.areaResguardante === destArea && r.nombreResguardante === destResguardante
+      );
+    }
+
+    setIsSubmitting(true);
+    const toastId = toast.loading(`Traspasando ${itemsToMove.length} bien(es) a '${destArea}'...`);
+
+    try {
+      const movedCodesSet = new Set(itemsToMove.map(i => i.codigo).filter(Boolean));
+
+      // 1. Retirar los bienes de cualquier resguardo origen donde estuvieran antes
+      for (const res of resguardos) {
+        if (targetResguardo && res.id === targetResguardo.id) continue;
+        if (!Array.isArray(res.articulos) || res.articulos.length === 0) continue;
+
+        let modified = false;
+        const newArticulos = [];
+
+        for (const art of res.articulos) {
+          const expanded = expandCodeRange(art.codigo || art.inventario || '');
+          const remainingCodes = expanded.filter(c => !movedCodesSet.has(c));
+          if (remainingCodes.length === expanded.length) {
+            newArticulos.push(art);
+          } else {
+            modified = true;
+            // Si aún quedan códigos de un rango original, conservar los restantes
+            if (remainingCodes.length > 0) {
+              newArticulos.push({
+                ...art,
+                cantidad: remainingCodes.length,
+                codigo: remainingCodes.length === 1 ? remainingCodes[0] : remainingCodes.join(', ')
+              });
+            }
+          }
+        }
+
+        if (modified) {
+          await updateDoc(doc(db, 'resguardos', res.id), { articulos: newArticulos });
+        }
+      }
+
+      // 2. Agregar los bienes al resguardo destino (si no va a Bodega Contraloría)
+      if (traspasoData.tipoDestino !== 'bodega') {
+        const nuevosArtsParaDestino = itemsToMove.map(item => ({
+          id: item.id,
+          cantidad: Number(item.cantidad) || 1,
+          descripcion: item.descripcion || item.articulo || '',
+          marca: item.marca || '',
+          modelo: item.modelo || '',
+          serie: item.serie || '',
+          observaciones: item.observaciones || '',
+          codigo: item.codigo || '',
+          estado: item.estadoFisico || item.estado || 'Bueno'
+        }));
+
+        if (targetResguardo) {
+          const existingArts = Array.isArray(targetResguardo.articulos) ? [...targetResguardo.articulos] : [];
+          for (const nArt of nuevosArtsParaDestino) {
+            if (!existingArts.some(a => a.codigo === nArt.codigo)) {
+              existingArts.push(nArt);
+            }
+          }
+          await updateDoc(doc(db, 'resguardos', targetResguardo.id), {
+            articulos: existingArts
+          });
+        } else {
+          await addDoc(collection(db, 'resguardos'), {
+            folio: destFolio || '',
+            fecha: new Date().toISOString().split('T')[0],
+            nombreResguardante: destResguardante,
+            areaResguardante: destArea,
+            nombreContralor: 'Profr. Juan Carlos Taboada B.',
+            observaciones: traspasoData.motivo || 'Generado por Traspaso de Bienes',
+            articulos: nuevosArtsParaDestino,
+            fechaRegistro: new Date().toISOString()
+          });
+        }
+      }
+
+      // 3. Actualizar la ubicación e historial de cada bien en el Inventario General
+      for (const item of itemsToMove) {
+        const ubicacionPrevia = item.ubicacion || 'Bodega Contraloría';
+        const currentHistorial = item.historial || [];
+        await updateDoc(doc(db, 'inventario', item.id), {
+          ubicacion: destArea,
+          historial: [
+            ...currentHistorial,
+            {
+              fecha: new Date().toISOString(),
+              accion: traspasoData.tipoDestino === 'bodega' ? 'Retorno a Bodega (Traspaso)' : 'Traspaso de Área / Resguardo',
+              detalle: `Traspasado de '${ubicacionPrevia}' a '${destArea}' (${destResguardante}). ${traspasoData.motivo ? `Motivo: ${traspasoData.motivo}` : ''}`,
+              usuario: userLabel
+            }
+          ]
+        });
+      }
+
+      await registrarMovimiento(
+        'Traspaso de Bienes (Cambio de Resguardo)',
+        `Se traspasaron ${itemsToMove.length} bien(es) [${itemsToMove.map(i => i.codigo).join(', ')}] hacia '${destArea}' (Resguardante: ${destResguardante}).`,
+        userLabel
+      );
+
+      setSelectedItems([]);
+      setTraspasoItemsIds([]);
+      setModalOpen(null);
+      setIsSubmitting(false);
+      toast.success(`¡${itemsToMove.length} bien(es) traspasados exitosamente a ${destArea}!`, { id: toastId });
+    } catch (err) {
+      console.error('Error en traspaso de bienes:', err);
+      toast.error('Hubo un error al realizar el traspaso.', { id: toastId });
+      setIsSubmitting(false);
+    }
+  };
+
+  // MEJORA #2: Funciones de Verificación / Auditoría Física por Área (Check-list)
+  const handleAuditoriaQuickStatus = async (item, nuevoEstado) => {
+    try {
+      const currentHistorial = item.historial || [];
+      const nota = notasAuditoria[item.id] !== undefined ? notasAuditoria[item.id] : (item.observaciones || '');
+      await updateDoc(doc(db, 'inventario', item.id), {
+        estado: nuevoEstado,
+        observaciones: nota,
+        ultimaVerificacion: new Date().toISOString(),
+        historial: [
+          ...currentHistorial,
+          {
+            fecha: new Date().toISOString(),
+            accion: 'Verificación Física (Auditoría)',
+            detalle: `Verificado en '${item.ubicacion || 'Sin área'}' con estado '${nuevoEstado}'. ${nota ? `Nota: ${nota}` : ''}`,
+            usuario: userLabel
+          }
+        ]
+      });
+
+      // Sincronizar el estado en el resguardo correspondiente si existe
+      if (item.ubicacion && item.codigo) {
+        const currRes = resguardos.find(r => (r.areaResguardante || r.area) === item.ubicacion);
+        if (currRes && Array.isArray(currRes.articulos)) {
+          let changed = false;
+          const updatedArts = currRes.articulos.map(a => {
+            const codes = expandCodeRange(a.codigo || a.inventario || '');
+            if (codes.includes(item.codigo)) {
+              changed = true;
+              return { ...a, estado: nuevoEstado, observaciones: nota || a.observaciones || '' };
+            }
+            return a;
+          });
+          if (changed) {
+            await updateDoc(doc(db, 'resguardos', currRes.id), { articulos: updatedArts });
+          }
+        }
+      }
+
+      setVerificadosHoy(prev => ({ ...prev, [item.id]: nuevoEstado }));
+      toast.success(`[${item.codigo}] verificado como ${nuevoEstado}`, { duration: 1500 });
+    } catch (err) {
+      console.error('Error en verificación física:', err);
+      toast.error('No se pudo actualizar el bien.');
+    }
+  };
+
+  const handleAuditoriaSaveNote = async (item) => {
+    const nota = (notasAuditoria[item.id] ?? item.observaciones ?? '').trim();
+    try {
+      await updateDoc(doc(db, 'inventario', item.id), {
+        observaciones: nota,
+        ultimaVerificacion: new Date().toISOString()
+      });
+      setVerificadosHoy(prev => ({ ...prev, [item.id]: item.estadoFisico || item.estado || 'Bueno' }));
+      toast.success(`Nota guardada en [${item.codigo}]`, { duration: 1500 });
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al guardar la nota.');
+    }
+  };
+
+  const handleAuditoriaVerifyAllArea = async (itemsList) => {
+    if (!itemsList || itemsList.length === 0) return;
+    if (!window.confirm(`¿Marcar los ${itemsList.length} bienes mostrados como VERIFICADOS hoy (conservando su estado actual)?`)) return;
+    const toastId = toast.loading('Registrando verificación del área...');
+    try {
+      const newVerificados = { ...verificadosHoy };
+      for (const item of itemsList) {
+        newVerificados[item.id] = item.estadoFisico || item.estado || 'Bueno';
+      }
+      setVerificadosHoy(newVerificados);
+      await registrarMovimiento(
+        'Auditoría Física de Inventario',
+        `Se verificaron físicamente ${itemsList.length} bienes del área '${auditoriaArea}'.`,
+        userLabel
+      );
+      toast.success(`¡${itemsList.length} bienes marcados como verificados!`, { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al verificar el área.', { id: toastId });
+    }
+  };
+
   const toggleSelectAll = () => {
     const filteredIds = filteredInventario.map(item => item.id);
     const allFilteredSelected = filteredIds.every(id => selectedItems.includes(id));
@@ -2273,26 +2594,36 @@ Esta acción no se puede deshacer.`);
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs adaptadas para Celular y PC */}
       <div className="border-b border-slate-200">
-        <nav className="-mb-px flex flex-wrap gap-2 space-x-6">
+        <nav className="-mb-px grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-4">
           <button
             onClick={() => setActiveTab('inventario')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'inventario' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            className={`py-3 sm:py-4 px-2.5 sm:px-3 border-b-2 font-bold text-xs sm:text-sm transition-colors flex items-center justify-center sm:justify-start rounded-t-lg ${activeTab === 'inventario' ? 'border-primary-600 text-primary-700 bg-primary-50/60' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
           >
-            <PackageOpen className="w-4 h-4 mr-2" /> Inventario de Mobiliario ({totalArticulos})
+            <PackageOpen className="w-4 h-4 mr-1.5 shrink-0" />
+            <span className="truncate">Inventario ({totalArticulos})</span>
           </button>
           <button
             onClick={() => setActiveTab('resguardos')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'resguardos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            className={`py-3 sm:py-4 px-2.5 sm:px-3 border-b-2 font-bold text-xs sm:text-sm transition-colors flex items-center justify-center sm:justify-start rounded-t-lg ${activeTab === 'resguardos' ? 'border-primary-600 text-primary-700 bg-primary-50/60' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
           >
-            <FileText className="w-4 h-4 mr-2" /> Historial de Resguardos ({resguardos.length})
+            <FileText className="w-4 h-4 mr-1.5 shrink-0" />
+            <span className="truncate">Resguardos ({resguardos.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('actas')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'actas' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            className={`py-3 sm:py-4 px-2.5 sm:px-3 border-b-2 font-bold text-xs sm:text-sm transition-colors flex items-center justify-center sm:justify-start rounded-t-lg ${activeTab === 'actas' ? 'border-primary-600 text-primary-700 bg-primary-50/60' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
           >
-            <History className="w-4 h-4 mr-2" /> Actas de Alta y Baja ({actasRecepcion.length + actasBaja.length})
+            <History className="w-4 h-4 mr-1.5 shrink-0" />
+            <span className="truncate">Altas y Bajas ({actasRecepcion.length + actasBaja.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('auditoria')}
+            className={`py-3 sm:py-4 px-2.5 sm:px-3 border-b-2 font-bold text-xs sm:text-sm transition-colors flex items-center justify-center sm:justify-start rounded-t-lg ${activeTab === 'auditoria' ? 'border-emerald-600 text-emerald-700 bg-emerald-50/60' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+          >
+            <ClipboardCheck className="w-4 h-4 mr-1.5 shrink-0 text-emerald-600" />
+            <span className="truncate">Auditoría Física (Check-list)</span>
           </button>
         </nav>
       </div>
@@ -2881,95 +3212,197 @@ Esta acción no se puede deshacer.`);
 
           <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-              <h3 className="font-semibold text-slate-700">
-                Catálogo de Bienes ({filteredInventario.length})
-              </h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-center justify-between w-full md:w-auto">
+                <h3 className="font-semibold text-slate-700">
+                  Catálogo de Bienes ({filteredInventario.length})
+                </h3>
+                <button
+                  type="button"
+                  onClick={toggleSelectAll}
+                  className="md:hidden text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-200"
+                >
+                  {filteredInventario.length > 0 && filteredInventario.every(item => selectedItems.includes(item.id))
+                    ? 'Deseleccionar todos'
+                    : 'Seleccionar todos'}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full md:w-auto">
                 {selectedItems.length > 0 && (
                   <>
-                    <button onClick={handlePrintEtiquetas} className="flex items-center px-3 py-2 bg-slate-800 text-white rounded-lg text-xs font-medium hover:bg-slate-900 shadow-sm transition-colors">
+                    <button onClick={() => openTraspasoModal()} className="flex items-center justify-center px-3 py-2 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 shadow-sm transition-colors">
+                      <ArrowRightLeft className="w-4 h-4 mr-1.5" /> Traspasar ({selectedItems.length})
+                    </button>
+                    <button onClick={handlePrintEtiquetas} className="flex items-center justify-center px-3 py-2 bg-slate-800 text-white rounded-lg text-xs font-medium hover:bg-slate-900 shadow-sm transition-colors">
                       <Printer className="w-4 h-4 mr-1.5" /> Etiquetas QR ({selectedItems.length})
                     </button>
-                    <button onClick={() => openModal('resguardo')} className="flex items-center px-3 py-2 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-medium hover:bg-indigo-200 shadow-sm transition-colors border border-indigo-200">
+                    <button onClick={() => openModal('resguardo')} className="flex items-center justify-center px-3 py-2 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-medium hover:bg-indigo-200 shadow-sm transition-colors border border-indigo-200">
                       <FileText className="w-4 h-4 mr-1.5" /> Asignar Resguardo
                     </button>
-                    <button onClick={() => openModal('baja')} className="flex items-center px-3 py-2 bg-sky-100 text-sky-800 rounded-lg text-xs font-medium hover:bg-sky-200 shadow-sm transition-colors border border-sky-200">
+                    <button onClick={() => openModal('baja')} className="flex items-center justify-center px-3 py-2 bg-sky-100 text-sky-800 rounded-lg text-xs font-medium hover:bg-sky-200 shadow-sm transition-colors border border-sky-200">
                       <FileText className="w-4 h-4 mr-1.5" /> Dar de Baja
                     </button>
-                    <button onClick={() => handleBulkStatusChange('Nuevo')} className="flex items-center px-3 py-2 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-medium hover:bg-emerald-200 shadow-sm transition-colors border border-emerald-200">
+                    <button onClick={() => handleBulkStatusChange('Nuevo')} className="flex items-center justify-center px-3 py-2 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-medium hover:bg-emerald-200 shadow-sm transition-colors border border-emerald-200">
                       <CheckCircle2 className="w-4 h-4 mr-1.5" /> Marcar Nuevo
                     </button>
-                    <button onClick={handleBulkDelete} className="flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 shadow-sm transition-colors border border-red-200">
+                    <button onClick={handleBulkDelete} className="flex items-center justify-center px-3 py-2 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 shadow-sm transition-colors border border-red-200">
                       <Trash2 className="w-4 h-4 mr-1.5" /> Eliminar ({selectedItems.length})
                     </button>
                   </>
                 )}
-                <button onClick={handleExportCSV} className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors">
-                  <Download className="w-4 h-4 mr-2 text-primary-600" /> Exportar CSV
+                <button onClick={handleExportCSV} className="flex items-center justify-center px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors">
+                  <Download className="w-4 h-4 mr-1.5 text-primary-600" /> Exportar CSV
                 </button>
-                <button onClick={() => setShowScannerModal(true)} className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors">
-                  <ScanLine className="w-4 h-4 mr-2" /> Escanear Lista (OCR)
+                <button onClick={() => setShowScannerModal(true)} className="flex items-center justify-center px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors">
+                  <ScanLine className="w-4 h-4 mr-1.5" /> Escanear (OCR)
                 </button>
-                <button onClick={() => openModal('recepcion')} className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 shadow-sm transition-colors">
+                <button onClick={() => openModal('recepcion')} className="col-span-2 sm:col-span-1 flex items-center justify-center px-4 py-2 bg-primary-600 text-white rounded-lg text-xs sm:text-sm font-bold hover:bg-primary-700 shadow-sm transition-colors">
                   <Plus className="w-4 h-4 mr-1" /> Añadir Artículo
                 </button>
               </div>
             </div>
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-3 text-left w-12">
-                  <input 
-                    type="checkbox" 
-                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                    checked={filteredInventario.length > 0 && filteredInventario.every(item => selectedItems.includes(item.id))}
-                    onChange={toggleSelectAll}
-                  />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Código</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículo</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Marca / Modelo</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">No. Serie</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Ubicación</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Cantidad</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
-              </tr>
-            </thead>
-            
-                            <tbody className="divide-y divide-slate-200">
-                {filteredInventario.length > 0 ? filteredInventario.map(item => (
-                  <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-indigo-50/50' : 'hover:bg-slate-50 transition-colors'}>
-                    <td className="px-6 py-4 text-left w-12">
+
+            {/* VISTA MÓVIL (TARJETAS TÁCTILES PARA CELULAR) */}
+            <div className="md:hidden divide-y divide-slate-200">
+              {filteredInventario.length > 0 ? filteredInventario.map(item => {
+                const est = item.estadoFisico || item.estado || 'Bueno';
+                return (
+                  <div key={item.id} className={`p-3.5 transition-colors ${selectedItems.includes(item.id) ? 'bg-indigo-50/70' : 'bg-white'}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <label className="flex items-start gap-2.5 cursor-pointer flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          className="w-5 h-5 mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 shrink-0"
+                          checked={selectedItems.includes(item.id)}
+                          onChange={() => toggleSelectItem(item.id)}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-mono text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                              {item.codigo || 'S/C'}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                              est === 'Baja' ? 'bg-slate-200 text-slate-600 line-through' :
+                              est === 'Nuevo' ? 'bg-emerald-100 text-emerald-700' :
+                              est === 'Malo' ? 'bg-red-100 text-red-700' :
+                              est === 'Regular' ? 'bg-amber-100 text-amber-700' :
+                              'bg-blue-100 text-blue-700'
+                            }`}>
+                              {est}
+                            </span>
+                            <span className="text-xs font-bold text-slate-500">Cant: {item.cantidad || 1}</span>
+                          </div>
+                          <p className="text-sm font-bold text-slate-800 mt-1 break-words">
+                            {item.articulo || item.descripcion || 'Sin nombre'}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Marca: <strong>{item.marca || 'S/M'}</strong> {item.modelo ? `| Mod: ${item.modelo}` : ''} {item.serie ? `| Serie: ${item.serie}` : ''}
+                          </p>
+                          <div className="mt-1.5">
+                            <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold border border-slate-200">
+                              📍 {item.ubicacion || 'Sin ubicar'}
+                            </span>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
+                      <button
+                        onClick={() => { setEditingItem(item); setModalOpen('editItem'); }}
+                        className="py-1.5 px-2 bg-primary-50 text-primary-700 rounded-lg text-xs font-bold flex items-center justify-center border border-primary-200"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 mr-1" /> Editar
+                      </button>
+                      <button
+                        onClick={() => openTraspasoModal([item.id])}
+                        className="py-1.5 px-2 bg-amber-50 text-amber-800 rounded-lg text-xs font-bold flex items-center justify-center border border-amber-200"
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5 mr-1" /> Mover
+                      </button>
+                      <button
+                        onClick={() => { setHistoryItem(item); setModalOpen('history'); }}
+                        className="py-1.5 px-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center border border-slate-200"
+                      >
+                        <History className="w-3.5 h-3.5 mr-1" /> Hist.
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(item.id)}
+                        className="py-1.5 px-2 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold flex items-center justify-center border border-rose-200"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Borrar
+                      </button>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="p-8 text-center text-slate-500 italic text-sm">
+                  No se encontraron artículos en el inventario que coincidan con la búsqueda.
+                </div>
+              )}
+            </div>
+
+            {/* VISTA ESCRITORIO (TABLA CON SCROLL HORIZONTAL SEGURO) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left w-12">
                       <input 
                         type="checkbox" 
                         className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                        checked={selectedItems.includes(item.id)}
-                        onChange={() => toggleSelectItem(item.id)}
+                        checked={filteredInventario.length > 0 && filteredInventario.every(item => selectedItems.includes(item.id))}
+                        onChange={toggleSelectAll}
                       />
-                    </td>
-                    <td className="px-6 py-4 text-sm font-mono text-slate-600">{item.codigo || 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-800 font-medium">{item.articulo || item.descripcion || 'Sin nombre'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{item.marca || 'N/A'} {item.modelo ? `(${item.modelo})` : ''}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{item.serie || 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium border border-slate-200">
-                        {item.ubicacion || 'Sin ubicar'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-bold text-slate-800">{item.cantidad || 1}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${
-                        (item.estadoFisico === 'Baja' || item.estado === 'Baja') ? 'bg-slate-200 text-slate-600 line-through' :
-                        (item.estadoFisico === 'Nuevo' || item.estado === 'Nuevo') ? 'bg-emerald-100 text-emerald-700' :
-                        (item.estadoFisico === 'Malo' || item.estado === 'Malo') ? 'bg-red-100 text-red-700' :
-                        (item.estadoFisico === 'Regular' || item.estado === 'Regular') ? 'bg-amber-100 text-amber-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {item.estadoFisico || item.estado || 'Bueno'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-right whitespace-nowrap space-x-2">
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Código</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículo</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Marca / Modelo</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">No. Serie</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Ubicación</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Cantidad</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {filteredInventario.length > 0 ? filteredInventario.map(item => (
+                    <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-indigo-50/50' : 'hover:bg-slate-50 transition-colors'}>
+                      <td className="px-6 py-4 text-left w-12">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          checked={selectedItems.includes(item.id)}
+                          onChange={() => toggleSelectItem(item.id)}
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-sm font-mono text-slate-600">{item.codigo || 'N/A'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-800 font-medium">{item.articulo || item.descripcion || 'Sin nombre'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{item.marca || 'N/A'} {item.modelo ? `(${item.modelo})` : ''}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{item.serie || 'N/A'}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium border border-slate-200">
+                          {item.ubicacion || 'Sin ubicar'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-slate-800">{item.cantidad || 1}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${
+                          (item.estadoFisico === 'Baja' || item.estado === 'Baja') ? 'bg-slate-200 text-slate-600 line-through' :
+                          (item.estadoFisico === 'Nuevo' || item.estado === 'Nuevo') ? 'bg-emerald-100 text-emerald-700' :
+                          (item.estadoFisico === 'Malo' || item.estado === 'Malo') ? 'bg-red-100 text-red-700' :
+                          (item.estadoFisico === 'Regular' || item.estado === 'Regular') ? 'bg-amber-100 text-amber-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {item.estadoFisico || item.estado || 'Bueno'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-right whitespace-nowrap space-x-1.5">
+                        <button 
+                          onClick={() => openTraspasoModal([item.id])}
+                          className="text-amber-700 hover:text-amber-900 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-amber-50"
+                          title="Traspasar este bien a otra área o resguardo"
+                        >
+                          <ArrowRightLeft className="w-3.5 h-3.5 mr-1" /> Traspasar
+                        </button>
                         <button 
                           onClick={() => { setHistoryItem(item); setModalOpen('history'); }}
                           className="text-slate-600 hover:text-indigo-700 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-slate-100"
@@ -2991,17 +3424,43 @@ Esta acción no se puede deshacer.`);
                         >
                           <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
                         </button>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="9" className="px-6 py-8 text-center text-slate-500 italic">No se encontraron artículos en el inventario que coincidan con la búsqueda.</td>
-                  </tr>
-                )}
-              </tbody>
-
-          </table>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan="9" className="px-6 py-8 text-center text-slate-500 italic">No se encontraron artículos en el inventario que coincidan con la búsqueda.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          {/* BARRA FLOTANTE EN CELULAR CUANDO HAY BIENES SELECCIONADOS */}
+          {selectedItems.length > 0 && (
+            <div className="md:hidden fixed bottom-3 left-3 right-3 z-40 bg-slate-900 text-white p-3 rounded-2xl shadow-2xl border border-slate-700 flex flex-col gap-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-indigo-300">{selectedItems.length} bien(es) seleccionado(s)</span>
+                <button onClick={() => setSelectedItems([])} className="text-slate-300 hover:text-white underline text-xs">
+                  Limpiar selección
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                <button onClick={() => openTraspasoModal()} className="bg-amber-500 text-white py-2 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center">
+                  <ArrowRightLeft className="w-3.5 h-3.5 mr-1" /> Mover
+                </button>
+                <button onClick={() => openModal('resguardo')} className="bg-indigo-600 text-white py-2 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center">
+                  <FileText className="w-3.5 h-3.5 mr-1" /> Resguardo
+                </button>
+                <button onClick={handlePrintEtiquetas} className="bg-slate-700 text-white py-2 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center">
+                  <Printer className="w-3.5 h-3.5 mr-1" /> QR
+                </button>
+                <button onClick={() => openModal('baja')} className="bg-rose-600 text-white py-2 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center">
+                  <Trash2 className="w-3.5 h-3.5 mr-1" /> Baja
+                </button>
+              </div>
+            </div>
+          )}
 
         </div>
       )}
@@ -3053,75 +3512,144 @@ Esta acción no se puede deshacer.`);
           </div>
 
           <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Folio</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Fecha</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Resguardante</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Área / Cargo</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículos</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
-                </tr>
-              </thead>
-              
-              <tbody className="divide-y divide-slate-200">
-                {resguardos.length > 0 ? resguardos.filter(r => 
-                    !resguardoSearch ||
-                    searchIncludes(r.resguardante || r.nombreResguardante, resguardoSearch) ||
-                    searchIncludes(r.area || r.areaResguardante || r.cargo, resguardoSearch) ||
-                    searchIncludes(r.folio, resguardoSearch) ||
-                    (Array.isArray(r.articulos) && r.articulos.some(a => searchIncludes(a.descripcion || a.articulo, resguardoSearch) || searchIncludes(a.codigo, resguardoSearch)))
-                ).map(r => {
-                  const totalPiezas = Array.isArray(r.articulos) ? r.articulos.reduce((s, a) => s + (Number(a.cantidad) || 1), 0) : 0;
-                  return (
-                  <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-mono font-bold text-slate-900">{r.folio || 'S/F'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{r.fecha ? (r.fecha.toDate ? r.fecha.toDate().toLocaleDateString('es-MX') : r.fecha) : 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-800 font-bold">{r.resguardante || r.nombreResguardante || 'Desconocido'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{r.area || r.areaResguardante || r.cargo || 'N/A'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      <span className="font-semibold text-slate-800">{r.articulos ? r.articulos.length : 0} partidas</span>
-                      <span className="text-xs text-slate-400 ml-1">({totalPiezas} pzas.)</span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-right whitespace-nowrap space-x-2">
-                        <button 
-                          onClick={() => handleEditResguardoClick(r)}
-                          className="text-primary-600 hover:text-primary-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-primary-50"
-                        >
-                          <Edit2 className="w-3.5 h-3.5 mr-1" /> Ver / Editar
-                        </button>
-                        <button 
-                          onClick={() => handleDuplicateResguardo(r)}
-                          className="text-amber-600 hover:text-amber-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-amber-50"
-                          title="Crear un nuevo resguardo usando esta lista como plantilla"
-                        >
-                          <Copy className="w-3.5 h-3.5 mr-1" /> Duplicar
-                        </button>
-                        <button
-                          onClick={() => { setPrintData(r); setPrintMode(r.tipo === 'Alta' ? 'recepcion' : (r.tipo === 'Baja' ? 'baja' : 'resguardo')); setTimeout(() => window.print(), 500); }}
-                          className="text-indigo-600 hover:text-indigo-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-indigo-50"
-                        >
-                          <Printer className="w-3.5 h-3.5 mr-1" /> Imprimir PDF
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteResguardoClick(r)}
-                          className="text-rose-600 hover:text-rose-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-rose-50"
-                          title="Eliminar acta de resguardo"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
-                        </button>
-                    </td>
-                  </tr>
-                  );
-                }) : (
-                  <tr>
-                    <td colSpan="6" className="px-6 py-8 text-center text-slate-500 italic">No hay actas de resguardo registradas.</td>
-                  </tr>
-                )}
-              </tbody>
+            {/* VISTA MÓVIL DE RESGUARDOS (TARJETAS PARA CELULAR) */}
+            <div className="md:hidden divide-y divide-slate-200">
+              {resguardos.length > 0 ? resguardos.filter(r => 
+                !resguardoSearch ||
+                searchIncludes(r.resguardante || r.nombreResguardante, resguardoSearch) ||
+                searchIncludes(r.area || r.areaResguardante || r.cargo, resguardoSearch) ||
+                searchIncludes(r.folio, resguardoSearch) ||
+                (Array.isArray(r.articulos) && r.articulos.some(a => searchIncludes(a.descripcion || a.articulo, resguardoSearch) || searchIncludes(a.codigo, resguardoSearch)))
+              ).map(r => {
+                const totalPiezas = Array.isArray(r.articulos) ? r.articulos.reduce((s, a) => s + (Number(a.cantidad) || 1), 0) : 0;
+                return (
+                  <div key={r.id} className="p-4 bg-white space-y-2.5">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-black bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">
+                            Folio: {r.folio || 'S/F'}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {r.fecha ? (r.fecha.toDate ? r.fecha.toDate().toLocaleDateString('es-MX') : r.fecha) : 'N/A'}
+                          </span>
+                        </div>
+                        <p className="text-sm font-bold text-slate-900 mt-1">
+                          {r.resguardante || r.nombreResguardante || 'Desconocido'}
+                        </p>
+                        <p className="text-xs font-semibold text-indigo-700">
+                          📍 {r.area || r.areaResguardante || r.cargo || 'N/A'}
+                        </p>
+                      </div>
+                      <span className="px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-bold border border-slate-200 shrink-0">
+                        {r.articulos ? r.articulos.length : 0} part. ({totalPiezas} pzas.)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-2 border-t border-slate-100">
+                      <button
+                        onClick={() => handleEditResguardoClick(r)}
+                        className="py-2 px-2 bg-primary-50 text-primary-700 rounded-lg text-xs font-bold flex items-center justify-center border border-primary-200"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 mr-1" /> Ver / Editar
+                      </button>
+                      <button
+                        onClick={() => { setPrintData(r); setPrintMode(r.tipo === 'Alta' ? 'recepcion' : (r.tipo === 'Baja' ? 'baja' : 'resguardo')); setTimeout(() => window.print(), 500); }}
+                        className="py-2 px-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold flex items-center justify-center border border-indigo-200"
+                      >
+                        <Printer className="w-3.5 h-3.5 mr-1" /> Imprimir
+                      </button>
+                      <button
+                        onClick={() => handleDuplicateResguardo(r)}
+                        className="py-2 px-2 bg-amber-50 text-amber-800 rounded-lg text-xs font-bold flex items-center justify-center border border-amber-200"
+                      >
+                        <Copy className="w-3.5 h-3.5 mr-1" /> Duplicar
+                      </button>
+                      <button
+                        onClick={() => handleDeleteResguardoClick(r)}
+                        className="py-2 px-2 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold flex items-center justify-center border border-rose-200"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
+                      </button>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="p-8 text-center text-slate-500 italic text-sm">
+                  No hay actas de resguardo registradas.
+                </div>
+              )}
+            </div>
 
-            </table>
+            {/* VISTA ESCRITORIO DE RESGUARDOS */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Folio</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Fecha</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Resguardante</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Área / Cargo</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículos</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {resguardos.length > 0 ? resguardos.filter(r => 
+                      !resguardoSearch ||
+                      searchIncludes(r.resguardante || r.nombreResguardante, resguardoSearch) ||
+                      searchIncludes(r.area || r.areaResguardante || r.cargo, resguardoSearch) ||
+                      searchIncludes(r.folio, resguardoSearch) ||
+                      (Array.isArray(r.articulos) && r.articulos.some(a => searchIncludes(a.descripcion || a.articulo, resguardoSearch) || searchIncludes(a.codigo, resguardoSearch)))
+                  ).map(r => {
+                    const totalPiezas = Array.isArray(r.articulos) ? r.articulos.reduce((s, a) => s + (Number(a.cantidad) || 1), 0) : 0;
+                    return (
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 text-sm font-mono font-bold text-slate-900">{r.folio || 'S/F'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{r.fecha ? (r.fecha.toDate ? r.fecha.toDate().toLocaleDateString('es-MX') : r.fecha) : 'N/A'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-800 font-bold">{r.resguardante || r.nombreResguardante || 'Desconocido'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{r.area || r.areaResguardante || r.cargo || 'N/A'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        <span className="font-semibold text-slate-800">{r.articulos ? r.articulos.length : 0} partidas</span>
+                        <span className="text-xs text-slate-400 ml-1">({totalPiezas} pzas.)</span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-right whitespace-nowrap space-x-2">
+                          <button 
+                            onClick={() => handleEditResguardoClick(r)}
+                            className="text-primary-600 hover:text-primary-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-primary-50"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 mr-1" /> Ver / Editar
+                          </button>
+                          <button 
+                            onClick={() => handleDuplicateResguardo(r)}
+                            className="text-amber-600 hover:text-amber-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-amber-50"
+                            title="Crear un nuevo resguardo usando esta lista como plantilla"
+                          >
+                            <Copy className="w-3.5 h-3.5 mr-1" /> Duplicar
+                          </button>
+                          <button
+                            onClick={() => { setPrintData(r); setPrintMode(r.tipo === 'Alta' ? 'recepcion' : (r.tipo === 'Baja' ? 'baja' : 'resguardo')); setTimeout(() => window.print(), 500); }}
+                            className="text-indigo-600 hover:text-indigo-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-indigo-50"
+                          >
+                            <Printer className="w-3.5 h-3.5 mr-1" /> Imprimir PDF
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteResguardoClick(r)}
+                            className="text-rose-600 hover:text-rose-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-rose-50"
+                            title="Eliminar acta de resguardo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
+                          </button>
+                      </td>
+                    </tr>
+                    );
+                  }) : (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-8 text-center text-slate-500 italic">No hay actas de resguardo registradas.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -3269,32 +3797,348 @@ Esta acción no se puede deshacer.`);
           </div>
         </div>
       )}
+
+      {/* MEJORA #2: PESTAÑA DE AUDITORÍA FÍSICA / CHECK-LIST POR ÁREA (ESPECIAL PARA CELULAR Y RECORRIDOS) */}
+      {activeTab === 'auditoria' && (() => {
+        const itemsArea = inventarioActivos.filter(item => {
+          const matchArea = auditoriaArea === 'Todas' || item.ubicacion === auditoriaArea;
+          const matchQuery = !auditoriaSearch ||
+            searchIncludes(item.codigo, auditoriaSearch) ||
+            searchIncludes(item.articulo || item.descripcion, auditoriaSearch) ||
+            searchIncludes(item.marca, auditoriaSearch) ||
+            searchIncludes(item.serie, auditoriaSearch);
+          return matchArea && matchQuery;
+        });
+        const verificadosCount = itemsArea.filter(i => verificadosHoy[i.id]).length;
+        const pct = itemsArea.length > 0 ? Math.round((verificadosCount / itemsArea.length) * 100) : 0;
+
+        return (
+          <div className="space-y-4 animate-in fade-in-50 duration-200">
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 shadow-sm">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                  <h3 className="font-bold text-emerald-950 text-base sm:text-lg flex items-center">
+                    <ClipboardCheck className="w-5 h-5 mr-2 text-emerald-600" />
+                    Verificación y Auditoría Física por Área (Check-list Móvil)
+                  </h3>
+                  <p className="text-xs text-emerald-800 mt-0.5">
+                    Selecciona el salón o área que estás revisando desde tu celular y toca el estado de cada bien para marcarlo como verificado en tiempo real.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleAuditoriaVerifyAllArea(itemsArea)}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center justify-center shrink-0"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> Verificar Todos ({itemsArea.length})
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <div>
+                  <label className="block text-xs font-bold text-emerald-900 mb-1 uppercase">1. Selecciona el Salón / Área a revisar</label>
+                  <select
+                    value={auditoriaArea}
+                    onChange={e => setAuditoriaArea(e.target.value)}
+                    className="w-full p-2.5 border border-emerald-300 rounded-xl text-sm font-bold bg-white text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="Todas">Todas las áreas ({inventarioActivos.length} bienes)</option>
+                    {ubicacionesUnicas.map(ub => {
+                      const countUb = inventarioActivos.filter(i => i.ubicacion === ub).length;
+                      return (
+                        <option key={ub} value={ub}>
+                          📍 {ub} ({countUb} bienes)
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-emerald-900 mb-1 uppercase">2. Filtrar por Código o Nombre en el área</label>
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar código o mueble (ej. SIL-0001, Proyector)..."
+                      value={auditoriaSearch}
+                      onChange={e => setAuditoriaSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2.5 border border-emerald-300 rounded-xl text-sm bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Barra de Progreso de la Auditoría */}
+              <div className="mt-4 bg-white/90 p-3 rounded-xl border border-emerald-200">
+                <div className="flex justify-between items-center text-xs font-bold text-slate-700 mb-1.5">
+                  <span>Progreso de revisión en esta vista: {verificadosCount} de {itemsArea.length} bienes verificados</span>
+                  <span className="text-emerald-700">{pct}%</span>
+                </div>
+                <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de Tarjetas Check-list Táctiles */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {itemsArea.length > 0 ? itemsArea.map(item => {
+                const estActual = item.estadoFisico || item.estado || 'Bueno';
+                const fueVerificadoHoy = Boolean(verificadosHoy[item.id]);
+                const notaVal = notasAuditoria[item.id] !== undefined ? notasAuditoria[item.id] : (item.observaciones || '');
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`p-4 rounded-xl border transition-all shadow-sm ${
+                      fueVerificadoHoy
+                        ? 'bg-emerald-50/60 border-emerald-400 ring-1 ring-emerald-300'
+                        : 'bg-white border-slate-200'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-mono text-xs font-black px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-200">
+                            {item.codigo || 'S/C'}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                            📍 {item.ubicacion || 'Sin área'}
+                          </span>
+                          {fueVerificadoHoy && (
+                            <span className="px-2 py-0.5 bg-emerald-600 text-white rounded text-[10px] font-bold flex items-center">
+                              <CheckCircle2 className="w-3 h-3 mr-1" /> VERIFICADO
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-bold text-slate-900 text-sm mt-1.5">
+                          {item.articulo || item.descripcion || 'Sin nombre'}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Marca: <strong>{item.marca || 'S/M'}</strong> {item.modelo ? `| Mod: ${item.modelo}` : ''} {item.serie ? `| Serie: ${item.serie}` : ''}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Botones grandes para tocar con el pulgar desde el celular */}
+                    <div className="grid grid-cols-4 gap-1.5 mt-3">
+                      {['Nuevo', 'Bueno', 'Regular', 'Malo'].map(st => {
+                        const active = estActual === st;
+                        const btnStyle =
+                          st === 'Nuevo'
+                            ? active ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                            : st === 'Bueno'
+                            ? active ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100'
+                            : st === 'Regular'
+                            ? active ? 'bg-amber-500 text-white border-amber-600' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                            : active ? 'bg-rose-600 text-white border-rose-700' : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100';
+
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => handleAuditoriaQuickStatus(item, st)}
+                            className={`py-2 px-1.5 rounded-lg text-xs font-bold border transition flex items-center justify-center ${btnStyle}`}
+                          >
+                            {active && <CheckCircle2 className="w-3.5 h-3.5 mr-1 shrink-0" />}
+                            {st}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Nota rápida de observación física + botón de Traspaso */}
+                    <div className="flex gap-1.5 mt-2.5">
+                      <input
+                        type="text"
+                        placeholder="Nota física (ej. falta tornillo, rayado)..."
+                        value={notaVal}
+                        onChange={e => setNotasAuditoria(prev => ({ ...prev, [item.id]: e.target.value }))}
+                        className="flex-1 text-xs p-2 border border-slate-300 rounded-lg bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAuditoriaSaveNote(item)}
+                        className="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 shrink-0"
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openTraspasoModal([item.id])}
+                        className="px-2.5 py-1.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold hover:bg-amber-200 shrink-0 flex items-center"
+                        title="Mover este bien a otro salón o área"
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="col-span-full p-8 text-center text-slate-500 italic bg-white rounded-xl border border-slate-200">
+                  No hay bienes activos en esta área o con ese criterio de búsqueda.
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </>
       )}
     </div>
 
     {modalOpen && (
-      <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-        <div className={`bg-white rounded-xl shadow-2xl w-full my-8 ${modalOpen === 'editItem' ? 'max-w-lg' : 'max-w-4xl'}`}>
-          <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
-            <h3 className="font-bold text-xl text-slate-800">
+      <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+        <div className={`bg-white rounded-xl shadow-2xl w-full my-4 sm:my-8 ${modalOpen === 'editItem' || modalOpen === 'traspaso' ? 'max-w-lg' : 'max-w-4xl'}`}>
+          <div className="px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl gap-2">
+            <h3 className="font-bold text-base sm:text-xl text-slate-800">
               {modalOpen === 'recepcion' ? 'Generar Acta de Recepción (Alta de Inventario)' : 
                modalOpen === 'resguardo' ? 'Generar Carta de Resguardo' : 
                modalOpen === 'baja' ? 'Generar Acta de Baja Oficial' :
                modalOpen === 'editResguardo' ? 'Editar Carta de Resguardo' : 
                modalOpen === 'editRecepcion' ? 'Editar Acta de Recepción / Agregar Bienes Faltantes' :
+               modalOpen === 'traspaso' ? 'Traspaso Rápido de Resguardo / Área' :
                modalOpen === 'history' ? 'Historial de Movimientos del Bien' : 'Editar Bien del Inventario'}
             </h3>
-            <button onClick={() => { setModalOpen(null); setEditingItem(null); setEditingResguardo(null); setEditingRecepcion(null); setHistoryItem(null); }} className="text-slate-400 hover:text-slate-600">
+            <button onClick={() => { setModalOpen(null); setEditingItem(null); setEditingResguardo(null); setEditingRecepcion(null); setHistoryItem(null); }} className="text-slate-400 hover:text-slate-600 shrink-0 p-1">
               <X className="w-6 h-6" />
             </button>
           </div>
           
-          <div className="p-6">
-            {modalOpen === 'editItem' && editingItem ? (
+          <div className="p-4 sm:p-6">
+            {modalOpen === 'traspaso' ? (
+              <form onSubmit={handleExecuteTraspaso} className="space-y-4">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+                  Estás por transferir <strong>{traspasoItemsIds.length} bien(es)</strong>. El sistema los quitará automáticamente de su resguardo anterior y los asignará al nuevo destino elegido, registrando el movimiento en el historial de cada bien y en la Bitácora.
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">¿A dónde deseas transferir los bienes?</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${traspasoData.modo === 'existente' ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-bold' : 'bg-white border-slate-200 text-slate-700'}`}>
+                      <input
+                        type="radio"
+                        name="modoTraspaso"
+                        checked={traspasoData.modo === 'existente'}
+                        onChange={() => setTraspasoData({ ...traspasoData, modo: 'existente' })}
+                        className="w-4 h-4 text-indigo-600"
+                      />
+                      <span className="text-sm">Integrar a un Resguardo / Área existente</span>
+                    </label>
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${traspasoData.modo === 'nuevo' ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-bold' : 'bg-white border-slate-200 text-slate-700'}`}>
+                      <input
+                        type="radio"
+                        name="modoTraspaso"
+                        checked={traspasoData.modo === 'nuevo'}
+                        onChange={() => setTraspasoData({ ...traspasoData, modo: 'nuevo' })}
+                        className="w-4 h-4 text-indigo-600"
+                      />
+                      <span className="text-sm">Crear nueva Carta de Resguardo (Nueva Área o Maestro)</span>
+                    </label>
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${traspasoData.modo === 'bodega' ? 'bg-amber-50 border-amber-400 text-amber-900 font-bold' : 'bg-white border-slate-200 text-slate-700'}`}>
+                      <input
+                        type="radio"
+                        name="modoTraspaso"
+                        checked={traspasoData.modo === 'bodega'}
+                        onChange={() => setTraspasoData({ ...traspasoData, modo: 'bodega' })}
+                        className="w-4 h-4 text-amber-600"
+                      />
+                      <span className="text-sm">Devolver a Bodega Contraloría (Liberar de resguardo)</span>
+                    </label>
+                  </div>
+                </div>
+
+                {traspasoData.modo === 'existente' && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Selecciona el Resguardo / Área Destino</label>
+                    <select
+                      value={traspasoData.resguardoExistenteId}
+                      onChange={e => setTraspasoData({ ...traspasoData, resguardoExistenteId: e.target.value })}
+                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white"
+                      required
+                    >
+                      <option value="">-- Elige un resguardo activo --</option>
+                      {resguardos.map(r => (
+                        <option key={r.id} value={r.id}>
+                          {r.areaResguardante} — {r.nombreResguardante} (Folio {r.folio || 'S/F'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {traspasoData.modo === 'nuevo' && (
+                  <div className="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Área o Salón Destino *</label>
+                      <input
+                        type="text"
+                        list="ubicaciones-list"
+                        placeholder="Ej. Aula 2B, Laboratorio, Dirección..."
+                        value={traspasoData.areaResguardante}
+                        onChange={e => setTraspasoData({ ...traspasoData, areaResguardante: e.target.value })}
+                        className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Nombre del Resguardante (Maestro/Responsable) *</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Profr. Carlos Hernández"
+                        value={traspasoData.nombreResguardante}
+                        onChange={e => setTraspasoData({ ...traspasoData, nombreResguardante: e.target.value })}
+                        className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Folio (Opcional, automático si se deja vacío)</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. 024"
+                        value={traspasoData.folio}
+                        onChange={e => setTraspasoData({ ...traspasoData, folio: e.target.value })}
+                        className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Motivo u Observación del Traspaso (Opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Cambio de salón ciclo escolar, préstamo permanente..."
+                    value={traspasoData.motivo}
+                    onChange={e => setTraspasoData({ ...traspasoData, motivo: e.target.value })}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setModalOpen(null)}
+                    className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm"
+                    disabled={isSubmitting}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold shadow-sm flex items-center justify-center text-sm"
+                    disabled={isSubmitting}
+                  >
+                    <ArrowRightLeft className="w-4 h-4 mr-2" />
+                    {isSubmitting ? 'Procesando Traspaso...' : 'Confirmar Traspaso'}
+                  </button>
+                </div>
+              </form>
+            ) : modalOpen === 'editItem' && editingItem ? (
               <form onSubmit={handleSaveEdit}>
                 <div className="space-y-4 mb-6">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Código de Inventario</label>
                       <input type="text" value={editingItem.codigo || ''} onChange={e => setEditingItem({...editingItem, codigo: e.target.value})} className="w-full p-2 border rounded font-mono text-sm bg-slate-50" />
@@ -3305,7 +4149,7 @@ Esta acción no se puede deshacer.`);
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Marca</label>
                       <input type="text" value={editingItem.marca || ''} onChange={e => setEditingItem({...editingItem, marca: e.target.value})} className="w-full p-2 border rounded text-sm" />
@@ -3320,7 +4164,7 @@ Esta acción no se puede deshacer.`);
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Cantidad</label>
                       <input type="number" value={editingItem.cantidad || ''} onChange={e => setEditingItem({...editingItem, cantidad: e.target.value})} className="w-full p-2 border rounded text-sm" />
@@ -3378,7 +4222,7 @@ Esta acción no se puede deshacer.`);
                     <input type="text" value={editingItem.observaciones || ''} onChange={e => setEditingItem({...editingItem, observaciones: e.target.value})} className="w-full p-2 border rounded text-sm" />
                   </div>
                 </div>
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-slate-200">
                   <button type="button" onClick={() => { setModalOpen(null); setEditingItem(null); }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancelar</button>
                   <button type="submit" className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 shadow-sm">Guardar Cambios</button>
                 </div>
@@ -3408,33 +4252,33 @@ Esta acción no se puede deshacer.`);
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+                <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-6">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold text-slate-700">Artículos incluidos</h4>
-                    <button type="button" onClick={() => setEditingResguardo({ ...editingResguardo, articulos: [...editingResguardo.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: 'Bueno', codigo: '' }] })} className="text-sm text-primary-600 hover:text-primary-700 font-medium font-bold">
+                    <h4 className="font-semibold text-slate-700 text-sm sm:text-base">Artículos incluidos</h4>
+                    <button type="button" onClick={() => setEditingResguardo({ ...editingResguardo, articulos: [...editingResguardo.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: 'Bueno', codigo: '' }] })} className="text-sm text-primary-600 hover:text-primary-700 font-bold">
                       + Añadir fila
                     </button>
                   </div>
                   <div className="space-y-3">
                     {editingResguardo.articulos.map((art, idx) => (
-                      <div key={idx} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                        <div className="flex gap-2 items-center">
+                      <div key={idx} className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded-lg">
+                        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
                           <div className="w-16">
-                            <input type="number" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm" value={art.cantidad || ''} onChange={(e) => {
+                            <input type="number" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.cantidad || ''} onChange={(e) => {
                               const newArts = [...editingResguardo.articulos];
                               newArts[idx].cantidad = e.target.value;
                               setEditingResguardo({...editingResguardo, articulos: newArts});
                             }} />
                           </div>
-                          <div className="flex-1">
-                            <input type="text" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                          <div className="flex-1 min-w-[160px]">
+                            <input type="text" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold p-1.5 border" value={art.descripcion || art.articulo || ''} onChange={(e) => {
                               const newArts = [...editingResguardo.articulos];
                               newArts[idx].descripcion = e.target.value;
                               setEditingResguardo({...editingResguardo, articulos: newArts});
                             }} />
                           </div>
-                          <div className="w-1/4">
-                            <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                          <div className="w-full sm:w-1/4">
+                            <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.codigo || art.inventario || ''} onChange={(e) => {
                               const newArts = [...editingResguardo.articulos];
                               newArts[idx].codigo = e.target.value;
                               setEditingResguardo({...editingResguardo, articulos: newArts});
@@ -3443,35 +4287,35 @@ Esta acción no se puede deshacer.`);
                           <button type="button" onClick={() => {
                             const newArts = editingResguardo.articulos.filter((_, i) => i !== idx);
                             setEditingResguardo({...editingResguardo, articulos: newArts.length ? newArts : [{}]});
-                          }} className="p-2 text-slate-400 hover:text-red-500">
+                          }} className="p-2 text-slate-400 hover:text-red-500 ml-auto">
                             <X className="w-5 h-5" />
                           </button>
                         </div>
-                        <div className="flex gap-2 items-center">
-                           <div className="flex-1">
-                              <input type="text" placeholder="Marca" className="w-full rounded-md border-slate-300 text-sm" value={art.marca || ''} onChange={(e) => {
+                        <div className="grid grid-cols-2 sm:flex gap-2 items-center">
+                           <div className="sm:flex-1">
+                              <input type="text" placeholder="Marca" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.marca || ''} onChange={(e) => {
                                 const newArts = [...editingResguardo.articulos];
                                 newArts[idx].marca = e.target.value;
                                 setEditingResguardo({...editingResguardo, articulos: newArts});
                               }} />
                            </div>
-                           <div className="flex-1">
-                              <input type="text" placeholder="Modelo" className="w-full rounded-md border-slate-300 text-sm" value={art.modelo || ''} onChange={(e) => {
+                           <div className="sm:flex-1">
+                              <input type="text" placeholder="Modelo" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.modelo || ''} onChange={(e) => {
                                 const newArts = [...editingResguardo.articulos];
                                 newArts[idx].modelo = e.target.value;
                                 setEditingResguardo({...editingResguardo, articulos: newArts});
                               }} />
                            </div>
-                           <div className="flex-1">
-                              <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm" value={art.serie || ''} onChange={(e) => {
+                           <div className="sm:flex-1">
+                              <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.serie || ''} onChange={(e) => {
                                 const newArts = [...editingResguardo.articulos];
                                 newArts[idx].serie = e.target.value;
                                 setEditingResguardo({...editingResguardo, articulos: newArts});
                               }} />
                            </div>
-                           <div className="w-32">
+                           <div className="sm:w-32">
                               <select 
-                                className="w-full rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 p-2" 
+                                className="w-full rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 p-1.5" 
                                 value={art.estado || 'Bueno'} 
                                 onChange={(e) => {
                                   const newArts = [...editingResguardo.articulos];
@@ -3485,8 +4329,8 @@ Esta acción no se puede deshacer.`);
                                 <option value="Malo">Malo</option>
                               </select>
                            </div>
-                           <div className="flex-1">
-                              <input type="text" placeholder="Observaciones" className="w-full rounded-md border-slate-300 text-sm" value={art.observaciones || ''} onChange={(e) => {
+                           <div className="col-span-2 sm:flex-1">
+                              <input type="text" placeholder="Observaciones" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.observaciones || ''} onChange={(e) => {
                                 const newArts = [...editingResguardo.articulos];
                                 newArts[idx].observaciones = e.target.value;
                                 setEditingResguardo({...editingResguardo, articulos: newArts});
@@ -3498,7 +4342,7 @@ Esta acción no se puede deshacer.`);
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-slate-200">
                   <button type="button" onClick={() => { setModalOpen(null); setEditingResguardo(null); }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancelar</button>
                   <button type="submit" className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm">
                     Guardar Cambios
@@ -3534,9 +4378,9 @@ Esta acción no se puede deshacer.`);
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold text-slate-700">Artículos del Acta ({editingRecepcion.articulos.reduce((s, a) => s + (Number(a.cantidad) || 1), 0)} piezas en {editingRecepcion.articulos.length} partidas)</h4>
+                <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-6">
+                  <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+                    <h4 className="font-semibold text-slate-700 text-sm sm:text-base">Artículos del Acta ({editingRecepcion.articulos.reduce((s, a) => s + (Number(a.cantidad) || 1), 0)} piezas en {editingRecepcion.articulos.length} partidas)</h4>
                     <button
                       type="button"
                       onClick={() => setEditingRecepcion({
@@ -3551,7 +4395,7 @@ Esta acción no se puede deshacer.`);
                   <div className="space-y-3">
                     {editingRecepcion.articulos.map((art, idx) => (
                       <div key={idx} className={`flex flex-col gap-2 p-3 border rounded-lg ${art._uid === undefined ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-slate-200'}`}>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${art._uid === undefined ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
                             {art._uid === undefined ? 'NUEVO' : `#${idx + 1}`}
                           </span>
@@ -3569,7 +4413,7 @@ Esta acción no se puede deshacer.`);
                               }}
                             />
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-[160px]">
                             <input
                               type="text"
                               placeholder="Nombre/Concepto del artículo"
@@ -3582,7 +4426,7 @@ Esta acción no se puede deshacer.`);
                               }}
                             />
                           </div>
-                          <div className="w-1/4">
+                          <div className="w-full sm:w-1/4">
                             <input
                               type="text"
                               placeholder="Código (vacío = automático)"
@@ -3604,14 +4448,14 @@ Esta acción no se puede deshacer.`);
                                 articulos: newArts.length ? newArts : [{ cantidad: '1', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Nuevo', codigo: '' }]
                               });
                             }}
-                            className="p-1.5 text-slate-400 hover:text-red-500"
+                            className="p-1.5 text-slate-400 hover:text-red-500 ml-auto"
                             title="Quitar esta partida del acta"
                           >
                             <X className="w-5 h-5" />
                           </button>
                         </div>
-                        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
-                          <div className="flex-1">
+                        <div className="grid grid-cols-2 sm:flex gap-2 items-center">
+                          <div className="sm:flex-1">
                             <input
                               type="text"
                               placeholder="Marca"
@@ -3624,7 +4468,7 @@ Esta acción no se puede deshacer.`);
                               }}
                             />
                           </div>
-                          <div className="flex-1">
+                          <div className="sm:flex-1">
                             <input
                               type="text"
                               placeholder="Modelo"
@@ -3637,7 +4481,7 @@ Esta acción no se puede deshacer.`);
                               }}
                             />
                           </div>
-                          <div className="flex-1">
+                          <div className="sm:flex-1">
                             <input
                               type="text"
                               placeholder="No. Serie"
@@ -3650,7 +4494,7 @@ Esta acción no se puede deshacer.`);
                               }}
                             />
                           </div>
-                          <div className="w-32">
+                          <div className="sm:w-32">
                             <select
                               className="w-full rounded-md border border-slate-300 text-sm bg-white p-1.5"
                               value={art.estado || 'Nuevo'}
@@ -3666,7 +4510,7 @@ Esta acción no se puede deshacer.`);
                               <option value="Malo">Malo</option>
                             </select>
                           </div>
-                          <div className="flex-1">
+                          <div className="col-span-2 sm:flex-1">
                             <input
                               type="text"
                               placeholder="Observaciones"
@@ -3685,18 +4529,18 @@ Esta acción no se puede deshacer.`);
                   </div>
                 </div>
 
-                <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-slate-200">
+                <div className="flex flex-wrap justify-end gap-2 sm:gap-3 pt-4 border-t border-slate-200">
                   <button
                     type="button"
                     onClick={() => { setModalOpen(null); setEditingRecepcion(null); }}
-                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium"
+                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm"
                     disabled={isSubmitting}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm"
+                    className="px-5 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm text-sm"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
@@ -3704,7 +4548,7 @@ Esta acción no se puede deshacer.`);
                   <button
                     type="button"
                     onClick={(e) => handleSaveRecepcionEdit(e, 'print')}
-                    className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm flex items-center"
+                    className="px-5 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm flex items-center text-sm"
                     disabled={isSubmitting}
                   >
                     <Printer className="w-4 h-4 mr-2" /> {isSubmitting ? 'Procesando...' : 'Guardar y Reimprimir Acta'}
@@ -3762,8 +4606,69 @@ Esta acción no se puede deshacer.`);
                       <label className="block text-sm font-medium text-slate-700 mb-1">Hora de Recepción</label>
                       <input type="time" value={formData.hora} onChange={e => setFormData({...formData, hora: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
-                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Doc. de Origen (Factura, etc.)</label><input type="text" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.origen} onChange={e => setFormData({...formData, origen: e.target.value})} /></div>
-                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Proveedor</label><input type="text" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.nombreProveedor} onChange={e => setFormData({...formData, nombreProveedor: e.target.value})} /></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Doc. de Origen (Factura, etc.)</label><input type="text" className="w-full p-2 border rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.origen} onChange={e => setFormData({...formData, origen: e.target.value})} /></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Proveedor</label><input type="text" className="w-full p-2 border rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.nombreProveedor} onChange={e => setFormData({...formData, nombreProveedor: e.target.value})} /></div>
+
+                    {/* MEJORA #3: Asignar directamente a un Resguardo o Área desde el Alta */}
+                    <div className="md:col-span-2 mt-1">
+                      <label className="flex items-start sm:items-center space-x-3 text-sm font-medium text-slate-800 cursor-pointer p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 hover:bg-emerald-100/70 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(formData.asignarDirectoResguardo)}
+                          onChange={e => setFormData({ ...formData, asignarDirectoResguardo: e.target.checked })}
+                          className="rounded text-emerald-600 focus:ring-emerald-500 w-5 h-5 mt-0.5 sm:mt-0"
+                        />
+                        <span>
+                          <strong>Asignar directamente a un Salón / Área o Resguardo</strong> al guardar esta Alta <span className="text-xs text-slate-500">(si no se marca, ingresarán a Bodega Contraloría)</span>
+                        </span>
+                      </label>
+
+                      {formData.asignarDirectoResguardo && (
+                        <div className="mt-3 p-4 bg-white rounded-xl border border-emerald-300 shadow-sm space-y-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Opción A: Integrar a una Carta de Resguardo ya existente</label>
+                            <select
+                              value={formData.resguardoExistenteId || ''}
+                              onChange={e => setFormData({ ...formData, resguardoExistenteId: e.target.value })}
+                              className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
+                            >
+                              <option value="">-- O selecciona "+ Crear Nuevo Resguardo" abajo --</option>
+                              {resguardos.map(r => (
+                                <option key={r.id} value={r.id}>
+                                  {r.areaResguardante} — {r.nombreResguardante} (Folio {r.folio || 'S/F'})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {!formData.resguardoExistenteId && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Área o Salón Destino *</label>
+                                <input
+                                  type="text"
+                                  list="ubicaciones-list"
+                                  placeholder="Ej. Aula 1A, Dirección, Laboratorio..."
+                                  value={formData.areaResguardante || ''}
+                                  onChange={e => setFormData({ ...formData, areaResguardante: e.target.value })}
+                                  className="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Nombre del Resguardante (Responsable) *</label>
+                                <input
+                                  type="text"
+                                  placeholder="Ej. Profr. Juan Pérez"
+                                  value={formData.nombreResguardante || ''}
+                                  onChange={e => setFormData({ ...formData, nombreResguardante: e.target.value })}
+                                  className="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
 
@@ -3793,31 +4698,31 @@ Esta acción no se puede deshacer.`);
                 {modalOpen === 'baja' && (
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Motivo de Baja</label>
-                    <input type="text" placeholder="Ej. Daño irreparable, Obsolescencia tecnológica" className="w-full rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} required />
+                    <input type="text" placeholder="Ej. Daño irreparable, Obsolescencia tecnológica" className="w-full p-2 border rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} required />
                   </div>
                 )}
               </div>
 
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+                <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-6">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold text-slate-700">Artículos a incluir</h4>
-                    <button type="button" onClick={handleAddRow} className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                    <h4 className="font-semibold text-slate-700 text-sm sm:text-base">Artículos a incluir</h4>
+                    <button type="button" onClick={handleAddRow} className="text-sm text-primary-600 hover:text-primary-700 font-bold">
                       + Añadir fila
                     </button>
                   </div>
                   <div className="space-y-3">
                     {formData.articulos.map((art, idx) => (
-                      <div key={idx} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                        <div className="flex gap-2 items-center">
+                      <div key={idx} className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded-lg">
+                        <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
                           <div className="w-16">
-                            <input type="number" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm" value={art.cantidad || ''} onChange={(e) => {
+                            <input type="number" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.cantidad || ''} onChange={(e) => {
                               const newArts = [...formData.articulos];
                               newArts[idx].cantidad = e.target.value;
                               setFormData({...formData, articulos: newArts});
                             }} />
                           </div>
-                          <div className="flex-1">
-                            <input type="text" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                          <div className="flex-1 min-w-[160px]">
+                            <input type="text" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold p-1.5 border" value={art.descripcion || art.articulo || ''} onChange={(e) => {
                               const newArts = [...formData.articulos];
                               newArts[idx].descripcion = e.target.value;
                               setFormData({...formData, articulos: newArts});
@@ -3825,8 +4730,8 @@ Esta acción no se puede deshacer.`);
                           </div>
                           
                           {modalOpen === 'recepcion' && (
-                            <div className="w-1/4">
-                              <input type="text" placeholder="Código Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600" value={art.codigo || ''} onChange={(e) => {
+                            <div className="w-full sm:w-1/4">
+                              <input type="text" placeholder="Código Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600 p-1.5 border" value={art.codigo || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].codigo = e.target.value;
                                 setFormData({...formData, articulos: newArts});
@@ -3834,8 +4739,8 @@ Esta acción no se puede deshacer.`);
                             </div>
                           )}
                           {(modalOpen === 'resguardo' || modalOpen === 'baja') && (
-                            <div className="w-1/4">
-                              <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                            <div className="w-full sm:w-1/4">
+                              <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.codigo || art.inventario || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].codigo = e.target.value;
                                 setFormData({...formData, articulos: newArts});
@@ -3846,40 +4751,40 @@ Esta acción no se puede deshacer.`);
                           <button type="button" onClick={() => {
                             const newArts = formData.articulos.filter((_, i) => i !== idx);
                             setFormData({...formData, articulos: newArts.length ? newArts : [{}]});
-                          }} className="p-2 text-slate-400 hover:text-red-500">
+                          }} className="p-2 text-slate-400 hover:text-red-500 ml-auto">
                             <X className="w-5 h-5" />
                           </button>
                         </div>
-                        <div className="flex gap-2 items-center">
-                           <div className="flex-1">
-                              <input type="text" placeholder="Marca" className="w-full rounded-md border-slate-300 text-sm" value={art.marca || ''} onChange={(e) => {
+                        <div className="grid grid-cols-2 sm:flex gap-2 items-center">
+                           <div className="sm:flex-1">
+                              <input type="text" placeholder="Marca" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.marca || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].marca = e.target.value;
                                 setFormData({...formData, articulos: newArts});
                               }} />
                            </div>
-                           <div className="flex-1">
-                              <input type="text" placeholder="Modelo" className="w-full rounded-md border-slate-300 text-sm" value={art.modelo || ''} onChange={(e) => {
+                           <div className="sm:flex-1">
+                              <input type="text" placeholder="Modelo" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.modelo || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].modelo = e.target.value;
                                 setFormData({...formData, articulos: newArts});
                               }} />
                            </div>
-                           <div className="flex-1">
-                              <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm" value={art.serie || ''} onChange={(e) => {
+                           <div className="sm:flex-1">
+                              <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.serie || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].serie = e.target.value;
                                 setFormData({...formData, articulos: newArts});
                               }} />
                            </div>
                            {modalOpen === 'baja' ? (
-                             <div className="w-1/4">
-                               <input type="text" list="ubicaciones-list" placeholder="Ubicación" className="w-full rounded-md border-slate-300 text-sm" value={art.ubicacion || ''} onChange={(e) => { const newArts = [...formData.articulos]; newArts[idx].ubicacion = e.target.value; setFormData({...formData, articulos: newArts}); }} />
+                             <div className="sm:w-1/4">
+                               <input type="text" list="ubicaciones-list" placeholder="Ubicación" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.ubicacion || ''} onChange={(e) => { const newArts = [...formData.articulos]; newArts[idx].ubicacion = e.target.value; setFormData({...formData, articulos: newArts}); }} />
                              </div>
                            ) : (
-                             <div className="w-32">
+                             <div className="sm:w-32">
                                 <select 
-                                  className="w-full rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 p-2" 
+                                  className="w-full rounded-md border border-slate-300 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 p-1.5" 
                                   value={art.estado || 'Bueno'} 
                                   onChange={(e) => {
                                     const newArts = [...formData.articulos];
@@ -3894,8 +4799,8 @@ Esta acción no se puede deshacer.`);
                                 </select>
                              </div>
                            )}
-                           <div className="flex-1">
-                              <input type="text" placeholder="Observaciones" className="w-full rounded-md border-slate-300 text-sm" value={art.observaciones || ''} onChange={(e) => {
+                           <div className="col-span-2 sm:flex-1">
+                              <input type="text" placeholder="Observaciones" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.observaciones || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].observaciones = e.target.value;
                                 setFormData({...formData, articulos: newArts});
@@ -3918,19 +4823,19 @@ Esta acción no se puede deshacer.`);
                 <button
                   type="button"
                   onClick={() => handlePrintBlank(modalOpen)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 rounded-lg text-sm font-bold flex items-center"
+                  className="w-full sm:w-auto justify-center px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 rounded-lg text-sm font-bold flex items-center"
                   disabled={isSubmitting}
                 >
                   <Printer className="w-4 h-4 mr-2 text-indigo-600" /> Imprimir Formato en Blanco (Llenar a mano)
                 </button>
-                <div className="flex gap-3">
-                  <button type="button" onClick={() => setModalOpen(null)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium" disabled={isSubmitting}>Cancelar</button>
+                <div className="flex flex-wrap w-full sm:w-auto justify-end gap-2 sm:gap-3">
+                  <button type="button" onClick={() => setModalOpen(null)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm" disabled={isSubmitting}>Cancelar</button>
                   {(modalOpen === 'recepcion' || modalOpen === 'resguardo' || modalOpen === 'baja') && (
-                    <button type="button" onClick={(e) => handlePrintSubmit(e, 'saveOnly')} className={`px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
+                    <button type="button" onClick={(e) => handlePrintSubmit(e, 'saveOnly')} className={`px-5 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm flex items-center text-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
                       {isSubmitting ? 'Guardando...' : 'Guardar Solamente'}
                     </button>
                   )}
-                  <button type="submit" className={`px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
+                  <button type="submit" className={`px-5 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-sm flex items-center text-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isSubmitting}>
                     <Printer className="w-4 h-4 mr-2" /> {isSubmitting ? 'Procesando...' : 'Guardar e Imprimir Formato'}
                   </button>
                 </div>
@@ -3939,9 +4844,7 @@ Esta acción no se puede deshacer.`);
             )}
           </div>
         </div>
-      
-      
-</div>
+      </div>
     )}
 
     {printMode === 'recepcion' && printData && <ActaRecepcionPrint data={printData} onBack={() => setPrintMode(null)} />}
