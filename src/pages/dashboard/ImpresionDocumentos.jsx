@@ -44,6 +44,19 @@ const formatearFechaNacimiento = (fechaNacimiento, curp) => {
   return extraerFechaDeCurp(curp) || '___/___/_____';
 };
 
+const formatearFechaExpedicion = (fechaStr) => {
+  if (!fechaStr || typeof fechaStr !== 'string') return 'a los 15 días del mes de julio del año 2026';
+  const match = fechaStr.trim().match(/^(\d{1,2})\s+de\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ]+)\s+(?:de|del(?:\s+año)?)\s+(\d{4})$/i);
+  if (match) {
+    const dia = parseInt(match[1], 10);
+    const mes = match[2];
+    const anio = match[3];
+    return `${dia === 1 ? 'al primer día' : `a los ${dia} días`} del mes de ${mes} del año ${anio}`;
+  }
+  if (/^(a\s+los|al\s+primer)/i.test(fechaStr.trim())) return fechaStr.trim();
+  return `a ${fechaStr.trim()}`;
+};
+
 const ImpresionDocumentos = () => {
   const { config } = useGlobalConfig();
   const [students, setStudents] = useState([]);
@@ -364,7 +377,7 @@ const ImpresionDocumentos = () => {
                     </div>
 
                     <p>
-                      A petición de la parte interesada y para los fines legales o escolares que a la misma convengan, se extiende la presente constancia en Ciudad Renacimiento, Acapulco de Juárez, Guerrero, a los {globalData.fecha}.
+                      A petición de la parte interesada y para los fines legales o escolares que a la misma convengan, se extiende la presente constancia en la ciudad y puerto de Acapulco de Juárez, Guerrero, {formatearFechaExpedicion(globalData.fecha)}.
                     </p>
                   </div>
 
@@ -445,7 +458,7 @@ const ImpresionDocumentos = () => {
                     </p>
 
                     <p>
-                      Se extiende el presente documento a solicitud de la parte interesada, para los fines que a su derecho convengan, en Ciudad Renacimiento, Acapulco de Juárez, Guerrero, a los {globalData.fecha}.
+                      Se extiende el presente documento a solicitud de la parte interesada, para los fines que a su derecho convengan, en la ciudad y puerto de Acapulco de Juárez, Guerrero, {formatearFechaExpedicion(globalData.fecha)}.
                     </p>
                   </div>
 

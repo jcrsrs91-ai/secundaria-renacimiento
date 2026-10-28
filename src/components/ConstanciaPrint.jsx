@@ -281,11 +281,11 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
           <div className={`flex-1 flex flex-col ${isCompactType ? 'justify-between py-1' : 'justify-evenly py-2'}`}>
             {type === 'simple' ? (
               <p className="indent-12">
-                EL QUE SUSCRIBE, <strong>{directorNombre}</strong>, DIRECTOR DE LA ESCUELA SECUNDARIA TÉCNICA N° 68 "RENACIMIENTO", CON DOMICILIO EN CALLE ALTA QUEBRADORA Y ANDADOR 24 DE FEBRERO S/N, CD. RENACIMIENTO, C.P. 39715, TEL. {celularEscuela}, POR MEDIO DE LA PRESENTE:
+                EL QUE SUSCRIBE, <strong>{directorNombre}</strong>, DIRECTOR DE LA ESCUELA SECUNDARIA TÉCNICA N° 68 "RENACIMIENTO", CON DOMICILIO EN CALLE ALTA QUEBRADORA Y ANDADOR 24 DE FEBRERO S/N, CD. RENACIMIENTO, C.P. 39715, ACAPULCO DE JUÁREZ, GUERRERO, TEL. {celularEscuela}, POR MEDIO DE LA PRESENTE:
               </p>
             ) : (
               <p className="indent-12">
-                El que suscribe, <strong>{directorNombre}</strong>, Director de la Escuela Secundaria Técnica N° 68 "Renacimiento", con domicilio en Calle Alta Quebradora y Andador 24 de Febrero S/N, Cd. Renacimiento, C.P. 39715, Tel. {celularEscuela}, por medio de la presente:
+                El que suscribe, <strong>{directorNombre}</strong>, Director de la Escuela Secundaria Técnica N° 68 "Renacimiento", con domicilio en Calle Alta Quebradora y Andador 24 de Febrero S/N, Cd. Renacimiento, C.P. 39715, Acapulco de Juárez, Guerrero, Tel. {celularEscuela}, por medio de la presente:
               </p>
             )}
 
@@ -413,15 +413,15 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
 
             {type === 'terminacion' ? (
               <p className="indent-12">
-                A petición de la parte interesada y para <strong>{formatearTextoTramite(tramiteToUse)}</strong>, se expide la presente constancia en la ciudad sede, <strong>a los 15 días del mes de julio del año 2026</strong>.
+                A petición de la parte interesada y para <strong>{formatearTextoTramite(tramiteToUse)}</strong>, se expide la presente constancia en la ciudad y puerto de Acapulco de Juárez, Guerrero, <strong>a los 15 días del mes de julio del año 2026</strong>.
               </p>
             ) : type === 'simple' ? (
               <p className="indent-12 uppercase">
-                A PETICIÓN DE LA PARTE INTERESADA Y PARA <strong>{formatearTextoTramite(tramiteToUse)}</strong>, SE EXPIDE LA PRESENTE CONSTANCIA EN LA CIUDAD SEDE, A LOS {new Date().getDate()} DÍAS DEL MES DE {new Date().toLocaleString('es-MX', { month: 'long' }).toUpperCase()} DEL AÑO {new Date().getFullYear()}.
+                A PETICIÓN DE LA PARTE INTERESADA Y PARA <strong>{formatearTextoTramite(tramiteToUse)}</strong>, SE EXPIDE LA PRESENTE CONSTANCIA EN LA CIUDAD Y PUERTO DE ACAPULCO DE JUÁREZ, GUERRERO, {new Date().getDate() === 1 ? 'AL PRIMER DÍA' : `A LOS ${new Date().getDate()} DÍAS`} DEL MES DE {new Date().toLocaleString('es-MX', { month: 'long' }).toUpperCase()} DEL AÑO {new Date().getFullYear()}.
               </p>
             ) : (
               <p className="indent-12">
-                A petición de la parte interesada y para <strong>{formatearTextoTramite(tramiteToUse)}</strong>, se expide la presente constancia en la ciudad sede, a los {new Date().getDate()} días del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
+                A petición de la parte interesada y para <strong>{formatearTextoTramite(tramiteToUse)}</strong>, se expide la presente constancia en la ciudad y puerto de Acapulco de Juárez, Guerrero, {new Date().getDate() === 1 ? 'al primer día' : `a los ${new Date().getDate()} días`} del mes de {new Date().toLocaleString('es-MX', { month: 'long' })} del año {new Date().getFullYear()}.
               </p>
             )}
           </div>
