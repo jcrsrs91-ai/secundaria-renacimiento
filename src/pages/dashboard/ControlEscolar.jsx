@@ -42,6 +42,7 @@ import { searchIncludes } from '../../utils/search';
 import { sortStudents } from '../../utils/sortUtils';
 import { registrarMovimiento } from '../../utils/bitacora';
 import BitacoraTab from '../../components/BitacoraTab';
+import { esPeriodoDeAlta, formatearFechaCorta } from '../../utils/dateRules';
 
 export default function ControlEscolar() {
   const { config, updateConfig } = useGlobalConfig();
@@ -580,9 +581,11 @@ export default function ControlEscolar() {
 
     try {
       const studentRef = doc(db, "students", student.id);
-      await updateDoc(studentRef, { status: "Activo", lastModifiedBy: auth.currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
-      await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Aceptar Aspirante', `Se aceptó al alumno ${student.nombres} ${student.apellidoPaterno} (${student.matricula})`);
-      alert(`Alumno aceptado y movido al Directorio Activo.`);
+      // Si se acepta despues del 30 de septiembre, ingresa como ALTA (sale marcado en las listas de asistencia)
+      const datosAlta = (esPeriodoDeAlta() && student.tipoIngreso !== 'Alta') ? { tipoIngreso: 'Alta', fechaAlta: formatearFechaCorta() } : {};
+      await updateDoc(studentRef, { status: "Activo", ...datosAlta, lastModifiedBy: auth.currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
+      await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Aceptar Aspirante', `Se aceptó al alumno ${student.nombres} ${student.apellidoPaterno} (${student.matricula})${datosAlta.tipoIngreso ? ' — registrado como ALTA' : ''}`);
+      alert(`Alumno aceptado y movido al Directorio Activo.${datosAlta.tipoIngreso ? ' Se registró como ALTA (ingreso posterior al 30 de septiembre).' : ''}`);
     } catch (error) {
       console.error("Error al aceptar:", error);
       alert("Error al actualizar la base de datos.");

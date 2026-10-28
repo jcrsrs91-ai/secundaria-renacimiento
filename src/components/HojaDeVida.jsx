@@ -3,7 +3,7 @@ import { X, Save, Edit, User, Heart, Users, Camera, Upload, StopCircle, Printer,
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
-import { isBeforeSept30 } from '../utils/dateRules';
+import { isBeforeSept30, formatearFechaCorta, fechaRegistroDeAlumno } from '../utils/dateRules';
 import { registrarMovimiento, detectarCambiosExpediente } from '../utils/bitacora';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
@@ -215,6 +215,11 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
         } else {
             data.motivoBaja = 'Baja Oficial';
         }
+    }
+
+    // Si se marca como ALTA y aun no tiene fecha de alta, se usa la fecha en que se registro (o hoy)
+    if (data.tipoIngreso === 'Alta' && !student.fechaAlta) {
+      data.fechaAlta = formatearFechaCorta(fechaRegistroDeAlumno(student) || new Date());
     }
 
     try {

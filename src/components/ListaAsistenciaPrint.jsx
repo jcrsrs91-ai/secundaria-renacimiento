@@ -28,6 +28,12 @@ export const getStudentGender = (s) => {
   return 'H';
 };
 
+// Convierte "28/10/2026" a "2026-10-28" para ordenar cronologicamente (otros formatos se dejan igual)
+const fechaParaOrden = (f) => {
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(f || '');
+  return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : (f || '');
+};
+
 export const sortAttendanceListStudents = (studentsList = []) => {
   const iniciales = [];
   const altas = [];
@@ -42,8 +48,8 @@ export const sortAttendanceListStudents = (studentsList = []) => {
 
   iniciales.sort(sortStudents);
   altas.sort((a, b) => {
-    const dateA = a.fechaAlta || a.fechaIngreso || '';
-    const dateB = b.fechaAlta || b.fechaIngreso || '';
+    const dateA = fechaParaOrden(a.fechaAlta || a.fechaIngreso || '');
+    const dateB = fechaParaOrden(b.fechaAlta || b.fechaIngreso || '');
     if (dateA && dateB && dateA !== dateB) {
       return dateA.localeCompare(dateB);
     }

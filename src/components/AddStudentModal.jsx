@@ -3,7 +3,7 @@ import { X, Save, User, GraduationCap, HeartPulse, Users } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { isBeforeSept30 } from '../utils/dateRules';
+import { isBeforeSept30, esPeriodoDeAlta, formatearFechaCorta } from '../utils/dateRules';
 import { registrarMovimiento } from '../utils/bitacora';
 
 export default function AddStudentModal({ onClose }) {
@@ -25,7 +25,8 @@ export default function AddStudentModal({ onClose }) {
     escuelaProcedencia: '',
     promedioEscuela: '',
     status: 'Activo',
-    tipoIngreso: 'Nuevo Ingreso',
+    // Despues del 30 de septiembre el alumno nuevo es ALTA automaticamente (se puede cambiar a mano)
+    tipoIngreso: esPeriodoDeAlta() ? 'Alta' : 'Nuevo Ingreso',
     tieneBeca: 'NO',
     nombreBeca: '',
     
@@ -96,6 +97,7 @@ export default function AddStudentModal({ onClose }) {
       
       await addDoc(collection(db, "students"), {
         ...formData,
+        fechaAlta: formData.tipoIngreso === 'Alta' ? formatearFechaCorta() : '',
         taller: taller,
         lastModifiedBy: auth.currentUser?.email || 'Desconocido',
         lastModifiedAt: new Date().toISOString(),
@@ -205,6 +207,7 @@ export default function AddStudentModal({ onClose }) {
                     <option value="Nuevo Ingreso">Ordinario (Inicio de Ciclo)</option>
                     <option value="Alta">Alta (Ingresó después)</option>
                   </select>
+                  <p className="text-[11px] text-slate-500 mt-1">Se sugiere según la fecha de hoy (después del 30 de septiembre = Alta). Puedes cambiarlo.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Grado *</label>
