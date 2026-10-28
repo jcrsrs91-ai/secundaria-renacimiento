@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { truncateTo1Dec, getCalificacionFinal, autoAcentuar } from '../utils/format';
 
@@ -53,6 +54,29 @@ const promedioALetras = (promedioNum) => {
   return `${enteroStr} PUNTO ${decStr}`;
 };
 
+// ---------------------------------------------------------------------------
+// AJUSTE AUTOMATICO A 1 HOJA CARTA
+// Las constancias estan en MAYUSCULAS (letras mas anchas). Si por el largo del nombre,
+// del tramite o de la tabla el contenido no cabe en una hoja, se reduce la letra de
+// 0.25pt en 0.25pt hasta que quepa. Si ya cabe, NO se cambia nada (margenes, espacios y
+// estructura siempre se conservan).
+// ---------------------------------------------------------------------------
+const MAX_ALTO_PX = 1040;      // alto maximo de la hoja (incluye el padding de 1cm arriba y abajo)
+const MIN_FUENTE_PT = 8.5;     // la letra nunca baja de este tamano
+const PASO_FUENTE_PT = 0.25;
+
+const ajustarFuente = (page, content, basePt) => {
+  const previo = content.style.fontSize;
+  let size = basePt;
+  while (size > MIN_FUENTE_PT) {
+    content.style.fontSize = `${size}pt`;
+    if (page.getBoundingClientRect().height <= MAX_ALTO_PX) break;
+    size = Math.round((size - PASO_FUENTE_PT) * 100) / 100;
+  }
+  content.style.fontSize = previo;
+  return Math.max(size, MIN_FUENTE_PT);
+};
+
 export const formatearTextoTramite = (tramite) => {
   if (!tramite || typeof tramite !== 'string') {
     return 'LOS FINES LEGALES QUE A LA MISMA CONVENGAN';
@@ -75,9 +99,38 @@ export const formatearTextoTramite = (tramite) => {
 
 export default function ConstanciaPrint({ student, type = 'simple', materiasPorGrado = {}, extraordinarioSelected = null, tramite = null }) {
   const { config } = useGlobalConfig();
-  if (!student) return null;
-
   const tramiteToUse = (tramite || student?.tramite || '').trim();
+
+  // Tamano base de letra de cada formato (el mismo de siempre)
+  const basePt = type === 'calificaciones' ? 10
+    : (type === 'acreditacion_extraordinario' && Array.isArray(extraordinarioSelected) && extraordinarioSelected.length > 2) ? 10.5
+    : type === 'simple' ? 11.5 : 11;
+
+  const pageRef = useRef(null);
+  const contentRef = useRef(null);
+  const [fontPt, setFontPt] = useState(null);
+
+  const remedir = useCallback(() => {
+    const page = pageRef.current;
+    const content = contentRef.current;
+    if (!page || !content) return;
+    const nuevo = ajustarFuente(page, content, basePt);
+    setFontPt(nuevo < basePt ? nuevo : null);
+  }, [basePt]);
+
+  useLayoutEffect(() => {
+    remedir();
+  }, [remedir, student, type, tramiteToUse, extraordinarioSelected, config?.cicloEscolarActual, config?.leyendaOficial]);
+
+  useEffect(() => {
+    let vivo = true;
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (vivo) remedir(); });
+    const alImprimir = () => flushSync(() => remedir());
+    window.addEventListener('beforeprint', alImprimir);
+    return () => { vivo = false; window.removeEventListener('beforeprint', alImprimir); };
+  }, [remedir]);
+
+  if (!student) return null;
 
   const materias = materiasPorGrado[student.grado] || [];
   
@@ -131,7 +184,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
           * { overflow: visible !important; }
           aside, header { display: none !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; }
-          .print-constancia-only { display: block !important; }
+          .print-constancia-only { display: block !important; position: static !important; left: auto !important; width: auto !important; visibility: visible !important; pointer-events: auto !important; }
           
           /* Watermark */
           .watermark::before {
@@ -151,10 +204,12 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
           }
         }
         @media screen {
-          .print-constancia-only { display: none !important; }
+          /* Fuera de pantalla e invisible, pero con layout real para poder medir si cabe en 1 hoja */
+          .print-constancia-only { display: block !important; position: fixed !important; left: -10000px !important; top: 0 !important; width: 8.5in !important; visibility: hidden !important; pointer-events: none !important; }
+          .print-constancia-only .page-container { width: 8.5in !important; min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 1cm !important; box-shadow: none !important; }
         }
       `}</style>
-      <div className="page-container relative block">
+      <div ref={pageRef} className="page-container relative block">
         <div className="page-border"></div>
         
         {/* 
@@ -168,7 +223,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
             type === 'calificaciones' ? 'px-10 py-6 leading-snug' : 
             type === 'acreditacion_extraordinario' ? 'px-10 py-4 leading-normal' : 
             type === 'simple' ? 'px-12 py-6 leading-relaxed' : 'px-10 py-6 leading-relaxed'} uppercase`} 
-          style={{ fontSize: type === 'calificaciones' ? '10pt' : (type === 'acreditacion_extraordinario' && Array.isArray(extraordinarioSelected) && extraordinarioSelected.length > 2) ? '10.5pt' : type === 'simple' ? '11.5pt' : '11pt' }}>
+          ref={contentRef} style={{ fontSize: fontPt ? `${fontPt}pt` : `${basePt}pt` }}>
          {/* HEADER LOGOS AND TITLE */}
          <div className={`flex items-center justify-between ${type === 'acreditacion_extraordinario' ? 'mb-2' : 'mb-4'}`}>
             <img src="/logo-sep.png" alt="Logo SEP / Guerrero" className="w-24 h-20 object-contain shrink-0" />
