@@ -251,6 +251,34 @@ const ImpresionDocumentos = () => {
 
       {/* ÁREA DE IMPRESIÓN (Visible condicionalmente) */}
       <div className="print-area">
+        <style>{`
+          .constancia-lote-letter {
+            width: 21.59cm;
+            height: 27.6cm;
+            min-height: 27.6cm;
+            max-height: 27.6cm;
+            padding: 1.2cm 1.4cm;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+          }
+          @media print {
+            @page { size: letter portrait; margin: 0mm; }
+            .constancia-lote-letter {
+              width: 21.59cm !important;
+              height: 27.6cm !important;
+              min-height: 27.6cm !important;
+              max-height: 27.6cm !important;
+              margin: 0 auto !important;
+              padding: 1.2cm 1.4cm !important;
+              box-sizing: border-box !important;
+              display: flex !important;
+              flex-direction: column !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+          }
+        `}</style>
         {filteredStudents.map((student, index) => {
           const nombreCompleto = `${student.nombres} ${student.apellidoPaterno} ${student.apellidoMaterno}`.toUpperCase();
           const promedioLetra = numeroALetras(student.promedio_certificado);
@@ -258,59 +286,61 @@ const ImpresionDocumentos = () => {
           
           // Ocultar todas las páginas excepto la primera en vista previa de pantalla (para no saturar la vista)
           // Al imprimir (print:block) se mostrarán todas y los page-breaks harán su trabajo.
-          const screenVisibility = index === 0 ? "block" : "hidden print:block";
+          const screenVisibility = index === 0 ? "flex" : "hidden print:flex";
 
           return (
             <React.Fragment key={student.id}>
               {/* ==========================================
                   DOCUMENTO 1: CONSTANCIA DE PROMEDIO
                   ========================================== */}
-              <div className={`page-container relative print-page-break ${screenVisibility}`}>
+              <div className={`page-container constancia-lote-letter relative print-page-break ${screenVisibility}`}>
                 <div className="page-border"></div>
                 
-                <div className="relative z-10 block font-sans text-gray-800 uppercase">
-                  {/* Encabezado con Logos Reales */}
-                  <div className="flex items-center justify-between mb-4">
-                    <img src="/logo-sep.png" alt="Logo SEP / Guerrero" className="h-16 w-auto object-contain" />
-                    
-                    <div className="flex-1 text-center px-4">
-                      <h1 className="font-black text-[14pt] tracking-widest text-slate-900 uppercase font-sans">
-                        Sistema Educativo Nacional
-                      </h1>
-                      <h2 className="font-bold text-[11pt] text-slate-700 mt-1 uppercase font-sans">
-                        Subsecretaría de Educación Básica
-                      </h2>
-                      <h3 className="font-semibold text-[10pt] text-slate-600 uppercase mt-1 font-serif">
-                        Escuela Secundaria Técnica N° 68 "Renacimiento"
-                      </h3>
-                      <p className="text-[9pt] font-medium text-slate-500 mt-0.5 font-sans">
-                        C.C.T. {globalData.cct}
-                      </p>
-                      <p className="text-[7pt] font-medium text-slate-500 mt-1 font-sans uppercase">
-                        {globalData.direccion}
-                      </p>
+                <div className="relative z-10 h-full flex-1 flex flex-col justify-between font-sans text-gray-800 uppercase">
+                  <div>
+                    {/* Encabezado con Logos Reales */}
+                    <div className="flex items-center justify-between mb-4">
+                      <img src="/logo-sep.png" alt="Logo SEP / Guerrero" className="h-16 w-auto object-contain" />
+                      
+                      <div className="flex-1 text-center px-4">
+                        <h1 className="font-black text-[14pt] tracking-widest text-slate-900 uppercase font-sans">
+                          Sistema Educativo Nacional
+                        </h1>
+                        <h2 className="font-bold text-[11pt] text-slate-700 mt-1 uppercase font-sans">
+                          Subsecretaría de Educación Básica
+                        </h2>
+                        <h3 className="font-semibold text-[10pt] text-slate-600 uppercase mt-1 font-serif">
+                          Escuela Secundaria Técnica N° 68 "Renacimiento"
+                        </h3>
+                        <p className="text-[9pt] font-medium text-slate-500 mt-0.5 font-sans uppercase">
+                          C.C.T. {globalData.cct} &nbsp;&nbsp;|&nbsp;&nbsp; CEL. 744 441 5678
+                        </p>
+                        <p className="text-[7pt] font-medium text-slate-500 mt-1 font-sans uppercase">
+                          {globalData.direccion}
+                        </p>
+                      </div>
+                      
+                      <img src="/logo-escuela.png" alt="Logo Escuela" className="h-20 w-auto object-contain" />
                     </div>
-                    
-                    <img src="/logo-escuela.png" alt="Logo Escuela" className="h-20 w-auto object-contain" />
+
+                    <hr className="border-t-[1.5px] border-gray-800 mb-5" />
+
+                    <div className="text-right font-serif text-[14px] mb-4 space-y-1">
+                      <p><span className="font-bold">Asunto:</span> Constancia de Promedio</p>
+                      <p>Ciudad Renacimiento, Acapulco de Juárez, Gro; a {globalData.fecha}.</p>
+                    </div>
+
+                    <div className="mb-2 font-serif font-bold text-gray-900 tracking-wider text-[14px]">
+                      <p>A QUIEN CORRESPONDA:</p>
+                    </div>
                   </div>
 
-                  <hr className="border-t-[1.5px] border-gray-800 mb-6" />
-
-                  <div className="text-right font-serif text-[14px] mb-6 space-y-1">
-                    <p><span className="font-bold">Asunto:</span> Constancia de Promedio</p>
-                    <p>Ciudad Renacimiento, Acapulco de Juárez, Gro; a {globalData.fecha}.</p>
-                  </div>
-
-                  <div className="mb-4 font-serif font-bold text-gray-900 tracking-wider text-[14px]">
-                    <p>A QUIEN CORRESPONDA:</p>
-                  </div>
-
-                  <div className="text-justify font-serif text-[15px] leading-relaxed text-gray-800 space-y-5 px-2 block">
+                  <div className="flex-1 flex flex-col justify-evenly text-justify font-serif text-[15px] leading-relaxed text-gray-800 px-2 py-2">
                     <p>
                       El (La) que suscribe, Director(a) de la Escuela Secundaria Técnica N° 68 "Renacimiento", con Clave de Centro de Trabajo (C.C.T.) <strong>{globalData.cct}</strong>, perteneciente a la zona escolar <strong>{globalData.zona}</strong>, hace constar que el (la) alumno(a):
                     </p>
 
-                    <div className="text-center my-6">
+                    <div className="text-center my-2">
                       <h2 className="font-serif text-2xl font-bold uppercase tracking-wider text-gray-900">
                         {nombreCompleto}
                       </h2>
@@ -324,7 +354,7 @@ const ImpresionDocumentos = () => {
                       De acuerdo con el registro que obra en los archivos de Control Escolar de esta institución, el (la) estudiante obtuvo un <strong>PROMEDIO FINAL DE CERTIFICADO</strong> de:
                     </p>
 
-                    <div className="flex justify-center my-4">
+                    <div className="flex justify-center my-2">
                       <div className="border-2 border-gray-800 px-16 py-4 bg-gray-50 text-center">
                         <p className="font-serif text-4xl font-bold text-gray-900">{student.promedio_certificado || '-.-'}</p>
                         <p className="font-serif text-[14px] font-bold text-gray-600 uppercase tracking-widest mt-2">
@@ -338,15 +368,15 @@ const ImpresionDocumentos = () => {
                     </p>
                   </div>
 
-                  <footer className="mt-6 pt-4 relative block">
+                  <footer className="pt-4 pb-2 relative block">
                     <div className="text-center">
-                      <p className="font-serif text-[14px] tracking-widest mb-6 font-bold">ATENTAMENTE</p>
+                      <p className="font-serif text-[14px] tracking-widest mb-12 font-bold">ATENTAMENTE</p>
                       <div className="border-t border-gray-800 w-80 mx-auto pt-2">
                         <p className="font-serif font-bold text-[16px] text-gray-900 mt-2">{globalData.nombre_director}</p>
                         <p className="font-serif text-[12px] text-gray-700 uppercase tracking-wider mt-1">Director del Plantel</p>
                       </div>
                     </div>
-                    <div className="absolute right-8 bottom-6 w-32 h-32 border-[1.5px] border-dashed border-gray-300 rounded-full flex items-center justify-center opacity-60">
+                    <div className="absolute right-8 bottom-4 w-32 h-32 border-[1.5px] border-dashed border-gray-300 rounded-full flex items-center justify-center opacity-60">
                       <span className="text-[12px] text-gray-400 font-serif text-center uppercase tracking-widest">Sello<br />Oficial</span>
                     </div>
                   </footer>
@@ -356,49 +386,51 @@ const ImpresionDocumentos = () => {
               {/* ==========================================
                   DOCUMENTO 2: CARTA DE BUENA CONDUCTA
                   ========================================== */}
-              <div className={`page-container relative print-page-break ${screenVisibility}`}>
+              <div className={`page-container constancia-lote-letter relative print-page-break ${screenVisibility}`}>
                 <div className="page-border"></div>
                 
-                <div className="relative z-10 block font-sans text-gray-800 uppercase">
-                  <div className="flex items-center justify-between mb-4">
-                    <img src="/logo-sep.png" alt="Logo SEP / Guerrero" className="h-16 w-auto object-contain" />
-                    <div className="flex-1 text-center px-4">
-                      <h1 className="font-black text-[14pt] tracking-widest text-slate-900 uppercase font-sans">
-                        Sistema Educativo Nacional
-                      </h1>
-                      <h2 className="font-bold text-[11pt] text-slate-700 mt-1 uppercase font-sans">
-                        Subsecretaría de Educación Básica
-                      </h2>
-                      <h3 className="font-semibold text-[10pt] text-slate-600 uppercase mt-1 font-serif">
-                        Escuela Secundaria Técnica N° 68 "Renacimiento"
-                      </h3>
-                      <p className="text-[9pt] font-medium text-slate-500 mt-0.5 font-sans">
-                        C.C.T. {globalData.cct}
-                      </p>
-                      <p className="text-[7pt] font-medium text-slate-500 mt-1 font-sans uppercase">
-                        {globalData.direccion}
-                      </p>
+                <div className="relative z-10 h-full flex-1 flex flex-col justify-between font-sans text-gray-800 uppercase">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <img src="/logo-sep.png" alt="Logo SEP / Guerrero" className="h-16 w-auto object-contain" />
+                      <div className="flex-1 text-center px-4">
+                        <h1 className="font-black text-[14pt] tracking-widest text-slate-900 uppercase font-sans">
+                          Sistema Educativo Nacional
+                        </h1>
+                        <h2 className="font-bold text-[11pt] text-slate-700 mt-1 uppercase font-sans">
+                          Subsecretaría de Educación Básica
+                        </h2>
+                        <h3 className="font-semibold text-[10pt] text-slate-600 uppercase mt-1 font-serif">
+                          Escuela Secundaria Técnica N° 68 "Renacimiento"
+                        </h3>
+                        <p className="text-[9pt] font-medium text-slate-500 mt-0.5 font-sans uppercase">
+                          C.C.T. {globalData.cct} &nbsp;&nbsp;|&nbsp;&nbsp; CEL. 744 441 5678
+                        </p>
+                        <p className="text-[7pt] font-medium text-slate-500 mt-1 font-sans uppercase">
+                          {globalData.direccion}
+                        </p>
+                      </div>
+                      <img src="/logo-escuela.png" alt="Logo Escuela" className="h-20 w-auto object-contain" />
                     </div>
-                    <img src="/logo-escuela.png" alt="Logo Escuela" className="h-20 w-auto object-contain" />
+
+                    <hr className="border-t-[1.5px] border-gray-800 mb-5" />
+
+                    <div className="text-right font-serif text-[14px] mb-4 space-y-1 mt-2">
+                      <p><span className="font-bold">Asunto:</span> Carta de Buena Conducta</p>
+                      <p>Ciudad Renacimiento, Acapulco de Juárez, Gro; a {globalData.fecha}.</p>
+                    </div>
+
+                    <div className="mb-2 font-serif font-bold text-gray-900 tracking-wider text-[14px]">
+                      <p>A QUIEN CORRESPONDA:</p>
+                    </div>
                   </div>
 
-                  <hr className="border-t-[1.5px] border-gray-800 mb-6" />
-
-                  <div className="text-right font-serif text-[14px] mb-6 space-y-1 mt-2">
-                    <p><span className="font-bold">Asunto:</span> Carta de Buena Conducta</p>
-                    <p>Ciudad Renacimiento, Acapulco de Juárez, Gro; a {globalData.fecha}.</p>
-                  </div>
-
-                  <div className="mb-4 font-serif font-bold text-gray-900 tracking-wider text-[14px]">
-                    <p>A QUIEN CORRESPONDA:</p>
-                  </div>
-
-                  <div className="text-justify font-serif text-[15px] leading-relaxed text-gray-800 space-y-6 mt-4 px-2 block">
+                  <div className="flex-1 flex flex-col justify-evenly text-justify font-serif text-[15px] leading-relaxed text-gray-800 px-2 py-2">
                     <p>
                       La Dirección de la Escuela Secundaria Técnica N° 68 "Renacimiento", a través de quien suscribe, expide la presente Carta de Buena Conducta a favor del (la) alumno(a):
                     </p>
 
-                    <div className="text-center my-6">
+                    <div className="text-center my-2">
                       <h2 className="font-serif text-2xl font-bold uppercase tracking-wider text-gray-900">
                         {nombreCompleto}
                       </h2>
@@ -417,15 +449,15 @@ const ImpresionDocumentos = () => {
                     </p>
                   </div>
 
-                  <footer className="mt-12 pt-8 relative block">
+                  <footer className="pt-4 pb-2 relative block">
                     <div className="text-center">
-                      <p className="font-serif text-[14px] tracking-widest mb-6 font-bold">ATENTAMENTE</p>
+                      <p className="font-serif text-[14px] tracking-widest mb-12 font-bold">ATENTAMENTE</p>
                       <div className="border-t border-gray-800 w-80 mx-auto pt-2">
                         <p className="font-serif font-bold text-[16px] text-gray-900 mt-2">{globalData.nombre_director}</p>
                         <p className="font-serif text-[12px] text-gray-700 uppercase tracking-wider mt-1">Director del Plantel</p>
                       </div>
                     </div>
-                    <div className="absolute right-8 bottom-6 w-32 h-32 border-[1.5px] border-dashed border-gray-300 rounded-full flex items-center justify-center opacity-60">
+                    <div className="absolute right-8 bottom-4 w-32 h-32 border-[1.5px] border-dashed border-gray-300 rounded-full flex items-center justify-center opacity-60">
                       <span className="text-[12px] text-gray-400 font-serif text-center uppercase tracking-widest">Sello<br />Oficial</span>
                     </div>
                   </footer>
