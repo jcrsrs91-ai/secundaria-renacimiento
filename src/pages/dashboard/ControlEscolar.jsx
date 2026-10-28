@@ -480,8 +480,8 @@ export default function ControlEscolar() {
   };
 
   const executePrintConstancia = (type) => {
-    if (type === 'terminacion' && !String(selectedStudent?.grado || '').includes('3')) {
-      alert("La Constancia de Terminación de Estudios es exclusiva para alumnos de 3er Grado.");
+    if (type === 'terminacion' && !String(selectedStudent?.grado || '').includes('3') && !String(selectedStudent?.grado || '').toLowerCase().includes('egresado') && selectedStudent?.status !== 'Egresado') {
+      alert("La Constancia de Terminación de Estudios es exclusiva para alumnos de 3er Grado o Egresados.");
       return;
     }
     if (type === 'inscripcion_primero' && !String(selectedStudent?.grado || '').includes('1')) {
@@ -1986,16 +1986,6 @@ export default function ControlEscolar() {
                 </div>
               </button>
 
-              <button onClick={() => executePrintConstancia('promedio_generacion')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition text-left group">
-                <div className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-4 group-hover:bg-purple-500 group-hover:text-white transition shrink-0">
-                  <Star className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-800">Constancia Promedio de Generación</h3>
-                  <p className="text-xs text-slate-500 mt-1">Para alumnos de 3er grado. (Usa el Promedio capturado arriba).</p>
-                </div>
-              </button>
-
               <button onClick={() => executePrintConstancia('promedio_anterior')} className="w-full flex items-start p-4 border border-slate-200 rounded-xl hover:border-orange-500 hover:bg-orange-50 transition text-left group">
                 <div className="bg-orange-100 text-orange-600 p-2 rounded-lg mr-4 group-hover:bg-orange-500 group-hover:text-white transition shrink-0">
                   <Star className="w-6 h-6" />
@@ -2021,8 +2011,8 @@ export default function ControlEscolar() {
                   <Award className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800">Constancia de Terminación (3er Año)</h3>
-                  <p className="text-xs text-slate-500 mt-1">Con fecha fija de cierre de ciclo. Solo para alumnos de 3er grado.</p>
+                  <h3 className="font-bold text-slate-800">Constancia de Terminación y Generación (3er Año)</h3>
+                  <p className="text-xs text-slate-500 mt-1">Incluye generación, promedio final de nivel educativo y fecha de cierre de ciclo.</p>
                 </div>
               </button>
 

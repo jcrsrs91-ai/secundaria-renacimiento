@@ -299,11 +299,7 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
               </p>
             ) : type === 'terminacion' ? (
               <p className="indent-12">
-                Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{fechaNacFormateada}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios correspondientes a la Educación Secundaria en el ciclo escolar {config?.cicloEscolarActual || '2025-2026'} en esta Institución Educativa.
-              </p>
-            ) : type === 'promedio_generacion' ? (
-              <p className="indent-12">
-                Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{fechaNacFormateada}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios de educación secundaria en esta institución durante la <strong>Generación {generacionTexto}</strong>.
+                Que el (la) alumno(a) <strong>{autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}</strong>, con fecha de nacimiento <strong>{fechaNacFormateada}</strong>, Clave Única de Registro de Población (CURP) <strong>{student.curp || '__________________'}</strong> y matrícula escolar <strong>{student.matricula}</strong>, concluyó satisfactoriamente sus estudios correspondientes a la Educación Secundaria (<strong>Generación {generacionTexto}</strong>) en el ciclo escolar {config?.cicloEscolarActual || '2025-2026'} en esta Institución Educativa.
               </p>
             ) : type === 'acreditacion_extraordinario' ? (
               <div className="indent-12 text-justify">
@@ -338,12 +334,6 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
             {type === 'promedio_ciclo' && (
               <p className="indent-12 font-medium">
                 Y ha obtenido hasta la fecha un Promedio General en el presente ciclo escolar de: <strong className="whitespace-nowrap">{promedioGeneral} ({promedioALetras(promedioGeneral)})</strong>.
-              </p>
-            )}
-
-            {type === 'promedio_generacion' && (
-              <p className="indent-12 font-medium">
-                Y de acuerdo con nuestros registros, obtuvo un Promedio General de Generación de: <strong className="whitespace-nowrap">{student.manualPromedio || '___'} ({promedioALetras(student.manualPromedio)})</strong>.
               </p>
             )}
 
