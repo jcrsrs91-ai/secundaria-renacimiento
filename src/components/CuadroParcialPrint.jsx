@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal } from '../utils/format';
 import { getStudentGender } from './ListaAsistenciaPrint';
 
 export default function CuadroParcialPrint({ alumnos = [], materias = [], grado = '', grupo = '' }) {
@@ -38,7 +38,7 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
       if (finalObj !== null) {
         sumMat += finalObj.valor;
         cntMat++;
-        if (finalObj.valor < 6.0) matRep++;
+        if (finalObj.valor < 6) matRep++;
       }
     });
 
@@ -129,9 +129,9 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
                   <td className="border border-black p-0.5 text-center font-bold">{idx + 1}</td>
                   <td className="border border-black p-0.5 font-medium truncate uppercase whitespace-nowrap">{al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}</td>
                   {materias.map(mat => {
-                    const t1 = al.calificaciones?.['t1']?.[mat.id] || '-';
-                    const t2 = al.calificaciones?.['t2']?.[mat.id] || '-';
-                    const t3 = al.calificaciones?.['t3']?.[mat.id] || '-';
+                    const t1 = roundToIntGrade(al.calificaciones?.['t1']?.[mat.id], '-');
+                    const t2 = roundToIntGrade(al.calificaciones?.['t2']?.[mat.id], '-');
+                    const t3 = roundToIntGrade(al.calificaciones?.['t3']?.[mat.id], '-');
                     
                     const finalObj = getPromedioFinalObj(al, mat.id);
                     let val = null;
@@ -140,10 +140,10 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
                     if (finalObj !== null) {
                       val = finalObj.valor;
                       isReg = finalObj.isRegularizacion;
-                      if (val < 6.0) matRepAlumno++;
+                      if (val < 6) matRepAlumno++;
                     }
                     
-                    const isFailing = val !== null && val < 6.0;
+                    const isFailing = val !== null && val < 6;
                     
                     return (
                       <React.Fragment key={`td-${mat.id}`}>
@@ -151,7 +151,7 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
                         <td className="border border-black p-0.5 text-center">{t2}</td>
                         <td className="border border-black p-0.5 text-center">{t3}</td>
                         <td className={`border border-black p-0.5 text-center font-bold bg-slate-50 ${isFailing ? 'text-red-600' : ''}`}>
-                          {val !== null ? `${truncateTo1Dec(val)}${isReg ? '*' : ''}` : '-'}
+                          {val !== null ? `${roundToIntGrade(val)}${isReg ? '*' : ''}` : '-'}
                         </td>
                       </React.Fragment>
                     );

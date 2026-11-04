@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { truncateTo1Dec, getCalificacionFinal, autoAcentuar } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, autoAcentuar } from '../utils/format';
 
 const extraerFechaDeCurp = (curp) => {
   if (!curp || curp.length < 10) return null;
@@ -150,16 +150,16 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
     let isRegularizacion = false;
 
     if (califFinalObj) {
-       finalMat = truncateTo1Dec(califFinalObj.valor);
+       finalMat = roundToIntGrade(califFinalObj.valor);
        numFinal = califFinalObj.valor;
        isRegularizacion = califFinalObj.isRegularizacion;
     }
     
     return {
       name: autoAcentuar(mat.name),
-      t1: truncateTo1Dec(t1),
-      t2: truncateTo1Dec(t2),
-      t3: truncateTo1Dec(t3),
+      t1: roundToIntGrade(t1),
+      t2: roundToIntGrade(t2),
+      t3: roundToIntGrade(t3),
       final: isRegularizacion ? `${finalMat}*` : finalMat,
       numFinal: numFinal,
       isRegularizacion

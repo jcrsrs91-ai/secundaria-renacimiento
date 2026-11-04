@@ -18,53 +18,70 @@ export const truncateTo2Dec = (val, fallback = '-') => {
   return (Math.floor((v + 0.00001) * 100) / 100).toFixed(2);
 };
 
+/**
+ * Redondea una calificación de asignatura (T1, T2, T3 o Final de Materia)
+ * a número entero sin decimales (ej. 8.5 -> 9, 8.4 -> 8).
+ */
+export const roundToIntNumber = (val) => {
+  if (val === null || val === undefined || isNaN(val) || val === '') return null;
+  const v = parseFloat(val);
+  if (isNaN(v)) return null;
+  return Math.round(v);
+};
+
+export const roundToIntGrade = (val, fallback = '-') => {
+  const num = roundToIntNumber(val);
+  if (num === null) return fallback;
+  return String(num);
+};
+
 export const getCalificacionFinal = (student, materiaId) => {
   if (!student) return null;
   if (student.regularizacion && student.regularizacion[materiaId]) {
-    // Attempt to still provide t1, t2, t3 if they exist, for the kardex display
-    const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
-    const t2 = parseFloat(student.calificaciones?.['t2']?.[materiaId]);
-    const t3 = parseFloat(student.calificaciones?.['t3']?.[materiaId]);
-    const regVal = truncateNumberTo1Dec(student.regularizacion[materiaId].calificacion);
+    const t1 = roundToIntNumber(student.calificaciones?.['t1']?.[materiaId]);
+    const t2 = roundToIntNumber(student.calificaciones?.['t2']?.[materiaId]);
+    const t3 = roundToIntNumber(student.calificaciones?.['t3']?.[materiaId]);
+    const regVal = roundToIntNumber(student.regularizacion[materiaId].calificacion);
     if (regVal !== null) {
       return {
         valor: regVal,
         isRegularizacion: true,
         fecha: student.regularizacion[materiaId].fecha,
         isReprobada: regVal < 6,
-        t1: isNaN(t1) ? '-' : t1,
-        t2: isNaN(t2) ? '-' : t2,
-        t3: isNaN(t3) ? '-' : t3
+        t1: t1 === null ? '-' : t1,
+        t2: t2 === null ? '-' : t2,
+        t3: t3 === null ? '-' : t3
       };
     }
   }
 
-  const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
-  const t2 = parseFloat(student.calificaciones?.['t2']?.[materiaId]);
-  const t3 = parseFloat(student.calificaciones?.['t3']?.[materiaId]);
+  const t1 = roundToIntNumber(student.calificaciones?.['t1']?.[materiaId]);
+  const t2 = roundToIntNumber(student.calificaciones?.['t2']?.[materiaId]);
+  const t3 = roundToIntNumber(student.calificaciones?.['t3']?.[materiaId]);
   let sum = 0, c = 0;
-  if (!isNaN(t1)) { sum += t1; c++; }
-  if (!isNaN(t2)) { sum += t2; c++; }
-  if (!isNaN(t3)) { sum += t3; c++; }
-  
+  if (t1 !== null) { sum += t1; c++; }
+  if (t2 !== null) { sum += t2; c++; }
+  if (t3 !== null) { sum += t3; c++; }
+
   if (c > 0) {
-    const finalMat = Math.floor((sum / c + 0.00001) * 10) / 10;
+    // La calificación final de cada materia es SIEMPRE un número entero redondeado
+    const finalMat = Math.round(sum / c);
     return {
       valor: finalMat,
       isRegularizacion: false,
       fecha: null,
       isReprobada: finalMat < 6,
-      t1: isNaN(t1) ? '-' : t1,
-      t2: isNaN(t2) ? '-' : t2,
-      t3: isNaN(t3) ? '-' : t3
+      t1: t1 === null ? '-' : t1,
+      t2: t2 === null ? '-' : t2,
+      t3: t3 === null ? '-' : t3
     };
   }
   return null;
 };
 
 /**
- * Calcula el promedio de un trimestre específico (t1, t2 o t3) según método PASEG:
- * Suma las calificaciones capturadas en ese trimestre y trunca a 1 decimal sin redondear.
+ * Calcula el Promedio General del Alumno en un trimestre específico (t1, t2 o t3):
+ * Suma las calificaciones enteras de sus asignaturas en ese trimestre y conserva 1 décima.
  */
 export const getPromedioTrimestrePASEG = (student, materias = [], trimestreKey = 't1') => {
   if (!student || !Array.isArray(materias)) return null;
@@ -72,9 +89,9 @@ export const getPromedioTrimestrePASEG = (student, materias = [], trimestreKey =
   let count = 0;
   materias.forEach(mat => {
     const matId = typeof mat === 'string' ? mat : mat.id;
-    const raw = parseFloat(student.calificaciones?.[trimestreKey]?.[matId]);
-    if (!isNaN(raw)) {
-      sum += raw;
+    const rawInt = roundToIntNumber(student.calificaciones?.[trimestreKey]?.[matId]);
+    if (rawInt !== null) {
+      sum += rawInt;
       count++;
     }
   });
@@ -83,9 +100,8 @@ export const getPromedioTrimestrePASEG = (student, materias = [], trimestreKey =
 };
 
 /**
- * Calcula el Promedio General Final del alumno según método PASEG:
- * Promedia los promedios finales ya truncados a 1 decimal de cada asignatura
- * y trunca el resultado final a 1 decimal sin redondear.
+ * Calcula el Promedio General Final del Alumno:
+ * Promedia las calificaciones finales enteras de cada asignatura y conserva 1 décima.
  */
 export const getPromedioGeneralPASEG = (student, materias = []) => {
   if (!student || !Array.isArray(materias)) return null;

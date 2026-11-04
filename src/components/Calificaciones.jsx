@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 import toast from 'react-hot-toast';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { truncateTo1Dec, getCalificacionFinal, autoAcentuar } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, roundToIntNumber, getCalificacionFinal, autoAcentuar } from '../utils/format';
 import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
 import { registrarMovimiento } from '../utils/bitacora';
 import { useAuth } from '../context/AuthContext';
@@ -47,8 +47,9 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     alumnos.forEach(al => {
       grades[al.id] = {};
       materias.forEach(mat => {
-        const calif = al.calificaciones?.[trimestre]?.[mat.id] ?? '';
-        grades[al.id][mat.id] = calif;
+        const raw = al.calificaciones?.[trimestre]?.[mat.id] ?? '';
+        const intVal = roundToIntNumber(raw);
+        grades[al.id][mat.id] = intVal !== null ? String(intVal) : '';
       });
     });
     setLocalGrades(grades);
@@ -83,15 +84,15 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     }
   };
 
-  // Promedio del trimestre seleccionado (Método PASEG: truncado a 1 decimal sin redondeo)
+  // Promedio General del Trimestre seleccionado (1 décima sin truncar a entero, a partir de calificaciones enteras por materia)
   const calcularPromedioTrimestre = (studentId) => {
     const grades = localGrades[studentId];
     if (!grades) return '-';
     let sum = 0;
     let count = 0;
     materias.forEach(mat => {
-      const val = parseFloat(grades[mat.id]);
-      if (!isNaN(val)) {
+      const val = roundToIntNumber(grades[mat.id]);
+      if (val !== null) {
         sum += val;
         count++;
       }
@@ -99,29 +100,29 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     return count === 0 ? '-' : truncateTo1Dec(sum / count);
   };
 
-  // Promedio General Acumulado PASEG (T1, T2, T3 en tiempo real combinando la edición actual)
+  // Promedio General Acumulado del Alumno (1 décima, promediando las calificaciones finales enteras de cada materia)
   const calcularPromedioGeneralPASEGEnVivo = (al) => {
     let sum = 0;
     let count = 0;
     materias.forEach(mat => {
       if (al.regularizacion && al.regularizacion[mat.id]) {
-        const regVal = parseFloat(al.regularizacion[mat.id].calificacion);
-        if (!isNaN(regVal)) {
-          sum += Math.floor((regVal + 0.00001) * 10) / 10;
+        const regVal = roundToIntNumber(al.regularizacion[mat.id].calificacion);
+        if (regVal !== null) {
+          sum += regVal;
           count++;
           return;
         }
       }
-      const t1 = parseFloat(trimestre === 't1' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t1']?.[mat.id]);
-      const t2 = parseFloat(trimestre === 't2' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t2']?.[mat.id]);
-      const t3 = parseFloat(trimestre === 't3' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t3']?.[mat.id]);
+      const t1 = roundToIntNumber(trimestre === 't1' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t1']?.[mat.id]);
+      const t2 = roundToIntNumber(trimestre === 't2' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t2']?.[mat.id]);
+      const t3 = roundToIntNumber(trimestre === 't3' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t3']?.[mat.id]);
       let sMat = 0, cMat = 0;
-      if (!isNaN(t1)) { sMat += t1; cMat++; }
-      if (!isNaN(t2)) { sMat += t2; cMat++; }
-      if (!isNaN(t3)) { sMat += t3; cMat++; }
+      if (t1 !== null) { sMat += t1; cMat++; }
+      if (t2 !== null) { sMat += t2; cMat++; }
+      if (t3 !== null) { sMat += t3; cMat++; }
       if (cMat > 0) {
-        const finalMatTrunc = Math.floor((sMat / cMat + 0.00001) * 10) / 10;
-        sum += finalMatTrunc;
+        const finalMatInt = Math.round(sMat / cMat);
+        sum += finalMatInt;
         count++;
       }
     });
@@ -256,9 +257,19 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     try {
       const promises = alumnos.map(al => {
         const docRef = doc(db, 'students', al.id);
-        const gradesToSave = localGrades[al.id];
+        const rawGrades = localGrades[al.id] || {};
+        const roundedGrades = {};
+        Object.keys(rawGrades).forEach(mId => {
+          const r = (rawGrades[mId] ?? '').toString().trim();
+          if (r === '') {
+            roundedGrades[mId] = '';
+          } else {
+            const intVal = roundToIntNumber(r);
+            roundedGrades[mId] = intVal !== null ? String(intVal) : '';
+          }
+        });
         const currentCalif = al.calificaciones || {};
-        const newTrimestreData = { ...currentCalif[trimestre], ...gradesToSave };
+        const newTrimestreData = { ...currentCalif[trimestre], ...roundedGrades };
         
         return updateDoc(docRef, {
           [`calificaciones.${trimestre}`]: newTrimestreData
@@ -305,7 +316,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
 
   const getPromedioFinal = (student, materiaId) => {
     const finalObj = getCalificacionFinal(student, materiaId);
-    return finalObj ? truncateTo1Dec(finalObj.valor, '') : '';
+    return finalObj ? roundToIntGrade(finalObj.valor, '') : '';
   };
 
   const handleExportarExcelFinales = () => {
@@ -320,7 +331,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         if (pf !== '') {
           sum += parseFloat(pf);
           count++;
-          if (parseFloat(pf) < 6.0) reprobadas++;
+          if (parseFloat(pf) < 6) reprobadas++;
         }
       });
       row.push(count > 0 ? truncateTo1Dec(sum / count, '') : '');
@@ -343,9 +354,9 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       const row = [idx + 1, al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`];
       let sum = 0, count = 0;
       materias.forEach(mat => {
-        const t1 = al.calificaciones?.['t1']?.[mat.id] || '';
-        const t2 = al.calificaciones?.['t2']?.[mat.id] || '';
-        const t3 = al.calificaciones?.['t3']?.[mat.id] || '';
+        const t1 = roundToIntGrade(al.calificaciones?.['t1']?.[mat.id], '');
+        const t2 = roundToIntGrade(al.calificaciones?.['t2']?.[mat.id], '');
+        const t3 = roundToIntGrade(al.calificaciones?.['t3']?.[mat.id], '');
         const pf = getPromedioFinal(al, mat.id);
         row.push(t1, t2, t3, pf);
         if (pf !== '') {
@@ -716,11 +727,20 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                               <td key={mat.id} className="px-1 py-2 text-center">
                                 <input 
                                   type="number" 
-                                  min="5" max="10" step="0.1"
+                                  min="5" max="10" step="1"
                                   data-sabana-cell={`${rowIdx}-${colIdx}`}
                                   value={val}
                                   onKeyDown={(e) => handleCellKeyDown(e, rowIdx, colIdx)}
                                   onChange={(e) => handleGradeChange(al.id, mat.id, e.target.value)}
+                                  onBlur={(e) => {
+                                    const rawVal = e.target.value.trim();
+                                    if (rawVal !== '') {
+                                      const intVal = roundToIntNumber(rawVal);
+                                      if (intVal !== null) {
+                                        handleGradeChange(al.id, mat.id, String(intVal));
+                                      }
+                                    }
+                                  }}
                                   placeholder={highlightEmptyCells && isEmpty ? '!' : ''}
                                   className={`w-14 text-center p-1.5 border rounded font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-colors
                                     ${isOutOfRange

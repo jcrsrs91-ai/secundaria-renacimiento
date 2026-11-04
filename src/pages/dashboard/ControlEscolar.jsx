@@ -300,11 +300,11 @@ export default function ControlEscolar() {
       }
 
       let sum = 0; let count = 0;
-      if (!isNaN(t1)) { sum += t1; count++; }
-      if (!isNaN(t2)) { sum += t2; count++; }
-      if (!isNaN(t3)) { sum += t3; count++; }
+      if (!isNaN(t1)) { sum += Math.round(t1); count++; }
+      if (!isNaN(t2)) { sum += Math.round(t2); count++; }
+      if (!isNaN(t3)) { sum += Math.round(t3); count++; }
       if (count > 0) {
-        const finalMat = Math.floor((sum / count + 0.00001) * 10) / 10;
+        const finalMat = Math.round(sum / count);
         if (finalMat < 6) return true;
       }
     }
@@ -430,11 +430,11 @@ export default function ControlEscolar() {
       const t2 = parseFloat(selectedStudent.calificaciones?.['t2']?.[mat.id]);
       const t3 = parseFloat(selectedStudent.calificaciones?.['t3']?.[mat.id]);
       let sum = 0; let count = 0;
-      if (!isNaN(t1)) { sum += t1; count++; }
-      if (!isNaN(t2)) { sum += t2; count++; }
-      if (!isNaN(t3)) { sum += t3; count++; }
+      if (!isNaN(t1)) { sum += Math.round(t1); count++; }
+      if (!isNaN(t2)) { sum += Math.round(t2); count++; }
+      if (!isNaN(t3)) { sum += Math.round(t3); count++; }
       if (count > 0) {
-        const finalMat = Math.floor((sum / count + 0.00001) * 10) / 10;
+        const finalMat = Math.round(sum / count);
         if (finalMat < 6) return true;
       }
     }
@@ -610,7 +610,7 @@ export default function ControlEscolar() {
           alert(`La calificación de ${asig.name} (${rawVal}) debe estar en escala oficial PASEG de 5 a 10.`);
           return;
         }
-        calificaciones[trimestre][asig.id] = num;
+        calificaciones[trimestre][asig.id] = Math.round(num);
       } else {
         delete calificaciones[trimestre][asig.id];
       }
@@ -1748,8 +1748,8 @@ export default function ControlEscolar() {
                         <input 
                           type="number" 
                           name={asig.id} 
-                          defaultValue={selectedStudent.calificaciones?.[gradeModalTrimestre]?.[asig.id] ?? ''} 
-                          min="5" max="10" step="0.1" 
+                          defaultValue={selectedStudent.calificaciones?.[gradeModalTrimestre]?.[asig.id] !== undefined && selectedStudent.calificaciones?.[gradeModalTrimestre]?.[asig.id] !== '' ? Math.round(Number(selectedStudent.calificaciones[gradeModalTrimestre][asig.id])) : ''} 
+                          min="5" max="10" step="1" 
                           className="w-20 p-1 text-center border rounded font-bold" 
                           placeholder="-" 
                         />

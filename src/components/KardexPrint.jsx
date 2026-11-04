@@ -1,12 +1,11 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer } from 'lucide-react';
-import { getCalificacionFinal } from '../utils/format';
+import { getCalificacionFinal, roundToIntNumber } from '../utils/format';
 
 export default function KardexPrint({ student, materiasPorGrado, onClose }) {
   if (!student) return null;
 
-  // The student name should already be accented by the global fetcher
   const nombreCompleto = `${student.nombres} ${student.apellidoPaterno} ${student.apellidoMaterno}`.toUpperCase();
   
   // Calculate final grade for a given materia in a given historical year (or current year if applicable)
@@ -14,31 +13,30 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
     // 1. Try to get from manual historial first
     if (student.historial && student.historial[gradoKey] && student.historial[gradoKey][materiaId]) {
       const hist = student.historial[gradoKey][materiaId];
-      const t1 = parseFloat(hist.t1);
-      const t2 = parseFloat(hist.t2);
-      const t3 = parseFloat(hist.t3);
+      const t1 = roundToIntNumber(hist.t1);
+      const t2 = roundToIntNumber(hist.t2);
+      const t3 = roundToIntNumber(hist.t3);
       
-      if (!isNaN(t1) || !isNaN(t2) || !isNaN(t3)) {
-        // Check if passed via regularizacion in the past
-        
+      if (t1 !== null || t2 !== null || t3 !== null) {
         let sum = 0, c = 0;
-        if (!isNaN(t1)) { sum += t1; c++; }
-        if (!isNaN(t2)) { sum += t2; c++; }
-        if (!isNaN(t3)) { sum += t3; c++; }
+        if (t1 !== null) { sum += t1; c++; }
+        if (t2 !== null) { sum += t2; c++; }
+        if (t3 !== null) { sum += t3; c++; }
         
-        const finalMat = Math.floor((sum / c + 0.00001) * 10) / 10;
+        // Calificación final de asignatura siempre entera redondeada
+        const finalMat = Math.round(sum / c);
         
-        // Modificado para mantener el original en Kárdex
         if (student.regularizacion && student.regularizacion[materiaId]) {
+          const regVal = roundToIntNumber(student.regularizacion[materiaId].calificacion) ?? finalMat;
           return {
-            valor: parseFloat(student.regularizacion[materiaId].calificacion), // para promedios
-            originalValor: finalMat, // para mostrar en tabla
+            valor: regVal,
+            originalValor: finalMat,
             isRegularizacion: true,
             fecha: student.regularizacion[materiaId].fecha,
             periodo: student.regularizacion[materiaId].periodo,
-            t1: isNaN(t1) ? '-' : t1,
-            t2: isNaN(t2) ? '-' : t2,
-            t3: isNaN(t3) ? '-' : t3
+            t1: t1 === null ? '-' : t1,
+            t2: t2 === null ? '-' : t2,
+            t3: t3 === null ? '-' : t3
           };
         }
 
@@ -48,35 +46,32 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
           isRegularizacion: false,
           fecha: null,
           isReprobada: finalMat < 6,
-          t1: isNaN(t1) ? '-' : t1,
-          t2: isNaN(t2) ? '-' : t2,
-          t3: isNaN(t3) ? '-' : t3
+          t1: t1 === null ? '-' : t1,
+          t2: t2 === null ? '-' : t2,
+          t3: t3 === null ? '-' : t3
         };
       }
     }
     
     // 2. Fallback to active system grades
-    
     const fallback = getCalificacionFinal(student, materiaId);
     if (!fallback) return null;
     
     if (fallback.isRegularizacion) {
-      // Re-calculate original
-      const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
-      const t2 = parseFloat(student.calificaciones?.['t2']?.[materiaId]);
-      const t3 = parseFloat(student.calificaciones?.['t3']?.[materiaId]);
+      const t1 = roundToIntNumber(student.calificaciones?.['t1']?.[materiaId]);
+      const t2 = roundToIntNumber(student.calificaciones?.['t2']?.[materiaId]);
+      const t3 = roundToIntNumber(student.calificaciones?.['t3']?.[materiaId]);
       let sum = 0, c = 0;
-      if (!isNaN(t1)) { sum += t1; c++; }
-      if (!isNaN(t2)) { sum += t2; c++; }
-      if (!isNaN(t3)) { sum += t3; c++; }
-      const finalMat = c > 0 ? Math.floor((sum / c + 0.00001) * 10) / 10 : '-';
+      if (t1 !== null) { sum += t1; c++; }
+      if (t2 !== null) { sum += t2; c++; }
+      if (t3 !== null) { sum += t3; c++; }
+      const finalMat = c > 0 ? Math.round(sum / c) : '-';
       fallback.originalValor = finalMat;
       fallback.periodo = student.regularizacion[materiaId].periodo;
     } else {
       fallback.originalValor = fallback.valor;
     }
     return fallback;
-
   };
 
   const currentGrades = (gradoKey) => {
@@ -110,12 +105,9 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
     finalAverage = (Math.floor((totalSum / 3 + 0.00001) * 10) / 10).toFixed(1);
   }
 
-  // Current Date for signature
-  
   const extraordinariosArray = [];
   if (student.regularizacion) {
     Object.keys(student.regularizacion).forEach(matId => {
-      // Find subject name
       let matName = matId;
       for (const grado in materiasPorGrado) {
         const found = materiasPorGrado[grado].find(m => m.id === matId);
@@ -123,7 +115,7 @@ export default function KardexPrint({ student, materiasPorGrado, onClose }) {
       }
       extraordinariosArray.push({
         materia: matName,
-        calificacion: student.regularizacion[matId].calificacion,
+        calificacion: roundToIntNumber(student.regularizacion[matId].calificacion) ?? student.regularizacion[matId].calificacion,
         fecha: student.regularizacion[matId].fecha,
         periodo: student.regularizacion[matId].periodo || '---'
       });

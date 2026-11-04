@@ -7,7 +7,7 @@ import { isBeforeSept30, formatearFechaCorta, fechaRegistroDeAlumno } from '../u
 import { registrarMovimiento, detectarCambiosExpediente } from '../utils/bitacora';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
-import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal } from '../utils/format';
 
 export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, onSave, readOnly = false }) {
   const { currentUser, userPermissions, userRole } = useAuth();
@@ -943,6 +943,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                       if (val === undefined || val === null || val === '') return '-';
                       const num = Number(val);
                       if (isNaN(num)) return '-';
+                      return <span className={Math.round(num) < 6 ? 'text-red-600 font-bold bg-red-50 px-2 py-1 rounded' : ''}>{roundToIntGrade(num)}</span>;
+                    };
+
+                    const renderPromedioGralCell = (val) => {
+                      if (val === undefined || val === null || val === '') return '-';
+                      const num = Number(val);
+                      if (isNaN(num)) return '-';
                       return <span className={num < 6 ? 'text-red-600 font-bold bg-red-50 px-2 py-1 rounded' : ''}>{truncateTo1Dec(num)}</span>;
                     };
 
@@ -970,14 +977,14 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                                 const t2 = califs['t2']?.[mat.id] ?? califs['T2']?.[mat.id];
                                 const t3 = califs['t3']?.[mat.id] ?? califs['T3']?.[mat.id];
                                 
-                                if (t1 !== undefined && t1 !== '' && !isNaN(Number(t1))) { sumT1 += Number(t1); countT1++; }
-                                if (t2 !== undefined && t2 !== '' && !isNaN(Number(t2))) { sumT2 += Number(t2); countT2++; }
-                                if (t3 !== undefined && t3 !== '' && !isNaN(Number(t3))) { sumT3 += Number(t3); countT3++; }
+                                if (t1 !== undefined && t1 !== '' && !isNaN(Number(t1))) { sumT1 += Math.round(Number(t1)); countT1++; }
+                                if (t2 !== undefined && t2 !== '' && !isNaN(Number(t2))) { sumT2 += Math.round(Number(t2)); countT2++; }
+                                if (t3 !== undefined && t3 !== '' && !isNaN(Number(t3))) { sumT3 += Math.round(Number(t3)); countT3++; }
 
                                 const finalObj = getCalificacionFinal(student, mat.id);
                                 let promedioFinal = '-';
                                 if (finalObj && finalObj.valor !== null && !isNaN(finalObj.valor)) {
-                                  promedioFinal = truncateTo1Dec(finalObj.valor);
+                                  promedioFinal = roundToIntGrade(finalObj.valor);
                                   sumFinalTrunc += finalObj.valor;
                                   countFinalTrunc++;
                                 }
@@ -996,11 +1003,11 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                             <tfoot>
                               <tr className="bg-slate-100 font-bold">
                                 <td className="border p-3 text-right">PROMEDIO GENERAL (PASEG)</td>
-                                <td className="border p-3 text-center text-primary-700">{countT1 > 0 ? renderCell((sumT1 / countT1)) : '-'}</td>
-                                <td className="border p-3 text-center text-primary-700">{countT2 > 0 ? renderCell((sumT2 / countT2)) : '-'}</td>
-                                <td className="border p-3 text-center text-primary-700">{countT3 > 0 ? renderCell((sumT3 / countT3)) : '-'}</td>
+                                <td className="border p-3 text-center text-primary-700">{countT1 > 0 ? renderPromedioGralCell(sumT1 / countT1) : '-'}</td>
+                                <td className="border p-3 text-center text-primary-700">{countT2 > 0 ? renderPromedioGralCell(sumT2 / countT2) : '-'}</td>
+                                <td className="border p-3 text-center text-primary-700">{countT3 > 0 ? renderPromedioGralCell(sumT3 / countT3) : '-'}</td>
                                 <td className="border p-3 text-center text-emerald-700 bg-emerald-50">
-                                  {countFinalTrunc > 0 ? renderCell(sumFinalTrunc / countFinalTrunc) : '-'}
+                                  {countFinalTrunc > 0 ? renderPromedioGralCell(sumFinalTrunc / countFinalTrunc) : '-'}
                                 </td>
                               </tr>
                             </tfoot>
@@ -1047,17 +1054,17 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                               
                               let numProm = 0;
                               let countProm = 0;
-                              if (t1 !== undefined && t1 !== '') { numProm += Number(t1); countProm++; }
-                              if (t2 !== undefined && t2 !== '') { numProm += Number(t2); countProm++; }
-                              if (t3 !== undefined && t3 !== '') { numProm += Number(t3); countProm++; }
+                              if (t1 !== undefined && t1 !== '') { numProm += Math.round(Number(t1)); countProm++; }
+                              if (t2 !== undefined && t2 !== '') { numProm += Math.round(Number(t2)); countProm++; }
+                              if (t3 !== undefined && t3 !== '') { numProm += Math.round(Number(t3)); countProm++; }
                               
-                              const promedioFinal = countProm > 0 ? truncateTo1Dec(numProm / countProm) : '-';
+                              const promedioFinal = countProm > 0 ? roundToIntGrade(numProm / countProm) : '-';
 
                               const renderCell = (val) => {
                                 if (val === undefined || val === null || val === '') return '-';
                                 const num = Number(val);
                                 if (isNaN(num)) return '-';
-                                return <span className={num < 6 ? 'text-red-600 font-bold bg-red-50 px-1 rounded' : ''}>{truncateTo1Dec(num)}</span>;
+                                return <span className={Math.round(num) < 6 ? 'text-red-600 font-bold bg-red-50 px-1 rounded' : ''}>{roundToIntGrade(num)}</span>;
                               };
 
                               return (

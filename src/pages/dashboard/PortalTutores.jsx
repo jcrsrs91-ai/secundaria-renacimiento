@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs, orderBy, limit, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { truncateTo1Dec, getCalificacionFinal, getPromedioTrimestrePASEG, getPromedioGeneralPASEG, autoAcentuar } from '../../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getPromedioTrimestrePASEG, getPromedioGeneralPASEG, autoAcentuar } from '../../utils/format';
 import BoletaPrint from '../../components/BoletaPrint';
 
 const materiasPorGrado = {
@@ -301,20 +301,20 @@ export default function PortalTutores() {
                       const t3 = calif.t3?.[materia.id];
                       
                       const finalObj = getCalificacionFinal(studentForParents, materia.id);
-                      const promedioStr = finalObj ? truncateTo1Dec(finalObj.valor) : '-';
+                      const promedioStr = finalObj ? roundToIntGrade(finalObj.valor) : '-';
                       const isReprobada = finalObj ? finalObj.isReprobada : false;
                       
                       return (
                         <tr key={materia.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm text-slate-800 font-semibold">{materia.name}</td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT1 ? 'text-slate-400 italic text-[11px]' : t1 && Number(t1) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {!pubT1 ? 'En captura' : (t1 !== undefined && t1 !== '' ? truncateTo1Dec(t1) : '-')}
+                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT1 ? 'text-slate-400 italic text-[11px]' : t1 && Math.round(Number(t1)) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                            {!pubT1 ? 'En captura' : (t1 !== undefined && t1 !== '' ? roundToIntGrade(t1) : '-')}
                           </td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT2 ? 'text-slate-400 italic text-[11px]' : t2 && Number(t2) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {!pubT2 ? 'En captura' : (t2 !== undefined && t2 !== '' ? truncateTo1Dec(t2) : '-')}
+                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT2 ? 'text-slate-400 italic text-[11px]' : t2 && Math.round(Number(t2)) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                            {!pubT2 ? 'En captura' : (t2 !== undefined && t2 !== '' ? roundToIntGrade(t2) : '-')}
                           </td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT3 ? 'text-slate-400 italic text-[11px]' : t3 && Number(t3) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {!pubT3 ? 'En captura' : (t3 !== undefined && t3 !== '' ? truncateTo1Dec(t3) : '-')}
+                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT3 ? 'text-slate-400 italic text-[11px]' : t3 && Math.round(Number(t3)) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                            {!pubT3 ? 'En captura' : (t3 !== undefined && t3 !== '' ? roundToIntGrade(t3) : '-')}
                           </td>
                           <td className={`px-3 sm:px-6 py-3 text-xs sm:text-sm text-center font-black bg-slate-50/80 ${promedioStr === '-' ? 'text-slate-400' : isReprobada ? 'text-red-600' : 'text-emerald-700'}`}>
                             {promedioStr}{finalObj?.isRegularizacion ? '*' : ''}

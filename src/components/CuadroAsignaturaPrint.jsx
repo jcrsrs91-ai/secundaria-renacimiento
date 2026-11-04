@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { autoAcentuar, truncateTo1Dec } from '../utils/format';
+import { autoAcentuar, roundToIntGrade, roundToIntNumber } from '../utils/format';
 import { TALLER_POR_GRUPO, getStudentGender, sortAttendanceListStudents } from './ListaAsistenciaPrint';
 
 export default function CuadroAsignaturaPrint({
@@ -199,23 +199,26 @@ export default function CuadroAsignaturaPrint({
               const fullName = rawName ? autoAcentuar(rawName).toUpperCase() : '';
               const gen = student.isEmpty ? '' : getStudentGender(student);
 
-              const c1 = getTrimestreVal(student, 't1', 'calificacion');
+              const rawC1 = getTrimestreVal(student, 't1', 'calificacion');
+              const c1 = roundToIntGrade(rawC1, '');
               const f1 = getTrimestreVal(student, 't1', 'faltas');
-              const c2 = getTrimestreVal(student, 't2', 'calificacion');
+              const rawC2 = getTrimestreVal(student, 't2', 'calificacion');
+              const c2 = roundToIntGrade(rawC2, '');
               const f2 = getTrimestreVal(student, 't2', 'faltas');
-              const c3 = getTrimestreVal(student, 't3', 'calificacion');
+              const rawC3 = getTrimestreVal(student, 't3', 'calificacion');
+              const c3 = roundToIntGrade(rawC3, '');
               const f3 = getTrimestreVal(student, 't3', 'faltas');
 
               let sum = 0;
               let cnt = 0;
               [c1, c2, c3].forEach(v => {
-                const n = parseFloat(v);
-                if (!isNaN(n)) {
+                const n = roundToIntNumber(v);
+                if (n !== null) {
                   sum += n;
                   cnt++;
                 }
               });
-              const promAcum = cnt > 0 ? truncateTo1Dec(sum / cnt) : '';
+              const promAcum = cnt > 0 ? String(Math.round(sum / cnt)) : '';
 
               const currentCalif = parseFloat(getTrimestreVal(student, trimestre, 'calificacion'));
               const isRegular = !isNaN(currentCalif) && currentCalif >= 6;

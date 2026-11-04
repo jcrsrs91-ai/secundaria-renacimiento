@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { truncateTo1Dec, getCalificacionFinal, getPromedioTrimestrePASEG, autoAcentuar } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getPromedioTrimestrePASEG, autoAcentuar } from '../utils/format';
 
 export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
   const { config } = useGlobalConfig();
@@ -54,7 +54,8 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
       {students.map(student => {
         const materias = materiasPorGrado[student.grado] || [];
         
-        // Calcular calificaciones con método PASEG (truncado a 1 decimal sin redondeo)
+        // Calificaciones por asignatura: Número Entero Redondeado.
+        // Promedio General del Alumno (por trimestre y final): 1 Décima.
         let sumGral = 0;
         let countGral = 0;
         let hasRegularizacion = false;
@@ -70,8 +71,8 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
           let final = null;
           let finalStr = '';
           if (califFinalObj) {
-            final = califFinalObj.valor;
-            finalStr = truncateTo1Dec(final, '');
+            final = califFinalObj.valor; // ya es entero redondeado
+            finalStr = roundToIntGrade(final, '');
             if (califFinalObj.isRegularizacion) {
                finalStr += '*';
                hasRegularizacion = true;
@@ -82,9 +83,9 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
           
           return {
             name: mat.name,
-            t1: truncateTo1Dec(t1, ''),
-            t2: truncateTo1Dec(t2, ''),
-            t3: truncateTo1Dec(t3, ''),
+            t1: roundToIntGrade(t1, ''),
+            t2: roundToIntGrade(t2, ''),
+            t3: roundToIntGrade(t3, ''),
             final: finalStr
           };
         });
@@ -140,7 +141,7 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                   <tbody>
                     {califs.map((mat, i) => {
                       const finalNum = parseFloat(mat.final);
-                      const isReprobado = !isNaN(finalNum) && finalNum < 6.0;
+                      const isReprobado = !isNaN(finalNum) && finalNum < 6;
                       return (
                         <tr key={i} className="border-b border-slate-200">
                           <td className="py-2 px-3 font-medium text-slate-800 border-r border-slate-200 uppercase text-xs">{mat.name}</td>
@@ -152,7 +153,7 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                       );
                     })}
                     <tr className="border-t-2 border-slate-800 bg-slate-100">
-                      <td className="py-3 px-3 text-right font-black uppercase text-xs border-r border-slate-300">Promedio del Grado (Método PASEG)</td>
+                      <td className="py-3 px-3 text-right font-black uppercase text-xs border-r border-slate-300">Promedio General del Grado</td>
                       <td className="py-3 px-2 text-center font-bold text-sm text-slate-800 border-r border-slate-300">{promT1}</td>
                       <td className="py-3 px-2 text-center font-bold text-sm text-slate-800 border-r border-slate-300">{promT2}</td>
                       <td className="py-3 px-2 text-center font-bold text-sm text-slate-800 border-r border-slate-300">{promT3}</td>

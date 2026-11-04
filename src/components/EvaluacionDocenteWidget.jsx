@@ -5,7 +5,7 @@ import { doc, updateDoc, setDoc, getDoc, serverTimestamp } from 'firebase/firest
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { autoAcentuar, truncateTo1Dec } from '../utils/format';
+import { autoAcentuar, truncateTo1Dec, roundToIntGrade, roundToIntNumber } from '../utils/format';
 import { materiasPorGrado } from '../utils/materias';
 import { registrarMovimiento } from '../utils/bitacora';
 import ListaAsistenciaPrint, { TALLER_POR_GRUPO, getStudentGender, sortAttendanceListStudents } from './ListaAsistenciaPrint';
@@ -253,8 +253,8 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     };
   };
 
-  // Pasar el promedio de los 20 días de clase a la columna Calif. Trim. (sin truncar o con 1 decimal según elija el docente)
-  const aplicarPromedioDiasACalificacion = (truncarA1Dec = false) => {
+  // Pasar el promedio de los 20 días de clase a la columna Calif. Trim. (redondeado a entero oficial o exacto para referencia interna)
+  const aplicarPromedioDiasACalificacion = (redondearAEntero = true) => {
     if (isReadOnlyForCurrentUser) return;
     let count = 0;
     const next = { ...evalData };
@@ -262,8 +262,8 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       if ((al.status || '').toLowerCase() === 'baja') return;
       const calc = getCalculoDiasAlumno(al.id);
       if (calc.promedioExacto !== null && !isNaN(calc.promedioExacto)) {
-        const valFinal = truncarA1Dec
-          ? truncateTo1Dec(calc.promedioExacto)
+        const valFinal = redondearAEntero
+          ? Math.round(calc.promedioExacto)
           : calc.promedioStr;
         next[al.id] = {
           ...(next[al.id] || {}),
@@ -276,13 +276,17 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     if (count > 0) {
       setEvalData(next);
       setHasUnsavedChanges(true);
-      toast.success(`Se pasó el promedio de las ${resumenDiasClase.totalClasesGrupo} celdas de clase a ${count} alumnos.`);
+      toast.success(
+        redondearAEntero
+          ? `Se pasó el promedio de las ${resumenDiasClase.totalClasesGrupo} celdas de clase (redondeado a entero oficial) a ${count} alumnos.`
+          : `Se pasó el promedio exacto de las ${resumenDiasClase.totalClasesGrupo} celdas de clase a ${count} alumnos.`
+      );
     } else {
       toast.error('Aún no hay calificaciones numéricas capturadas en las celdas 1 a 20.');
     }
   };
 
-  // Calcular promedio automático desde Tareas (T1..T6), Examen, Participación y Columna Extra para un alumno
+  // Calcular promedio automático desde Tareas (T1..T6), Examen, Participación y Columna Extra para un alumno (redondeado a entero)
   const autocalcularFila = (studentId) => {
     if (isReadOnlyForCurrentUser) return;
     const row = evalData[studentId] || {};
@@ -291,7 +295,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       .filter(n => !isNaN(n));
     if (vals.length === 0) return;
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    handleFieldChange(studentId, 'calificacion', String(truncateTo1Dec(avg)));
+    handleFieldChange(studentId, 'calificacion', String(Math.round(avg)));
   };
 
   const autocalcularTodos = () => {
@@ -309,7 +313,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
         next[al.id] = {
           ...row,
-          calificacion: String(truncateTo1Dec(avg))
+          calificacion: String(Math.round(avg))
         };
         updatedCount++;
       }
@@ -317,7 +321,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     if (updatedCount > 0) {
       setEvalData(next);
       setHasUnsavedChanges(true);
-      toast.success(`Se calculó la calificación de ${updatedCount} alumnos a partir de sus actividades.`);
+      toast.success(`Se calculó la calificación entera redondeada de ${updatedCount} alumnos a partir de sus actividades.`);
     } else {
       toast.error('Ingresa primero valores en Tareas, Examen o Participación.');
     }
@@ -417,8 +421,9 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
 
         const row = evalData[al.id] || {};
         const docRef = doc(db, 'students', al.id);
+        const califEnteraOficial = roundToIntGrade(row.calificacion, '');
         return updateDoc(docRef, {
-          [`calificaciones.${trimestre}.${materiaId}`]: row.calificacion ?? '',
+          [`calificaciones.${trimestre}.${materiaId}`]: califEnteraOficial,
           [`evaluacionDetalle.${trimestre}.${materiaId}`]: {
             dias: row.dias || {},
             faltas: row.faltas ?? '',
@@ -431,7 +436,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
             examen: row.examen ?? '',
             participacion: row.participacion ?? '',
             extraEval: row.extraEval ?? '',
-            calificacion: row.calificacion ?? '',
+            calificacion: califEnteraOficial !== '' ? califEnteraOficial : (row.calificacion ?? ''),
             observaciones: row.observaciones ?? '',
             docente: docenteNombre.trim(),
             updatedAt: new Date().toISOString()
@@ -705,20 +710,20 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => aplicarPromedioDiasACalificacion(false)}
+                  onClick={() => aplicarPromedioDiasACalificacion(true)}
                   className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-lg transition shadow-sm flex items-center gap-1.5"
-                  title="Copia el promedio exacto de los días de clase a la columna Calif. Trim."
+                  title="Copia el promedio de los días de clase redondeado a número entero oficial a la columna Calif. Trim."
                 >
                   <Calculator className="w-3.5 h-3.5" />
-                  Pasar Prom. de Días (Exacto) a Calif. Trim.
+                  Pasar a Calif. Trim. (Redondeado a Entero Oficial)
                 </button>
                 <button
                   type="button"
-                  onClick={() => aplicarPromedioDiasACalificacion(true)}
+                  onClick={() => aplicarPromedioDiasACalificacion(false)}
                   className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 border border-emerald-600 font-bold rounded-lg transition flex items-center gap-1.5"
-                  title="Copia el promedio de los días de clase truncado a 1 décima PASEG a la columna Calif. Trim."
+                  title="Copia el promedio exacto de los días de clase con decimales para uso interno en la lista del docente"
                 >
-                  Pasar a Calif. Trim. (1 décima PASEG)
+                  Pasar Prom. de Días (Exacto en Lista)
                 </button>
               </div>
             )}

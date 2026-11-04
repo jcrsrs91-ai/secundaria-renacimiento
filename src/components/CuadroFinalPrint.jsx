@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal } from '../utils/format';
 import { getStudentGender } from './ListaAsistenciaPrint';
 
 export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = '', grupo = '' }) {
@@ -48,7 +48,7 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
       if (finalObj !== null) {
         sumMat += finalObj.valor;
         cntMat++;
-        if (finalObj.valor < 6.0) matRep++;
+        if (finalObj.valor < 6) matRep++;
       }
     });
 
@@ -138,16 +138,16 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
                       isReg = finalObj.isRegularizacion;
                       sumaPorMateria[mat.id] += val;
                       countPorMateria[mat.id]++;
-                      if (val < 6.0) {
+                      if (val < 6) {
                         reprobadosPorMateria[mat.id]++;
                         matRepAlumno++;
                       }
                     }
                     
-                    const isFailing = val !== null && val < 6.0;
+                    const isFailing = val !== null && val < 6;
                     return (
                       <td key={mat.id} className={`border border-black p-0.5 text-center font-bold ${isFailing ? 'text-red-600' : ''}`}>
-                        {val !== null ? `${truncateTo1Dec(val)}${isReg ? '*' : ''}` : '-'}
+                        {val !== null ? `${roundToIntGrade(val)}${isReg ? '*' : ''}` : '-'}
                       </td>
                     );
                   })}
