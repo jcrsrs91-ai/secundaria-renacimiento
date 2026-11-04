@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Newspaper, User, BellRing, FileText, CheckCircle2, Clock, LogOut, MessageSquare, Send, Check, Printer, Award } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs, orderBy, limit, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { truncateTo1Dec, getCalificacionFinal, getPromedioTrimestrePASEG, getPromedioGeneralPASEG, autoAcentuar } from '../../utils/format';
@@ -30,10 +31,11 @@ const materiasPorGrado = {
 export default function PortalTutores() {
   const [activeTab, setActiveTab] = useState('expediente');
   const { studentSession, loginAsStudent, logout } = useAuth();
+  const { config } = useGlobalConfig();
   const [liveStudent, setLiveStudent] = useState(studentSession);
   const [noticias, setNoticias] = useState([]);
   const [loadingAvisos, setLoadingAvisos] = useState(true);
-  const [activeShiftTab, setActiveShiftTab] = useState('matutino');
+  const [activeShiftTab] = useState('matutino');
   
   // Chat States
   const [messages, setMessages] = useState([]);
@@ -50,7 +52,6 @@ export default function PortalTutores() {
       if (snap.exists()) {
         const updated = { id: snap.id, ...snap.data() };
         setLiveStudent(updated);
-        // Mantener localStorage actualizado por si recarga la página
         if (typeof loginAsStudent === 'function') {
           loginAsStudent(updated);
         }
@@ -143,13 +144,31 @@ export default function PortalTutores() {
     fetchAvisos();
   }, []);
 
-  if (!liveStudent) return <div className="p-8 text-center">Cargando...</div>;
+  const pubT1 = config?.trimestresPublicadosPadres?.t1 !== false;
+  const pubT2 = config?.trimestresPublicadosPadres?.t2 !== false;
+  const pubT3 = config?.trimestresPublicadosPadres?.t3 !== false;
+
+  // Filtrar solo los trimestres que Control Escolar haya marcado como publicados para padres
+  const studentForParents = useMemo(() => {
+    if (!liveStudent) return null;
+    const rawCalif = liveStudent.calificaciones || {};
+    return {
+      ...liveStudent,
+      calificaciones: {
+        t1: pubT1 ? (rawCalif.t1 || {}) : {},
+        t2: pubT2 ? (rawCalif.t2 || {}) : {},
+        t3: pubT3 ? (rawCalif.t3 || {}) : {}
+      }
+    };
+  }, [liveStudent, pubT1, pubT2, pubT3]);
+
+  if (!liveStudent || !studentForParents) return <div className="p-8 text-center">Cargando...</div>;
 
   const materiasAlumno = materiasPorGrado[liveStudent.grado] || [];
-  const promT1 = truncateTo1Dec(getPromedioTrimestrePASEG(liveStudent, materiasAlumno, 't1'));
-  const promT2 = truncateTo1Dec(getPromedioTrimestrePASEG(liveStudent, materiasAlumno, 't2'));
-  const promT3 = truncateTo1Dec(getPromedioTrimestrePASEG(liveStudent, materiasAlumno, 't3'));
-  const promGral = truncateTo1Dec(getPromedioGeneralPASEG(liveStudent, materiasAlumno));
+  const promT1 = pubT1 ? truncateTo1Dec(getPromedioTrimestrePASEG(studentForParents, materiasAlumno, 't1')) : '-';
+  const promT2 = pubT2 ? truncateTo1Dec(getPromedioTrimestrePASEG(studentForParents, materiasAlumno, 't2')) : '-';
+  const promT3 = pubT3 ? truncateTo1Dec(getPromedioTrimestrePASEG(studentForParents, materiasAlumno, 't3')) : '-';
+  const promGral = truncateTo1Dec(getPromedioGeneralPASEG(studentForParents, materiasAlumno));
 
   const docsMap = liveStudent.documentos || {};
   const docsList = [
@@ -262,34 +281,40 @@ export default function PortalTutores() {
                   <thead className="bg-slate-800 text-white">
                     <tr>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Campo Formativo / Disciplina</th>
-                      <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">Trimestre 1</th>
-                      <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">Trimestre 2</th>
-                      <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">Trimestre 3</th>
+                      <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">
+                        Trimestre 1 {!pubT1 && <span className="block text-[9px] font-normal text-amber-300">(En captura)</span>}
+                      </th>
+                      <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">
+                        Trimestre 2 {!pubT2 && <span className="block text-[9px] font-normal text-amber-300">(En captura)</span>}
+                      </th>
+                      <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">
+                        Trimestre 3 {!pubT3 && <span className="block text-[9px] font-normal text-amber-300">(En captura)</span>}
+                      </th>
                       <th className="px-3 sm:px-6 py-3 text-center text-xs font-black uppercase tracking-wider bg-slate-900">Promedio Final</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-white">
                     {materiasAlumno.map((materia) => {
-                      const calif = liveStudent.calificaciones || {};
+                      const calif = studentForParents.calificaciones || {};
                       const t1 = calif.t1?.[materia.id];
                       const t2 = calif.t2?.[materia.id];
                       const t3 = calif.t3?.[materia.id];
                       
-                      const finalObj = getCalificacionFinal(liveStudent, materia.id);
+                      const finalObj = getCalificacionFinal(studentForParents, materia.id);
                       const promedioStr = finalObj ? truncateTo1Dec(finalObj.valor) : '-';
                       const isReprobada = finalObj ? finalObj.isReprobada : false;
                       
                       return (
                         <tr key={materia.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm text-slate-800 font-semibold">{materia.name}</td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${t1 && Number(t1) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {t1 !== undefined && t1 !== '' ? truncateTo1Dec(t1) : '-'}
+                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT1 ? 'text-slate-400 italic text-[11px]' : t1 && Number(t1) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                            {!pubT1 ? 'En captura' : (t1 !== undefined && t1 !== '' ? truncateTo1Dec(t1) : '-')}
                           </td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${t2 && Number(t2) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {t2 !== undefined && t2 !== '' ? truncateTo1Dec(t2) : '-'}
+                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT2 ? 'text-slate-400 italic text-[11px]' : t2 && Number(t2) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                            {!pubT2 ? 'En captura' : (t2 !== undefined && t2 !== '' ? truncateTo1Dec(t2) : '-')}
                           </td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${t3 && Number(t3) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {t3 !== undefined && t3 !== '' ? truncateTo1Dec(t3) : '-'}
+                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT3 ? 'text-slate-400 italic text-[11px]' : t3 && Number(t3) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                            {!pubT3 ? 'En captura' : (t3 !== undefined && t3 !== '' ? truncateTo1Dec(t3) : '-')}
                           </td>
                           <td className={`px-3 sm:px-6 py-3 text-xs sm:text-sm text-center font-black bg-slate-50/80 ${promedioStr === '-' ? 'text-slate-400' : isReprobada ? 'text-red-600' : 'text-emerald-700'}`}>
                             {promedioStr}{finalObj?.isRegularizacion ? '*' : ''}
@@ -322,7 +347,7 @@ export default function PortalTutores() {
               </div>
               <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
                 <p className="text-xs text-slate-500 italic">
-                  Las calificaciones se actualizan en tiempo real conforme los docentes y Control Escolar registran cada periodo trimestral.
+                  Las calificaciones se actualizan en tiempo real conforme los docentes y Control Escolar liberan cada periodo trimestral.
                 </p>
                 <span className="text-[11px] font-semibold text-slate-600 bg-white px-2.5 py-1 rounded border border-slate-200">
                   Método PASEG: Promedio truncado a 1 décima
@@ -335,7 +360,7 @@ export default function PortalTutores() {
               <h3 className="font-bold text-slate-800 border-b pb-2 mb-4">Expediente de Documentos en Control Escolar</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                 {docsList.map(item => {
-                  const entregado = docsMap[item.key] !== false; // Por defecto true en alumnos inscritos salvo que esté marcado pendiente
+                  const entregado = docsMap[item.key] !== false;
                   return (
                     <div key={item.key} className="flex justify-between items-center py-2 border-b border-slate-100">
                       <span className="text-sm text-slate-600">{item.label}</span>
@@ -485,7 +510,7 @@ export default function PortalTutores() {
       </div>
 
       {/* Componente de Impresión de Boleta Oficial */}
-      <BoletaPrint students={[liveStudent]} materiasPorGrado={materiasPorGrado} />
+      <BoletaPrint students={[studentForParents]} materiasPorGrado={materiasPorGrado} />
     </>
   );
 }

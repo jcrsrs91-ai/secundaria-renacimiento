@@ -9,7 +9,9 @@ export function useGlobalConfig() {
     inscripcionesAbiertas: true,
     reinscripcionesAbiertas: false,
     coordinadorMatutino: 'PROFRA. LUCILA RODRÍGUEZ MARTÍNEZ',
-    coordinadorVespertino: 'PROFR. JOSÉ BARRERA VÁZQUEZ'
+    coordinadorVespertino: 'PROFR. JOSÉ BARRERA VÁZQUEZ',
+    trimestresBloqueadosDocentes: { t1: false, t2: false, t3: false },
+    trimestresPublicadosPadres: { t1: true, t2: true, t3: true }
   });
   const [loading, setLoading] = useState(true);
 
@@ -20,6 +22,12 @@ export function useGlobalConfig() {
         const data = docSnap.data();
         if (data.inscripcionesAbiertas === undefined) data.inscripcionesAbiertas = true;
         if (data.reinscripcionesAbiertas === undefined) data.reinscripcionesAbiertas = false;
+        if (!data.trimestresBloqueadosDocentes) {
+          data.trimestresBloqueadosDocentes = { t1: false, t2: false, t3: false };
+        }
+        if (!data.trimestresPublicadosPadres) {
+          data.trimestresPublicadosPadres = { t1: true, t2: true, t3: true };
+        }
         setConfig(prev => ({ ...prev, ...data }));
       } else {
         setDoc(docRef, {
@@ -28,7 +36,9 @@ export function useGlobalConfig() {
           inscripcionesAbiertas: true,
           reinscripcionesAbiertas: false,
           coordinadorMatutino: 'PROFRA. LUCILA RODRÍGUEZ MARTÍNEZ',
-          coordinadorVespertino: 'PROFR. JOSÉ BARRERA VÁZQUEZ'
+          coordinadorVespertino: 'PROFR. JOSÉ BARRERA VÁZQUEZ',
+          trimestresBloqueadosDocentes: { t1: false, t2: false, t3: false },
+          trimestresPublicadosPadres: { t1: true, t2: true, t3: true }
         });
       }
       setLoading(false);

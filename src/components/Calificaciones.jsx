@@ -1,17 +1,26 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Download, Upload, Save, CheckCircle, AlertTriangle, Grid, GraduationCap } from 'lucide-react';
+import { Download, Upload, Save, CheckCircle, AlertTriangle, Grid, GraduationCap, Lock, Unlock, Eye, EyeOff, Filter, Sparkles } from 'lucide-react';
 import Papa from 'papaparse';
+import toast from 'react-hot-toast';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { truncateTo1Dec, getCalificacionFinal, autoAcentuar } from '../utils/format';
 import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
 import { registrarMovimiento } from '../utils/bitacora';
 import { useAuth } from '../context/AuthContext';
+import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import EvaluacionDocenteWidget from './EvaluacionDocenteWidget';
 import { sortAttendanceListStudents } from './ListaAsistenciaPrint';
 
+const TRIMESTRE_NAMES = {
+  t1: 'Trimestre 1',
+  t2: 'Trimestre 2',
+  t3: 'Trimestre 3'
+};
+
 export default function Calificaciones({ activos, materiasPorGrado, onPrintBoleta, onPrintConcentradoFinal, onPrintConcentradoParcial }) {
   const { currentUser } = useAuth();
+  const { config, updateConfig } = useGlobalConfig();
   const [subMode, setSubMode] = useState('sabana'); // 'sabana' | 'asignatura'
   const [grado, setGrado] = useState('1er Grado');
   const [grupo, setGrupo] = useState('A');
@@ -19,6 +28,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [showConcentradoMenu, setShowConcentradoMenu] = useState(false);
+  const [highlightEmptyCells, setHighlightEmptyCells] = useState(false);
+  const [filterOnlyIncomplete, setFilterOnlyIncomplete] = useState(false);
 
   // Filtrar alumnos activos por grado y grupo usando el mismo orden oficial de Lista de Asistencia (Altas al final)
   const alumnos = useMemo(() => {
@@ -51,6 +62,25 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         [materiaId]: value
       }
     }));
+  };
+
+  // Navegación rápida tipo Excel con Enter y Flechas en la Sábana General de Secretarios
+  const handleCellKeyDown = (e, rowIdx, colIdx) => {
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextInput = document.querySelector(`input[data-sabana-cell="${rowIdx + 1}-${colIdx}"]`);
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.select();
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prevInput = document.querySelector(`input[data-sabana-cell="${rowIdx - 1}-${colIdx}"]`);
+      if (prevInput) {
+        prevInput.focus();
+        prevInput.select();
+      }
+    }
   };
 
   // Promedio del trimestre seleccionado (Método PASEG: truncado a 1 decimal sin redondeo)
@@ -98,6 +128,42 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     return count === 0 ? '-' : truncateTo1Dec(sum / count);
   };
 
+  // Auditoría de Celdas Vacías y Alumnos Incompletos en el Grupo Actual
+  const auditoriaGrupo = useMemo(() => {
+    let alumnosIncompletos = 0;
+    let celdasVacias = 0;
+    const incompletosMap = {};
+
+    alumnos.forEach(al => {
+      let faltanAlumno = 0;
+      materias.forEach(mat => {
+        const val = (localGrades[al.id]?.[mat.id] ?? '').toString().trim();
+        if (val === '') {
+          faltanAlumno++;
+          celdasVacias++;
+        }
+      });
+      if (faltanAlumno > 0) {
+        alumnosIncompletos++;
+        incompletosMap[al.id] = faltanAlumno;
+      }
+    });
+
+    return {
+      alumnosIncompletos,
+      celdasVacias,
+      incompletosMap,
+      grupoCompleto: alumnos.length > 0 && celdasVacias === 0
+    };
+  }, [alumnos, materias, localGrades]);
+
+  // Lista mostrada en la tabla (con su número de lista original intacto)
+  const alumnosMostrados = useMemo(() => {
+    const conNumero = alumnos.map((al, idx) => ({ ...al, numeroListaOficial: idx + 1 }));
+    if (!filterOnlyIncomplete) return conNumero;
+    return conNumero.filter(al => auditoriaGrupo.incompletosMap[al.id] > 0);
+  }, [alumnos, filterOnlyIncomplete, auditoriaGrupo]);
+
   // Semáforo de avance de captura por asignatura en el grupo actual
   const semaforoMaterias = useMemo(() => {
     return materias.map(mat => {
@@ -123,6 +189,52 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       };
     });
   }, [materias, alumnos, localGrades, trimestre]);
+
+  // Controles de Candado Docente y Visibilidad a Padres
+  const isDocenteLocked = Boolean(config?.trimestresBloqueadosDocentes?.[trimestre]);
+  const isPublishedToParents = config?.trimestresPublicadosPadres?.[trimestre] !== false;
+
+  const handleToggleDocenteLock = async () => {
+    const nextMap = {
+      ...(config?.trimestresBloqueadosDocentes || { t1: false, t2: false, t3: false }),
+      [trimestre]: !isDocenteLocked
+    };
+    const ok = await updateConfig({ trimestresBloqueadosDocentes: nextMap });
+    if (ok) {
+      await registrarMovimiento(
+        currentUser?.email,
+        'Control Escolar (Calificaciones)',
+        nextMap[trimestre] ? 'Cierre de Trimestre Docente' : 'Apertura de Trimestre Docente',
+        `${nextMap[trimestre] ? 'Bloqueó' : 'Abrió'} la captura docente para ${TRIMESTRE_NAMES[trimestre]}`
+      );
+      toast.success(
+        nextMap[trimestre]
+          ? `🔒 ${TRIMESTRE_NAMES[trimestre]} cerrado para Docentes. (Ustedes en Control Escolar siguen pudiendo capturar libremente).`
+          : `🔓 ${TRIMESTRE_NAMES[trimestre]} abierto nuevamente para captura de Docentes.`
+      );
+    }
+  };
+
+  const handleToggleParentVisibility = async () => {
+    const nextMap = {
+      ...(config?.trimestresPublicadosPadres || { t1: true, t2: true, t3: true }),
+      [trimestre]: !isPublishedToParents
+    };
+    const ok = await updateConfig({ trimestresPublicadosPadres: nextMap });
+    if (ok) {
+      await registrarMovimiento(
+        currentUser?.email,
+        'Control Escolar (Calificaciones)',
+        nextMap[trimestre] ? 'Publicar Boleta a Padres' : 'Ocultar Trimestre a Padres',
+        `${nextMap[trimestre] ? 'Publicó' : 'Puso en modo captura (oculto)'} las calificaciones de ${TRIMESTRE_NAMES[trimestre]} en el Portal Familiar`
+      );
+      toast.success(
+        nextMap[trimestre]
+          ? `👁️ Calificaciones del ${TRIMESTRE_NAMES[trimestre]} ahora visibles para los Padres en el Portal Familiar.`
+          : `🙈 ${TRIMESTRE_NAMES[trimestre]} oculto temporalmente a los Padres (aparecerá "En captura").`
+      );
+    }
+  };
 
   const handleSaveAll = async () => {
     // Validar que todas las calificaciones capturadas estén en escala oficial PASEG (5 a 10)
@@ -160,6 +272,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         `Guardó la sábana general de calificaciones de ${grado} "${grupo}" (${trimestre.toUpperCase()}) para ${alumnos.length} alumnos.`
       );
       setSuccessMsg('Calificaciones guardadas exitosamente.');
+      toast.success('Sábana general guardada correctamente.');
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (error) {
       console.error(error);
@@ -313,7 +426,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
           }`}
         >
           <Grid className="w-4 h-4 mr-2 text-primary-600" />
-          Sábana General del Grupo (Todas las Materias)
+          Sábana General del Grupo (Secretarios - Todas las Materias)
         </button>
         <button
           type="button"
@@ -327,6 +440,73 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
           <GraduationCap className="w-4 h-4 mr-2" />
           Captura y Cuadros por Asignatura (Docentes / Coordinación)
         </button>
+      </div>
+
+      {/* Barra de Blindaje y Control del Trimestre (Para Secretarios / Control Escolar) */}
+      <div className="bg-slate-900 text-white p-4 rounded-xl shadow-md border border-slate-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 no-print">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white">
+              Panel de Control de Calificaciones — {TRIMESTRE_NAMES[trimestre]}
+            </h4>
+            <p className="text-[11px] text-slate-300 mt-0.5">
+              Como Secretario(a) siempre puedes capturar aquí. Usa estos interruptores para bloquear a docentes o publicar boletas a los padres:
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Candado de Captura Docente */}
+          <button
+            type="button"
+            onClick={handleToggleDocenteLock}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition shadow-sm ${
+              isDocenteLocked
+                ? 'bg-amber-500 text-slate-950 border-amber-400 hover:bg-amber-400'
+                : 'bg-slate-800 text-emerald-300 border-emerald-500/40 hover:bg-slate-700'
+            }`}
+            title="Al cerrar el candado, los docentes ya no pueden modificar este trimestre, pero Control Escolar sí puede seguir editando."
+          >
+            {isDocenteLocked ? (
+              <>
+                <Lock className="w-4 h-4" />
+                Docentes: Bloqueado ({trimestre.toUpperCase()})
+              </>
+            ) : (
+              <>
+                <Unlock className="w-4 h-4" />
+                Docentes: Captura Abierta ({trimestre.toUpperCase()})
+              </>
+            )}
+          </button>
+
+          {/* Visibilidad en Portal de Padres */}
+          <button
+            type="button"
+            onClick={handleToggleParentVisibility}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition shadow-sm ${
+              isPublishedToParents
+                ? 'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500'
+                : 'bg-slate-800 text-amber-300 border-amber-500/40 hover:bg-slate-700'
+            }`}
+            title="Controla si los padres de familia ya pueden ver las calificaciones de este trimestre en su celular."
+          >
+            {isPublishedToParents ? (
+              <>
+                <Eye className="w-4 h-4" />
+                Portal Padres: Publicado ({trimestre.toUpperCase()})
+              </>
+            ) : (
+              <>
+                <EyeOff className="w-4 h-4" />
+                Portal Padres: Oculto / En Captura ({trimestre.toUpperCase()})
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {subMode === 'asignatura' ? (
@@ -367,9 +547,9 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
             <div className="w-full md:w-1/4">
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Trimestre</label>
               <select value={trimestre} onChange={e => setTrimestre(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-primary-700 bg-primary-50">
-                <option value="t1">Trimestre 1</option>
-                <option value="t2">Trimestre 2</option>
-                <option value="t3">Trimestre 3</option>
+                <option value="t1">Trimestre 1 {config?.trimestresBloqueadosDocentes?.t1 ? '🔒' : ''}</option>
+                <option value="t2">Trimestre 2 {config?.trimestresBloqueadosDocentes?.t2 ? '🔒' : ''}</option>
+                <option value="t3">Trimestre 3 {config?.trimestresBloqueadosDocentes?.t3 ? '🔒' : ''}</option>
               </select>
             </div>
             <div className="flex-1 flex justify-end gap-2">
@@ -383,17 +563,59 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
             </div>
           </div>
 
-          {/* Semáforo de Entrega de Maestros por Asignatura */}
+          {/* Semáforo de Entrega de Maestros y Detector de Celdas Vacías */}
           {alumnos.length > 0 && (
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-600">
-                  Semáforo de Avance de Captura por Asignatura ({grado} "{grupo}" - {trimestre.toUpperCase()})
-                </h4>
-                <span className="text-xs text-slate-500">
-                  Las calificaciones capturadas por los docentes aparecen aquí automáticamente
-                </span>
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                <div>
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                    Semáforo de Avance y Detector de Celdas Vacías ({grado} "{grupo}" - {trimestre.toUpperCase()})
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Tip de captura rápida: presiona <strong>Enter</strong> o <strong>Flecha Abajo</strong> en cualquier casilla para bajar al siguiente alumno.
+                  </p>
+                </div>
+
+                {/* Botones del Detector de Celdas Vacías */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {auditoriaGrupo.grupoCompleto ? (
+                    <span className="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-extrabold flex items-center gap-1.5">
+                      <CheckCircle className="w-4 h-4" /> Grupo 100% capturado (0 celdas vacías)
+                    </span>
+                  ) : (
+                    <>
+                      <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">
+                        ⚠️ {auditoriaGrupo.alumnosIncompletos} alumnos con pendientes ({auditoriaGrupo.celdasVacias} celdas vacías)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setHighlightEmptyCells(!highlightEmptyCells)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1.5 ${
+                          highlightEmptyCells
+                            ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-sm'
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        {highlightEmptyCells ? 'Quitar resalte amarillo' : 'Resaltar celdas vacías'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFilterOnlyIncomplete(!filterOnlyIncomplete)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1.5 ${
+                          filterOnlyIncomplete
+                            ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm'
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Filter className="w-3.5 h-3.5" />
+                        {filterOnlyIncomplete ? 'Ver todos los alumnos' : 'Ver solo incompletos'}
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                 {semaforoMaterias.map(sm => (
                   <div
@@ -458,7 +680,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {alumnos.map((al, idx) => {
+                    {alumnosMostrados.map((al, rowIdx) => {
                       const promTrimStr = calcularPromedioTrimestre(al.id);
                       const promTrim = parseFloat(promTrimStr);
                       const isReprobadoTrim = !isNaN(promTrim) && promTrim < 6.0;
@@ -466,32 +688,48 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                       const promGralStr = calcularPromedioGeneralPASEGEnVivo(al);
                       const promGral = parseFloat(promGralStr);
                       const isReprobadoGral = !isNaN(promGral) && promGral < 6.0;
+                      const faltantesAlumno = auditoriaGrupo.incompletosMap[al.id] || 0;
 
                       return (
-                        <tr key={al.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                        <tr key={al.id} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                           <td className="px-2 py-3 text-center text-xs font-bold text-slate-500 sticky left-0 z-10 bg-inherit border-r border-slate-200">
-                            {idx + 1}
+                            {al.numeroListaOficial}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-xs font-bold text-slate-800 sticky left-10 z-10 bg-inherit border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                             {autoAcentuar(`${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''}`.trim())} <span className="font-medium">{autoAcentuar(al.nombres || '')}</span>
                             {al.tipoIngreso === 'Alta' && (
                               <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-black bg-emerald-100 text-emerald-800 rounded border border-emerald-300">ALTA</span>
                             )}
+                            {highlightEmptyCells && faltantesAlumno > 0 && (
+                              <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-black bg-amber-200 text-amber-950 rounded border border-amber-400">
+                                Faltan {faltantesAlumno}
+                              </span>
+                            )}
                           </td>
-                          {materias.map(mat => {
+                          {materias.map((mat, colIdx) => {
                             const val = localGrades[al.id]?.[mat.id] ?? '';
+                            const isEmpty = val.toString().trim() === '';
                             const numVal = parseFloat(val);
-                            const isOutOfRange = val !== '' && (isNaN(numVal) || numVal < 5 || numVal > 10);
-                            const isFailing = !isOutOfRange && numVal < 6.0 && val !== '';
+                            const isOutOfRange = !isEmpty && (isNaN(numVal) || numVal < 5 || numVal > 10);
+                            const isFailing = !isEmpty && !isOutOfRange && numVal < 6.0;
                             return (
                               <td key={mat.id} className="px-1 py-2 text-center">
                                 <input 
                                   type="number" 
                                   min="5" max="10" step="0.1"
+                                  data-sabana-cell={`${rowIdx}-${colIdx}`}
                                   value={val}
+                                  onKeyDown={(e) => handleCellKeyDown(e, rowIdx, colIdx)}
                                   onChange={(e) => handleGradeChange(al.id, mat.id, e.target.value)}
+                                  placeholder={highlightEmptyCells && isEmpty ? '!' : ''}
                                   className={`w-14 text-center p-1.5 border rounded font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-colors
-                                    ${isOutOfRange ? 'bg-amber-100 border-amber-500 text-amber-900 ring-2 ring-amber-400' : isFailing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-slate-300 text-slate-700'}
+                                    ${isOutOfRange
+                                      ? 'bg-red-100 border-red-500 text-red-900 ring-2 ring-red-400'
+                                      : highlightEmptyCells && isEmpty
+                                        ? 'bg-amber-100 border-amber-500 text-amber-950 ring-2 ring-amber-300'
+                                        : isFailing
+                                          ? 'bg-red-50 border-red-300 text-red-700'
+                                          : 'bg-white border-slate-300 text-slate-700'}
                                   `}
                                 />
                               </td>
