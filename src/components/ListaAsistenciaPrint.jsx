@@ -69,6 +69,7 @@ export default function ListaAsistenciaPrint({
   asignatura = '',
   trimestreLabel = '',
   evalData = {},
+  contenidosFecha = {},
   stats = null
 }) {
   const { config } = useGlobalConfig();
@@ -230,26 +231,54 @@ export default function ListaAsistenciaPrint({
                   <span className="text-[7.5px] font-semibold text-slate-600 text-right pr-0.5">CONTENIDOS / FECHA &rarr;</span>
                 </div>
               </th>
-              <th colSpan={daysCols.length + 1} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Asistencias</th>
+              <th colSpan={daysCols.length + 1} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Asistencias / Registro Diario</th>
               <th colSpan={taskCols.length} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Tareas / Trabajos</th>
               <th colSpan={4} className="font-extrabold text-center uppercase tracking-widest border-b border-slate-400 text-[9.5px]">Evaluación</th>
               <th rowSpan={3} className="font-bold text-center uppercase tracking-tight text-[8px]">Observaciones</th>
             </tr>
 
-            {/* Fila 2: Espacio en blanco para Contenidos / Tema visto ese día (Entre Asistencias y el Número) */}
+            {/* Fila 2: Espacio para Contenidos / Tema / Fecha visto ese día */}
             <tr className="bg-white h-[33px]">
               {daysCols.map(col => (
-                <th key={`cont-d-${col}`} className="p-0 align-bottom"></th>
+                <th key={`cont-d-${col}`} className="p-0 align-middle text-center">
+                  {isFilled && contenidosFecha?.[`d${col}`] ? (
+                    <div className="w-full h-[31px] flex items-center justify-center overflow-hidden px-[1px]">
+                      <span className="text-[6px] font-bold leading-[1.05] text-slate-800 text-center break-words">
+                        {contenidosFecha[`d${col}`]}
+                      </span>
+                    </div>
+                  ) : null}
+                </th>
               ))}
               <th className="bg-slate-100 p-0"></th>
 
               {taskCols.map(col => (
-                <th key={`cont-t-${col}`} className="p-0 align-bottom"></th>
+                <th key={`cont-t-${col}`} className="p-0 align-middle text-center">
+                  {isFilled && contenidosFecha?.[`t${col}`] ? (
+                    <div className="w-full h-[31px] flex items-center justify-center overflow-hidden px-[1px]">
+                      <span className="text-[6px] font-bold leading-[1.05] text-slate-800 text-center break-words">
+                        {contenidosFecha[`t${col}`]}
+                      </span>
+                    </div>
+                  ) : null}
+                </th>
               ))}
 
-              <th className="bg-slate-50 p-0"></th>
-              <th className="bg-slate-50 p-0"></th>
-              <th className="bg-slate-50 p-0"></th>
+              <th className="bg-slate-50 p-0 align-middle text-center">
+                {isFilled && contenidosFecha?.examen ? (
+                  <span className="text-[6px] font-bold leading-none text-slate-800">{contenidosFecha.examen}</span>
+                ) : null}
+              </th>
+              <th className="bg-slate-50 p-0 align-middle text-center">
+                {isFilled && contenidosFecha?.participacion ? (
+                  <span className="text-[6px] font-bold leading-none text-slate-800">{contenidosFecha.participacion}</span>
+                ) : null}
+              </th>
+              <th className="bg-slate-50 p-0 align-middle text-center">
+                {isFilled && contenidosFecha?.extraEval ? (
+                  <span className="text-[6px] font-bold leading-none text-slate-800">{contenidosFecha.extraEval}</span>
+                ) : null}
+              </th>
               <th className="bg-slate-100 p-0"></th>
             </tr>
 
@@ -321,10 +350,15 @@ export default function ListaAsistenciaPrint({
                     </>
                   ) : (
                     <>
-                      {/* Columnas de Asistencia */}
-                      {daysCols.map(col => (
-                        <td key={`cell-d-${student.id}-${col}`}></td>
-                      ))}
+                      {/* Columnas de Asistencia o Calificación Diaria (1 a 20) */}
+                      {daysCols.map(col => {
+                        const cellVal = isFilled && stEval.dias?.[`d${col}`] !== undefined ? stEval.dias[`d${col}`] : '';
+                        return (
+                          <td key={`cell-d-${student.id}-${col}`} className="text-center text-[7.8px] font-semibold leading-none">
+                            {cellVal}
+                          </td>
+                        );
+                      })}
                       {/* Total de faltas */}
                       <td className="bg-slate-100/50 text-center font-bold text-[9px] leading-none">
                         {isFilled && stEval.faltas !== undefined && stEval.faltas !== '' ? stEval.faltas : ''}

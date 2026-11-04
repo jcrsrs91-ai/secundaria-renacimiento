@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Save, Printer, CheckCircle, FileSpreadsheet, ClipboardList, Calculator, UserCheck, AlertCircle, Lock, Eye } from 'lucide-react';
+import { Save, Printer, CheckCircle, FileSpreadsheet, ClipboardList, Calculator, UserCheck, AlertCircle, Lock, Eye, Calendar } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
@@ -17,6 +17,9 @@ const TRIMESTRE_LABELS = {
   t3: 'III (Tercero)'
 };
 
+const DAYS_COLS = Array.from({ length: 20 }, (_, i) => i + 1);
+const TASK_COLS = Array.from({ length: 6 }, (_, i) => i + 1);
+
 export default function EvaluacionDocenteWidget({ students = [] }) {
   const { userName, currentUser, userRole } = useAuth();
   const { config } = useGlobalConfig();
@@ -26,12 +29,16 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
   const [trimestre, setTrimestre] = useState('t1');
   const [materiaId, setMateriaId] = useState('espanol1');
   const [docenteNombre, setDocenteNombre] = useState(userName || '');
-  const [modoCaptura, setModoCaptura] = useState('rapido'); // 'rapido' | 'detallado'
+  const [modoCaptura, setModoCaptura] = useState('rapido'); // 'rapido' | 'detallado' | 'lista_oficial'
+  const [modoDivisorDias, setModoDivisorDias] = useState('clases_grupo'); // 'clases_grupo' | 'celdas_alumno'
   const [paperSize, setPaperSize] = useState('letter');
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [printOption, setPrintOption] = useState(null); // 'opcion1_lista' | 'opcion2_cuadro'
   const [highlightEmpty, setHighlightEmpty] = useState(false);
+
+  // Encabezados de CONTENIDOS / FECHA para las 20 columnas de días y las 6 tareas
+  const [contenidosFecha, setContenidosFecha] = useState({});
 
   const isLockedForTeachers = Boolean(config?.trimestresBloqueadosDocentes?.[trimestre]);
   // Los secretarios y superadmin SIEMPRE pueden editar aunque el trimestre esté cerrado para docentes
@@ -69,7 +76,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
   }, [students, grado, grupo]);
 
   // Estado local de evaluación por alumno
-  // evalData[studentId] = { faltas, t1..t6, examen, participacion, calificacion, observaciones }
+  // evalData[studentId] = { dias: { d1..d20 }, faltas, t1..t6, examen, participacion, extraEval, calificacion, observaciones }
   const [evalData, setEvalData] = useState({});
 
   // Cargar datos de los alumnos y metadatos del docente para esa materia/grupo/trimestre
@@ -78,7 +85,14 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     alumnosGrupo.forEach(al => {
       const savedCalif = al.calificaciones?.[trimestre]?.[materiaId] ?? '';
       const det = al.evaluacionDetalle?.[trimestre]?.[materiaId] || {};
+      const savedDias = det.dias || {};
+      const diasObj = {};
+      DAYS_COLS.forEach(col => {
+        diasObj[`d${col}`] = savedDias[`d${col}`] ?? '';
+      });
+
       initial[al.id] = {
+        dias: diasObj,
         faltas: det.faltas ?? '',
         t1: det.t1 ?? '',
         t2: det.t2 ?? '',
@@ -96,17 +110,22 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     setEvalData(initial);
     setHasUnsavedChanges(false);
 
-    // Cargar nombre del docente guardado en capturas_docentes si no es un docente con nombre fijo
+    // Cargar nombre del docente y contenidos/fechas guardados en capturas_docentes
     const fetchSavedDocente = async () => {
       try {
         const capId = `${grado.replace(/\s+/g, '')}_${grupo}_${materiaId}_${trimestre}`;
         const snap = await getDoc(doc(db, 'capturas_docentes', capId));
-        if (snap.exists() && snap.data().docente) {
-          if (userRole !== 'docente' || !userName) {
-            setDocenteNombre(snap.data().docente);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.docente && (userRole !== 'docente' || !userName)) {
+            setDocenteNombre(data.docente);
+          } else if (userName) {
+            setDocenteNombre(userName);
           }
-        } else if (userName) {
-          setDocenteNombre(userName);
+          setContenidosFecha(data.contenidosFecha || {});
+        } else {
+          if (userName) setDocenteNombre(userName);
+          setContenidosFecha({});
         }
       } catch (err) {
         console.error('Error loading docente metadata:', err);
@@ -127,7 +146,143 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     setHasUnsavedChanges(true);
   };
 
-  // Calcular promedio automático desde Tareas (T1..T6), Examen, Participación y Columna Extra para un alumno (Método PASEG truncado a 1 décima)
+  const handleDiaChange = (studentId, dayKey, value) => {
+    if (isReadOnlyForCurrentUser) return;
+    setEvalData(prev => {
+      const studentRow = prev[studentId] || {};
+      return {
+        ...prev,
+        [studentId]: {
+          ...studentRow,
+          dias: {
+            ...(studentRow.dias || {}),
+            [dayKey]: value
+          }
+        }
+      };
+    });
+    setHasUnsavedChanges(true);
+  };
+
+  const handleContenidoFechaChange = (colKey, value) => {
+    if (isReadOnlyForCurrentUser) return;
+    setContenidosFecha(prev => ({
+      ...prev,
+      [colKey]: value
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  // Navegación con Enter / Flecha Abajo entre alumnos dentro de la Lista Oficial
+  const handleGridKeyDown = (e, rowIdx, colKey) => {
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = document.querySelector(`input[data-docente-cell="${rowIdx + 1}-${colKey}"]`);
+      if (next) {
+        next.focus();
+        next.select();
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = document.querySelector(`input[data-docente-cell="${rowIdx - 1}-${colKey}"]`);
+      if (prev) {
+        prev.focus();
+        prev.select();
+      }
+    }
+  };
+
+  // Detectar cuántas celdas/columnas de los 20 días tuvieron clase (tienen fecha/contenido arriba o al menos 1 alumno con calificación numérica)
+  const resumenDiasClase = useMemo(() => {
+    const columnasConClase = [];
+    DAYS_COLS.forEach(col => {
+      const dKey = `d${col}`;
+      const tieneEncabezado = (contenidosFecha[dKey] || '').trim() !== '';
+      const tieneCalifNumerica = alumnosGrupo.some(al => {
+        if ((al.status || '').toLowerCase() === 'baja') return false;
+        const val = parseFloat(evalData[al.id]?.dias?.[dKey]);
+        return !isNaN(val);
+      });
+      if (tieneEncabezado || tieneCalifNumerica) {
+        columnasConClase.push(dKey);
+      }
+    });
+    return {
+      totalClasesGrupo: columnasConClase.length,
+      columnasConClase
+    };
+  }, [contenidosFecha, alumnosGrupo, evalData]);
+
+  // Calcular Suma y Promedio Exacto (sin truncar) de las 20 celdas de días para un alumno
+  const getCalculoDiasAlumno = (studentId) => {
+    const dias = evalData[studentId]?.dias || {};
+    let suma = 0;
+    let celdasCalificadasAlumno = 0;
+
+    DAYS_COLS.forEach(col => {
+      const raw = (dias[`d${col}`] ?? '').toString().trim();
+      if (raw !== '') {
+        const num = parseFloat(raw);
+        if (!isNaN(num)) {
+          suma += num;
+          celdasCalificadasAlumno++;
+        }
+      }
+    });
+
+    const divisor = modoDivisorDias === 'clases_grupo'
+      ? resumenDiasClase.totalClasesGrupo
+      : celdasCalificadasAlumno;
+
+    if (divisor === 0 || (celdasCalificadasAlumno === 0 && suma === 0)) {
+      return { suma: null, promedioExacto: null, celdasCalificadasAlumno, divisor };
+    }
+
+    const promExacto = suma / divisor;
+    // Mostrar hasta 2 decimales exactos sin truncar (o entero si es exacto)
+    const promFormateado = Number.isInteger(promExacto)
+      ? promExacto.toFixed(1)
+      : Number(promExacto.toFixed(2)).toString();
+
+    return {
+      suma: Number(suma.toFixed(2)),
+      promedioExacto: promExacto,
+      promedioStr: promFormateado,
+      celdasCalificadasAlumno,
+      divisor
+    };
+  };
+
+  // Pasar el promedio de los 20 días de clase a la columna Calif. Trim. (sin truncar o con 1 decimal según elija el docente)
+  const aplicarPromedioDiasACalificacion = (truncarA1Dec = false) => {
+    if (isReadOnlyForCurrentUser) return;
+    let count = 0;
+    const next = { ...evalData };
+    alumnosGrupo.forEach(al => {
+      if ((al.status || '').toLowerCase() === 'baja') return;
+      const calc = getCalculoDiasAlumno(al.id);
+      if (calc.promedioExacto !== null && !isNaN(calc.promedioExacto)) {
+        const valFinal = truncarA1Dec
+          ? truncateTo1Dec(calc.promedioExacto)
+          : calc.promedioStr;
+        next[al.id] = {
+          ...(next[al.id] || {}),
+          calificacion: String(valFinal)
+        };
+        count++;
+      }
+    });
+
+    if (count > 0) {
+      setEvalData(next);
+      setHasUnsavedChanges(true);
+      toast.success(`Se pasó el promedio de las ${resumenDiasClase.totalClasesGrupo} celdas de clase a ${count} alumnos.`);
+    } else {
+      toast.error('Aún no hay calificaciones numéricas capturadas en las celdas 1 a 20.');
+    }
+  };
+
+  // Calcular promedio automático desde Tareas (T1..T6), Examen, Participación y Columna Extra para un alumno
   const autocalcularFila = (studentId) => {
     if (isReadOnlyForCurrentUser) return;
     const row = evalData[studentId] || {};
@@ -232,7 +387,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     };
   }, [alumnosGrupo, evalData]);
 
-  // Guardar calificaciones y detalles en Firestore
+  // Guardar calificaciones, celdas diarias y encabezados de fecha/contenido en Firestore
   const handleSaveGrades = async (silent = false) => {
     if (isReadOnlyForCurrentUser) {
       toast.error('La captura para este trimestre ha sido bloqueada por Control Escolar.');
@@ -240,7 +395,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     }
     if (alumnosGrupo.length === 0) return false;
 
-    // Validar rango oficial SEP/PASEG (5.0 a 10.0) antes de guardar
+    // Validar rango oficial SEP/PASEG (5.0 a 10.0) en la columna Calif. Trim. antes de guardar
     for (const al of alumnosGrupo) {
       const isBaja = (al.status || '').toLowerCase() === 'baja';
       if (isBaja) continue;
@@ -248,7 +403,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       if (rawCalif !== '') {
         const num = parseFloat(rawCalif);
         if (isNaN(num) || num < 5 || num > 10) {
-          toast.error(`La calificación de ${al.apellidoPaterno || ''} ${al.nombres || ''} (${rawCalif}) debe estar en escala oficial PASEG de 5 a 10.`);
+          toast.error(`La calificación trimestral final de ${al.apellidoPaterno || ''} ${al.nombres || ''} (${rawCalif}) debe estar entre 5 y 10.`);
           return false;
         }
       }
@@ -265,6 +420,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         return updateDoc(docRef, {
           [`calificaciones.${trimestre}.${materiaId}`]: row.calificacion ?? '',
           [`evaluacionDetalle.${trimestre}.${materiaId}`]: {
+            dias: row.dias || {},
             faltas: row.faltas ?? '',
             t1: row.t1 ?? '',
             t2: row.t2 ?? '',
@@ -283,7 +439,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         });
       });
 
-      // Guardar metadatos de entrega para el Semáforo de Secretarios y Coordinación
+      // Guardar metadatos de entrega y encabezados de CONTENIDOS / FECHA para la lista
       const capId = `${grado.replace(/\s+/g, '')}_${grupo}_${materiaId}_${trimestre}`;
       promises.push(
         setDoc(doc(db, 'capturas_docentes', capId), {
@@ -294,6 +450,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           trimestre,
           docente: docenteNombre.trim(),
           emailDocente: currentUser?.email || '',
+          contenidosFecha: contenidosFecha || {},
           existenciaT: stats.existenciaT,
           totalEvaluados: stats.totalEvaluados,
           regularesT: stats.regularesT === '' ? 0 : stats.regularesT,
@@ -313,7 +470,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       );
       setHasUnsavedChanges(false);
       if (!silent) {
-        toast.success('¡Calificaciones y estadística guardadas en el sistema!');
+        toast.success('¡Lista, calificaciones diarias y estadística guardadas en el sistema!');
       }
       setIsSaving(false);
       return true;
@@ -332,7 +489,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     }
     if (hasUnsavedChanges && !isReadOnlyForCurrentUser) {
       await handleSaveGrades(true);
-      toast.success('Calificaciones guardadas automáticamente antes de imprimir.');
+      toast.success('Datos guardados automáticamente antes de imprimir.');
     }
     setPrintOption(option);
     setTimeout(() => {
@@ -440,8 +597,8 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-3 border-t border-slate-100 items-end">
-          <div className="md:col-span-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-3 border-t border-slate-100 items-end">
+          <div className="lg:col-span-4">
             <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">
               Nombre del Docente (Aparecerá en el encabezado y firma)
             </label>
@@ -458,13 +615,13 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
             />
           </div>
 
-          <div className="md:col-span-4">
+          <div className="lg:col-span-6">
             <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Modalidad de Captura</label>
-            <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
               <button
                 type="button"
                 onClick={() => setModoCaptura('rapido')}
-                className={`py-1.5 px-2 rounded-md text-xs font-bold transition ${
+                className={`py-2 px-2 rounded-md text-xs font-bold transition ${
                   modoCaptura === 'rapido' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -473,16 +630,26 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
               <button
                 type="button"
                 onClick={() => setModoCaptura('detallado')}
-                className={`py-1.5 px-2 rounded-md text-xs font-bold transition ${
+                className={`py-2 px-2 rounded-md text-xs font-bold transition ${
                   modoCaptura === 'detallado' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 Completa (+Tareas/Exam)
               </button>
+              <button
+                type="button"
+                onClick={() => setModoCaptura('lista_oficial')}
+                className={`py-2 px-2 rounded-md text-xs font-bold transition flex items-center justify-center gap-1 ${
+                  modoCaptura === 'lista_oficial' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 shrink-0" />
+                Lista Oficial (20 Celdas + Fechas)
+              </button>
             </div>
           </div>
 
-          <div className="md:col-span-3">
+          <div className="lg:col-span-2">
             <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Tamaño de Hoja</label>
             <select
               value={paperSize}
@@ -496,13 +663,76 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         </div>
       </div>
 
+      {/* Panel Especial de Control para la Modalidad "Lista Oficial (20 Celdas + Fechas)" */}
+      {modoCaptura === 'lista_oficial' && (
+        <div className="bg-emerald-950 text-white p-4 rounded-xl border border-emerald-700 shadow-md space-y-3 no-print">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div>
+              <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-emerald-300 flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Lista Oficial Interactiva — Registro por Día de Clase y Fecha (Sin Truncar)
+              </h4>
+              <p className="text-xs text-emerald-100/90 mt-0.5">
+                Escribe arriba de cada columna (`1` al `20`) <strong>qué calificaste ese día y la fecha</strong>, y debajo la calificación de cada alumno. La tabla suma todas sus calificaciones diarias y las divide entre los días que hubo clase sin afectar nada más.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <span className="px-3 py-1.5 rounded-lg bg-emerald-900/90 border border-emerald-600 text-xs font-bold text-emerald-200">
+                Celdas / Días con clase detectados: <strong className="text-white text-sm">{resumenDiasClase.totalClasesGrupo}</strong> de 20
+              </span>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-emerald-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-emerald-200">Método de división del promedio diario:</span>
+              <select
+                value={modoDivisorDias}
+                onChange={e => setModoDivisorDias(e.target.value)}
+                className="p-1.5 rounded bg-emerald-900 border border-emerald-600 text-white font-bold text-xs"
+              >
+                <option value="clases_grupo">
+                  Dividir suma entre el TOTAL de días que hubo clase ({resumenDiasClase.totalClasesGrupo} celdas activas)
+                </option>
+                <option value="celdas_alumno">
+                  Dividir suma solo entre las celdas calificadas de cada alumno
+                </option>
+              </select>
+            </div>
+
+            {!isReadOnlyForCurrentUser && (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => aplicarPromedioDiasACalificacion(false)}
+                  className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-lg transition shadow-sm flex items-center gap-1.5"
+                  title="Copia el promedio exacto de los días de clase a la columna Calif. Trim."
+                >
+                  <Calculator className="w-3.5 h-3.5" />
+                  Pasar Prom. de Días (Exacto) a Calif. Trim.
+                </button>
+                <button
+                  type="button"
+                  onClick={() => aplicarPromedioDiasACalificacion(true)}
+                  className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-700 text-emerald-100 border border-emerald-600 font-bold rounded-lg transition flex items-center gap-1.5"
+                  title="Copia el promedio de los días de clase truncado a 1 décima PASEG a la columna Calif. Trim."
+                >
+                  Pasar a Calif. Trim. (1 décima PASEG)
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Tarjeta de Estadística Automática en Vivo (Requisitos de Coordinación) */}
       <div className="bg-white rounded-xl border-2 border-indigo-200 shadow-sm overflow-hidden no-print">
         <div className="bg-indigo-900 text-white px-5 py-2.5 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Calculator className="w-4 h-4 text-indigo-300" />
             <h3 className="text-xs font-extrabold uppercase tracking-wider">
-              Requisitos Estadísticos para Coordinación (Método PASEG Automático)
+              Requisitos Estadísticos para Coordinación (Calculados en Automático)
             </h3>
           </div>
           <div className="flex items-center gap-3">
@@ -602,13 +832,13 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {modoCaptura === 'detallado' && !isReadOnlyForCurrentUser && (
+          {(modoCaptura === 'detallado' || modoCaptura === 'lista_oficial') && !isReadOnlyForCurrentUser && (
             <button
               type="button"
               onClick={autocalcularTodos}
               className="flex items-center px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg font-semibold text-xs transition"
             >
-              <Calculator className="w-4 h-4 mr-1.5" /> Promediar Tareas/Examen (PASEG)
+              <Calculator className="w-4 h-4 mr-1.5" /> Promediar T1..T6 / Examen
             </button>
           )}
 
@@ -635,32 +865,102 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       {/* Tabla de Captura de Alumnos */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden no-print">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <table className="min-w-full divide-y divide-slate-200 text-sm border-collapse">
             <thead className="bg-slate-800 text-white">
+              {/* Fila extra superior de CONTENIDOS / FECHA cuando está activa la modalidad Lista Oficial */}
+              {modoCaptura === 'lista_oficial' && (
+                <tr className="bg-emerald-950 border-b border-emerald-800">
+                  <th colSpan={3} className="px-3 py-2 text-right text-[11px] font-black uppercase text-emerald-300 sticky left-0 z-20 bg-emerald-950 border-r border-emerald-800">
+                    CONTENIDOS / FECHA DE CLASE &rarr;
+                  </th>
+                  {DAYS_COLS.map(col => {
+                    const dKey = `d${col}`;
+                    return (
+                      <th key={`header-fecha-${col}`} className="p-1 border-r border-emerald-800/60 min-w-[56px]">
+                        <input
+                          type="text"
+                          disabled={isReadOnlyForCurrentUser}
+                          value={contenidosFecha[dKey] ?? ''}
+                          onChange={e => handleContenidoFechaChange(dKey, e.target.value)}
+                          placeholder={`Día ${col}`}
+                          title={`Anote la fecha o actividad evaluada en la columna ${col} (ej. 12/Oct Mapa)`}
+                          className="w-full px-1 py-1 text-[10px] text-center font-bold bg-emerald-900/70 text-white placeholder-emerald-400/50 border border-emerald-700 rounded focus:bg-white focus:text-slate-900 focus:outline-none"
+                        />
+                      </th>
+                    );
+                  })}
+                  <th colSpan={2} className="px-2 py-1 text-center text-[10px] font-extrabold text-emerald-200 bg-emerald-900/50 border-r border-emerald-800">
+                    Cálculo de los 20 Días
+                  </th>
+                  <th className="bg-slate-800"></th>
+                  {TASK_COLS.map(col => {
+                    const tKey = `t${col}`;
+                    return (
+                      <th key={`header-tfecha-${col}`} className="p-1 border-r border-slate-700 min-w-[52px]">
+                        <input
+                          type="text"
+                          disabled={isReadOnlyForCurrentUser}
+                          value={contenidosFecha[tKey] ?? ''}
+                          onChange={e => handleContenidoFechaChange(tKey, e.target.value)}
+                          placeholder={`Tema T${col}`}
+                          className="w-full px-1 py-1 text-[10px] text-center font-bold bg-slate-700 text-white placeholder-slate-400 border border-slate-600 rounded focus:bg-white focus:text-slate-900 focus:outline-none"
+                        />
+                      </th>
+                    );
+                  })}
+                  <th colSpan={5} className="bg-slate-800"></th>
+                </tr>
+              )}
+
               <tr>
-                <th className="px-3 py-3 text-center text-xs font-bold uppercase w-10">N°</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Nombre del Alumno(a)</th>
-                <th className="px-2 py-3 text-center text-xs font-bold uppercase w-12">Sexo</th>
-                <th className="px-2 py-3 text-center text-xs font-bold uppercase w-20 bg-slate-700" title="Total de Faltas en el Trimestre">
+                <th className="px-2 py-3 text-center text-xs font-bold uppercase w-10 sticky left-0 z-10 bg-slate-900 border-r border-slate-700">N°</th>
+                <th className="px-3 py-3 text-left text-xs font-bold uppercase min-w-[230px] sticky left-10 z-10 bg-slate-900 border-r border-slate-700">Nombre del Alumno(a)</th>
+                <th className="px-2 py-3 text-center text-xs font-bold uppercase w-10 border-r border-slate-700">Sexo</th>
+
+                {modoCaptura === 'lista_oficial' && (
+                  <>
+                    {DAYS_COLS.map(col => {
+                      const activa = resumenDiasClase.columnasConClase.includes(`d${col}`);
+                      return (
+                        <th
+                          key={`th-d-${col}`}
+                          className={`px-1 py-2 text-center text-[11px] font-extrabold uppercase w-14 border-r border-slate-700 ${
+                            activa ? 'bg-emerald-800 text-white' : 'bg-slate-800 text-slate-300'
+                          }`}
+                        >
+                          {col}
+                        </th>
+                      );
+                    })}
+                    <th className="px-2 py-2 text-center text-[10px] font-black uppercase w-16 bg-emerald-900 text-emerald-200 border-r border-emerald-700" title="Suma total de las calificaciones anotadas en las celdas 1 a 20">
+                      Suma<br/>Días
+                    </th>
+                    <th className="px-2 py-2 text-center text-[10px] font-black uppercase w-20 bg-emerald-950 text-emerald-300 border-r border-emerald-700" title="Promedio exacto sin truncar: Suma dividida entre el total de celdas que hubo clase">
+                      Prom.<br/>Clases
+                    </th>
+                  </>
+                )}
+
+                <th className="px-2 py-3 text-center text-xs font-bold uppercase w-20 bg-slate-700 border-r border-slate-600" title="Total de Faltas en el Trimestre">
                   Faltas (T.F.)
                 </th>
-                {modoCaptura === 'detallado' && (
+                {(modoCaptura === 'detallado' || modoCaptura === 'lista_oficial') && (
                   <>
-                    {[1, 2, 3, 4, 5, 6].map(t => (
-                      <th key={`th-t-${t}`} className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-14 text-slate-300">
+                    {TASK_COLS.map(t => (
+                      <th key={`th-t-${t}`} className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-14 text-slate-300 border-r border-slate-700">
                         T{t}
                       </th>
                     ))}
-                    <th className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-16 text-amber-200">Exam.</th>
-                    <th className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-16 text-amber-200">Partic.</th>
-                    <th className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-16 text-amber-200" title="Columna adicional de evaluación">Otro</th>
+                    <th className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-16 text-amber-200 border-r border-slate-700">Exam.</th>
+                    <th className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-16 text-amber-200 border-r border-slate-700">Partic.</th>
+                    <th className="px-1.5 py-3 text-center text-[11px] font-bold uppercase w-16 text-amber-200 border-r border-slate-700" title="Columna adicional de evaluación">Otro</th>
                   </>
                 )}
-                <th className="px-3 py-3 text-center text-xs font-black uppercase w-28 bg-indigo-950 text-indigo-200">
+                <th className="px-3 py-3 text-center text-xs font-black uppercase w-28 bg-indigo-950 text-indigo-200 border-r border-slate-700">
                   Calif. Trim.
                 </th>
-                <th className="px-3 py-3 text-center text-xs font-bold uppercase w-24">Situación</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase w-44">Observaciones</th>
+                <th className="px-3 py-3 text-center text-xs font-bold uppercase w-24 border-r border-slate-700">Situación</th>
+                <th className="px-3 py-3 text-left text-xs font-bold uppercase min-w-[160px]">Observaciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -674,6 +974,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                 const califNum = parseFloat(califStr);
                 const isReprobado = !isNaN(califNum) && califNum < 6;
                 const isAprobado = !isNaN(califNum) && califNum >= 6;
+                const calcDias = modoCaptura === 'lista_oficial' ? getCalculoDiasAlumno(al.id) : null;
 
                 return (
                   <tr
@@ -685,12 +986,14 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                           ? 'bg-amber-100/80 hover:bg-amber-100'
                           : isReprobado
                             ? 'bg-red-50/40 hover:bg-red-50/70'
-                            : 'hover:bg-slate-50'
+                            : idx % 2 === 0
+                              ? 'bg-white hover:bg-slate-50'
+                              : 'bg-slate-50/60 hover:bg-slate-100/60'
                     }
                   >
-                    <td className="px-3 py-2.5 text-center font-bold text-slate-500">{idx + 1}</td>
-                    <td className="px-3 py-2.5 font-bold uppercase text-slate-800">
-                      <div className="flex items-center gap-2">
+                    <td className="px-2 py-2.5 text-center font-bold text-slate-500 sticky left-0 z-10 bg-inherit border-r border-slate-200">{idx + 1}</td>
+                    <td className="px-3 py-2.5 font-bold uppercase text-slate-800 sticky left-10 z-10 bg-inherit border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]">
+                      <div className="flex items-center gap-1.5 whitespace-nowrap">
                         <span className={isBaja ? 'line-through text-slate-400' : ''}>
                           {al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}
                         </span>
@@ -706,71 +1009,117 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                         )}
                       </div>
                     </td>
-                    <td className="px-2 py-2.5 text-center font-bold text-xs text-slate-500">{gen}</td>
+                    <td className="px-2 py-2.5 text-center font-bold text-xs text-slate-500 border-r border-slate-200">{gen}</td>
 
                     {isBaja ? (
                       <td
-                        colSpan={modoCaptura === 'detallado' ? 13 : 4}
+                        colSpan={
+                          modoCaptura === 'lista_oficial'
+                            ? 35
+                            : modoCaptura === 'detallado'
+                              ? 13
+                              : 4
+                        }
                         className="px-4 py-2.5 text-center font-bold text-xs tracking-widest text-slate-400 uppercase bg-slate-100"
                       >
                         — B A J A &nbsp; O F I C I A L — (No se evalúa ni cuenta en existencia activa)
                       </td>
                     ) : (
                       <>
+                        {/* 20 Celdas de Asistencia o Calificación Diaria cuando está en modo Lista Oficial */}
+                        {modoCaptura === 'lista_oficial' && (
+                          <>
+                            {DAYS_COLS.map(col => {
+                              const dKey = `d${col}`;
+                              const valDia = row.dias?.[dKey] ?? '';
+                              const activa = resumenDiasClase.columnasConClase.includes(dKey);
+                              return (
+                                <td key={`td-d-${al.id}-${col}`} className={`p-1 text-center border-r border-slate-200 ${activa ? 'bg-emerald-50/30' : ''}`}>
+                                  <input
+                                    type="text"
+                                    disabled={isReadOnlyForCurrentUser}
+                                    data-docente-cell={`${idx}-${dKey}`}
+                                    value={valDia}
+                                    onKeyDown={e => handleGridKeyDown(e, idx, dKey)}
+                                    onChange={e => handleDiaChange(al.id, dKey, e.target.value)}
+                                    className="w-12 p-1 text-center border border-slate-300 rounded text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none disabled:bg-slate-100"
+                                  />
+                                </td>
+                              );
+                            })}
+                            <td className="px-2 py-2 text-center font-bold text-xs bg-emerald-50/70 text-emerald-900 border-r border-emerald-200">
+                              {calcDias?.suma !== null ? calcDias.suma : '-'}
+                            </td>
+                            <td className="px-2 py-2 text-center font-black text-sm bg-emerald-100/80 text-emerald-950 border-r border-emerald-300" title={calcDias?.suma !== null ? `${calcDias.suma} ÷ ${calcDias.divisor} clases` : ''}>
+                              {calcDias?.promedioStr || '-'}
+                            </td>
+                          </>
+                        )}
+
                         {/* Faltas T.F. */}
-                        <td className="px-2 py-2 text-center bg-slate-50">
+                        <td className="px-2 py-2 text-center bg-slate-50 border-r border-slate-200">
                           <input
                             type="number"
                             min="0"
                             max="60"
                             disabled={isReadOnlyForCurrentUser}
+                            data-docente-cell={`${idx}-faltas`}
                             value={row.faltas ?? ''}
+                            onKeyDown={e => handleGridKeyDown(e, idx, 'faltas')}
                             onChange={e => handleFieldChange(al.id, 'faltas', e.target.value)}
                             placeholder="0"
                             className="w-16 p-1.5 text-center border border-slate-300 rounded-md font-semibold text-slate-700 focus:ring-2 focus:ring-primary-500 disabled:bg-slate-100"
                           />
                         </td>
 
-                        {/* Sub-columnas de Tareas, Examen, Participación y Columna Extra en Modo Detallado */}
-                        {modoCaptura === 'detallado' && (
+                        {/* Sub-columnas de Tareas, Examen, Participación y Columna Extra */}
+                        {(modoCaptura === 'detallado' || modoCaptura === 'lista_oficial') && (
                           <>
-                            {[1, 2, 3, 4, 5, 6].map(t => (
-                              <td key={`td-t-${al.id}-${t}`} className="px-1 py-2 text-center">
+                            {TASK_COLS.map(t => (
+                              <td key={`td-t-${al.id}-${t}`} className="px-1 py-2 text-center border-r border-slate-200">
                                 <input
                                   type="text"
                                   disabled={isReadOnlyForCurrentUser}
+                                  data-docente-cell={`${idx}-t${t}`}
                                   value={row[`t${t}`] ?? ''}
+                                  onKeyDown={e => handleGridKeyDown(e, idx, `t${t}`)}
                                   onChange={e => handleFieldChange(al.id, `t${t}`, e.target.value)}
                                   className="w-12 p-1 text-center border border-slate-200 rounded text-xs font-medium disabled:bg-slate-100"
                                 />
                               </td>
                             ))}
-                            <td className="px-1 py-2 text-center bg-amber-50/30">
+                            <td className="px-1 py-2 text-center bg-amber-50/30 border-r border-slate-200">
                               <input
                                 type="text"
                                 disabled={isReadOnlyForCurrentUser}
+                                data-docente-cell={`${idx}-examen`}
                                 value={row.examen ?? ''}
+                                onKeyDown={e => handleGridKeyDown(e, idx, 'examen')}
                                 onChange={e => handleFieldChange(al.id, 'examen', e.target.value)}
                                 className="w-14 p-1 text-center border border-amber-300 rounded text-xs font-semibold disabled:bg-slate-100"
                               />
                             </td>
-                            <td className="px-1 py-2 text-center bg-amber-50/30">
+                            <td className="px-1 py-2 text-center bg-amber-50/30 border-r border-slate-200">
                               <input
                                 type="text"
                                 disabled={isReadOnlyForCurrentUser}
+                                data-docente-cell={`${idx}-participacion`}
                                 value={row.participacion ?? ''}
+                                onKeyDown={e => handleGridKeyDown(e, idx, 'participacion')}
                                 onChange={e => handleFieldChange(al.id, 'participacion', e.target.value)}
                                 className="w-14 p-1 text-center border border-amber-300 rounded text-xs font-semibold disabled:bg-slate-100"
                               />
                             </td>
-                            <td className="px-1 py-2 text-center bg-amber-50/30">
+                            <td className="px-1 py-2 text-center bg-amber-50/30 border-r border-slate-200">
                               <input
                                 type="text"
                                 disabled={isReadOnlyForCurrentUser}
+                                data-docente-cell={`${idx}-extraEval`}
                                 value={row.extraEval ?? ''}
+                                onKeyDown={e => handleGridKeyDown(e, idx, 'extraEval')}
                                 onChange={e => handleFieldChange(al.id, 'extraEval', e.target.value)}
                                 onBlur={() => {
-                                  if (!row.calificacion) autocalcularFila(al.id);
+                                  if (!row.calificacion && modoCaptura === 'detallado') autocalcularFila(al.id);
                                 }}
                                 className="w-14 p-1 text-center border border-amber-300 rounded text-xs font-semibold disabled:bg-slate-100"
                               />
@@ -779,14 +1128,16 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                         )}
 
                         {/* Calificación del Trimestre */}
-                        <td className="px-2 py-2 text-center bg-indigo-50/40">
+                        <td className="px-2 py-2 text-center bg-indigo-50/40 border-r border-slate-200">
                           <input
                             type="number"
-                            step="0.1"
+                            step="0.01"
                             min="5"
                             max="10"
                             disabled={isReadOnlyForCurrentUser}
+                            data-docente-cell={`${idx}-calificacion`}
                             value={row.calificacion ?? ''}
+                            onKeyDown={e => handleGridKeyDown(e, idx, 'calificacion')}
                             onChange={e => handleFieldChange(al.id, 'calificacion', e.target.value)}
                             placeholder="-"
                             className={`w-20 p-1.5 text-center border-2 rounded-lg font-black text-base focus:outline-none focus:ring-2 disabled:bg-slate-100 ${
@@ -802,7 +1153,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                         </td>
 
                         {/* Situación en la Materia */}
-                        <td className="px-2 py-2 text-center">
+                        <td className="px-2 py-2 text-center border-r border-slate-200">
                           {isAprobado && (
                             <span className="px-2 py-1 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
                               REGULAR
@@ -853,6 +1204,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           asignatura={asignaturaActual}
           trimestreLabel={TRIMESTRE_LABELS[trimestre] || 'I'}
           evalData={evalData}
+          contenidosFecha={contenidosFecha}
           stats={stats}
         />
       )}
