@@ -7,6 +7,7 @@ import { isBeforeSept30, formatearFechaCorta, fechaRegistroDeAlumno } from '../u
 import { registrarMovimiento, detectarCambiosExpediente } from '../utils/bitacora';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
+import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
 
 export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, onSave, readOnly = false }) {
   const { currentUser, userPermissions, userRole } = useAuth();
@@ -925,6 +926,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     const califs = student.calificaciones || {};
                     let sumT1 = 0, sumT2 = 0, sumT3 = 0;
                     let countT1 = 0, countT2 = 0, countT3 = 0;
+                    let sumFinalTrunc = 0, countFinalTrunc = 0;
                     let hasReprobada = false;
 
                     // First pass to check reprobadas
@@ -932,15 +934,16 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                       const t1 = califs['t1']?.[mat.id] ?? califs['T1']?.[mat.id];
                       const t2 = califs['t2']?.[mat.id] ?? califs['T2']?.[mat.id];
                       const t3 = califs['t3']?.[mat.id] ?? califs['T3']?.[mat.id];
-                      if (t1 !== undefined && Number(t1) < 6) hasReprobada = true;
-                      if (t2 !== undefined && Number(t2) < 6) hasReprobada = true;
-                      if (t3 !== undefined && Number(t3) < 6) hasReprobada = true;
+                      if (t1 !== undefined && t1 !== '' && Number(t1) < 6) hasReprobada = true;
+                      if (t2 !== undefined && t2 !== '' && Number(t2) < 6) hasReprobada = true;
+                      if (t3 !== undefined && t3 !== '' && Number(t3) < 6) hasReprobada = true;
                     });
 
                     const renderCell = (val) => {
                       if (val === undefined || val === null || val === '') return '-';
                       const num = Number(val);
-                      return <span className={num < 6 ? 'text-sky-600 font-bold bg-sky-50 px-2 py-1 rounded' : ''}>{num.toFixed(1)}</span>;
+                      if (isNaN(num)) return '-';
+                      return <span className={num < 6 ? 'text-red-600 font-bold bg-red-50 px-2 py-1 rounded' : ''}>{truncateTo1Dec(num)}</span>;
                     };
 
                     return (
@@ -958,7 +961,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                                 <th className="border p-3 text-center font-semibold text-slate-600 w-24">T1</th>
                                 <th className="border p-3 text-center font-semibold text-slate-600 w-24">T2</th>
                                 <th className="border p-3 text-center font-semibold text-slate-600 w-24">T3</th>
-                                <th className="border p-3 text-center font-bold text-slate-700 w-24 bg-slate-100">Final</th>
+                                <th className="border p-3 text-center font-bold text-slate-700 w-24 bg-slate-100">Final (PASEG)</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -967,19 +970,16 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                                 const t2 = califs['t2']?.[mat.id] ?? califs['T2']?.[mat.id];
                                 const t3 = califs['t3']?.[mat.id] ?? califs['T3']?.[mat.id];
                                 
-                                if (t1 !== undefined) { sumT1 += Number(t1); countT1++; }
-                                if (t2 !== undefined) { sumT2 += Number(t2); countT2++; }
-                                if (t3 !== undefined) { sumT3 += Number(t3); countT3++; }
+                                if (t1 !== undefined && t1 !== '' && !isNaN(Number(t1))) { sumT1 += Number(t1); countT1++; }
+                                if (t2 !== undefined && t2 !== '' && !isNaN(Number(t2))) { sumT2 += Number(t2); countT2++; }
+                                if (t3 !== undefined && t3 !== '' && !isNaN(Number(t3))) { sumT3 += Number(t3); countT3++; }
 
+                                const finalObj = getCalificacionFinal(student, mat.id);
                                 let promedioFinal = '-';
-                                let numProm = 0;
-                                let countProm = 0;
-                                if (t1 !== undefined) { numProm += Number(t1); countProm++; }
-                                if (t2 !== undefined) { numProm += Number(t2); countProm++; }
-                                if (t3 !== undefined) { numProm += Number(t3); countProm++; }
-                                
-                                if (countProm > 0) {
-                                  promedioFinal = (numProm / countProm).toFixed(1);
+                                if (finalObj && finalObj.valor !== null && !isNaN(finalObj.valor)) {
+                                  promedioFinal = truncateTo1Dec(finalObj.valor);
+                                  sumFinalTrunc += finalObj.valor;
+                                  countFinalTrunc++;
                                 }
 
                                 return (
@@ -995,12 +995,12 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                             </tbody>
                             <tfoot>
                               <tr className="bg-slate-100 font-bold">
-                                <td className="border p-3 text-right">PROMEDIO GENERAL</td>
+                                <td className="border p-3 text-right">PROMEDIO GENERAL (PASEG)</td>
                                 <td className="border p-3 text-center text-primary-700">{countT1 > 0 ? renderCell((sumT1 / countT1)) : '-'}</td>
                                 <td className="border p-3 text-center text-primary-700">{countT2 > 0 ? renderCell((sumT2 / countT2)) : '-'}</td>
                                 <td className="border p-3 text-center text-primary-700">{countT3 > 0 ? renderCell((sumT3 / countT3)) : '-'}</td>
                                 <td className="border p-3 text-center text-emerald-700 bg-emerald-50">
-                                  {countT1 > 0 || countT2 > 0 || countT3 > 0 ? renderCell(((sumT1 + sumT2 + sumT3) / (countT1 + countT2 + countT3))) : '-'}
+                                  {countFinalTrunc > 0 ? renderCell(sumFinalTrunc / countFinalTrunc) : '-'}
                                 </td>
                               </tr>
                             </tfoot>
@@ -1051,12 +1051,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                               if (t2 !== undefined && t2 !== '') { numProm += Number(t2); countProm++; }
                               if (t3 !== undefined && t3 !== '') { numProm += Number(t3); countProm++; }
                               
-                              const promedioFinal = countProm > 0 ? (numProm / countProm).toFixed(1) : '-';
+                              const promedioFinal = countProm > 0 ? truncateTo1Dec(numProm / countProm) : '-';
 
                               const renderCell = (val) => {
                                 if (val === undefined || val === null || val === '') return '-';
                                 const num = Number(val);
-                                return <span className={num < 6 ? 'text-sky-600 font-bold bg-sky-50 px-1 rounded' : ''}>{num.toFixed(1)}</span>;
+                                if (isNaN(num)) return '-';
+                                return <span className={num < 6 ? 'text-red-600 font-bold bg-red-50 px-1 rounded' : ''}>{truncateTo1Dec(num)}</span>;
                               };
 
                               return (

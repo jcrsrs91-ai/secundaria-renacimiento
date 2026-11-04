@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal, getPromedioTrimestrePASEG, autoAcentuar } from '../utils/format';
 
 export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
   const { config } = useGlobalConfig();
@@ -13,7 +13,7 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
           @page { size: letter; margin: 1cm; }
           html, body, #root { height: auto !important; overflow: visible !important; min-height: auto !important; display: block !important; margin: 0 !important; padding: 0 !important; }
           * { overflow: visible !important; }
-          aside, header { display: none !important; }
+          aside, header, nav, .no-print { display: none !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; }
           .print-boleta-only { display: block !important; margin: 0; padding: 0; }
           .boleta-page { 
@@ -54,14 +54,17 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
       {students.map(student => {
         const materias = materiasPorGrado[student.grado] || [];
         
-        // Calcular calificaciones
+        // Calcular calificaciones con método PASEG (truncado a 1 decimal sin redondeo)
         let sumGral = 0;
         let countGral = 0;
         let hasRegularizacion = false;
+        let countT3 = 0;
+
         const califs = materias.map(mat => {
           const t1 = parseFloat(student.calificaciones?.['t1']?.[mat.id]);
           const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
           const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
+          if (!isNaN(t3)) countT3++;
           
           const califFinalObj = getCalificacionFinal(student, mat.id);
           let final = null;
@@ -86,7 +89,11 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
           };
         });
 
+        const promT1 = truncateTo1Dec(getPromedioTrimestrePASEG(student, materias, 't1'), '');
+        const promT2 = truncateTo1Dec(getPromedioTrimestrePASEG(student, materias, 't2'), '');
+        const promT3 = truncateTo1Dec(getPromedioTrimestrePASEG(student, materias, 't3'), '');
         const promedioFinal = countGral > 0 ? truncateTo1Dec(sumGral / countGral, '') : '';
+        const cicloConcluido = materias.length > 0 && countT3 === materias.length;
 
         return (
           <div key={student.id} className="boleta-page bg-white p-6 relative boleta-watermark">
@@ -95,9 +102,9 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
               <div className="flex justify-between items-center border-b-4 border-slate-800 pb-3 mb-4">
                 <img src="/logo-sep.png" alt="SEP" className="w-32 object-contain" />
                 <div className="text-center flex-1 px-4">
-              <h1 className="font-black text-lg tracking-widest text-slate-900 uppercase">Boleta de Evaluación</h1>
-              <h2 className="font-bold text-xs text-slate-700 mt-1 uppercase">Educación Secundaria Técnica</h2>
-              <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase">Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}</p>
+                  <h1 className="font-black text-lg tracking-widest text-slate-900 uppercase">Boleta de Evaluación</h1>
+                  <h2 className="font-bold text-xs text-slate-700 mt-1 uppercase">Educación Secundaria Técnica</h2>
+                  <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase">Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'}</p>
                 </div>
                 <img src="/logo-escuela.png" alt="Escuela" className="w-24 object-contain" />
               </div>
@@ -106,13 +113,13 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="border border-slate-300 rounded p-2">
                   <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Datos de la Institución</div>
-                  <div className="text-xs font-black text-slate-800">C.C.T: <span className="font-medium text-slate-600">12DST0077B</span></div>
+                  <div className="text-xs font-black text-slate-800">C.C.T: <span className="font-medium text-slate-600">{config?.cct || '12DST0077B'}</span></div>
                   <div className="text-xs font-black text-slate-800 uppercase">Escuela: <span className="font-medium text-slate-600">Escuela Secundaria Técnica N° 68 "Renacimiento"</span></div>
                   <div className="text-xs font-black text-slate-800 uppercase">Turno: <span className="font-medium text-slate-600">{student.turno || 'Matutino'}</span></div>
                 </div>
                 <div className="border border-slate-300 rounded p-2">
                   <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Datos del Alumno</div>
-                  <div className="text-xs font-black text-slate-800 uppercase">Nombre: <span className="font-medium text-slate-600">{student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}</span></div>
+                  <div className="text-xs font-black text-slate-800 uppercase">Nombre: <span className="font-medium text-slate-600">{autoAcentuar(`${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.trim())}</span></div>
                   <div className="text-xs font-black text-slate-800 uppercase">CURP: <span className="font-medium text-slate-600">{student.curp}</span></div>
                   <div className="text-xs font-black text-slate-800 uppercase">Grado y Grupo: <span className="font-medium text-slate-600">{student.grado} "{student.grupo}"</span></div>
                 </div>
@@ -140,13 +147,16 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                           <td className="py-2 px-2 text-center border-r border-slate-200">{mat.t1}</td>
                           <td className="py-2 px-2 text-center border-r border-slate-200">{mat.t2}</td>
                           <td className="py-2 px-2 text-center border-r border-slate-200">{mat.t3}</td>
-                          <td className={`py-2 px-2 text-center font-bold bg-slate-50 ${isReprobado ? 'text-sky-600' : 'text-slate-900'}`}>{mat.final}</td>
+                          <td className={`py-2 px-2 text-center font-bold bg-slate-50 ${isReprobado ? 'text-red-600' : 'text-slate-900'}`}>{mat.final}</td>
                         </tr>
                       );
                     })}
                     <tr className="border-t-2 border-slate-800 bg-slate-100">
-                      <td colSpan="4" className="py-3 px-3 text-right font-black uppercase text-sm border-r border-slate-300">Promedio Final del Grado</td>
-                      <td className="py-3 px-2 text-center font-black text-lg text-slate-900">{promedioFinal}</td>
+                      <td className="py-3 px-3 text-right font-black uppercase text-xs border-r border-slate-300">Promedio del Grado (Método PASEG)</td>
+                      <td className="py-3 px-2 text-center font-bold text-sm text-slate-800 border-r border-slate-300">{promT1}</td>
+                      <td className="py-3 px-2 text-center font-bold text-sm text-slate-800 border-r border-slate-300">{promT2}</td>
+                      <td className="py-3 px-2 text-center font-bold text-sm text-slate-800 border-r border-slate-300">{promT3}</td>
+                      <td className="py-3 px-2 text-center font-black text-lg text-slate-900 bg-slate-200">{promedioFinal}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -158,16 +168,18 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                 </p>
               )}
 
-              {/* ASISTENCIA (Opcional simulado) */}
+              {/* ASISTENCIA Y SITUACIÓN */}
               <div className="flex gap-4 mb-8">
                 <div className="flex-1 border border-slate-300 rounded p-2 text-center">
-                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Asistencia Parcial</div>
+                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Asistencia</div>
                   <div className="text-sm font-bold text-slate-800">≥ 80% (Aprobatoria)</div>
                 </div>
                 <div className="flex-1 border border-slate-300 rounded p-2 text-center bg-slate-50">
                   <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Resultado de la Evaluación</div>
                   <div className="text-sm font-black text-slate-900 uppercase">
-                    {promedioFinal ? (parseFloat(promedioFinal) >= 6.0 ? 'Promovido' : 'No Promovido') : 'En Curso'}
+                    {cicloConcluido && promedioFinal
+                      ? (parseFloat(promedioFinal) >= 6.0 ? 'Promovido' : 'No Promovido')
+                      : 'En Curso'}
                   </div>
                 </div>
               </div>
@@ -186,7 +198,7 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                      <p className="text-[8px] font-black uppercase text-center leading-tight">Sello de la<br/>Institución</p>
                   </div>
                   <div className="border-b border-black w-full mb-1 h-8 relative z-10"></div>
-                  <p className="text-[10px] font-bold text-slate-800 uppercase relative z-10">Profr. Juan Carlos Taboada Barajas</p>
+                  <p className="text-[10px] font-bold text-slate-800 uppercase relative z-10">{config?.directorName || 'Profr. Juan Carlos Taboada Barajas'}</p>
                   <p className="text-[8px] font-bold text-slate-500 uppercase mt-0.5 relative z-10">Director del Plantel</p>
                 </div>
               </div>

@@ -119,7 +119,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     setHasUnsavedChanges(true);
   };
 
-  // Calcular promedio automático desde Tareas (T1..T6), Examen, Participación y Columna Extra para un alumno
+  // Calcular promedio automático desde Tareas (T1..T6), Examen, Participación y Columna Extra para un alumno (Método PASEG truncado a 1 décima)
   const autocalcularFila = (studentId) => {
     const row = evalData[studentId] || {};
     const vals = ['t1', 't2', 't3', 't4', 't5', 't6', 'examen', 'participacion', 'extraEval']
@@ -127,8 +127,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       .filter(n => !isNaN(n));
     if (vals.length === 0) return;
     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const rounded = Math.round(avg * 10) / 10;
-    handleFieldChange(studentId, 'calificacion', String(rounded));
+    handleFieldChange(studentId, 'calificacion', String(truncateTo1Dec(avg)));
   };
 
   const autocalcularTodos = () => {
@@ -226,6 +225,21 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
   // Guardar calificaciones y detalles en Firestore
   const handleSaveGrades = async (silent = false) => {
     if (alumnosGrupo.length === 0) return false;
+
+    // Validar rango oficial SEP/PASEG (5.0 a 10.0) antes de guardar
+    for (const al of alumnosGrupo) {
+      const isBaja = (al.status || '').toLowerCase() === 'baja';
+      if (isBaja) continue;
+      const rawCalif = (evalData[al.id]?.calificacion ?? '').toString().trim();
+      if (rawCalif !== '') {
+        const num = parseFloat(rawCalif);
+        if (isNaN(num) || num < 5 || num > 10) {
+          toast.error(`La calificación de ${al.apellidoPaterno || ''} ${al.nombres || ''} (${rawCalif}) debe estar en escala oficial PASEG de 5 a 10.`);
+          return false;
+        }
+      }
+    }
+
     setIsSaving(true);
     try {
       const promises = alumnosGrupo.map(al => {

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { truncateTo1Dec } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
 
 export default function AprovechamientoPrint({ activos, onClose }) {
   const { config } = useGlobalConfig();
@@ -44,29 +44,26 @@ export default function AprovechamientoPrint({ activos, onClose }) {
     return labels[key] || key;
   };
 
+  // Promedio final de la asignatura usando método PASEG (truncado a 1 décima y tomando en cuenta regularizaciones)
   const calcularPromedioFinalAlumno = (student, materiaId) => {
-    const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
-    const t2 = parseFloat(student.calificaciones?.['t2']?.[materiaId]);
-    const t3 = parseFloat(student.calificaciones?.['t3']?.[materiaId]);
-    let sum = 0, c = 0;
-    if (!isNaN(t1)) { sum += t1; c++; }
-    if (!isNaN(t2)) { sum += t2; c++; }
-    if (!isNaN(t3)) { sum += t3; c++; }
-    return c > 0 ? (sum / c) : null;
+    const finalObj = getCalificacionFinal(student, materiaId);
+    return finalObj ? finalObj.valor : null;
   };
 
+  // Promedio general del alumno usando método PASEG (truncado a 1 décima)
   const calcularPromedioGralAlumno = (student, gradoKeys) => {
     let sum = 0, c = 0;
     (gradoKeys || []).forEach(key => {
       const p = calcularPromedioFinalAlumno(student, key);
       if (p !== null) { sum += p; c++; }
     });
-    return c > 0 ? (sum / c) : null;
+    return c > 0 ? Math.floor((sum / c + 0.00001) * 10) / 10 : null;
   };
 
   const reportData = useMemo(() => {
     const turnos = ['Matutino', 'Vespertino'];
     const grados = ['1er Grado', '2do Grado', '3er Grado'];
+    const alumnosActivos = (activos || []).filter(a => (a.status || 'Activo') === 'Activo');
     
     // keys por grado
     const keysByGrado = {
@@ -80,7 +77,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
     // Calcular por turnos
     turnos.forEach(turno => {
       grados.forEach(grado => {
-        const students = activos.filter(a => getGradoBase(a.grado) === grado && (a.turno || 'Matutino') === turno);
+        const students = alumnosActivos.filter(a => getGradoBase(a.grado) === grado && (a.turno || 'Matutino') === turno);
         keysByGrado[grado].forEach(key => {
           let sum = 0, count = 0;
           students.forEach(s => {
@@ -100,7 +97,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
 
       // Promedio general del turno
       let tSum = 0, tCount = 0;
-      activos.filter(a => (a.turno || 'Matutino') === turno).forEach(s => {
+      alumnosActivos.filter(a => (a.turno || 'Matutino') === turno).forEach(s => {
         const val = calcularPromedioGralAlumno(s, keysByGrado[getGradoBase(s.grado)]);
         if (val !== null) { tSum += val; tCount++; }
       });
@@ -109,7 +106,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
 
     // Promedios totales escuela
     grados.forEach(grado => {
-      const students = activos.filter(a => getGradoBase(a.grado) === grado);
+      const students = alumnosActivos.filter(a => getGradoBase(a.grado) === grado);
       keysByGrado[grado].forEach(key => {
         let sum = 0, count = 0;
         students.forEach(s => {
@@ -129,7 +126,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
 
     // Promedio general de toda la escuela
     let escSum = 0, escCount = 0;
-    activos.forEach(s => {
+    alumnosActivos.forEach(s => {
       const val = calcularPromedioGralAlumno(s, keysByGrado[getGradoBase(s.grado)]);
       if (val !== null) { escSum += val; escCount++; }
     });
@@ -197,7 +194,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
                 </th>
               </tr>
               <tr className="bg-white">
-                {campos[grado].flatMap(c => c.keys).map((k, i) => (
+                {campos[grado].flatMap(c => c.keys).map((k) => (
                   <th key={k} className={`px-2 py-2 print:px-1 print:py-0.5 text-center text-xs print:text-[8px] font-semibold text-slate-600 border-r border-slate-200 border-t border-slate-200 bg-slate-50/50 print:border-slate-400 print:bg-white`}>
                     {getMateriaLabel(k)}
                   </th>
@@ -270,7 +267,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
           <div className="text-center flex-1 px-4">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase print:text-sm print:leading-tight">REPORTE GLOBAL DE APROVECHAMIENTO</h1>
             <h2 className="text-base font-bold text-slate-600 mt-1 uppercase print:text-[10px] print:mt-0 print:leading-tight">Escuela Secundaria Técnica N° 68 "Renacimiento"</h2>
-            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[9px] print:mt-0 print:leading-tight">Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'} - Evaluación hasta el 3er Periodo</p>
+            <p className="text-sm font-medium text-slate-500 mt-1 print:text-[9px] print:mt-0 print:leading-tight">Ciclo Escolar {config?.cicloEscolarActual || '2025-2026'} - Criterio PASEG (Truncado a 1 Décima)</p>
           </div>
           <img src="/logo-escuela.png" alt="Escuela" className="h-20 w-auto object-contain print:h-10" />
         </div>
@@ -324,7 +321,7 @@ export default function AprovechamientoPrint({ activos, onClose }) {
         {/* Pie de Firma */}
         <div className="mt-16 pt-8 flex justify-center break-inside-avoid print:mt-4 print:pt-2">
           <div className="text-center w-80 print:w-64">
-            <div className="border-t-2 border-slate-800 pt-2 font-bold text-slate-800 text-sm print:border-black print:text-[10px] print:pt-1">PROFR. JUAN CARLOS TABOADA BARAJAS</div>
+            <div className="border-t-2 border-slate-800 pt-2 font-bold text-slate-800 text-sm print:border-black print:text-[10px] print:pt-1">{(config?.directorName || 'PROFR. JUAN CARLOS TABOADA BARAJAS').toUpperCase()}</div>
             <div className="mt-1 text-slate-500 text-xs font-semibold tracking-wide print:text-black print:text-[8px] print:mt-0">DIRECTOR DE LA ESCUELA</div>
           </div>
         </div>

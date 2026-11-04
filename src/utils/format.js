@@ -1,8 +1,14 @@
-export const truncateTo1Dec = (val, fallback = '-') => {
-  if (val === null || val === undefined || isNaN(val) || val === '') return fallback;
+export const truncateNumberTo1Dec = (val) => {
+  if (val === null || val === undefined || isNaN(val) || val === '') return null;
   const v = parseFloat(val);
-  if (isNaN(v)) return fallback;
-  return (Math.floor((v + 0.00001) * 10) / 10).toFixed(1);
+  if (isNaN(v)) return null;
+  return Math.floor((v + 0.00001) * 10) / 10;
+};
+
+export const truncateTo1Dec = (val, fallback = '-') => {
+  const num = truncateNumberTo1Dec(val);
+  if (num === null) return fallback;
+  return num.toFixed(1);
 };
 
 export const truncateTo2Dec = (val, fallback = '-') => {
@@ -13,19 +19,24 @@ export const truncateTo2Dec = (val, fallback = '-') => {
 };
 
 export const getCalificacionFinal = (student, materiaId) => {
+  if (!student) return null;
   if (student.regularizacion && student.regularizacion[materiaId]) {
     // Attempt to still provide t1, t2, t3 if they exist, for the kardex display
     const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
     const t2 = parseFloat(student.calificaciones?.['t2']?.[materiaId]);
     const t3 = parseFloat(student.calificaciones?.['t3']?.[materiaId]);
-    return {
-      valor: parseFloat(student.regularizacion[materiaId].calificacion),
-      isRegularizacion: true,
-      fecha: student.regularizacion[materiaId].fecha,
-      t1: isNaN(t1) ? '-' : t1,
-      t2: isNaN(t2) ? '-' : t2,
-      t3: isNaN(t3) ? '-' : t3
-    };
+    const regVal = truncateNumberTo1Dec(student.regularizacion[materiaId].calificacion);
+    if (regVal !== null) {
+      return {
+        valor: regVal,
+        isRegularizacion: true,
+        fecha: student.regularizacion[materiaId].fecha,
+        isReprobada: regVal < 6,
+        t1: isNaN(t1) ? '-' : t1,
+        t2: isNaN(t2) ? '-' : t2,
+        t3: isNaN(t3) ? '-' : t3
+      };
+    }
   }
 
   const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
@@ -49,7 +60,47 @@ export const getCalificacionFinal = (student, materiaId) => {
     };
   }
   return null;
-  return null;
+};
+
+/**
+ * Calcula el promedio de un trimestre específico (t1, t2 o t3) según método PASEG:
+ * Suma las calificaciones capturadas en ese trimestre y trunca a 1 decimal sin redondear.
+ */
+export const getPromedioTrimestrePASEG = (student, materias = [], trimestreKey = 't1') => {
+  if (!student || !Array.isArray(materias)) return null;
+  let sum = 0;
+  let count = 0;
+  materias.forEach(mat => {
+    const matId = typeof mat === 'string' ? mat : mat.id;
+    const raw = parseFloat(student.calificaciones?.[trimestreKey]?.[matId]);
+    if (!isNaN(raw)) {
+      sum += raw;
+      count++;
+    }
+  });
+  if (count === 0) return null;
+  return Math.floor((sum / count + 0.00001) * 10) / 10;
+};
+
+/**
+ * Calcula el Promedio General Final del alumno según método PASEG:
+ * Promedia los promedios finales ya truncados a 1 decimal de cada asignatura
+ * y trunca el resultado final a 1 decimal sin redondear.
+ */
+export const getPromedioGeneralPASEG = (student, materias = []) => {
+  if (!student || !Array.isArray(materias)) return null;
+  let sum = 0;
+  let count = 0;
+  materias.forEach(mat => {
+    const matId = typeof mat === 'string' ? mat : mat.id;
+    const finalObj = getCalificacionFinal(student, matId);
+    if (finalObj && finalObj.valor !== null && !isNaN(finalObj.valor)) {
+      sum += finalObj.valor;
+      count++;
+    }
+  });
+  if (count === 0) return null;
+  return Math.floor((sum / count + 0.00001) * 10) / 10;
 };
 
 export const autoAcentuar = (text) => {
@@ -199,7 +250,9 @@ export const autoAcentuar = (text) => {
     'ROSARIO': 'ROSARIO', 'ROSENDO': 'ROSENDO', 'RUFINO': 'RUFINO',
     'RUPERTO': 'RUPERTO', 'SABINO': 'SABINO', 'SALVADOR': 'SALVADOR',
     'SAMUEL': 'SAMUEL', 'SANTIAGO': 'SANTIAGO', 'SANTOS': 'SANTOS',
-    'SATURNINO': 'SATURNINO', 'SERGIO': 'SERGIO', 'SILVESTRE': 'SILVESTRE',
+    'SEGOVIA': 'SEGOVIA', 'SEPULVEDA': 'SEPÚLVEDA', 'SERNA': 'SERNA',
+    'SERRANO': 'SERRANO', 'SIERRA': 'SIERRA', 'SILVA': 'SILVA',
+    'SOLIS': 'SOLÍS', 'SOTO': 'SOTO', 'SUAREZ': 'SUÁREZ',
     'TADEO': 'TADEO', 'TEODORO': 'TEODORO', 'TIMOTEO': 'TIMOTEO',
     'TITO': 'TITO', 'TOMAS': 'TOMÁS', 'TRINIDAD': 'TRINIDAD',
     'ULISES': 'ULISES', 'VALERIANO': 'VALERIANO', 'VALERIO': 'VALERIO',
@@ -216,24 +269,16 @@ export const autoAcentuar = (text) => {
 
   let processed = text.toString();
   
-  // Reemplazar palabra por palabra manteniendo mayúsculas si es necesario, 
-  // pero dado que el input podría venir en cualquier case, lo mejor es
-  // hacer un regex y reemplazar respetando el diccionario.
-  
   Object.keys(dictionary).forEach(key => {
-    // Regex para coincidencia de palabra completa, case insensitive
     const regex = new RegExp(`\\b${key}\\b`, 'gi');
     processed = processed.replace(regex, (match) => {
-      // Si la original era toda mayúscula, devolver la versión acentuada en mayúscula
       if (match === match.toUpperCase()) {
         return dictionary[key];
       }
-      // Si la original era Capitalizada
       if (match[0] === match[0].toUpperCase() && match.slice(1) === match.slice(1).toLowerCase()) {
         const acent = dictionary[key];
         return acent.charAt(0).toUpperCase() + acent.slice(1).toLowerCase();
       }
-      // Si era minúscula
       return dictionary[key].toLowerCase();
     });
   });

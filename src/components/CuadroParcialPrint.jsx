@@ -44,7 +44,8 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
 
     if (cntMat > 0) {
       alumnosEvaluados++;
-      sumaPromedios += (sumMat / cntMat);
+      const promAlumnoTrunc = Math.floor((sumMat / cntMat + 0.00001) * 10) / 10;
+      sumaPromedios += promAlumnoTrunc;
       if (matRep === 0) {
         if (gen === 'M') regularesM++;
         else regularesH++;

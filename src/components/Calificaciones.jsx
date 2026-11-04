@@ -1,14 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { sortStudents } from '../utils/sortUtils';
 import { Download, Upload, Save, CheckCircle, AlertTriangle, Grid, GraduationCap } from 'lucide-react';
 import Papa from 'papaparse';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { truncateTo1Dec } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal, autoAcentuar } from '../utils/format';
 import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
 import { registrarMovimiento } from '../utils/bitacora';
 import { useAuth } from '../context/AuthContext';
 import EvaluacionDocenteWidget from './EvaluacionDocenteWidget';
+import { sortAttendanceListStudents } from './ListaAsistenciaPrint';
 
 export default function Calificaciones({ activos, materiasPorGrado, onPrintBoleta, onPrintConcentradoFinal, onPrintConcentradoParcial }) {
   const { currentUser } = useAuth();
@@ -20,11 +20,10 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   const [successMsg, setSuccessMsg] = useState('');
   const [showConcentradoMenu, setShowConcentradoMenu] = useState(false);
 
-  // Filtrar alumnos activos por grado y grupo para la sábana general
+  // Filtrar alumnos activos por grado y grupo usando el mismo orden oficial de Lista de Asistencia (Altas al final)
   const alumnos = useMemo(() => {
-    return activos
-      .filter(a => a.grado === grado && a.grupo === grupo && (a.status || 'Activo') === 'Activo')
-      .sort(sortStudents);
+    const filtrados = activos.filter(a => a.grado === grado && a.grupo === grupo && (a.status || 'Activo') === 'Activo');
+    return sortAttendanceListStudents(filtrados);
   }, [activos, grado, grupo]);
 
   const materias = materiasPorGrado[grado] || [];
@@ -37,7 +36,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     alumnos.forEach(al => {
       grades[al.id] = {};
       materias.forEach(mat => {
-        const calif = al.calificaciones?.[trimestre]?.[mat.id] || '';
+        const calif = al.calificaciones?.[trimestre]?.[mat.id] ?? '';
         grades[al.id][mat.id] = calif;
       });
     });
@@ -54,7 +53,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     }));
   };
 
-  const calcularPromedio = (studentId) => {
+  // Promedio del trimestre seleccionado (Método PASEG: truncado a 1 decimal sin redondeo)
+  const calcularPromedioTrimestre = (studentId) => {
     const grades = localGrades[studentId];
     if (!grades) return '-';
     let sum = 0;
@@ -63,6 +63,35 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       const val = parseFloat(grades[mat.id]);
       if (!isNaN(val)) {
         sum += val;
+        count++;
+      }
+    });
+    return count === 0 ? '-' : truncateTo1Dec(sum / count);
+  };
+
+  // Promedio General Acumulado PASEG (T1, T2, T3 en tiempo real combinando la edición actual)
+  const calcularPromedioGeneralPASEGEnVivo = (al) => {
+    let sum = 0;
+    let count = 0;
+    materias.forEach(mat => {
+      if (al.regularizacion && al.regularizacion[mat.id]) {
+        const regVal = parseFloat(al.regularizacion[mat.id].calificacion);
+        if (!isNaN(regVal)) {
+          sum += Math.floor((regVal + 0.00001) * 10) / 10;
+          count++;
+          return;
+        }
+      }
+      const t1 = parseFloat(trimestre === 't1' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t1']?.[mat.id]);
+      const t2 = parseFloat(trimestre === 't2' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t2']?.[mat.id]);
+      const t3 = parseFloat(trimestre === 't3' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t3']?.[mat.id]);
+      let sMat = 0, cMat = 0;
+      if (!isNaN(t1)) { sMat += t1; cMat++; }
+      if (!isNaN(t2)) { sMat += t2; cMat++; }
+      if (!isNaN(t3)) { sMat += t3; cMat++; }
+      if (cMat > 0) {
+        const finalMatTrunc = Math.floor((sMat / cMat + 0.00001) * 10) / 10;
+        sum += finalMatTrunc;
         count++;
       }
     });
@@ -96,6 +125,21 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   }, [materias, alumnos, localGrades, trimestre]);
 
   const handleSaveAll = async () => {
+    // Validar que todas las calificaciones capturadas estén en escala oficial PASEG (5 a 10)
+    for (const al of alumnos) {
+      const grades = localGrades[al.id] || {};
+      for (const mat of materias) {
+        const raw = (grades[mat.id] ?? '').toString().trim();
+        if (raw !== '') {
+          const num = parseFloat(raw);
+          if (isNaN(num) || num < 5 || num > 10) {
+            alert(`Atención: La calificación "${raw}" en ${mat.name} para ${al.apellidoPaterno} ${al.nombres} no es válida.\n\nEn PASEG la escala oficial es de 5 a 10.`);
+            return;
+          }
+        }
+      }
+    }
+
     setIsSaving(true);
     try {
       const promises = alumnos.map(al => {
@@ -129,9 +173,10 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       alert("No hay alumnos en este grupo para generar plantilla.");
       return;
     }
-    const headers = ['Matricula', 'Nombre Completo', ...materias.map(m => m.name)];
-    const data = alumnos.map(al => {
+    const headers = ['No_Lista', 'Matricula', 'Nombre Completo', ...materias.map(m => m.name)];
+    const data = alumnos.map((al, idx) => {
       const row = [
+        idx + 1,
         al.matricula,
         `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`
       ];
@@ -146,21 +191,15 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   };
 
   const getPromedioFinal = (student, materiaId) => {
-    const t1 = parseFloat(student.calificaciones?.['t1']?.[materiaId]);
-    const t2 = parseFloat(student.calificaciones?.['t2']?.[materiaId]);
-    const t3 = parseFloat(student.calificaciones?.['t3']?.[materiaId]);
-    let sum = 0, c = 0;
-    if (!isNaN(t1)) { sum += t1; c++; }
-    if (!isNaN(t2)) { sum += t2; c++; }
-    if (!isNaN(t3)) { sum += t3; c++; }
-    return c > 0 ? truncateTo1Dec(sum / c, '') : '';
+    const finalObj = getCalificacionFinal(student, materiaId);
+    return finalObj ? truncateTo1Dec(finalObj.valor, '') : '';
   };
 
   const handleExportarExcelFinales = () => {
     if (alumnos.length === 0) return;
-    const headers = ['Matrícula', 'Nombre del Alumno', ...materias.map(m => m.name), 'Promedio General', 'Materias Reprobadas'];
-    const data = alumnos.map(al => {
-      const row = [al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`];
+    const headers = ['N°', 'Matrícula', 'Nombre del Alumno', ...materias.map(m => m.name), 'Promedio General PASEG', 'Materias Reprobadas'];
+    const data = alumnos.map((al, idx) => {
+      const row = [idx + 1, al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`];
       let sum = 0, count = 0, reprobadas = 0;
       materias.forEach(mat => {
         const pf = getPromedioFinal(al, mat.id);
@@ -181,14 +220,14 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
 
   const handleExportarExcelParciales = () => {
     if (alumnos.length === 0) return;
-    const headers = ['Matrícula', 'Nombre del Alumno'];
+    const headers = ['N°', 'Matrícula', 'Nombre del Alumno'];
     materias.forEach(mat => {
       headers.push(`${mat.name} T1`, `${mat.name} T2`, `${mat.name} T3`, `${mat.name} Final`);
     });
-    headers.push('Promedio General');
+    headers.push('Promedio General PASEG');
 
-    const data = alumnos.map(al => {
-      const row = [al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`];
+    const data = alumnos.map((al, idx) => {
+      const row = [idx + 1, al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`];
       let sum = 0, count = 0;
       materias.forEach(mat => {
         const t1 = al.calificaciones?.['t1']?.[mat.id] || '';
@@ -230,8 +269,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         let matchCount = 0;
 
         results.data.forEach(row => {
-          const matricula = row['MATRICULA'];
-          const student = alumnos.find(a => a.matricula.toUpperCase() === (matricula || '').toUpperCase());
+          const matricula = row['MATRICULA'] || row['MATRÍCULA'];
+          const student = alumnos.find(a => (a.matricula || '').toUpperCase() === (matricula || '').toUpperCase());
           if (student) {
             matchCount++;
             materias.forEach(mat => {
@@ -402,29 +441,48 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-800">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-200 uppercase tracking-wider sticky left-0 z-10 bg-slate-900 border-r border-slate-700">Alumno</th>
+                      <th className="px-2 py-3 text-center text-xs font-bold text-slate-300 uppercase w-10 sticky left-0 z-10 bg-slate-900 border-r border-slate-700">N°</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-200 uppercase tracking-wider sticky left-10 z-10 bg-slate-900 border-r border-slate-700">Alumno (Orden de Lista)</th>
                       {materias.map(mat => (
                         <th key={mat.id} className="px-2 py-3 text-center text-[10px] font-bold text-slate-300 uppercase w-16 whitespace-normal leading-tight" title={mat.name}>
                           {mat.name.replace('Formación Cívica y Ética', 'F.C.E.').replace('Ciencias', 'Cien.')}
                         </th>
                       ))}
-                      <th className="px-4 py-3 text-center text-xs font-black text-indigo-400 uppercase tracking-wider bg-slate-900 border-l border-slate-700">PROM</th>
-                      <th className="px-4 py-3 text-center text-xs font-bold text-slate-300 uppercase tracking-wider bg-slate-900 border-l border-slate-700 w-10"></th>
+                      <th className="px-3 py-3 text-center text-[10px] font-black text-sky-300 uppercase tracking-wider bg-slate-900 border-l border-slate-700 leading-tight" title="Promedio del trimestre seleccionado (truncado a 1 décima PASEG)">
+                        PROM.<br/>{trimestre.toUpperCase()}
+                      </th>
+                      <th className="px-3 py-3 text-center text-[10px] font-black text-amber-300 uppercase tracking-wider bg-slate-900 border-l border-slate-700 leading-tight" title="Promedio General Acumulado PASEG (T1-T3)">
+                        PROM.<br/>GRAL
+                      </th>
+                      <th className="px-3 py-3 text-center text-xs font-bold text-slate-300 uppercase tracking-wider bg-slate-900 border-l border-slate-700 w-10"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {alumnos.map((al, idx) => {
-                      const prom = parseFloat(calcularPromedio(al.id));
-                      const isReprobado = !isNaN(prom) && prom < 6.0;
+                      const promTrimStr = calcularPromedioTrimestre(al.id);
+                      const promTrim = parseFloat(promTrimStr);
+                      const isReprobadoTrim = !isNaN(promTrim) && promTrim < 6.0;
+
+                      const promGralStr = calcularPromedioGeneralPASEGEnVivo(al);
+                      const promGral = parseFloat(promGralStr);
+                      const isReprobadoGral = !isNaN(promGral) && promGral < 6.0;
 
                       return (
                         <tr key={al.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                          <td className="px-4 py-3 whitespace-nowrap text-xs font-bold text-slate-800 sticky left-0 z-10 bg-inherit border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                            {al.apellidoPaterno} {al.apellidoMaterno} <span className="font-medium">{al.nombres}</span>
+                          <td className="px-2 py-3 text-center text-xs font-bold text-slate-500 sticky left-0 z-10 bg-inherit border-r border-slate-200">
+                            {idx + 1}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs font-bold text-slate-800 sticky left-10 z-10 bg-inherit border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                            {autoAcentuar(`${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''}`.trim())} <span className="font-medium">{autoAcentuar(al.nombres || '')}</span>
+                            {al.tipoIngreso === 'Alta' && (
+                              <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-black bg-emerald-100 text-emerald-800 rounded border border-emerald-300">ALTA</span>
+                            )}
                           </td>
                           {materias.map(mat => {
-                            const val = localGrades[al.id]?.[mat.id] || '';
-                            const isFailing = parseFloat(val) < 6.0 && val !== '';
+                            const val = localGrades[al.id]?.[mat.id] ?? '';
+                            const numVal = parseFloat(val);
+                            const isOutOfRange = val !== '' && (isNaN(numVal) || numVal < 5 || numVal > 10);
+                            const isFailing = !isOutOfRange && numVal < 6.0 && val !== '';
                             return (
                               <td key={mat.id} className="px-1 py-2 text-center">
                                 <input 
@@ -433,19 +491,24 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                                   value={val}
                                   onChange={(e) => handleGradeChange(al.id, mat.id, e.target.value)}
                                   className={`w-14 text-center p-1.5 border rounded font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-colors
-                                    ${isFailing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-slate-300 text-slate-700'}
+                                    ${isOutOfRange ? 'bg-amber-100 border-amber-500 text-amber-900 ring-2 ring-amber-400' : isFailing ? 'bg-red-50 border-red-300 text-red-700' : 'bg-white border-slate-300 text-slate-700'}
                                   `}
                                 />
                               </td>
                             );
                           })}
-                          <td className="px-4 py-3 text-center bg-inherit border-l border-slate-200">
-                            <span className={`inline-block px-2.5 py-1 rounded-md text-sm font-black ${isReprobado ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>
-                              {calcularPromedio(al.id)}
+                          <td className="px-3 py-3 text-center bg-inherit border-l border-slate-200">
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-black ${promTrimStr === '-' ? 'text-slate-400' : isReprobadoTrim ? 'bg-red-100 text-red-700' : 'bg-sky-50 text-sky-800 border border-sky-200'}`}>
+                              {promTrimStr}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-center bg-inherit border-l border-slate-200">
+                            <span className={`inline-block px-2.5 py-1 rounded-md text-sm font-black ${promGralStr === '-' ? 'text-slate-400' : isReprobadoGral ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>
+                              {promGralStr}
                             </span>
                           </td>
                           <td className="px-2 py-3 text-center bg-inherit border-l border-slate-200">
-                            <button onClick={() => onPrintBoleta && onPrintBoleta(al)} className="text-slate-500 hover:text-slate-800 transition" title="Imprimir Boleta">
+                            <button onClick={() => onPrintBoleta && onPrintBoleta(al)} className="text-slate-500 hover:text-slate-800 transition" title="Imprimir Boleta Individual">
                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                             </button>
                           </td>
@@ -459,7 +522,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
               {/* Action Bar */}
               <div className="bg-slate-50 border-t border-slate-200 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-4 relative">
-                  <span className="text-sm font-medium text-slate-500">{alumnos.length} alumnos activos listados</span>
+                  <span className="text-sm font-medium text-slate-500">{alumnos.length} alumnos activos listados (Método PASEG: truncado a 1 décima)</span>
                   
                   <div className="relative">
                     <button 

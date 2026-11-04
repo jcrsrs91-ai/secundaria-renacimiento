@@ -60,8 +60,10 @@ export default function TutorLogin() {
       if (querySnapshot.empty) {
         setErrorMsg('Matrícula o CURP incorrectos, o el alumno aún no está activo.');
       } else {
-        const studentDoc = querySnapshot.docs[0];
-        loginAsStudent({ id: studentDoc.id, ...studentDoc.data() });
+        // Priorizar siempre el documento con status === 'Activo' en caso de existir un registro Pendiente duplicado
+        const docs = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const activeStudent = docs.find(d => (d.status || 'Activo') === 'Activo') || docs[0];
+        loginAsStudent(activeStudent);
         navigate('/panel/portal-familiar');
       }
     } catch (error) {
@@ -144,7 +146,7 @@ export default function TutorLogin() {
                   <GraduationCap className="w-8 h-8 text-sky-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-slate-800">Acceso Familiar</h3>
-                <p className="text-slate-500 text-sm mt-2">Consulta el expediente de tu hijo/a</p>
+                <p className="text-slate-500 text-sm mt-2">Consulta el expediente y calificaciones de tu hijo/a</p>
               </div>
 
               {errorMsg && (

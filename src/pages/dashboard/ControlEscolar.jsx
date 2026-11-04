@@ -69,6 +69,7 @@ export default function ControlEscolar() {
   
   // Estados para Modal de Extraordinarios
   const [extraStudent, setExtraStudent] = useState(null);
+  const [gradeModalTrimestre, setGradeModalTrimestre] = useState('t1');
   const [extraordinarioToPrint, setExtraordinarioToPrint] = useState(null);
   const [eerToPrint, setEerToPrint] = useState(null);
   const [extraSubjects, setExtraSubjects] = useState([]);
@@ -595,20 +596,29 @@ export default function ControlEscolar() {
   const handleGradeSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const trimestre = formData.get('trimestre');
+    const trimestre = formData.get('trimestre') || gradeModalTrimestre || 't1';
     
-    const calificaciones = selectedStudent.calificaciones || {};
-    if (!calificaciones[trimestre]) calificaciones[trimestre] = {};
+    const calificaciones = { ...(selectedStudent.calificaciones || {}) };
+    calificaciones[trimestre] = { ...(calificaciones[trimestre] || {}) };
     
     const materias = materiasPorGrado[selectedStudent.grado] || [];
-    materias.forEach(asig => {
-      const val = formData.get(asig.id);
-      if (val) calificaciones[trimestre][asig.id] = Number(val);
-    });
+    for (const asig of materias) {
+      const rawVal = (formData.get(asig.id) ?? '').toString().trim();
+      if (rawVal !== '') {
+        const num = Number(rawVal);
+        if (isNaN(num) || num < 5 || num > 10) {
+          alert(`La calificación de ${asig.name} (${rawVal}) debe estar en escala oficial PASEG de 5 a 10.`);
+          return;
+        }
+        calificaciones[trimestre][asig.id] = num;
+      } else {
+        delete calificaciones[trimestre][asig.id];
+      }
+    }
 
     try {
       await updateDoc(doc(db, "students", selectedStudent.id), { calificaciones, lastModifiedBy: auth.currentUser?.email || "Desconocido", lastModifiedAt: new Date().toISOString() });
-      await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Calificaciones', `Se guardaron calificaciones del ${trimestre} para el alumno ${selectedStudent.nombres} ${selectedStudent.apellidoPaterno} (${selectedStudent.matricula})`);
+      await registrarMovimiento(auth.currentUser?.email, 'Control Escolar', 'Calificaciones', `Se guardaron calificaciones del ${trimestre.toUpperCase()} para el alumno ${selectedStudent.nombres} ${selectedStudent.apellidoPaterno} (${selectedStudent.matricula})`);
       alert('Calificaciones guardadas');
       closeModal();
     } catch (err) {
@@ -1719,21 +1729,26 @@ export default function ControlEscolar() {
                   
                   <div className="mb-4">
                     <label className="block text-xs font-medium text-slate-500 mb-1">Periodo a Evaluar</label>
-                    <select name="trimestre" className="w-full p-2 border rounded bg-slate-50">
+                    <select
+                      name="trimestre"
+                      value={gradeModalTrimestre}
+                      onChange={(e) => setGradeModalTrimestre(e.target.value)}
+                      className="w-full p-2 border rounded bg-slate-50 font-bold text-primary-700"
+                    >
                       <option value="t1">1er Trimestre</option>
                       <option value="t2">2do Trimestre</option>
                       <option value="t3">3er Trimestre</option>
                     </select>
                   </div>
 
-                  <div className="space-y-3 border-t pt-4 max-h-[40vh] overflow-y-auto pr-2">
+                  <div key={gradeModalTrimestre} className="space-y-3 border-t pt-4 max-h-[40vh] overflow-y-auto pr-2">
                     {materiasPorGrado[selectedStudent.grado]?.map(asig => (
                       <div key={asig.id} className="flex justify-between items-center bg-slate-50 p-2 rounded border">
                         <label className="text-sm font-medium text-slate-700">{asig.name}</label>
                         <input 
                           type="number" 
                           name={asig.id} 
-                          defaultValue={selectedStudent.calificaciones?.t1?.[asig.id] || ''} 
+                          defaultValue={selectedStudent.calificaciones?.[gradeModalTrimestre]?.[asig.id] ?? ''} 
                           min="5" max="10" step="0.1" 
                           className="w-20 p-1 text-center border rounded font-bold" 
                           placeholder="-" 
