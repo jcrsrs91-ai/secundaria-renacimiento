@@ -17,6 +17,7 @@ import ConstanciaEERPrint from '../../components/ConstanciaEERPrint';
 import BatchConstanciaEERPrint from '../../components/BatchConstanciaEERPrint';
 import CuadroParcialPrint from '../../components/CuadroParcialPrint';
 import { downloadExcelFriendlyCsv } from '../../utils/exportCsv';
+import { descargarListaAsistenciaEditableExcel } from '../../utils/exportListaExcel';
 import AprovechamientoPrint from '../../components/AprovechamientoPrint';
 import MatriculaPrint from '../../components/MatriculaPrint';
 import MatriculaGruposPrint from '../../components/MatriculaGruposPrint';
@@ -1215,7 +1216,30 @@ export default function ControlEscolar() {
                 <option value="legal">Oficio (Oficio / Legal)</option>
               </select>
             </div>
-            <div className="flex-1 flex justify-end w-full md:w-auto">
+            <div className="flex-1 flex flex-wrap justify-end gap-2.5 w-full md:w-auto">
+              <button 
+                onClick={async () => {
+                  if (asisAlumnos.length === 0) {
+                    alert("No hay alumnos activos en este grado y grupo.");
+                    return;
+                  }
+                  const esVespertino = ['G', 'H', 'I', 'J', 'K', 'L'].includes(asisGrupo);
+                  await descargarListaAsistenciaEditableExcel({
+                    students: asisAlumnos,
+                    grado: asisGrado,
+                    grupo: asisGrupo,
+                    cicloEscolar: config?.cicloEscolarActual || '2025 - 2026',
+                    coordinadorNombre: esVespertino
+                      ? (config?.coordinadorVespertino || 'Profr. José Barrera Vázquez')
+                      : (config?.coordinadorMatutino || 'Profra. Lucila Rodríguez Martínez')
+                  });
+                  toast.success(`Lista Editable en Excel (.xlsx) de ${asisGrado} "${asisGrupo}" descargada.`);
+                }} 
+                className="flex items-center justify-center w-full sm:w-auto px-5 py-2.5 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition shadow-md text-sm"
+                title="Descarga el archivo Excel (.xlsx) con fórmulas automáticas para que el docente trabaje sin internet y entregue sus calificaciones"
+              >
+                <Download className="w-5 h-5 mr-2" /> Descargar Lista Editable (.xlsx)
+              </button>
               <button 
                 onClick={() => {
                   if (asisAlumnos.length === 0) {
@@ -1226,7 +1250,7 @@ export default function ControlEscolar() {
                   setPrintMode('listaAsistencia');
                   setTimeout(() => window.print(), 500);
                 }} 
-                className="flex items-center justify-center w-full md:w-auto px-6 py-2.5 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition shadow-md"
+                className="flex items-center justify-center w-full sm:w-auto px-6 py-2.5 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition shadow-md text-sm"
               >
                 <Printer className="w-5 h-5 mr-2" /> Imprimir Lista Oficial
               </button>

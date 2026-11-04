@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Save, Printer, CheckCircle, FileSpreadsheet, ClipboardList, Calculator, UserCheck, AlertCircle, Lock, Eye, Calendar } from 'lucide-react';
+import { Save, Printer, CheckCircle, FileSpreadsheet, ClipboardList, Calculator, UserCheck, AlertCircle, Lock, Eye, Calendar, Download, Upload } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ import { materiasPorGrado } from '../utils/materias';
 import { registrarMovimiento } from '../utils/bitacora';
 import ListaAsistenciaPrint, { TALLER_POR_GRUPO, getStudentGender, sortAttendanceListStudents } from './ListaAsistenciaPrint';
 import CuadroAsignaturaPrint from './CuadroAsignaturaPrint';
+import { descargarListaAsistenciaEditableExcel, importarListaAsistenciaEditableExcel } from '../utils/exportListaExcel';
 
 const TRIMESTRE_LABELS = {
   t1: 'I (Primero)',
@@ -502,6 +503,70 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     }, 350);
   };
 
+  // Descargar la Lista Oficial de Asistencia y Evaluación en formato Excel (.xlsx) editable con fórmulas
+  const handleDownloadExcelEditable = async () => {
+    if (alumnosGrupo.length === 0) {
+      toast.error('No hay alumnos en este grupo para descargar la lista.');
+      return;
+    }
+    const esVespertino = ['G', 'H', 'I', 'J', 'K', 'L'].includes(grupo);
+    await descargarListaAsistenciaEditableExcel({
+      students: alumnosGrupo,
+      grado,
+      grupo,
+      asignatura: asignaturaActual,
+      docente: docenteNombre,
+      trimestreLabel: TRIMESTRE_LABELS[trimestre] || 'I',
+      cicloEscolar: config?.cicloEscolarActual || '2025 - 2026',
+      coordinadorNombre: esVespertino
+        ? (config?.coordinadorVespertino || 'Profr. José Barrera Vázquez')
+        : (config?.coordinadorMatutino || 'Profra. Lucila Rodríguez Martínez'),
+      evalData,
+      contenidosFecha
+    });
+    toast.success('¡Lista Editable en Excel (.xlsx) descargada! El docente puede llenarla en su computadora.');
+  };
+
+  // Subir/Importar la Lista Editable en Excel (.xlsx) entregada por el docente
+  const handleImportExcelEditable = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (isReadOnlyForCurrentUser) {
+      toast.error('La captura para este trimestre está bloqueada.');
+      e.target.value = '';
+      return;
+    }
+    try {
+      const result = await importarListaAsistenciaEditableExcel(file, alumnosGrupo);
+      if (result.matchedCount > 0) {
+        if (result.docenteDetectado && !docenteNombre) {
+          setDocenteNombre(autoAcentuar(result.docenteDetectado));
+        }
+        if (Object.keys(result.contenidosFecha || {}).length > 0) {
+          setContenidosFecha(prev => ({ ...prev, ...result.contenidosFecha }));
+        }
+        setEvalData(prev => {
+          const next = { ...prev };
+          Object.keys(result.importedEval).forEach(stId => {
+            next[stId] = {
+              ...(next[stId] || {}),
+              ...result.importedEval[stId]
+            };
+          });
+          return next;
+        });
+        setHasUnsavedChanges(true);
+        toast.success(`¡Se cargaron las calificaciones y asistencias de ${result.matchedCount} alumnos desde el Excel! Da clic en "Guardar Calificaciones en Sistema".`);
+      } else {
+        toast.error('No se encontraron coincidencias de alumnos en el archivo Excel seleccionado.');
+      }
+    } catch (err) {
+      console.error('Error al importar lista Excel:', err);
+      toast.error('No se pudo leer el archivo Excel (.xlsx). Verifica que sea el formato descargado del sistema.');
+    }
+    e.target.value = '';
+  };
+
   const turnoActual = ['G', 'H', 'I', 'J', 'K', 'L'].includes(grupo) ? 'Vespertino' : 'Matutino';
 
   return (
@@ -845,6 +910,27 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
             >
               <Calculator className="w-4 h-4 mr-1.5" /> Promediar T1..T6 / Examen
             </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleDownloadExcelEditable}
+            className="flex items-center px-3.5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg font-bold text-xs sm:text-sm transition shadow-sm"
+            title="Descarga esta Lista de Asistencia y Evaluación en archivo Excel (.xlsx) editable con fórmulas para profesores que prefieran trabajar fuera de la plataforma"
+          >
+            <Download className="w-4 h-4 mr-1.5" />
+            Descargar Lista Editable (.xlsx)
+          </button>
+
+          {!isReadOnlyForCurrentUser && (
+            <label
+              className="cursor-pointer flex items-center px-3.5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-extrabold text-xs sm:text-sm transition shadow-sm"
+              title="Si el profesor llenó su Lista Editable en Excel (.xlsx) y te la entregó, súbela aquí para cargar sus calificaciones automáticamente"
+            >
+              <Upload className="w-4 h-4 mr-1.5" />
+              Subir Lista Excel (.xlsx)
+              <input type="file" accept=".xlsx" className="hidden" onChange={handleImportExcelEditable} />
+            </label>
           )}
 
           <button
