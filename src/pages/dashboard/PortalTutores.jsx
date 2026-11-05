@@ -1,11 +1,26 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Newspaper, User, BellRing, FileText, CheckCircle2, Clock, LogOut, MessageSquare, Send, Check, CheckCheck, Printer, Award, Sparkles } from 'lucide-react';
+import { Newspaper, User, BellRing, FileText, CheckCircle2, Clock, LogOut, MessageSquare, Send, Check, CheckCheck, Printer, Award, Sparkles, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs, orderBy, limit, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getPromedioTrimestrePASEG, getPromedioGeneralPASEG, autoAcentuar } from '../../utils/format';
 import BoletaPrint from '../../components/BoletaPrint';
+import { inferirTurnoChat, HORARIOS_TURNO } from '../../components/FloatingBuzonWidget';
+
+// Verifica si la hora actual está dentro del horario laboral del turno correspondiente (Lunes a Viernes)
+const estaEnHorarioDeTurno = (turno) => {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Domingo, 6 = Sábado
+  if (day === 0 || day === 6) return false;
+  const decimalHour = now.getHours() + now.getMinutes() / 60;
+  if (turno === 'Vespertino') {
+    // Turno Vespertino: 1:30 PM (13.5) a 7:30 PM (19.5)
+    return decimalHour >= 13.5 && decimalHour <= 19.5;
+  }
+  // Turno Matutino: 7:00 AM (7.0) a 1:30 PM (13.5)
+  return decimalHour >= 7.0 && decimalHour <= 13.5;
+};
 
 const materiasPorGrado = {
   '1er Grado': [
@@ -35,7 +50,15 @@ export default function PortalTutores() {
   const [liveStudent, setLiveStudent] = useState(studentSession);
   const [noticias, setNoticias] = useState([]);
   const [loadingAvisos, setLoadingAvisos] = useState(true);
-  const [activeShiftTab] = useState('matutino');
+
+  const turnoAlumno = useMemo(() => inferirTurnoChat(liveStudent), [liveStudent]);
+  const [activeShiftTab, setActiveShiftTab] = useState('matutino');
+
+  useEffect(() => {
+    if (turnoAlumno) {
+      setActiveShiftTab(turnoAlumno.toLowerCase());
+    }
+  }, [turnoAlumno]);
   
   // Chat States
   const [messages, setMessages] = useState([]);
@@ -109,6 +132,9 @@ export default function PortalTutores() {
 
     if (customText === null) setNewMessage('');
 
+    const turnoActual = inferirTurnoChat(liveStudent);
+    const enHorario = estaEnHorarioDeTurno(turnoActual);
+
     try {
       const chatRef = doc(db, 'chats', liveStudent.id);
       
@@ -117,6 +143,8 @@ export default function PortalTutores() {
         matricula: liveStudent.matricula || liveStudent.id,
         grado: liveStudent.grado || '',
         grupo: liveStudent.grupo || '',
+        turno: turnoActual,
+        caseStatus: 'pendiente',
         lastMessage: textToSend,
         lastSender: 'tutor',
         updatedAt: serverTimestamp(),
@@ -129,6 +157,33 @@ export default function PortalTutores() {
         sender: 'tutor',
         createdAt: serverTimestamp()
       });
+
+      // Si el tutor escribe fuera del horario de su turno (Matutino o Vespertino), enviar acuse automático de tranquilidad
+      const recentSystemMsg = messages.some(m => {
+        if (m.sender !== 'system') return false;
+        const diffSec = Math.floor(Date.now() / 1000) - (m.createdAt?.seconds || 0);
+        return diffSec < 14400; // no repetir en 4 horas
+      });
+
+      if (!enHorario && !recentSystemMsg) {
+        const autoReplyText =
+          turnoActual === 'Vespertino'
+            ? '🌙 Hemos recibido tu mensaje en Control Escolar (Turno Vespertino). En este momento nos encontramos fuera de horario de ventanilla, pero tu mensaje ya quedó registrado como PRIORITARIO para ser atendido en nuestro horario del Turno Vespertino: Lunes a Viernes de 2:00 PM a 7:30 PM.'
+            : '☀️ Hemos recibido tu mensaje en Control Escolar (Turno Matutino). En este momento nos encontramos fuera de horario de ventanilla, pero tu mensaje ya quedó registrado como PRIORITARIO para ser atendido en nuestro horario del Turno Matutino: Lunes a Viernes de 7:30 AM a 1:30 PM.';
+
+        setTimeout(async () => {
+          try {
+            await setDoc(doc(collection(chatRef, 'messages')), {
+              text: autoReplyText,
+              sender: 'system',
+              senderName: `Recepción Automática (${turnoActual})`,
+              createdAt: serverTimestamp()
+            });
+          } catch {
+            // ignore
+          }
+        }, 900);
+      }
     } catch (error) {
       console.error("Error enviando mensaje:", error);
     }
@@ -418,17 +473,27 @@ export default function PortalTutores() {
               </div>
             </div>
 
-            {/* Contacto rápido */}
+            {/* Contacto rápido con Horarios de Ambos Turnos */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
               <div>
                 <h3 className="font-bold text-slate-800 border-b pb-2 mb-3">Atención a Padres y Tutores</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  ¿Tienes alguna duda sobre una calificación, inasistencia o trámite de constancia? Comunícate directamente con Control Escolar.
+                <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                  ¿Tienes alguna duda sobre una calificación, inasistencia o trámite de constancia? Comunícate directamente con Control Escolar de tu turno.
                 </p>
+                <div className="space-y-2 text-[11px]">
+                  <div className={`p-2 rounded-lg border flex items-center justify-between ${turnoAlumno === 'Matutino' ? 'bg-amber-50 border-amber-300 text-amber-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                    <span className="flex items-center gap-1"><Sun className="w-3.5 h-3.5 text-amber-500" /> Turno Matutino:</span>
+                    <span>7:30 AM a 1:30 PM</span>
+                  </div>
+                  <div className={`p-2 rounded-lg border flex items-center justify-between ${turnoAlumno === 'Vespertino' ? 'bg-indigo-50 border-indigo-300 text-indigo-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                    <span className="flex items-center gap-1"><Moon className="w-3.5 h-3.5 text-indigo-500" /> Turno Vespertino:</span>
+                    <span>2:00 PM a 7:30 PM</span>
+                  </div>
+                </div>
               </div>
-              <div className="mt-5">
+              <div className="mt-4">
                 <button onClick={() => setActiveTab('mensajes')} className="w-full flex items-center justify-center py-2.5 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition shadow-sm">
-                  <MessageSquare className="w-4 h-4 mr-2" /> Enviar Mensaje a Control Escolar
+                  <MessageSquare className="w-4 h-4 mr-2" /> Enviar Mensaje ({turnoAlumno})
                 </button>
               </div>
             </div>
@@ -438,6 +503,30 @@ export default function PortalTutores() {
         {/* Muro de Noticias */}
         {activeTab === 'muro' && (
           <div className="space-y-6">
+            {/* Selector de avisos por Turno */}
+            <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+              <span className="text-xs font-bold text-slate-600">Mostrando avisos de:</span>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveShiftTab('matutino')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition ${
+                    activeShiftTab === 'matutino' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  <Sun className="w-3.5 h-3.5" /> Matutino
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveShiftTab('vespertino')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition ${
+                    activeShiftTab === 'vespertino' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  <Moon className="w-3.5 h-3.5" /> Vespertino
+                </button>
+              </div>
+            </div>
             {loadingAvisos ? (
               <div className="text-center py-8">
                 <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -487,14 +576,20 @@ export default function PortalTutores() {
         {/* Chat / Mensajes Directos */}
         {activeTab === 'mensajes' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[620px]">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+            <div className="p-4 bg-slate-900 text-white flex flex-wrap justify-between items-center gap-2">
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center mr-3">
                   <User className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-50">Control Escolar</h3>
-                  <p className="text-xs text-emerald-400 font-medium">EST N°68 • Atención Directa a Padres</p>
+                  <h3 className="font-bold text-slate-50 flex items-center gap-2">
+                    Control Escolar • Turno {turnoAlumno}
+                  </h3>
+                  <p className="text-xs text-emerald-400 font-medium">
+                    {turnoAlumno === 'Vespertino'
+                      ? '🌙 Horario de Ventanilla Vespertino: Lunes a Viernes de 2:00 PM a 7:30 PM'
+                      : '☀️ Horario de Ventanilla Matutino: Lunes a Viernes de 7:30 AM a 1:30 PM'}
+                  </p>
                 </div>
               </div>
               {chatDoc?.lastSender === 'tutor' && (
