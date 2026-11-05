@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Newspaper, User, BellRing, FileText, CheckCircle2, Clock, LogOut, MessageSquare, Send, Check, Printer, Award } from 'lucide-react';
+import { Newspaper, User, BellRing, FileText, CheckCircle2, Clock, LogOut, MessageSquare, Send, Check, CheckCheck, Printer, Award, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import { db } from '../../firebase';
@@ -39,6 +39,7 @@ export default function PortalTutores() {
   
   // Chat States
   const [messages, setMessages] = useState([]);
+  const [chatDoc, setChatDoc] = useState(null);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
 
@@ -61,13 +62,18 @@ export default function PortalTutores() {
     return () => unsubStudent();
   }, [studentSession?.id]);
 
-  // Escuchar mensajes del chat
+  // Escuchar documento principal del chat (para saber si hay mensajes no leídos o vistos) y la subcolección de mensajes
   useEffect(() => {
     if (!studentSession) return;
     
     const chatRef = doc(db, 'chats', studentSession.id);
+    const unsubChatDoc = onSnapshot(chatRef, (snap) => {
+      if (snap.exists()) {
+        setChatDoc({ id: snap.id, ...snap.data() });
+      }
+    });
+
     const msgsRef = collection(chatRef, 'messages');
-    
     const unsubscribe = onSnapshot(msgsRef, (snapshot) => {
       let msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
@@ -83,31 +89,36 @@ export default function PortalTutores() {
       }, 100);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubChatDoc();
+      unsubscribe();
+    };
   }, [studentSession]);
 
-  // Marcar como leídos cuando abre la pestaña
+  // Marcar como leídos cuando abre la pestaña o recibe un mensaje con la pestaña abierta
   useEffect(() => {
-    if (activeTab === 'mensajes' && studentSession) {
+    if (activeTab === 'mensajes' && studentSession && chatDoc?.unreadTutor) {
       updateDoc(doc(db, 'chats', studentSession.id), { unreadTutor: false }).catch(() => {});
     }
-  }, [activeTab, studentSession]);
+  }, [activeTab, studentSession, chatDoc?.unreadTutor]);
 
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !liveStudent) return;
+  const sendMessage = async (e, customText = null) => {
+    if (e) e.preventDefault();
+    const textToSend = (customText !== null ? customText : newMessage).trim();
+    if (!textToSend || !liveStudent) return;
 
-    const textToSend = newMessage.trim();
-    setNewMessage('');
+    if (customText === null) setNewMessage('');
 
     try {
       const chatRef = doc(db, 'chats', liveStudent.id);
       
       await setDoc(chatRef, {
-        studentName: `${liveStudent.nombres} ${liveStudent.apellidoPaterno} ${liveStudent.apellidoMaterno}`,
+        studentName: `${liveStudent.nombres || ''} ${liveStudent.apellidoPaterno || ''} ${liveStudent.apellidoMaterno || ''}`.trim(),
+        matricula: liveStudent.matricula || liveStudent.id,
         grado: liveStudent.grado || '',
         grupo: liveStudent.grupo || '',
         lastMessage: textToSend,
+        lastSender: 'tutor',
         updatedAt: serverTimestamp(),
         unreadAdmin: true,
         unreadTutor: false
@@ -230,6 +241,31 @@ export default function PortalTutores() {
           </div>
         </div>
 
+        {/* Alerta Principal si Control Escolar envió un mensaje nuevo */}
+        {chatDoc?.unreadTutor && activeTab !== 'mensajes' && (
+          <div
+            onClick={() => setActiveTab('mensajes')}
+            className="bg-rose-600 hover:bg-rose-700 text-white rounded-2xl p-4 shadow-lg cursor-pointer transition-all flex items-center justify-between gap-4 animate-pulse"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                <MessageSquare className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-extrabold text-sm sm:text-base">
+                  ¡Tienes un nuevo mensaje de Control Escolar!
+                </p>
+                <p className="text-xs text-rose-100 line-clamp-1">
+                  "{chatDoc.lastMessage}"
+                </p>
+              </div>
+            </div>
+            <span className="px-3 py-1.5 bg-white text-rose-700 font-extrabold text-xs rounded-xl shrink-0 shadow-xs">
+              Ver y Responder →
+            </span>
+          </div>
+        )}
+
         {/* Tabs adaptadas a móvil */}
         <div className="border-b border-slate-200 overflow-x-auto">
           <nav className="-mb-px flex space-x-4 sm:space-x-8 min-w-max px-1">
@@ -250,6 +286,11 @@ export default function PortalTutores() {
               className={`py-3.5 px-2 border-b-2 font-bold text-sm transition-colors flex items-center ${activeTab === 'mensajes' ? 'border-primary-600 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             >
               <MessageSquare className="w-4 h-4 mr-2" /> Mensajes con Control Escolar
+              {chatDoc?.unreadTutor && (
+                <span className="ml-2 px-2 py-0.5 text-[10px] font-extrabold bg-rose-600 text-white rounded-full animate-bounce">
+                  NUEVO
+                </span>
+              )}
             </button>
           </nav>
         </div>
@@ -445,7 +486,7 @@ export default function PortalTutores() {
 
         {/* Chat / Mensajes Directos */}
         {activeTab === 'mensajes' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[620px]">
             <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center mr-3">
@@ -453,9 +494,26 @@ export default function PortalTutores() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-50">Control Escolar</h3>
-                  <p className="text-xs text-emerald-400 font-medium">EST N°68</p>
+                  <p className="text-xs text-emerald-400 font-medium">EST N°68 • Atención Directa a Padres</p>
                 </div>
               </div>
+              {chatDoc?.lastSender === 'tutor' && (
+                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold flex items-center ${
+                  chatDoc?.unreadAdmin
+                    ? 'bg-slate-800 text-slate-300'
+                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                }`}>
+                  {chatDoc?.unreadAdmin ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 mr-1" /> Enviado a Control Escolar
+                    </>
+                  ) : (
+                    <>
+                      <CheckCheck className="w-3.5 h-3.5 mr-1 text-emerald-400" /> Visto por Control Escolar
+                    </>
+                  )}
+                </span>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
@@ -466,19 +524,30 @@ export default function PortalTutores() {
                 <div className="text-center mt-10">
                   <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                   <p className="text-slate-500 font-medium">Escribe tu primer mensaje</p>
-                  <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Control Escolar responderá tus dudas por este medio en horario hábil.</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Control Escolar recibe una alerta inmediata y responderá tus dudas por este medio.</p>
                 </div>
               ) : (
                 messages.map(msg => {
                   const isTutor = msg.sender === 'tutor';
                   return (
                     <div key={msg.id} className={`flex flex-col ${isTutor ? 'items-end' : 'items-start'}`}>
-                      <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl ${isTutor ? 'bg-primary-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-sm'}`}>
+                      <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl ${isTutor ? 'bg-primary-600 text-white rounded-br-none shadow-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-sm'}`}>
+                        {!isTutor && (
+                          <p className="text-[10px] font-bold text-primary-600 mb-0.5">
+                            {msg.senderName || 'Control Escolar EST N°68'}
+                          </p>
+                        )}
                         <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
                       </div>
-                      <span className="text-[10px] text-slate-400 mt-1 flex items-center">
+                      <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
                         {msg.createdAt?.seconds && new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {isTutor && <Check className="w-3 h-3 ml-1 text-slate-400" />}
+                        {isTutor && (
+                          chatDoc?.unreadAdmin ? (
+                            <Check className="w-3 h-3 text-slate-400" title="Enviado" />
+                          ) : (
+                            <CheckCheck className="w-3.5 h-3.5 text-emerald-500" title="Visto por Control Escolar" />
+                          )
+                        )}
                       </span>
                     </div>
                   );
@@ -487,13 +556,37 @@ export default function PortalTutores() {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Botones de consulta rápida para padres */}
+            <div className="bg-slate-100/80 border-t border-slate-200 px-4 py-2">
+              <p className="text-[11px] font-bold text-slate-600 mb-1.5 flex items-center">
+                <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-500" /> Consultas rápidas (toca una para escribirla):
+              </p>
+              <div className="flex gap-1.5 overflow-x-auto pb-1">
+                {[
+                  'Hola, buen día. Quisiera solicitar una constancia de estudios.',
+                  'Buen día, tengo una duda sobre una calificación de la boleta.',
+                  'Hola, quisiera informar y justificar una inasistencia de mi hijo(a).',
+                  '¿En qué horario puedo acudir a ventanilla de Control Escolar?'
+                ].map((qText, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setNewMessage(qText)}
+                    className="text-[11px] bg-white hover:bg-primary-50 text-slate-700 border border-slate-200 rounded-full px-3 py-1 whitespace-nowrap transition-colors"
+                  >
+                    {qText}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="p-4 bg-white border-t border-slate-200">
               <form onSubmit={sendMessage} className="flex items-center gap-2">
                 <input 
                   type="text" 
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
-                  placeholder="Escribe tu duda aquí..." 
+                  placeholder="Escribe tu duda o mensaje aquí..." 
                   className="flex-1 px-4 py-3 bg-slate-100 border-transparent focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 rounded-xl text-sm transition-all"
                 />
                 <button 
@@ -506,6 +599,23 @@ export default function PortalTutores() {
               </form>
             </div>
           </div>
+        )}
+
+        {/* Burbuja Flotante en Portal de Padres para abrir el Chat desde cualquier pestaña */}
+        {activeTab !== 'mensajes' && (
+          <button
+            onClick={() => setActiveTab('mensajes')}
+            className={`fixed bottom-5 right-5 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full shadow-2xl transition-all hover:scale-105 ${
+              chatDoc?.unreadTutor
+                ? 'bg-rose-600 hover:bg-rose-700 text-white ring-4 ring-rose-500/30 animate-bounce'
+                : 'bg-primary-600 hover:bg-primary-700 text-white'
+            }`}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span className="text-xs font-extrabold">
+              {chatDoc?.unreadTutor ? '¡Mensaje Nuevo de Control Escolar!' : 'Chat con Control Escolar'}
+            </span>
+          </button>
         )}
       </div>
 

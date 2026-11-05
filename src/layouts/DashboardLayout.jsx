@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import FloatingBuzonWidget from '../components/FloatingBuzonWidget';
 import {
   Package,  
   LayoutDashboard, 
@@ -15,12 +17,14 @@ import {
   Megaphone,
   MessageSquare,
   Key,
-  FileSpreadsheet
+  FileSpreadsheet,
+  BellRing
 } from 'lucide-react';
 
 export default function DashboardLayout() {
   const { currentUser, userPermissions, userRole, userName, logout } = useAuth();
   const location = useLocation();
+  const [unreadBuzonCount, setUnreadBuzonCount] = useState(0);
 
   const isOnlyDocente =
     userRole === 'docente' ||
@@ -28,6 +32,14 @@ export default function DashboardLayout() {
       userPermissions.includes('portal-docente') &&
       !userPermissions.includes('all') &&
       !userPermissions.includes('control-escolar'));
+
+  const canSeeBuzon = Boolean(
+    currentUser &&
+    (userRole === 'superadmin' ||
+      userPermissions?.includes('all') ||
+      userPermissions?.includes('buzon') ||
+      userPermissions?.includes('control-escolar'))
+  );
 
   const menu = currentUser ? [
     { name: 'Panel Principal', path: '/panel', icon: LayoutDashboard, id: 'home' },
@@ -47,6 +59,7 @@ export default function DashboardLayout() {
     if (item.id === 'home') return !isOnlyDocente;
     if (userPermissions?.includes('all')) return true;
     if (item.id === 'inventario' && userPermissions?.includes('contraloria')) return true;
+    if (item.id === 'buzon' && userPermissions?.includes('control-escolar')) return true;
     return userPermissions?.includes(item.id);
   }) : [
     { name: 'Mi Portal Familiar', path: '/panel/portal-familiar', icon: UsersRound },
@@ -66,16 +79,28 @@ export default function DashboardLayout() {
           <nav className="space-y-1 px-3">
             {menu.map((item) => {
               const isActive = location.pathname === item.path;
+              const isBuzon = item.id === 'buzon';
               return (
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive ? 'bg-primary-600 text-white' : 'hover:bg-slate-800 hover:text-white'
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-primary-600 text-white'
+                      : isBuzon && unreadBuzonCount > 0
+                        ? 'bg-red-950/70 text-red-200 border border-red-500/40 hover:bg-red-900/70'
+                        : 'hover:bg-slate-800 hover:text-white'
                   }`}
                 >
-                  <item.icon className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  {item.name}
+                  <div className="flex items-center truncate">
+                    <item.icon className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? 'text-white' : isBuzon && unreadBuzonCount > 0 ? 'text-red-400 animate-bounce' : 'text-slate-400'}`} />
+                    <span className="truncate">{item.name}</span>
+                  </div>
+                  {isBuzon && unreadBuzonCount > 0 && (
+                    <span className="ml-2 px-2 py-0.5 text-[11px] font-black bg-red-600 text-white rounded-full shadow animate-pulse">
+                      {unreadBuzonCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -95,11 +120,24 @@ export default function DashboardLayout() {
           <h1 className="text-xl font-semibold text-slate-800">
             {menu.find(m => m.path === location.pathname)?.name || 'Panel'}
           </h1>
-          {currentUser && (
-            <div className="text-xs font-medium text-slate-500">
-              {userName ? <span className="font-bold text-slate-700">{userName}</span> : currentUser.email}
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            {canSeeBuzon && unreadBuzonCount > 0 && (
+              <Link
+                to="/panel/buzon"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-extrabold hover:bg-red-100 transition animate-pulse"
+              >
+                <BellRing className="w-4 h-4 text-red-600" />
+                {unreadBuzonCount === 1
+                  ? '1 Mensaje nuevo de Tutor'
+                  : `${unreadBuzonCount} Mensajes nuevos de Tutores`}
+              </Link>
+            )}
+            {currentUser && (
+              <div className="text-xs font-medium text-slate-500">
+                {userName ? <span className="font-bold text-slate-700">{userName}</span> : currentUser.email}
+              </div>
+            )}
+          </div>
         </header>
         <main className="flex-1 overflow-y-auto print:overflow-visible p-8 print:p-0">
           <div className="mx-auto max-w-7xl print:max-w-none">
@@ -107,6 +145,11 @@ export default function DashboardLayout() {
           </div>
         </main>
       </div>
+
+      {/* Burbuja Flotante Interactiva en Todas las Pantallas */}
+      {canSeeBuzon && (
+        <FloatingBuzonWidget onUnreadCountChange={setUnreadBuzonCount} />
+      )}
     </div>
   );
 }
