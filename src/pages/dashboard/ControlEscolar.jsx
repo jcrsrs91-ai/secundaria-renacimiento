@@ -577,7 +577,164 @@ export default function ControlEscolar() {
     }
   };
 
+  const normalizarTextoComparacion = (str) =>
+    (str || '')
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, ' ');
+
+  const buscarActivoExistente = (pendiente) => {
+    if (!pendiente) return null;
+    const curpP = (pendiente.curp || '').trim().toUpperCase();
+    if (curpP.length >= 10) {
+      const matchPorCurp =
+        _rawDirectorio.find(a => (a.status || 'Activo') === 'Activo' && (a.curp || '').trim().toUpperCase() === curpP) ||
+        _rawDirectorio.find(a => (a.curp || '').trim().toUpperCase() === curpP);
+      if (matchPorCurp) return matchPorCurp;
+    }
+
+    const patP = normalizarTextoComparacion(pendiente.apellidoPaterno);
+    const matP = normalizarTextoComparacion(pendiente.apellidoMaterno);
+    const nomP = normalizarTextoComparacion(pendiente.nombres);
+    if (patP && nomP) {
+      const matchPorNombre =
+        _rawDirectorio.find(
+          a =>
+            (a.status || 'Activo') === 'Activo' &&
+            normalizarTextoComparacion(a.apellidoPaterno) === patP &&
+            normalizarTextoComparacion(a.apellidoMaterno) === matP &&
+            normalizarTextoComparacion(a.nombres) === nomP
+        ) ||
+        _rawDirectorio.find(
+          a =>
+            normalizarTextoComparacion(a.apellidoPaterno) === patP &&
+            normalizarTextoComparacion(a.apellidoMaterno) === matP &&
+            normalizarTextoComparacion(a.nombres) === nomP
+        );
+      if (matchPorNombre) return matchPorNombre;
+    }
+    return null;
+  };
+
+  const pendientesDuplicados = useMemo(() => {
+    return pendientes
+      .map(p => ({ pendiente: p, activo: buscarActivoExistente(p) }))
+      .filter(item => item.activo !== null);
+  }, [pendientes, _rawDirectorio]);
+
+  const construirDatosFusionExpediente = (pendiente, activo) => {
+    const camposProtegidos = new Set([
+      'id',
+      'status',
+      'grado',
+      'grupo',
+      'turno',
+      'taller',
+      'matricula',
+      'calificaciones',
+      'asistencias',
+      'historial',
+      'extraordinarios',
+      'tipoIngreso',
+      'fechaAlta',
+      'motivoBaja',
+      'fechaBaja',
+      'fechaRegistro'
+    ]);
+
+    const updatePayload = {};
+    Object.entries(pendiente).forEach(([key, val]) => {
+      if (camposProtegidos.has(key)) return;
+      if (key === 'documentos' && val && typeof val === 'object') {
+        const docsCombinados = { ...(activo.documentos || {}) };
+        Object.entries(val).forEach(([dKey, dVal]) => {
+          if (dVal) docsCombinados[dKey] = true;
+        });
+        updatePayload.documentos = docsCombinados;
+        return;
+      }
+      if (val !== undefined && val !== null && val !== '') {
+        updatePayload[key] = val;
+      }
+    });
+
+    if (!activo.grado && pendiente.grado) updatePayload.grado = pendiente.grado;
+    if (!activo.grupo && pendiente.grupo) updatePayload.grupo = pendiente.grupo;
+    if (!activo.turno && pendiente.turno) updatePayload.turno = pendiente.turno;
+    if (!activo.taller && pendiente.taller) updatePayload.taller = pendiente.taller;
+    if (!activo.matricula && pendiente.matricula) updatePayload.matricula = pendiente.matricula;
+
+    updatePayload.tipoTramite = 'Actualización de Expediente';
+    updatePayload.fechaActualizacion = serverTimestamp();
+    updatePayload.lastModifiedBy = auth.currentUser?.email || 'Control Escolar (Fusión)';
+    updatePayload.lastModifiedAt = new Date().toISOString();
+
+    return updatePayload;
+  };
+
+  const fusionarPendienteConActivo = async (pendiente, activoExistente, pedirConfirmacion = true) => {
+    const targetActivo = activoExistente || buscarActivoExistente(pendiente);
+    if (!targetActivo) return false;
+
+    if (pedirConfirmacion) {
+      const ok = window.confirm(
+        `El alumno ${pendiente.apellidoPaterno} ${pendiente.apellidoMaterno || ''} ${pendiente.nombres} ya existe en el Directorio Activo (${targetActivo.grado || ''} "${targetActivo.grupo || '?'}" - ${targetActivo.turno || 'Matutino'}).\n\n¿Deseas pasar todos los datos y documentos capturados por el tutor a su expediente Activo y eliminar esta solicitud pendiente duplicada?`
+      );
+      if (!ok) return false;
+    }
+
+    try {
+      const payload = construirDatosFusionExpediente(pendiente, targetActivo);
+      await updateDoc(doc(db, "students", targetActivo.id), payload);
+      if (pendiente.id && pendiente.id !== targetActivo.id) {
+        await deleteDoc(doc(db, "students", pendiente.id));
+      }
+      await registrarMovimiento(
+        auth.currentUser?.email,
+        'Control Escolar',
+        'Fusión de Expediente Duplicado',
+        `Se actualizaron los datos del alumno activo ${targetActivo.nombres} ${targetActivo.apellidoPaterno} (${targetActivo.grado} ${targetActivo.grupo || ''}) con la solicitud enviada en Nuevo Ingreso y se eliminó el duplicado pendiente.`
+      );
+      if (pedirConfirmacion) {
+        toast.success(`Expediente activo de ${targetActivo.nombres} ${targetActivo.apellidoPaterno} actualizado correctamente.`);
+      }
+      return true;
+    } catch (err) {
+      console.error("Error al fusionar expediente:", err);
+      if (pedirConfirmacion) {
+        toast.error("Ocurrió un error al fusionar el expediente.");
+      }
+      return false;
+    }
+  };
+
+  const fusionarTodosLosPendientesDuplicados = async () => {
+    if (pendientesDuplicados.length === 0) return;
+    const confirmar = window.confirm(
+      `Se detectaron ${pendientesDuplicados.length} solicitud(es) en "Pendientes" de alumnos que YA están dados de alta en tu Directorio Activo (padres que entraron por "Nuevo Ingreso" en lugar de "Actualizar").\n\n¿Deseas transferir automáticamente todos sus datos llenados (domicilio, tutores, ficha médica, documentos) a sus expedientes Activos y limpiar las solicitudes duplicadas?`
+    );
+    if (!confirmar) return;
+
+    const toastId = toast.loading(`Actualizando ${pendientesDuplicados.length} expediente(s) activo(s)...`);
+    let exitosos = 0;
+    for (const item of pendientesDuplicados) {
+      const ok = await fusionarPendienteConActivo(item.pendiente, item.activo, false);
+      if (ok) exitosos++;
+    }
+    toast.dismiss(toastId);
+    toast.success(`¡Listo! Se actualizaron y fusionaron ${exitosos} expediente(s) en el Directorio Activo.`);
+  };
+
   const aceptarAspirante = async (student) => {
+    const activoExistente = buscarActivoExistente(student);
+    if (activoExistente) {
+      await fusionarPendienteConActivo(student, activoExistente, true);
+      return;
+    }
+
     const confirmacion = window.confirm(`¿Estás seguro de aceptar a ${student.nombres} ${student.apellidoPaterno}?`);
     if (!confirmacion) return;
 
@@ -1110,6 +1267,27 @@ export default function ControlEscolar() {
       {/* Tabla Pendientes */}
         {!loading && activeTab === 'pendientes' && (
           <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-x-auto">
+            {pendientesDuplicados.length > 0 && (
+              <div className="p-4 bg-amber-50 border-b border-amber-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-amber-900">
+                      Se detectaron {pendientesDuplicados.length} solicitud(es) de alumnos que YA están en tu Directorio Activo
+                    </p>
+                    <p className="text-xs text-amber-800 mt-0.5">
+                      Estos padres llenaron el formulario en la pestaña "Nuevo Ingreso" en lugar de "Actualizar". Puedes transferir toda su información y documentos a sus expedientes activos con un solo clic sin duplicar alumnos.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={fusionarTodosLosPendientesDuplicados}
+                  className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm transition-colors flex items-center gap-2"
+                >
+                  🔄 Fusionar y Actualizar Expedientes Activos ({pendientesDuplicados.length})
+                </button>
+              </div>
+            )}
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex">
               <input type="text" placeholder="Buscar aspirante por nombre o CURP..." value={searchAspirantes} onChange={(e) => setSearchAspirantes(e.target.value)} className="w-full max-w-md px-4 py-2 border border-slate-300 rounded-md focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
             </div>
@@ -1127,13 +1305,21 @@ export default function ControlEscolar() {
               {filteredPendientes.length === 0 ? (
                 <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">No hay solicitudes pendientes.</td></tr>
               ) : (
-                filteredPendientes.map(p => (
-                  <tr key={p.id}>
+                filteredPendientes.map(p => {
+                  const matchActivo = buscarActivoExistente(p);
+                  return (
+                  <tr key={p.id} className={matchActivo ? "bg-amber-50/40" : ""}>
                     <td className="px-6 py-4 text-sm font-medium text-slate-900">
                       <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded text-xs">{p.tipoTramite || 'Nuevo Ingreso'}</span>
+                      {matchActivo && (
+                        <span className="mt-1.5 block w-fit bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded text-[11px] font-bold">
+                          🔄 Ya existe en Activos ({matchActivo.grado} "{matchActivo.grupo || '?'}" - {matchActivo.turno || 'Matutino'})
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 font-semibold uppercase">
                       {p.apellidoPaterno} {p.apellidoMaterno} {p.nombres}
+                      {p.curp && <span className="block text-[11px] text-slate-400 font-mono">{p.curp}</span>}
                       {(!p.documentos?.acta || !p.documentos?.curp || !p.documentos?.certificado || !p.documentos?.ine || !p.documentos?.domicilio) && (
                         <span className="mt-1 flex items-center text-[10px] text-red-500 font-bold normal-case">
                           <AlertTriangle className="w-3 h-3 mr-1" /> Faltan Documentos Digitales
@@ -1153,15 +1339,26 @@ export default function ControlEscolar() {
                         <button onClick={() => setSelectedExpediente(p)} className="text-purple-600 hover:text-purple-800 font-medium text-sm inline-flex items-center ml-4">
                           <FolderOpen className="w-4 h-4 mr-1" /> Docs Digitales
                         </button>
-                        <button onClick={() => aceptarAspirante(p)} className="text-emerald-600 font-medium text-sm hover:bg-emerald-50 px-3 py-1 rounded border border-emerald-200 transition-colors">
-                        Aceptar Aspirante
-                      </button>
+                        {matchActivo ? (
+                          <button
+                            onClick={() => fusionarPendienteConActivo(p, matchActivo, true)}
+                            className="bg-amber-600 text-white font-semibold text-sm hover:bg-amber-700 px-3 py-1 rounded border border-amber-700 transition-colors shadow-sm"
+                            title="Transfiere los datos capturados al expediente activo del alumno y elimina este duplicado"
+                          >
+                            🔄 Actualizar Expediente Activo
+                          </button>
+                        ) : (
+                          <button onClick={() => aceptarAspirante(p)} className="text-emerald-600 font-medium text-sm hover:bg-emerald-50 px-3 py-1 rounded border border-emerald-200 transition-colors">
+                            Aceptar Aspirante
+                          </button>
+                        )}
                       <button onClick={() => handleDeleteStudent(p)} className="text-red-500 font-medium text-sm hover:bg-red-50 px-3 py-1 rounded border border-red-200 transition-colors">
                         Eliminar
                       </button>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

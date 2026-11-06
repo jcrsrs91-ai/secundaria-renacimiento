@@ -3,9 +3,57 @@ import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import { UserPlus, ClipboardList, Search, Upload, Printer, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db, storage } from '../../firebase';
-import { collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import HojaInscripcionPrint from '../../components/HojaInscripcionPrint';
+
+// Unifica documentos cuando un padre llenó por error "Nuevo Ingreso" existiendo ya el alumno "Activo"
+const resolverExpedienteUnificado = (docsSnap) => {
+  if (!docsSnap || docsSnap.length === 0) return null;
+  const items = docsSnap.map(d => ({ id: d.id, ...d.data() }));
+
+  // Priorizar el expediente Activo (o con matrícula/calificaciones) sobre el Pendiente
+  items.sort((a, b) => {
+    const aActivo = (a.status || 'Activo') !== 'Pendiente' ? 1 : 0;
+    const bActivo = (b.status || 'Activo') !== 'Pendiente' ? 1 : 0;
+    if (aActivo !== bActivo) return bActivo - aActivo;
+    const aMat = a.matricula ? 1 : 0;
+    const bMat = b.matricula ? 1 : 0;
+    return bMat - aMat;
+  });
+
+  const primary = { ...items[0] };
+  const duplicatePendingIds = [];
+
+  for (let i = 1; i < items.length; i++) {
+    const sec = items[i];
+    if (sec.status === 'Pendiente') {
+      duplicatePendingIds.push(sec.id);
+    }
+    // Copiar campos que estén vacíos en primary pero llenos en el registro secundario (Pendiente)
+    Object.keys(sec).forEach(key => {
+      if (['id', 'status', 'grado', 'grupo', 'turno', 'taller', 'matricula', 'calificaciones', 'asistencias', 'historial', 'extraordinarios', 'tipoIngreso', 'fechaAlta'].includes(key)) {
+        return;
+      }
+      const valPrimary = primary[key];
+      const valSec = sec[key];
+      if (key === 'documentos' && valSec && typeof valSec === 'object') {
+        primary.documentos = { ...(valSec || {}), ...(primary.documentos || {}) };
+      } else if ((valPrimary === undefined || valPrimary === null || valPrimary === '') && valSec !== undefined && valSec !== null && valSec !== '') {
+        primary[key] = valSec;
+      }
+    });
+  }
+
+  // Si el primario no tenía grado/grupo pero el secundario sí
+  if (!primary.grado && items[1]?.grado) primary.grado = items[1].grado;
+  if (!primary.grupo && items[1]?.grupo) primary.grupo = items[1].grupo;
+  if (!primary.turno && items[1]?.turno) primary.turno = items[1].turno;
+  if (!primary.taller && items[1]?.taller) primary.taller = items[1].taller;
+
+  primary._duplicatePendingIds = duplicatePendingIds;
+  return primary;
+};
 
 export default function PreInscripcion() {
   const { config } = useGlobalConfig();
@@ -47,7 +95,7 @@ export default function PreInscripcion() {
     try {
       const q = query(
         collection(db, "students"),
-        where("curp", "==", lookupCurp.toUpperCase())
+        where("curp", "==", lookupCurp.trim().toUpperCase())
       );
       const querySnapshot = await getDocs(q);
       
@@ -57,19 +105,18 @@ export default function PreInscripcion() {
         return;
       }
       
-      const data = querySnapshot.docs[0].data();
-      const id = querySnapshot.docs[0].id;
+      const unified = resolverExpedienteUnificado(querySnapshot.docs);
 
-      if (data.grado === '3er Grado' || data.grado === '3ero') {
+      if (unified.grado === '3er Grado' || unified.grado === '3ero') {
         setLookupError('¡Felicidades por graduarte! Los alumnos de 3er Grado ya no pueden reinscribirse.');
         setIsSubmitting(false);
         return;
       }
 
       let nextGrado = "2do Grado";
-      if (data.grado === '2do Grado' || data.grado === '2do') nextGrado = "3er Grado";
+      if (unified.grado === '2do Grado' || unified.grado === '2do') nextGrado = "3er Grado";
 
-      setStudentData({ id, ...data, grado: nextGrado });
+      setStudentData({ ...unified, grado: nextGrado });
     } catch (error) {
       setLookupError('Error de conexión: ' + error.message);
     } finally {
@@ -85,7 +132,7 @@ export default function PreInscripcion() {
     try {
       const q = query(
         collection(db, "students"),
-        where("curp", "==", lookupCurp.toUpperCase())
+        where("curp", "==", lookupCurp.trim().toUpperCase())
       );
       const querySnapshot = await getDocs(q);
       
@@ -95,8 +142,8 @@ export default function PreInscripcion() {
         return;
       }
       
-      // Mostrar la ficha directamente
-      setFinalData(querySnapshot.docs[0].data());
+      const unified = resolverExpedienteUnificado(querySnapshot.docs);
+      setFinalData(unified);
       setIsSubmitted(true);
     } catch (error) {
       setLookupError('Error de conexión: ' + error.message);
@@ -112,7 +159,7 @@ export default function PreInscripcion() {
     try {
       const q = query(
         collection(db, "students"),
-        where("curp", "==", lookupCurp.toUpperCase())
+        where("curp", "==", lookupCurp.trim().toUpperCase())
       );
       const querySnapshot = await getDocs(q);
       
@@ -122,7 +169,8 @@ export default function PreInscripcion() {
         return;
       }
       
-      setStudentData({ id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() });
+      const unified = resolverExpedienteUnificado(querySnapshot.docs);
+      setStudentData(unified);
     } catch (error) {
       setLookupError('Error de conexión: ' + error.message);
     } finally {
@@ -130,7 +178,6 @@ export default function PreInscripcion() {
     }
   };
 
-  
   const handleDocFileChange = (e, setter) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -152,8 +199,8 @@ export default function PreInscripcion() {
     }
   };
 
-  const handleCurpInput = (e) => {
-    let val = e.target.value.toUpperCase();
+  const handleCurpInput = async (e) => {
+    let val = e.target.value.toUpperCase().trim();
     e.target.value = val;
     
     if (val.length === 18) {
@@ -166,7 +213,6 @@ export default function PreInscripcion() {
         const yearStr = val.substring(4, 6);
         const monthStr = val.substring(6, 8);
         const dayStr = val.substring(8, 10);
-        
         
         let gender = '';
         if (val.length >= 11) {
@@ -190,10 +236,29 @@ export default function PreInscripcion() {
         const fnac = `${fullYear}-${monthStr}-${dayStr}`;
         
         const dateInput = document.querySelector('input[name="fechaNacimiento"]');
-        if (dateInput && !dateInput.value) {
+        if (dateInput) {
           dateInput.value = fnac;
-        } else if (dateInput) {
-          dateInput.value = fnac; // Forzar actualización aunque haya algo
+        }
+
+        // Si el padre está en "Nuevo Ingreso", verificar automáticamente si la CURP ya existe en el padrón
+        if (activeTab === 'nuevo' && (!studentData || studentData.curp !== val)) {
+          try {
+            const q = query(collection(db, "students"), where("curp", "==", val));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+              const unified = resolverExpedienteUnificado(snap.docs);
+              setStudentData(unified);
+              if (config?.inscripcionesAbiertas !== false) {
+                setActiveTab('completar');
+              }
+              toast.success(
+                `¡Encontramos el expediente de ${unified.nombres || ''} ${unified.apellidoPaterno || ''}! Se cargaron sus datos para actualizar su expediente activo sin duplicarlo.`,
+                { duration: 6000 }
+              );
+            }
+          } catch (err) {
+            console.error("Error verificando CURP existente:", err);
+          }
         }
       }
     } else if (val.length > 0) {
@@ -206,14 +271,29 @@ export default function PreInscripcion() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setLoadingMessage(activeTab === 'completar' ? 'Guardando actualización de datos...' : 'Trabajando en subir los documentos...');
+    setLoadingMessage(activeTab === 'completar' ? 'Guardando actualización de datos...' : 'Verificando expediente y guardando datos...');
     
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
 
     try {
-      const currentCurp = data.curp ? data.curp.toUpperCase() : studentData.curp;
-      let fotoUrl = studentData?.fotoUrl || null;
+      const currentCurp = (data.curp ? data.curp : (studentData?.curp || '')).trim().toUpperCase();
+
+      // SIEMPRE verificar en Firestore si ya existe un alumno con esa CURP (evita duplicados cuando el padre entró en "Nuevo Ingreso")
+      let targetExisting = studentData;
+      let duplicateIdsToClean = studentData?._duplicatePendingIds || [];
+
+      if (currentCurp) {
+        const qExist = query(collection(db, "students"), where("curp", "==", currentCurp));
+        const existSnap = await getDocs(qExist);
+        if (!existSnap.empty) {
+          const unified = resolverExpedienteUnificado(existSnap.docs);
+          targetExisting = unified;
+          duplicateIdsToClean = unified._duplicatePendingIds || [];
+        }
+      }
+
+      let fotoUrl = targetExisting?.fotoUrl || null;
 
       if (photoFile) {
         const photoRef = ref(storage, `student_photos/${currentCurp}_${Date.now()}`);
@@ -221,7 +301,7 @@ export default function PreInscripcion() {
         fotoUrl = await getDownloadURL(photoRef);
       }
 
-      let documentos = studentData?.documentos || {};
+      let documentos = { ...(targetExisting?.documentos || {}) };
       
       const uploadDoc = async (fileObj, docName) => {
         if (fileObj) {
@@ -232,7 +312,7 @@ export default function PreInscripcion() {
           documentos[docName] = true;
           return url;
         }
-        return studentData?.[docName + 'Url'] || null;
+        return targetExisting?.[docName + 'Url'] || null;
       };
 
       const actaUrl = await uploadDoc(actaFile, 'acta');
@@ -244,15 +324,23 @@ export default function PreInscripcion() {
       const ineContacto1Url = await uploadDoc(ineContacto1File, 'ineContacto1');
       const ineContacto2Url = await uploadDoc(ineContacto2File, 'ineContacto2');
 
-      if (activeTab === 'completar' && studentData) {
-        data.grado = studentData.grado;
-        data.grupo = studentData.grupo;
-        data.turno = studentData.turno;
-        data.taller = studentData.taller;
+      // Si el alumno ya existe en la escuela como Activo (o estamos en completar), preservar su grado, grupo, turno, taller, matrícula y estatus
+      const isAlreadyRegistered = Boolean(targetExisting?.id);
+      const isAlreadyActive = isAlreadyRegistered && (targetExisting.status || 'Activo') !== 'Pendiente';
+
+      if ((activeTab === 'completar' || isAlreadyActive) && targetExisting) {
+        if (targetExisting.grado) data.grado = targetExisting.grado;
+        if (targetExisting.grupo) data.grupo = targetExisting.grupo;
+        if (targetExisting.turno) data.turno = targetExisting.turno;
+        if (targetExisting.taller) data.taller = targetExisting.taller;
       }
 
+      const cleanTarget = { ...(targetExisting || {}) };
+      delete cleanTarget._duplicatePendingIds;
+      delete cleanTarget.id;
+
       const submissionData = {
-        ...studentData,
+        ...cleanTarget,
         ...data,
         fotoUrl,
         actaUrl,
@@ -265,13 +353,28 @@ export default function PreInscripcion() {
         ineContacto2Url,
         documentos,
         curp: currentCurp,
-        tipoTramite: activeTab === 'reinscripcion' ? "Reinscripción" : (studentData?.tipoTramite || "Nuevo Ingreso"),
+        tipoTramite: activeTab === 'reinscripcion'
+          ? "Reinscripción"
+          : isAlreadyActive
+          ? (targetExisting?.tipoTramite || "Actualización de Expediente")
+          : (targetExisting?.tipoTramite || "Nuevo Ingreso"),
         updatedAt: serverTimestamp()
       };
 
-      if ((activeTab === 'reinscripcion' || activeTab === 'completar') && studentData?.id) {
-        const docRef = doc(db, "students", studentData.id);
+      if (isAlreadyRegistered && targetExisting?.id) {
+        // Preservar estatus Activo si ya era un alumno activo del plantel
+        if (isAlreadyActive) {
+          submissionData.status = targetExisting.status || "Activo";
+        }
+        const docRef = doc(db, "students", targetExisting.id);
         await updateDoc(docRef, submissionData);
+
+        // Si había solicitudes "Pendiente" duplicadas de esta misma CURP, eliminarlas tras haber fusionado sus datos en el Activo
+        for (const dupId of duplicateIdsToClean) {
+          if (dupId && dupId !== targetExisting.id) {
+            await deleteDoc(doc(db, "students", dupId)).catch(() => {});
+          }
+        }
       } else {
         submissionData.status = "Pendiente";
         submissionData.createdAt = serverTimestamp();
@@ -290,10 +393,10 @@ export default function PreInscripcion() {
 
   if (isSubmitted && finalData) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="max-w-4xl mx-auto py-8">
+      <div className="min-h-screen bg-slate-50 print:bg-white print:min-h-0">
+        <div className="max-w-4xl mx-auto py-8 print:py-0">
           <HojaInscripcionPrint data={finalData} />
-          <div className="text-center mt-8 print:hidden">
+          <div className="text-center mt-8 print:hidden no-print">
             <a href="/" className="inline-block py-2.5 px-6 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition">
               Finalizar y Volver al Inicio
             </a>
@@ -308,7 +411,6 @@ export default function PreInscripcion() {
     setStudentData(null);
     setLookupError('');
     setLookupCurp('');
-    setLookupMatricula('');
   };
 
   return (
@@ -428,7 +530,7 @@ export default function PreInscripcion() {
 
             {/* Formulario Principal */}
             {(activeTab === 'nuevo' || ((activeTab === 'reinscripcion' || activeTab === 'completar') && studentData)) && (
-              <form onSubmit={handleSubmit} className="space-y-8">
+              <form key={studentData?.id || activeTab} onSubmit={handleSubmit} className="space-y-8">
                 
                 {activeTab === 'reinscripcion' && (
                   <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg flex items-start">
@@ -442,8 +544,10 @@ export default function PreInscripcion() {
                 {activeTab === 'completar' && (
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex items-start mb-6">
                     <div className="flex-1">
-                      <h4 className="font-bold text-blue-800">Actualizar Expediente de {studentData.nombres}</h4>
-                      <p className="text-sm text-blue-700 mt-1">Revisa y actualiza la información personal, escolar o de contacto y guarda los cambios.</p>
+                      <h4 className="font-bold text-blue-800">Actualizar Expediente de {studentData.nombres} {studentData.apellidoPaterno}</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Expediente oficial ubicado en <strong>{studentData.grado} Grupo "{studentData.grupo}" ({studentData.turno || 'Matutino'})</strong>. Revisa y actualiza la información personal, escolar o de contacto y guarda los cambios.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -459,17 +563,18 @@ export default function PreInscripcion() {
                         <h3 className="text-lg font-bold text-sky-800">
                           Requisitos para Nuevo Ingreso
                         </h3>
-                        <div className="mt-2 text-sm text-sky-700 space-y-2">
-                          <p>
-                            Para realizar la inscripción de manera exitosa, deberás subir en este formulario los siguientes documentos en formato PDF y entregar los físicos antes del <strong>30 de septiembre</strong> (fecha límite oficial de la SEP):
-                          </p>
-                          <ul className="list-disc pl-5 space-y-1 font-medium">
-                            <li><strong>Para 1er Grado:</strong> Acta de Nacimiento, CURP, y Certificado de Primaria.</li>
-                            <li><strong>Para 2do Grado:</strong> Lo anterior + Boleta de 1er Grado de Secundaria.</li>
-                            <li><strong>Para 3er Grado:</strong> Lo anterior + Boletas de 1er y 2do Grado de Secundaria.</li>
+                        <div className="mt-2 text-sm text-sky-700 space-y-1">
+                          <p className="font-medium mb-2">Para completar tu registro exitosamente, ten a la mano los siguientes documentos escaneados en formato <b>PDF</b>:</p>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li><b>Acta de Nacimiento</b> (Formatos vigentes: tradicional sepia/café o formato verde).</li>
+                            <li><b>CURP</b> (Formato reciente y legible).</li>
+                            <li><b>Certificado de Primaria</b> o Constancia de 6to grado (Opcional por el momento).</li>
+                            <li><b>Comprobante de Asignación</b> del portal de la SEP (Si aplica).</li>
+                            <li><b>INE vigente del Padre, Madre o Tutor</b>.</li>
+                            <li><b>Comprobante de domicilio</b> reciente (Luz, agua o teléfono, no mayor a 3 meses).</li>
                           </ul>
-                          <p className="italic mt-2 opacity-80">
-                            Nota: Si eres alumno de reinscripción, por favor selecciona la pestaña de "Reinscripción" arriba.
+                          <p className="mt-3 text-xs bg-white/60 p-2 rounded text-sky-900 border border-sky-200">
+                            <b>Nota:</b> Si el alumno ya está inscrito en la escuela y solo deseas actualizar sus datos, al escribir su <b>CURP</b> el sistema detectará su expediente automáticamente para no duplicarlo.
                           </p>
                         </div>
                       </div>
@@ -477,41 +582,21 @@ export default function PreInscripcion() {
                   </div>
                 )}
 
-                {/* Ciclo Escolar */}
-                  <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 mb-6">
-                    <h3 className="text-lg font-bold text-slate-800 mb-2">Ciclo Escolar</h3>
-                    <p className="text-sm text-slate-500 mb-4">Selecciona el ciclo escolar para este trámite.</p>
-                    <select name="cicloEscolar" className="block w-full rounded-md shadow-sm p-3 border border-slate-300 font-medium" required defaultValue="2026-2027">
-                      <option value="">Seleccionar ciclo...</option>
-                      <option value="2024-2025">2024-2025</option>
-                      <option value="2025-2026">2025-2026</option>
-                      <option value="2026-2027">2026-2027</option>
-                      <option value="2027-2028">2027-2028</option>
-                      <option value="2028-2029">2028-2029</option>
-                    </select>
-                  </div>
-
                 {/* Fotografía (Oculta al actualizar datos) */}
                 {activeTab !== 'completar' && (
-                  <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 text-center">
-                    <h3 className="text-lg font-bold text-slate-800 mb-2">Fotografía del Alumno</h3>
-                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
-                      <h4 className="text-red-800 font-bold text-sm mb-1">FOTOGRAFÍA RECIENTE PARA CREDENCIAL ESCOLAR</h4>
-                      <p className="text-xs text-red-700">Esta fotografía se imprimirá directamente en la credencial oficial del alumno, por lo que debe cumplir <b>estrictamente</b> con las normas de la SEP:</p>
-                      <ul className="list-disc pl-4 text-xs text-red-700 mt-1 space-y-1">
-                        <li>Tomada de frente, rostro serio y orejas descubiertas.</li>
-                        <li>Fondo completamente blanco o muy claro (sin sombras).</li>
-                        <li>Usar playera o camisa tipo polo escolar (blanca).</li>
-                        <li>Sin lentes, sin gorras, sin maquillaje y con el cabello recogido.</li>
-                        <li><b>Completamente Reciente.</b></li>
-                      </ul>
+                  <div className="flex flex-col items-center p-6 bg-slate-50 border border-dashed border-slate-300 rounded-xl">
+                    <div className="w-24 h-32 bg-slate-200 border border-slate-400 mb-4 flex items-center justify-center overflow-hidden">
+                      {photoFile ? (
+                        <img src={URL.createObjectURL(photoFile)} alt="Preview" className="w-full h-full object-cover" />
+                      ) : studentData?.fotoUrl ? (
+                        <img src={studentData.fotoUrl} alt="Actual" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs text-slate-400 text-center px-2">Foto Tamaño Infantil</span>
+                      )}
                     </div>
-
-                    <p className="text-sm text-slate-500 mb-4">Sube una fotografía reciente, tamaño infantil, con fondo claro y rostro descubierto.</p>
-                    <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                      <Upload className="w-5 h-5 mr-2 text-slate-400" />
-                      Seleccionar Archivo de Imagen
-                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} required={!studentData?.fotoUrl} />
+                    <label className="cursor-pointer bg-white py-2 px-4 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50">
+                      <span>Seleccionar Fotografía (Opcional)</span>
+                      <input type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
                     </label>
                     {photoFile && <p className="mt-2 text-sm text-emerald-600 font-medium">Foto seleccionada: {photoFile.name}</p>}
                     {studentData?.fotoUrl && !photoFile && <p className="mt-2 text-sm text-slate-500">Ya tienes una foto guardada. Sube otra solo si deseas cambiarla.</p>}
@@ -526,7 +611,7 @@ export default function PreInscripcion() {
                         {activeTab === 'nuevo' ? (
                           <div>
                             <label className="block text-sm font-medium">Grado al que Ingresa</label>
-                            <select name="grado" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required>
+                            <select name="grado" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.grado || ''}>
                               <option value="">Seleccionar</option><option>1er Grado</option><option>2do Grado</option><option>3er Grado</option>
                             </select>
                           </div>
@@ -606,11 +691,11 @@ export default function PreInscripcion() {
                           <label className="block text-sm font-medium">Taller / Tecnología</label>
                           <input id="tallerInput" type="text" name="taller" className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-gray-100" required defaultValue={studentData?.taller} placeholder="Se asigna por grupo..." readOnly />
                         </div>
-                        {activeTab === 'nuevo' && (
+                        {(activeTab === 'nuevo' || activeTab === 'completar') && (
                           <>
                             <div className="md:col-span-4">
                               <label className="block text-sm font-medium">Escuela de Procedencia</label>
-                              <input type="text" name="escuelaProcedencia" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.escuelaProcedencia} />
+                              <input type="text" name="escuelaProcedencia" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required={activeTab === 'nuevo'} defaultValue={studentData?.escuelaProcedencia} />
                             </div>
                             <div className="md:col-span-3">
                               <label className="block text-sm font-medium">Domicilio de la Escuela</label>
@@ -686,43 +771,43 @@ export default function PreInscripcion() {
                         <div>
                           <label className="block text-sm font-medium">Fecha de Nacimiento</label>
                           <input type="date" name="fechaNacimiento" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.fechaNacimiento} />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium">Nacionalidad (País de Nacimiento)</label>
-                            <select name="nacionalidad" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nacionalidad || 'MEXICANA'}>
-                              <option value="MEXICANA">Mexicana</option>
-                              <option value="EXTRANJERA">Extranjera</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium">¿Habla alguna Lengua Indígena?</label>
-                            <select name="lenguaIndigena" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.lenguaIndigena || 'NO'} onChange={(e) => {
-                               const input = document.getElementById('nombreLenguaContainer');
-                               if (e.target.value === 'SÍ') {
-                                 input.style.display = 'block';
-                               } else {
-                                 input.style.display = 'none';
-                               }
-                            }}>
-                              <option>NO</option>
-                              <option>SÍ</option>
-                            </select>
-                          </div>
-                          <div id="nombreLenguaContainer" style={{display: studentData?.lenguaIndigena === 'SÍ' ? 'block' : 'none'}}>
-                            <label className="block text-sm font-medium">¿Cuál lengua indígena?</label>
-                            <input type="text" name="nombreLenguaIndigena" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nombreLenguaIndigena} placeholder="Ej. Náhuatl, Maya..." />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium">¿Además de la lengua indígena, habla español?</label>
-                              <select name="hablaEspanol" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.hablaEspanol || 'SÍ'}>
-                                <option>SÍ</option>
-                                <option>NO</option>
-                              </select>
-                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium">Nacionalidad (País de Nacimiento)</label>
+                          <select name="nacionalidad" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nacionalidad || 'MEXICANA'}>
+                            <option value="MEXICANA">Mexicana</option>
+                            <option value="EXTRANJERA">Extranjera</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium">¿Habla alguna Lengua Indígena?</label>
+                          <select name="lenguaIndigena" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.lenguaIndigena || 'NO'} onChange={(e) => {
+                             const input = document.getElementById('nombreLenguaContainer');
+                             if (e.target.value === 'SÍ') {
+                               input.style.display = 'block';
+                             } else {
+                               input.style.display = 'none';
+                             }
+                          }}>
+                            <option>NO</option>
+                            <option>SÍ</option>
+                          </select>
+                        </div>
+                        <div id="nombreLenguaContainer" style={{display: studentData?.lenguaIndigena === 'SÍ' ? 'block' : 'none'}}>
+                          <label className="block text-sm font-medium">¿Cuál lengua indígena?</label>
+                          <input type="text" name="nombreLenguaIndigena" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nombreLenguaIndigena} placeholder="Ej. Náhuatl, Maya..." />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium">¿Además de la lengua indígena, habla español?</label>
+                          <select name="hablaEspanol" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.hablaEspanol || 'SÍ'}>
+                            <option>SÍ</option>
+                            <option>NO</option>
+                          </select>
+                        </div>
 
                         <div className="md:col-span-2">
                           <label className="block text-sm font-medium text-slate-700">Calle</label>
-                          <input type="text" name="calle" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.calle} />
+                          <input type="text" name="calle" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.calle || studentData?.calleNumero} />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-slate-700">Número</label>
@@ -734,7 +819,7 @@ export default function PreInscripcion() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-slate-700">Código Postal</label>
-                          <input type="text" name="cp" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.cp} />
+                          <input type="text" name="cp" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.cp || studentData?.codigoPostal} />
                         </div>
                       </div>
                     </div>
@@ -780,7 +865,7 @@ export default function PreInscripcion() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="md:col-span-2">
                           <label className="block text-sm font-medium">Nombre Completo del Tutor principal</label>
-                          <input type="text" name="tutorNombre" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.tutorNombre} />
+                          <input type="text" name="tutorNombre" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.tutorNombre || studentData?.tutor} />
                         </div>
                         <div>
                           <label className="block text-sm font-medium">Parentesco</label>
@@ -803,16 +888,15 @@ export default function PreInscripcion() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium">Teléfono Celular / WhatsApp</label>
-                          <input type="tel" name="telefono" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.telefono} />
+                          <input type="tel" name="telefono" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.telefono || studentData?.celularTutor} />
                         </div>
                       </div>
-                      
                       
                       <h4 className="font-bold text-slate-700 mt-6 mb-3 border-b pb-1">Contactos de Emergencia (Diferentes al Tutor)</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                           <label className="block text-sm font-medium">Nombre de Contacto 1</label>
-                          <input type="text" name="emergenciaNombre1" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.emergenciaNombre1} />
+                          <input type="text" name="emergenciaNombre1" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.emergenciaNombre1 || studentData?.referencia1} />
                         </div>
                         <div>
                           <label className="block text-sm font-medium">Parentesco (C1)</label>
@@ -822,11 +906,11 @@ export default function PreInscripcion() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium">Teléfono de Contacto 1</label>
-                          <input type="tel" name="emergenciaTel1" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.emergenciaTel1} />
+                          <input type="tel" name="emergenciaTel1" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.emergenciaTel1 || studentData?.celularRef1} />
                         </div>
                         <div>
                           <label className="block text-sm font-medium">Nombre de Contacto 2</label>
-                          <input type="text" name="emergenciaNombre2" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.emergenciaNombre2} />
+                          <input type="text" name="emergenciaNombre2" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.emergenciaNombre2 || studentData?.referencia2} />
                         </div>
                         <div>
                           <label className="block text-sm font-medium">Parentesco (C2)</label>
@@ -836,7 +920,7 @@ export default function PreInscripcion() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium">Teléfono de Contacto 2</label>
-                          <input type="tel" name="emergenciaTel2" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.emergenciaTel2} />
+                          <input type="tel" name="emergenciaTel2" required className="mt-1 block w-full rounded-md shadow-sm p-2 border" defaultValue={studentData?.emergenciaTel2 || studentData?.celularRef2} />
                         </div>
                       </div>
                     </div>
@@ -846,7 +930,7 @@ export default function PreInscripcion() {
                 {activeTab !== 'completar' && (
                   <div>
                     <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">5. Documentación Digital en PDF</h3>
-                    <p className="text-sm text-slate-500 mb-4">Solo se aceptan archivos en formato PDF.</p>
+                    <p className="text-sm text-slate-500 mb-4">Solo se aceptan archivos en formato PDF o imagen clara.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       
                       <div className="bg-slate-50 p-4 border rounded-lg">
@@ -903,7 +987,7 @@ export default function PreInscripcion() {
                 <div className="pt-6 border-t border-slate-200 flex justify-between items-center">
                   <a href="/" className="text-sm text-slate-500 hover:text-slate-700">Cancelar</a>
                   <button type="submit" disabled={isSubmitting} className="inline-flex justify-center rounded-lg border border-transparent bg-primary-600 py-3 px-8 text-sm font-medium text-white shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-colors">
-                    {isSubmitting ? 'Guardando archivos...' : (activeTab === 'completar' ? 'Guardar y Generar Acuse' : 'Guardar y Generar Ficha')}
+                    {isSubmitting ? 'Guardando archivos...' : (activeTab === 'completar' ? 'Guardar y Generar Ficha Actualizada' : 'Guardar y Generar Ficha')}
                   </button>
                 </div>
               </form>
