@@ -1794,18 +1794,6 @@ export default function ControlEscolar() {
         <AddStudentModal onClose={closeModal} />
       )}
 
-      {/* MODAL HOJA DE VIDA (Componente Externo) */}
-      {modalType === 'hoja' && selectedStudent && (
-        <HojaDeVida 
-          student={selectedStudent} 
-          materiasPorGrado={materiasPorGrado}
-          onClose={closeModal} 
-          onSave={(updatedStudent) => {
-            // Actualizar localmente si es necesario, o dejar que el onSnapshot lo haga
-          }} 
-        />
-      )}
-
       {modalType === 'acuse' && selectedStudent && (
         <AcuseDocumentosModal 
           student={selectedStudent} 
@@ -2250,6 +2238,18 @@ export default function ControlEscolar() {
       {printMode === 'listaClausura' && <ListaClausuraPrint students={printData.students} grupo={printData.grupo} asesor={printData.asesor} />}
       {printMode === 'concentrado-final' && <CuadroFinalPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
+
+      {/* MODAL HOJA DE VIDA (Fuera de print:hidden para permitir imprimir Ficha y Constancias de EER) */}
+      {modalType === 'hoja' && selectedStudent && (
+        <HojaDeVida 
+          student={selectedStudent} 
+          materiasPorGrado={materiasPorGrado}
+          onClose={closeModal} 
+          onSave={(updatedStudent) => {
+            // Actualizar localmente si es necesario, o dejar que el onSnapshot lo haga
+          }} 
+        />
+      )}
 
       {selectedExpediente && (
         <ExpedienteModal 

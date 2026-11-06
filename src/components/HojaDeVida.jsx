@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Save, Edit, User, Heart, Users, Camera, Upload, StopCircle, Printer, Award, FileCheck } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -249,24 +250,57 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
   };
 
   if (showPrintMode) {
-    return (
-      <div className="fixed inset-0 z-[60] bg-gray-100 overflow-y-auto">
-        <div className="p-4 bg-white shadow flex justify-between print:hidden sticky top-0 z-10">
-          <button onClick={() => {
-            setShowPrintMode(false);
-            setPrintExtraordinarioSelected(null);
-          }} className="text-gray-500 font-bold hover:text-gray-800 flex items-center bg-gray-200 px-4 py-2 rounded-lg">
-             ← Volver al Expediente
+    const printStudentData = {
+      ...student,
+      grupo: grupo || student.grupo,
+      taller: taller || student.taller,
+      fotoUrl: fotoPreview || student.fotoUrl,
+      tieneBeca,
+      nombreBeca,
+      documentos: { ...(student.documentos || {}), ...(documentos || {}) }
+    };
+
+    return createPortal(
+      <div className="hoja-vida-print-portal fixed inset-0 z-[9999] bg-gray-100 overflow-y-auto print:static print:inset-auto print:bg-white print:overflow-visible">
+        <style>{`
+          @media print {
+            #root { display: none !important; }
+            .hoja-vida-print-portal {
+              display: block !important;
+              position: static !important;
+              width: 100% !important;
+              height: auto !important;
+              overflow: visible !important;
+              background: white !important;
+            }
+          }
+        `}</style>
+        <div className="p-4 bg-white shadow flex justify-between items-center print:hidden sticky top-0 z-10 no-print">
+          <button
+            onClick={() => {
+              setShowPrintMode(false);
+              setPrintExtraordinarioSelected(null);
+            }}
+            className="text-gray-700 font-bold hover:text-gray-900 flex items-center bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition-colors"
+          >
+            ← Volver al Expediente
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2 rounded-lg font-bold text-sm shadow flex items-center gap-2 transition-colors"
+          >
+            <Printer className="w-4 h-4" /> Imprimir / Guardar PDF
           </button>
         </div>
-        <div className="py-8">
+        <div className="py-8 print:py-0">
           {printExtraordinarioSelected ? (
-            <ConstanciaPrint student={student} type="acreditacion_extraordinario" materiasPorGrado={materiasPorGrado} extraordinarioSelected={printExtraordinarioSelected} />
+            <ConstanciaPrint student={printStudentData} type="acreditacion_extraordinario" materiasPorGrado={materiasPorGrado} extraordinarioSelected={printExtraordinarioSelected} />
           ) : (
-            <HojaInscripcionPrint data={student} />
+            <HojaInscripcionPrint data={printStudentData} />
           )}
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
