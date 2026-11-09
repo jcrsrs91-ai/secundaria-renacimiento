@@ -53,6 +53,33 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
     }
   }, [config]);
 
+  const cleanField = (val, placeholders = ['S/M', 'S/N', 'N/A', 'NA', 'SIN MODELO', 'SIN MARCA', 'SIN SERIE', 'NINGUNO', '-', '--', 'NULL', 'UNDEFINED']) => {
+    const str = String(val || '').trim();
+    if (!str) return '';
+    if (placeholders.includes(str.toUpperCase())) return '';
+    return str.toUpperCase();
+  };
+
+  const cleanModelo = (rawModelo, item = {}, parentDoc = {}) => {
+    const m = cleanField(rawModelo);
+    if (!m) return '';
+    // Evitar valores auto-rellenados por el navegador o copiados de otros campos
+    const forbidden = [
+      cleanField(item.marca),
+      cleanField(item.descripcion),
+      cleanField(item.articulo),
+      cleanField(item.ubicacion),
+      cleanField(parentDoc.nombreResguardante || parentDoc.resguardante),
+      cleanField(parentDoc.areaResguardante || parentDoc.area || parentDoc.cargo),
+      cleanField(parentDoc.folio),
+      'BUENO', 'REGULAR', 'MALO', 'NUEVO', 'BAJA',
+      'ACAPULCO', 'ACAPULCO DE JUAREZ', 'ACAPULCO DE JUÁREZ', 'CD. RENACIMIENTO', 'CIUDAD RENACIMIENTO', 'RENACIMIENTO', 'GUERRERO', '39715'
+    ].filter(Boolean);
+    if (forbidden.includes(m)) return '';
+    if (m.includes('@') || /^\d{10}$/.test(m)) return '';
+    return m;
+  };
+
   const filasMostradas = useMemo(() => {
     if (modoOrigen === 'blanco') return [];
 
@@ -62,15 +89,27 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
       resguardos.forEach(res => {
         const area = res.areaResguardante || res.area || res.cargo || '';
         const resguardante = res.nombreResguardante || res.resguardante || '';
+        // Si todos los artículos distintos de un mismo resguardo tienen exactamente el mismo texto en modelo, fue auto-relleno del navegador
+        const nonEmptyModelos = Array.isArray(res.articulos)
+          ? res.articulos.map(a => cleanField(a.modelo)).filter(Boolean)
+          : [];
+        const uniqueDescs = Array.isArray(res.articulos)
+          ? new Set(res.articulos.map(a => (a.descripcion || a.articulo || '').trim().toUpperCase()).filter(Boolean))
+          : new Set();
+        const isBrowserAutofillAcrossRows =
+          nonEmptyModelos.length >= 2 &&
+          uniqueDescs.size >= 2 &&
+          new Set(nonEmptyModelos).size === 1;
+
         if (Array.isArray(res.articulos)) {
           res.articulos.forEach(art => {
             if (!art.cantidad && !art.descripcion && !art.articulo && !art.marca) return;
             allResguardoItems.push({
               cantidad: Number(art.cantidad) || 1,
               concepto: (art.descripcion || art.articulo || 'SIN DESCRIPCIÓN').trim().toUpperCase(),
-              marca: (art.marca || 'S/M').trim().toUpperCase(),
-              modelo: (art.modelo || 'S/M').trim().toUpperCase(),
-              serie: (art.serie || 'S/N').trim().toUpperCase(),
+              marca: cleanField(art.marca),
+              modelo: isBrowserAutofillAcrossRows ? '' : cleanModelo(art.modelo, art, res),
+              serie: cleanField(art.serie),
               estado: (art.estado || 'BUENO').trim().toUpperCase(),
               observaciones: (
                 art.observaciones ||
@@ -98,7 +137,7 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
             concepto: item.concepto,
             marca: item.marca,
             modelo: item.modelo,
-            serie: item.serie || 'S/N',
+            serie: item.serie || '',
             estado: item.estado,
             areasSet: new Set(item.area ? [item.area.toUpperCase()] : []),
             seriesSet: new Set(item.serie && item.serie !== 'S/N' ? [item.serie] : [])
@@ -116,7 +155,7 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
           concepto: g.concepto,
           marca: g.marca,
           modelo: g.modelo,
-          serie: g.seriesSet.size === 1 ? [...g.seriesSet][0] : (g.seriesSet.size > 1 ? 'VARIOS' : 'S/N'),
+          serie: g.seriesSet.size === 1 ? [...g.seriesSet][0] : (g.seriesSet.size > 1 ? 'VARIOS' : ''),
           estado: g.estado,
           observaciones: g.areasSet.size > 0 ? `DISTRIBUIDO EN: ${[...g.areasSet].join(', ')}` : 'EN RESGUARDO'
         }))
@@ -129,9 +168,9 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
       return activos.map(i => ({
         cantidad: Number(i.cantidad) || 1,
         concepto: (i.descripcion || i.articulo || 'SIN NOMBRE').trim().toUpperCase(),
-        marca: (i.marca || 'S/M').trim().toUpperCase(),
-        modelo: (i.modelo || 'S/M').trim().toUpperCase(),
-        serie: (i.serie || 'S/N').trim().toUpperCase(),
+        marca: cleanField(i.marca),
+        modelo: cleanModelo(i.modelo, i),
+        serie: cleanField(i.serie),
         estado: (i.estadoFisico || i.estado || 'BUENO').trim().toUpperCase(),
         observaciones: [i.ubicacion && `UBIC: ${i.ubicacion}`, i.codigo && `CÓD: ${i.codigo}`, i.observaciones]
           .filter(Boolean)
@@ -144,8 +183,8 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
     const invMap = {};
     activos.forEach(i => {
       const concepto = (i.descripcion || i.articulo || 'SIN NOMBRE').trim().toUpperCase();
-      const marca = (i.marca || 'S/M').trim().toUpperCase();
-      const modelo = (i.modelo || 'S/M').trim().toUpperCase();
+      const marca = cleanField(i.marca);
+      const modelo = cleanModelo(i.modelo, i);
       const estado = (i.estadoFisico || i.estado || 'BUENO').trim().toUpperCase();
       const key = `${concepto}|${marca}|${modelo}|${estado}`;
       const qty = Number(i.cantidad) || 1;
@@ -173,7 +212,7 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
         concepto: g.concepto,
         marca: g.marca,
         modelo: g.modelo,
-        serie: g.series.size === 1 ? [...g.series][0] : (g.series.size > 1 ? 'VARIOS' : 'S/N'),
+        serie: g.series.size === 1 ? [...g.series][0] : (g.series.size > 1 ? 'VARIOS' : ''),
         estado: g.estado,
         observaciones: g.ubicaciones.size > 0 ? `ÁREAS: ${[...g.ubicaciones].join(', ')}` : ''
       }))
@@ -197,9 +236,9 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
       'N°': idx + 1,
       'CANT.': f.cantidad || 1,
       'CONCEPTO': f.concepto || '',
-      'MARCA': f.marca || 'S/M',
-      'MODELO': f.modelo || 'S/M',
-      'SERIE': f.serie || 'S/N',
+      'MARCA': f.marca || '',
+      'MODELO': f.modelo || '',
+      'SERIE': f.serie || '',
       'ESTADO FISICO': f.estado || 'BUENO',
       'OBSERVACIONES': f.observaciones || '',
       'ESCUELA': config.nombreEscuela,

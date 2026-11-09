@@ -637,9 +637,158 @@ export default function Inventario() {
   const [modalOpen, setModalOpen] = useState(null); // 'recepcion' | 'resguardo' | 'baja' | 'editItem' | 'history'
   const [editingItem, setEditingItem] = useState(null);
   const [historyItem, setHistoryItem] = useState(null);
+  const [autoCleanModelosDone, setAutoCleanModelosDone] = useState(false);
   
-  const [formData, setFormData] = useState({ articulos: [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }] });
+  const [formData, setFormData] = useState({ articulos: [{ cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: '', inventario: '' }] });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Limpia valores basura o auto-rellenados por el navegador en el campo Modelo
+  const sanitizeModeloVal = (rawModelo, art = {}, parentDoc = {}) => {
+    const str = String(rawModelo || '').trim();
+    if (!str) return '';
+    const upper = str.toUpperCase();
+    if (['S/M', 'S/N', 'N/A', 'NA', 'SIN MODELO', 'SIN MARCA', 'SIN SERIE', 'NINGUNO', '-', '--', 'NULL', 'UNDEFINED'].includes(upper)) {
+      return '';
+    }
+    const forbidden = [
+      String(art?.marca || '').trim().toUpperCase(),
+      String(art?.descripcion || '').trim().toUpperCase(),
+      String(art?.articulo || '').trim().toUpperCase(),
+      String(art?.codigo || '').trim().toUpperCase(),
+      String(art?.ubicacion || '').trim().toUpperCase(),
+      String(parentDoc?.nombreResguardante || parentDoc?.resguardante || '').trim().toUpperCase(),
+      String(parentDoc?.areaResguardante || parentDoc?.area || parentDoc?.cargo || '').trim().toUpperCase(),
+      String(parentDoc?.folio || '').trim().toUpperCase(),
+      'BUENO', 'REGULAR', 'MALO', 'NUEVO', 'BAJA',
+      'ACAPULCO', 'ACAPULCO DE JUAREZ', 'ACAPULCO DE JUÁREZ', 'CD. RENACIMIENTO', 'CIUDAD RENACIMIENTO', 'RENACIMIENTO', 'GUERRERO', '39715'
+    ].filter(Boolean);
+    if (forbidden.includes(upper)) return '';
+    if (upper.includes('@') || /^\d{10}$/.test(upper)) return '';
+    return str;
+  };
+
+  // Auto-limpieza automática en segundo plano para corregir resguardos/inventario donde el navegador haya auto-rellenado Modelo
+  useEffect(() => {
+    if (autoCleanModelosDone) return;
+    if (resguardos.length === 0 && inventario.length === 0) return;
+
+    const runAutoSanitize = async () => {
+      setAutoCleanModelosDone(true);
+      try {
+        const batch = writeBatch(db);
+        let ops = 0;
+
+        for (const res of resguardos) {
+          if (!Array.isArray(res.articulos) || res.articulos.length === 0) continue;
+          const nonEmptyMods = res.articulos.map(a => String(a.modelo || '').trim().toUpperCase()).filter(Boolean);
+          const uniqueConcepts = new Set(res.articulos.map(a => String(a.descripcion || a.articulo || '').trim().toUpperCase()).filter(Boolean));
+          // Si 2 o más artículos distintos en la misma acta tienen exactamente el mismo texto en modelo, fue autocompletado del navegador
+          const sameAutofillAcrossDistinctRows =
+            nonEmptyMods.length >= 2 &&
+            uniqueConcepts.size >= 2 &&
+            new Set(nonEmptyMods).size === 1;
+
+          let changed = false;
+          const cleanedArts = res.articulos.map(art => {
+            const currentMod = String(art.modelo || '');
+            const safeMod = sameAutofillAcrossDistinctRows ? '' : sanitizeModeloVal(currentMod, art, res);
+            if (currentMod !== safeMod) {
+              changed = true;
+              return { ...art, modelo: safeMod };
+            }
+            return art;
+          });
+
+          if (changed && ops < 450) {
+            batch.update(doc(db, 'resguardos', res.id), { articulos: cleanedArts });
+            ops++;
+          }
+        }
+
+        for (const item of inventario) {
+          const currentMod = String(item.modelo || '');
+          if (!currentMod) continue;
+          const safeMod = sanitizeModeloVal(currentMod, item);
+          if (currentMod !== safeMod && ops < 450) {
+            batch.update(doc(db, 'inventario', item.id), { modelo: safeMod });
+            ops++;
+          }
+        }
+
+        if (ops > 0) {
+          await batch.commit();
+        }
+      } catch (e) {
+        console.error('Error en auto-limpieza de modelos:', e);
+      }
+    };
+
+    runAutoSanitize();
+  }, [resguardos, inventario, autoCleanModelosDone]);
+
+  const handleClearResguardoModelos = async (resDoc) => {
+    if (!resDoc || !resDoc.id) return;
+    if (!window.confirm(`¿Deseas vaciar el campo "Modelo" de todos los artículos del resguardo Folio ${resDoc.folio || 'S/F'} (${resDoc.nombreResguardante || 'S/N'})?`)) return;
+    const toastId = toast.loading('Limpiando campo Modelo del acta...');
+    try {
+      const cleanedArts = (resDoc.articulos || []).map(a => ({ ...a, modelo: '' }));
+      await updateDoc(doc(db, 'resguardos', resDoc.id), { articulos: cleanedArts });
+
+      // También limpiar el campo modelo en los bienes de inventario vinculados a esta acta
+      for (const art of cleanedArts) {
+        const codes = expandCodeRange(art.codigo || art.inventario || '');
+        for (const c of codes) {
+          const invItem = inventario.find(i => i.codigo === c || (art.id && i.id === art.id));
+          if (invItem && invItem.modelo) {
+            await updateDoc(doc(db, 'inventario', invItem.id), { modelo: '' });
+          }
+        }
+      }
+
+      if (printData && printData.id === resDoc.id) {
+        setPrintData({ ...printData, articulos: cleanedArts });
+      }
+      toast.success('¡Campo Modelo limpiado correctamente en esta acta!', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al limpiar los modelos del acta.', { id: toastId });
+    }
+  };
+
+  const handleLimpiarTodosLosModelosResguardos = async () => {
+    if (!window.confirm('¿Deseas vaciar el campo "Modelo" en TODAS las Actas de Resguardo y sus artículos en el Inventario General para eliminar cualquier texto auto-rellenado?')) return;
+    const toastId = toast.loading('Limpiando campo Modelo en todos los resguardos...');
+    try {
+      const batch = writeBatch(db);
+      let updatedRes = 0;
+      let updatedInv = 0;
+
+      for (const res of resguardos) {
+        if (Array.isArray(res.articulos) && res.articulos.some(a => a.modelo && String(a.modelo).trim() !== '')) {
+          const cleaned = res.articulos.map(a => ({ ...a, modelo: '' }));
+          batch.update(doc(db, 'resguardos', res.id), { articulos: cleaned });
+          updatedRes++;
+        }
+      }
+
+      for (const item of inventario) {
+        if (item.modelo && String(item.modelo).trim() !== '') {
+          batch.update(doc(db, 'inventario', item.id), { modelo: '' });
+          updatedInv++;
+        }
+      }
+
+      if (updatedRes > 0 || updatedInv > 0) {
+        await batch.commit();
+        toast.success(`¡Listo! Se limpió el campo Modelo en ${updatedRes} acta(s) de resguardo y ${updatedInv} artículo(s).`, { id: toastId });
+      } else {
+        toast.success('Todas las actas de resguardo ya tienen el campo Modelo limpio.', { id: toastId });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Hubo un error al limpiar los modelos.', { id: toastId });
+    }
+  };
 
   useEffect(() => {
     const handleAfterPrint = () => setPrintMode(null);
@@ -655,7 +804,8 @@ export default function Inventario() {
       articulosIniciales = inventario.filter(i => selectedItems.includes(i.id)).map(i => ({
         ...i,
         cantidad: i.cantidad || 1,
-        descripcion: i.descripcion || i.articulo || ''
+        descripcion: i.descripcion || i.articulo || '',
+        modelo: sanitizeModeloVal(i.modelo, i)
       }));
     }
 
@@ -701,7 +851,7 @@ export default function Inventario() {
   };
 
   const handleAddRow = () => {
-    setFormData({ ...formData, articulos: [...formData.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: '', inventario: '' }] });
+    setFormData({ ...formData, articulos: [...formData.articulos, { cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Bueno', inventario: '', codigo: '' }] });
   };
 
   const handlePrintSubmit = async (e, actionType = 'print') => {
@@ -875,12 +1025,13 @@ export default function Inventario() {
           // AUTO-LINK: Asignar ID existente a los articulos introducidos manualmente por codigo
           validItems.forEach(art => {
             if (!art.id && (art.codigo || art.inventario)) {
-              const manualCode = art.codigo || art.inventario;
-              const existing = inventario.find(i => i.codigo === manualCode);
+              const manualCode = String(art.codigo || art.inventario).trim();
+              const existing = manualCode ? inventario.find(i => i.codigo === manualCode) : null;
               if (existing) {
                 art.id = existing.id;
                 art.descripcion = existing.descripcion || existing.articulo || art.descripcion;
                 art.marca = existing.marca || art.marca;
+                art.modelo = sanitizeModeloVal(art.modelo || existing.modelo, art, formData);
                 art.serie = existing.serie || art.serie;
               }
             }
@@ -904,7 +1055,9 @@ export default function Inventario() {
               cantidad: qty,
               descripcion: art.descripcion || art.articulo || '',
               marca: art.marca || '',
+              modelo: sanitizeModeloVal(art.modelo, art, formData),
               serie: art.serie || '',
+              observaciones: art.observaciones || '',
               codigo: display, // Rangos consolidados para la impresión y visualización
               estado: art.estado || 'Bueno'
             };
@@ -1399,7 +1552,9 @@ export default function Inventario() {
                 cantidad: 1,
                 descripcion: editingItem.descripcion || editingItem.articulo || '',
                 marca: editingItem.marca || '',
+                modelo: sanitizeModeloVal(editingItem.modelo, editingItem, newRes),
                 serie: editingItem.serie || '',
+                observaciones: editingItem.observaciones || '',
                 codigo: editingItem.codigo,
                 estado: editingItem.estado || 'Bueno'
               });
@@ -1419,7 +1574,9 @@ export default function Inventario() {
                       ...a,
                       descripcion: editingItem.descripcion || editingItem.articulo || '',
                       marca: editingItem.marca || '',
+                      modelo: sanitizeModeloVal(editingItem.modelo, editingItem, currRes),
                       serie: editingItem.serie || '',
+                      observaciones: editingItem.observaciones || '',
                       codigo: editingItem.codigo,
                       estado: editingItem.estado || 'Bueno'
                     };
@@ -1434,7 +1591,9 @@ export default function Inventario() {
                   cantidad: 1,
                   descripcion: editingItem.descripcion || editingItem.articulo || '',
                   marca: editingItem.marca || '',
+                  modelo: sanitizeModeloVal(editingItem.modelo, editingItem, currRes),
                   serie: editingItem.serie || '',
+                  observaciones: editingItem.observaciones || '',
                   codigo: editingItem.codigo,
                   estado: editingItem.estado || 'Bueno'
                 };
@@ -1581,7 +1740,11 @@ export default function Inventario() {
   const handleEditResguardoClick = (res) => {
     setEditingResguardo({
       ...res,
-      articulos: res.articulos ? res.articulos.map((art, i) => ({ ...art, _uid: i })) : []
+      articulos: res.articulos ? res.articulos.map((art, i) => ({
+        ...art,
+        modelo: sanitizeModeloVal(art.modelo, art, res),
+        _uid: i
+      })) : []
     });
     setModalOpen('editResguardo');
     window.scrollTo(0, 0);
@@ -1593,8 +1756,9 @@ export default function Inventario() {
       id: '',
       codigo: '',
       inventario: '',
+      modelo: sanitizeModeloVal(art.modelo, art, res),
       serie: ''
-    })) : [{ cantidad: '', descripcion: '', marca: '', serie: '', estado: 'Bueno', inventario: '' }];
+    })) : [{ cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Bueno', inventario: '', codigo: '' }];
 
     setFormData({
       fecha: new Date().toISOString().split('T')[0],
@@ -1675,7 +1839,7 @@ export default function Inventario() {
           cantidad: qty,
           descripcion: art.descripcion || art.articulo || '',
           marca: art.marca || '',
-          modelo: art.modelo || '',
+          modelo: sanitizeModeloVal(art.modelo, art, editingResguardo),
           serie: art.serie || '',
           observaciones: art.observaciones || '',
           codigo: finalCode,
@@ -1709,11 +1873,10 @@ export default function Inventario() {
           const code = expandedNewCodes[i];
           const oldCodeMatch = expandedOldCodes[i];
           
-          const invItem = inventario.find(inv => 
-            inv.codigo === code || 
-            (art.id && inv.id === art.id) || 
-            (oldCodeMatch && inv.codigo === oldCodeMatch)
-          );
+          const invItem =
+            inventario.find(inv => inv.codigo === code) ||
+            (oldCodeMatch ? inventario.find(inv => inv.codigo === oldCodeMatch) : null) ||
+            (expandedNewCodes.length === 1 && art.id ? inventario.find(inv => inv.id === art.id) : null);
           
           if (invItem) {
             const itemRef = doc(db, 'inventario', invItem.id);
@@ -1724,7 +1887,7 @@ export default function Inventario() {
               articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || invItem.articulo || '',
               descripcion: art.descripcion || invItem.descripcion || '',
               marca: art.marca || '',
-              modelo: art.modelo || '',
+              modelo: sanitizeModeloVal(art.modelo, art, editingResguardo),
               serie: art.serie || '',
               observaciones: art.observaciones || ''
             };
@@ -3497,6 +3660,13 @@ Esta acción no se puede deshacer.`);
                 <Printer className="w-4 h-4 mr-2" /> Imprimir en Blanco
               </button>
               <button
+                onClick={handleLimpiarTodosLosModelosResguardos}
+                className="flex items-center justify-center px-3.5 py-2 bg-amber-50 border border-amber-300 text-amber-800 rounded-lg text-sm font-bold hover:bg-amber-100 shadow-sm transition-colors whitespace-nowrap"
+                title="Vaciar el campo Modelo en todas las actas de resguardo si se auto-rellenó"
+              >
+                <X className="w-4 h-4 mr-1.5" /> Limpiar Modelos Auto-rellenados
+              </button>
+              <button
                 onClick={handleExportResguardosCSV}
                 className="flex items-center justify-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors whitespace-nowrap"
               >
@@ -4136,31 +4306,31 @@ Esta acción no se puede deshacer.`);
                 </div>
               </form>
             ) : modalOpen === 'editItem' && editingItem ? (
-              <form onSubmit={handleSaveEdit}>
+              <form onSubmit={handleSaveEdit} autoComplete="off">
                 <div className="space-y-4 mb-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Código de Inventario</label>
-                      <input type="text" value={editingItem.codigo || ''} onChange={e => setEditingItem({...editingItem, codigo: e.target.value})} className="w-full p-2 border rounded font-mono text-sm bg-slate-50" />
+                      <input type="text" name="edit_inv_codigo_x" autoComplete="off" value={editingItem.codigo || ''} onChange={e => setEditingItem({...editingItem, codigo: e.target.value})} className="w-full p-2 border rounded font-mono text-sm bg-slate-50" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Nombre / Concepto del artículo</label>
-                      <input type="text" value={editingItem.articulo || editingItem.descripcion || ''} onChange={e => setEditingItem({...editingItem, articulo: e.target.value, descripcion: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                      <input type="text" name="edit_inv_concepto_x" autoComplete="off" value={editingItem.articulo || editingItem.descripcion || ''} onChange={e => setEditingItem({...editingItem, articulo: e.target.value, descripcion: e.target.value})} className="w-full p-2 border rounded text-sm" />
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Marca</label>
-                      <input type="text" value={editingItem.marca || ''} onChange={e => setEditingItem({...editingItem, marca: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                      <input type="text" name="edit_inv_marca_x" autoComplete="off" value={editingItem.marca || ''} onChange={e => setEditingItem({...editingItem, marca: e.target.value})} className="w-full p-2 border rounded text-sm" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Modelo</label>
-                      <input type="text" value={editingItem.modelo || ''} onChange={e => setEditingItem({...editingItem, modelo: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                      <input type="text" name="edit_inv_modelo_x" autoComplete="off" data-lpignore="true" data-form-type="other" value={editingItem.modelo || ''} onChange={e => setEditingItem({...editingItem, modelo: e.target.value})} className="w-full p-2 border rounded text-sm" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">No. Serie</label>
-                      <input type="text" value={editingItem.serie || ''} onChange={e => setEditingItem({...editingItem, serie: e.target.value})} className="w-full p-2 border rounded text-sm" />
+                      <input type="text" name="edit_inv_serie_x" autoComplete="off" value={editingItem.serie || ''} onChange={e => setEditingItem({...editingItem, serie: e.target.value})} className="w-full p-2 border rounded text-sm" />
                     </div>
                   </div>
 
@@ -4228,57 +4398,70 @@ Esta acción no se puede deshacer.`);
                 </div>
               </form>
             ) : modalOpen === 'editResguardo' && editingResguardo ? (
-              <form onSubmit={handleSaveResguardoEdit}>
+              <form onSubmit={handleSaveResguardoEdit} autoComplete="off">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Fecha</label>
-                    <input type="date" value={editingResguardo.fecha} onChange={e => setEditingResguardo({...editingResguardo, fecha: e.target.value})} className="w-full p-2 border rounded" />
+                    <input type="date" name="resg_edit_fecha" autoComplete="off" value={editingResguardo.fecha} onChange={e => setEditingResguardo({...editingResguardo, fecha: e.target.value})} className="w-full p-2 border rounded" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Folio</label>
-                    <input type="text" value={editingResguardo.folio} onChange={e => setEditingResguardo({...editingResguardo, folio: e.target.value})} className="w-full p-2 border rounded" />
+                    <input type="text" name="resg_edit_folio" autoComplete="off" value={editingResguardo.folio} onChange={e => setEditingResguardo({...editingResguardo, folio: e.target.value})} className="w-full p-2 border rounded" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Resguardante</label>
-                    <input type="text" value={editingResguardo.nombreResguardante} onChange={e => setEditingResguardo({...editingResguardo, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
+                    <input type="text" name="resg_edit_responsable" autoComplete="off" value={editingResguardo.nombreResguardante} onChange={e => setEditingResguardo({...editingResguardo, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Área o Cargo</label>
-                    <input type="text" value={editingResguardo.areaResguardante} onChange={e => setEditingResguardo({...editingResguardo, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
+                    <input type="text" name="resg_edit_area" autoComplete="off" value={editingResguardo.areaResguardante} onChange={e => setEditingResguardo({...editingResguardo, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Observaciones</label>
-                    <textarea rows="2" value={editingResguardo.observaciones || ''} onChange={e => setEditingResguardo({...editingResguardo, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, faltantes..."></textarea>
+                    <textarea rows="2" name="resg_edit_obs" autoComplete="off" value={editingResguardo.observaciones || ''} onChange={e => setEditingResguardo({...editingResguardo, observaciones: e.target.value})} className="w-full p-2 border rounded" placeholder="Daños visibles, faltantes..."></textarea>
                   </div>
                 </div>
 
                 <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-6">
-                  <div className="flex justify-between items-center mb-3">
+                  <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                     <h4 className="font-semibold text-slate-700 text-sm sm:text-base">Artículos incluidos</h4>
-                    <button type="button" onClick={() => setEditingResguardo({ ...editingResguardo, articulos: [...editingResguardo.articulos, { cantidad: '', descripcion: '', marca: '', serie: '', estado: 'Bueno', codigo: '' }] })} className="text-sm text-primary-600 hover:text-primary-700 font-bold">
-                      + Añadir fila
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cleared = editingResguardo.articulos.map(a => ({ ...a, modelo: '' }));
+                          setEditingResguardo({ ...editingResguardo, articulos: cleared });
+                          toast.success('Se vació el campo Modelo de todas las filas. Recuerda dar clic en Guardar Cambios.');
+                        }}
+                        className="text-xs px-2.5 py-1 bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 rounded-md font-bold"
+                      >
+                        Vaciar Modelo en todas las filas
+                      </button>
+                      <button type="button" onClick={() => setEditingResguardo({ ...editingResguardo, articulos: [...editingResguardo.articulos, { cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Bueno', codigo: '' }] })} className="text-sm text-primary-600 hover:text-primary-700 font-bold">
+                        + Añadir fila
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     {editingResguardo.articulos.map((art, idx) => (
                       <div key={idx} className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded-lg">
                         <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
                           <div className="w-16">
-                            <input type="number" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.cantidad || ''} onChange={(e) => {
+                            <input type="number" name={`resg_edit_cant_${idx}`} autoComplete="off" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.cantidad || ''} onChange={(e) => {
                               const newArts = [...editingResguardo.articulos];
                               newArts[idx].cantidad = e.target.value;
                               setEditingResguardo({...editingResguardo, articulos: newArts});
                             }} />
                           </div>
                           <div className="flex-1 min-w-[160px]">
-                            <input type="text" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold p-1.5 border" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                            <input type="text" name={`resg_edit_desc_${idx}`} autoComplete="off" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold p-1.5 border" value={art.descripcion || art.articulo || ''} onChange={(e) => {
                               const newArts = [...editingResguardo.articulos];
                               newArts[idx].descripcion = e.target.value;
                               setEditingResguardo({...editingResguardo, articulos: newArts});
                             }} />
                           </div>
                           <div className="w-full sm:w-1/4">
-                            <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                            <input type="text" name={`resg_edit_cod_${idx}`} autoComplete="off" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.codigo || art.inventario || ''} onChange={(e) => {
                               const newArts = [...editingResguardo.articulos];
                               newArts[idx].codigo = e.target.value;
                               setEditingResguardo({...editingResguardo, articulos: newArts});
@@ -4293,21 +4476,21 @@ Esta acción no se puede deshacer.`);
                         </div>
                         <div className="grid grid-cols-2 sm:flex gap-2 items-center">
                            <div className="sm:flex-1">
-                              <input type="text" placeholder="Marca" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.marca || ''} onChange={(e) => {
+                              <input type="text" name={`resg_edit_marca_${idx}`} autoComplete="off" placeholder="Marca" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.marca || ''} onChange={(e) => {
                                 const newArts = [...editingResguardo.articulos];
                                 newArts[idx].marca = e.target.value;
                                 setEditingResguardo({...editingResguardo, articulos: newArts});
                               }} />
                            </div>
                            <div className="sm:flex-1">
-                              <input type="text" placeholder="Modelo" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.modelo || ''} onChange={(e) => {
+                              <input type="text" name={`resg_edit_mod_x_${idx}`} autoComplete="off" data-lpignore="true" data-form-type="other" placeholder="Modelo" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.modelo || ''} onChange={(e) => {
                                 const newArts = [...editingResguardo.articulos];
                                 newArts[idx].modelo = e.target.value;
                                 setEditingResguardo({...editingResguardo, articulos: newArts});
                               }} />
                            </div>
                            <div className="sm:flex-1">
-                              <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.serie || ''} onChange={(e) => {
+                              <input type="text" name={`resg_edit_serie_${idx}`} autoComplete="off" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.serie || ''} onChange={(e) => {
                                 const newArts = [...editingResguardo.articulos];
                                 newArts[idx].serie = e.target.value;
                                 setEditingResguardo({...editingResguardo, articulos: newArts});
@@ -4593,21 +4776,21 @@ Esta acción no se puede deshacer.`);
                 </div>
               </div>
             ) : (
-              <form onSubmit={(e) => handlePrintSubmit(e, 'print')}>
+              <form onSubmit={(e) => handlePrintSubmit(e, 'print')} autoComplete="off">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Fecha</label>
-                  <input type="date" value={formData.fecha} onChange={e => setFormData({...formData, fecha: e.target.value})} className="w-full p-2 border rounded" />
+                  <input type="date" name="doc_fecha_x" autoComplete="off" value={formData.fecha} onChange={e => setFormData({...formData, fecha: e.target.value})} className="w-full p-2 border rounded" />
                 </div>
                 
                 {modalOpen === 'recepcion' && (
                   <>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Hora de Recepción</label>
-                      <input type="time" value={formData.hora} onChange={e => setFormData({...formData, hora: e.target.value})} className="w-full p-2 border rounded" />
+                      <input type="time" name="doc_hora_x" autoComplete="off" value={formData.hora} onChange={e => setFormData({...formData, hora: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
-                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Doc. de Origen (Factura, etc.)</label><input type="text" className="w-full p-2 border rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.origen} onChange={e => setFormData({...formData, origen: e.target.value})} /></div>
-                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Proveedor</label><input type="text" className="w-full p-2 border rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.nombreProveedor} onChange={e => setFormData({...formData, nombreProveedor: e.target.value})} /></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Doc. de Origen (Factura, etc.)</label><input type="text" name="doc_origen_x" autoComplete="off" className="w-full p-2 border rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.origen} onChange={e => setFormData({...formData, origen: e.target.value})} /></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Proveedor</label><input type="text" name="doc_prov_x" autoComplete="off" className="w-full p-2 border rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.nombreProveedor} onChange={e => setFormData({...formData, nombreProveedor: e.target.value})} /></div>
 
                     {/* MEJORA #3: Asignar directamente a un Resguardo o Área desde el Alta */}
                     <div className="md:col-span-2 mt-1">
@@ -4647,6 +4830,8 @@ Esta acción no se puede deshacer.`);
                                 <label className="block text-xs font-bold text-slate-700 mb-1">Área o Salón Destino *</label>
                                 <input
                                   type="text"
+                                  name="doc_area_dest_x"
+                                  autoComplete="off"
                                   list="ubicaciones-list"
                                   placeholder="Ej. Aula 1A, Dirección, Laboratorio..."
                                   value={formData.areaResguardante || ''}
@@ -4658,6 +4843,8 @@ Esta acción no se puede deshacer.`);
                                 <label className="block text-xs font-bold text-slate-700 mb-1">Nombre del Resguardante (Responsable) *</label>
                                 <input
                                   type="text"
+                                  name="doc_resg_dest_x"
+                                  autoComplete="off"
                                   placeholder="Ej. Profr. Juan Pérez"
                                   value={formData.nombreResguardante || ''}
                                   onChange={e => setFormData({ ...formData, nombreResguardante: e.target.value })}
@@ -4676,15 +4863,15 @@ Esta acción no se puede deshacer.`);
                   <>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Folio (Opcional)</label>
-                      <input type="text" placeholder="001" value={formData.folio} onChange={e => setFormData({...formData, folio: e.target.value})} className="w-full p-2 border rounded" />
+                      <input type="text" name="resg_new_folio_x" autoComplete="off" placeholder="001" value={formData.folio} onChange={e => setFormData({...formData, folio: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Resguardante</label>
-                      <input type="text" placeholder="Profr. Juan Pérez" value={formData.nombreResguardante} onChange={e => setFormData({...formData, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
+                      <input type="text" name="resg_new_resp_x" autoComplete="off" placeholder="Profr. Juan Pérez" value={formData.nombreResguardante} onChange={e => setFormData({...formData, nombreResguardante: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Área o Cargo</label>
-                      <input type="text" placeholder="Ej. Aula 3 / Maestro de Historia" value={formData.areaResguardante} onChange={e => setFormData({...formData, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
+                      <input type="text" name="resg_new_area_x" autoComplete="off" placeholder="Ej. Aula 3 / Maestro de Historia" value={formData.areaResguardante} onChange={e => setFormData({...formData, areaResguardante: e.target.value})} className="w-full p-2 border rounded" />
                     </div>
                     <div className="md:col-span-2 mt-2">
                       <label className="flex items-center space-x-3 text-sm font-medium text-slate-700 cursor-pointer p-4 bg-indigo-50 rounded-xl border border-indigo-200 hover:bg-indigo-100 transition-colors">
@@ -4698,31 +4885,44 @@ Esta acción no se puede deshacer.`);
                 {modalOpen === 'baja' && (
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Motivo de Baja</label>
-                    <input type="text" placeholder="Ej. Daño irreparable, Obsolescencia tecnológica" className="w-full p-2 border rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} required />
+                    <input type="text" name="baja_motivo_x" autoComplete="off" placeholder="Ej. Daño irreparable, Obsolescencia tecnológica" className="w-full p-2 border rounded-lg border-slate-300 focus:ring-primary-500 focus:border-primary-500" value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})} required />
                   </div>
                 )}
               </div>
 
                 <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-6">
-                  <div className="flex justify-between items-center mb-3">
+                  <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                     <h4 className="font-semibold text-slate-700 text-sm sm:text-base">Artículos a incluir</h4>
-                    <button type="button" onClick={handleAddRow} className="text-sm text-primary-600 hover:text-primary-700 font-bold">
-                      + Añadir fila
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cleared = formData.articulos.map(a => ({ ...a, modelo: '' }));
+                          setFormData({ ...formData, articulos: cleared });
+                          toast.success('Se vació el campo Modelo de todas las filas.');
+                        }}
+                        className="text-xs px-2.5 py-1 bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 rounded-md font-bold"
+                      >
+                        Vaciar Modelo en todas las filas
+                      </button>
+                      <button type="button" onClick={handleAddRow} className="text-sm text-primary-600 hover:text-primary-700 font-bold">
+                        + Añadir fila
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     {formData.articulos.map((art, idx) => (
                       <div key={idx} className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded-lg">
                         <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
                           <div className="w-16">
-                            <input type="number" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.cantidad || ''} onChange={(e) => {
+                            <input type="number" name={`art_new_cant_${idx}`} autoComplete="off" placeholder="Cant" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.cantidad || ''} onChange={(e) => {
                               const newArts = [...formData.articulos];
                               newArts[idx].cantidad = e.target.value;
                               setFormData({...formData, articulos: newArts});
                             }} />
                           </div>
                           <div className="flex-1 min-w-[160px]">
-                            <input type="text" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold p-1.5 border" value={art.descripcion || art.articulo || ''} onChange={(e) => {
+                            <input type="text" name={`art_new_desc_${idx}`} autoComplete="off" placeholder="Nombre/Concepto del artículo" className="w-full rounded-md border-slate-300 text-sm font-bold p-1.5 border" value={art.descripcion || art.articulo || ''} onChange={(e) => {
                               const newArts = [...formData.articulos];
                               newArts[idx].descripcion = e.target.value;
                               setFormData({...formData, articulos: newArts});
@@ -4731,7 +4931,7 @@ Esta acción no se puede deshacer.`);
                           
                           {modalOpen === 'recepcion' && (
                             <div className="w-full sm:w-1/4">
-                              <input type="text" placeholder="Código Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600 p-1.5 border" value={art.codigo || ''} onChange={(e) => {
+                              <input type="text" name={`art_new_cod_rec_${idx}`} autoComplete="off" placeholder="Código Inic. (Ej: 1-A-1)" className="w-full rounded-md border-slate-300 text-sm font-bold text-indigo-600 p-1.5 border" value={art.codigo || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].codigo = e.target.value;
                                 setFormData({...formData, articulos: newArts});
@@ -4740,7 +4940,7 @@ Esta acción no se puede deshacer.`);
                           )}
                           {(modalOpen === 'resguardo' || modalOpen === 'baja') && (
                             <div className="w-full sm:w-1/4">
-                              <input type="text" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.codigo || art.inventario || ''} onChange={(e) => {
+                              <input type="text" name={`art_new_cod_resg_${idx}`} autoComplete="off" placeholder="Código Inventario" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.codigo || art.inventario || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].codigo = e.target.value;
                                 setFormData({...formData, articulos: newArts});
@@ -4757,21 +4957,21 @@ Esta acción no se puede deshacer.`);
                         </div>
                         <div className="grid grid-cols-2 sm:flex gap-2 items-center">
                            <div className="sm:flex-1">
-                              <input type="text" placeholder="Marca" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.marca || ''} onChange={(e) => {
+                              <input type="text" name={`art_new_marca_${idx}`} autoComplete="off" placeholder="Marca" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.marca || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].marca = e.target.value;
                                 setFormData({...formData, articulos: newArts});
                               }} />
                            </div>
                            <div className="sm:flex-1">
-                              <input type="text" placeholder="Modelo" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.modelo || ''} onChange={(e) => {
+                              <input type="text" name={`art_new_mod_x_${idx}`} autoComplete="off" data-lpignore="true" data-form-type="other" placeholder="Modelo" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.modelo || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].modelo = e.target.value;
                                 setFormData({...formData, articulos: newArts});
                               }} />
                            </div>
                            <div className="sm:flex-1">
-                              <input type="text" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.serie || ''} onChange={(e) => {
+                              <input type="text" name={`art_new_serie_${idx}`} autoComplete="off" placeholder="No. Serie" className="w-full rounded-md border-slate-300 text-sm p-1.5 border" value={art.serie || ''} onChange={(e) => {
                                 const newArts = [...formData.articulos];
                                 newArts[idx].serie = e.target.value;
                                 setFormData({...formData, articulos: newArts});
@@ -4848,7 +5048,7 @@ Esta acción no se puede deshacer.`);
     )}
 
     {printMode === 'recepcion' && printData && <ActaRecepcionPrint data={printData} onBack={() => setPrintMode(null)} />}
-    {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} onBack={() => setPrintMode(null)} />}
+    {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} onBack={() => setPrintMode(null)} onClearModelos={handleClearResguardoModelos} />}
     {printMode === 'baja' && printData && <ActaBajaPrint data={printData} onBack={() => setPrintMode(null)} />}
     {printMode === 'etiquetas' && printData && <EtiquetasPrint items={printData} onBack={() => setPrintMode(null)} />}
     {(printMode === 'cedula_censal' || printMode === 'cedula_censal_blank') && (
