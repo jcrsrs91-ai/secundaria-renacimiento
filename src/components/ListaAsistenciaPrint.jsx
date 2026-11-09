@@ -121,7 +121,7 @@ export default function ListaAsistenciaPrint({
     <div className="print-lista-asistencia-only">
       <style>{`
         @media print {
-          @page { size: ${sizeValue} landscape; margin: 0.32cm 0.6cm; }
+          @page { size: ${sizeValue} landscape; margin: 0.22cm 0.3cm; }
           html, body, #root { height: auto !important; min-height: auto !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; background: white !important; }
           aside, header, nav, .no-print { display: none !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
@@ -130,7 +130,7 @@ export default function ListaAsistenciaPrint({
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
-            padding: 0 0.15cm !important;
+            padding: 0 0.05cm !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
             page-break-after: auto !important;
