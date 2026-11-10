@@ -169,13 +169,9 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                 </p>
               )}
 
-              {/* ASISTENCIA Y SITUACIÓN */}
-              <div className="flex gap-4 mb-8">
-                <div className="flex-1 border border-slate-300 rounded p-2 text-center">
-                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Asistencia</div>
-                  <div className="text-sm font-bold text-slate-800">≥ 80% (Aprobatoria)</div>
-                </div>
-                <div className="flex-1 border border-slate-300 rounded p-2 text-center bg-slate-50">
+              {/* SITUACIÓN / RESULTADO DE LA EVALUACIÓN */}
+              <div className="mb-8">
+                <div className="border border-slate-300 rounded p-2.5 text-center bg-slate-50">
                   <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Resultado de la Evaluación</div>
                   <div className="text-sm font-black text-slate-900 uppercase">
                     {cicloConcluido && promedioFinal
