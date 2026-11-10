@@ -289,8 +289,8 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
               </p>
             )}
 
-            <div className={`text-center font-black ${type === 'simple' ? 'text-xl' : 'text-lg'} tracking-[0.3em] uppercase`}>
-              C E R T I F I C A
+            <div className={`text-center font-black ${type === 'simple' ? 'text-xl' : 'text-lg'} tracking-[0.25em] uppercase`}>
+              SE HACE CONSTAR
             </div>
 
             {type === 'terminacion_tramite' ? (

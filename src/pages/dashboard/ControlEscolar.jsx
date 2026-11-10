@@ -2170,7 +2170,7 @@ export default function ControlEscolar() {
                        constanciaTramiteOption === 'laboral' ? 'Laboral' : 'Personalizado'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">Formato tradicional 100% en mayúsculas certificando la inscripción y el grado cursado.</p>
+                  <p className="text-xs text-slate-500 mt-1">Formato tradicional 100% en mayúsculas haciendo constar la inscripción y el grado cursado.</p>
                 </div>
               </button>
 
@@ -2219,7 +2219,7 @@ export default function ControlEscolar() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800">Constancia Promedio del Año Pasado</h3>
-                  <p className="text-xs text-slate-500 mt-1">Certifica el promedio obtenido en el ciclo escolar anterior.</p>
+                  <p className="text-xs text-slate-500 mt-1">Hace constar el promedio obtenido en el ciclo escolar anterior.</p>
                 </div>
               </button>
 
