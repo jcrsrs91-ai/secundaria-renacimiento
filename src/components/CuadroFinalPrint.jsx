@@ -37,6 +37,7 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
   let sumaPromedios = 0, alumnosEvaluados = 0;
 
   alumnos.forEach(al => {
+    if ((al.status || '').toLowerCase() === 'baja') return;
     const gen = getStudentGender(al);
     if (gen === 'M') existenciaM++;
     else existenciaH++;
@@ -123,38 +124,50 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
           </thead>
           <tbody>
             {alumnos.map((al, idx) => {
+              const isBaja = (al.status || '').toLowerCase() === 'baja';
               let matRepAlumno = 0;
               return (
-                <tr key={al.id}>
+                <tr key={al.id} className={isBaja ? 'bg-slate-200/70 text-slate-500' : ''}>
                   <td className="border border-black p-0.5 text-center font-bold">{idx + 1}</td>
-                  <td className="border border-black p-0.5 font-medium truncate uppercase whitespace-nowrap">{al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}</td>
-                  {materias.map(mat => {
-                    const finalObj = getPromedioFinalObj(al, mat.id);
-                    let val = null;
-                    let isReg = false;
-                    
-                    if (finalObj !== null) {
-                      val = finalObj.valor;
-                      isReg = finalObj.isRegularizacion;
-                      sumaPorMateria[mat.id] += val;
-                      countPorMateria[mat.id]++;
-                      if (val < 6) {
-                        reprobadosPorMateria[mat.id]++;
-                        matRepAlumno++;
-                      }
-                    }
-                    
-                    const isFailing = val !== null && val < 6;
-                    return (
-                      <td key={mat.id} className={`border border-black p-0.5 text-center font-bold ${isFailing ? 'text-red-600' : ''}`}>
-                        {val !== null ? `${roundToIntGrade(val)}${isReg ? '*' : ''}` : '-'}
-                      </td>
-                    );
-                  })}
-                  <td className="border border-black p-0.5 text-center font-black bg-slate-100">{getPromedioGeneralAlumno(al)}</td>
-                  <td className={`border border-black p-0.5 text-center font-black ${matRepAlumno > 0 ? 'text-red-700 bg-red-50' : 'text-slate-300'}`}>
-                    {matRepAlumno}
+                  <td className={`border border-black p-0.5 font-medium truncate uppercase whitespace-nowrap ${isBaja ? 'line-through text-slate-500' : ''}`}>
+                    {al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}
+                    {isBaja && <span className="ml-1 font-black text-red-700 no-underline">(BAJA)</span>}
                   </td>
+                  {isBaja ? (
+                    <td colSpan={materias.length + 2} className="border border-black p-0.5 text-center font-black tracking-widest text-slate-600 uppercase">
+                      — B A J A {al.fechaBaja ? `(${al.fechaBaja})` : ''} —
+                    </td>
+                  ) : (
+                    <>
+                      {materias.map(mat => {
+                        const finalObj = getPromedioFinalObj(al, mat.id);
+                        let val = null;
+                        let isReg = false;
+                        
+                        if (finalObj !== null) {
+                          val = finalObj.valor;
+                          isReg = finalObj.isRegularizacion;
+                          sumaPorMateria[mat.id] += val;
+                          countPorMateria[mat.id]++;
+                          if (val < 6) {
+                            reprobadosPorMateria[mat.id]++;
+                            matRepAlumno++;
+                          }
+                        }
+                        
+                        const isFailing = val !== null && val < 6;
+                        return (
+                          <td key={mat.id} className={`border border-black p-0.5 text-center font-bold ${isFailing ? 'text-red-600' : ''}`}>
+                            {val !== null ? `${roundToIntGrade(val)}${isReg ? '*' : ''}` : '-'}
+                          </td>
+                        );
+                      })}
+                      <td className="border border-black p-0.5 text-center font-black bg-slate-100">{getPromedioGeneralAlumno(al)}</td>
+                      <td className={`border border-black p-0.5 text-center font-black ${matRepAlumno > 0 ? 'text-red-700 bg-red-50' : 'text-slate-300'}`}>
+                        {matRepAlumno}
+                      </td>
+                    </>
+                  )}
                 </tr>
               );
             })}

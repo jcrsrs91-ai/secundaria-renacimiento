@@ -236,11 +236,11 @@ export default function ControlEscolar() {
                }
           }
 
-          // Auto-reparar Bajas previas que no tengan motivo (asumir 'No Inscrito' ya que es antes del 30 sept)
+          // Auto-reparar Bajas que no tengan motivo (después del 30 de sept es Baja Oficial; antes es No Inscrito)
           if (data.status === 'Baja' && !data.motivoBaja) {
-             const asNoInscrito = 'No Inscrito';
-             if (doc.id) updateDoc(doc.ref, { motivoBaja: asNoInscrito }).catch(console.error);
-             data.motivoBaja = asNoInscrito;
+             const defaultMotivo = esPeriodoDeAlta() ? 'Baja Oficial' : 'No Inscrito';
+             if (doc.id) updateDoc(doc.ref, { motivoBaja: defaultMotivo }).catch(console.error);
+             data.motivoBaja = defaultMotivo;
           }
 
         return { id: doc.id, ...data };
@@ -1367,7 +1367,7 @@ export default function ControlEscolar() {
 
       {/* Tabla Calificaciones */}
       {!loading && activeTab === 'calificaciones' && (
-        <Calificaciones activos={activos} materiasPorGrado={materiasPorGrado} onPrintBoleta={handlePrintBoleta} onPrintConcentradoFinal={handlePrintConcentradoFinal} onPrintConcentradoParcial={handlePrintConcentradoParcial} />
+        <Calificaciones activos={directorio} materiasPorGrado={materiasPorGrado} onPrintBoleta={handlePrintBoleta} onPrintConcentradoFinal={handlePrintConcentradoFinal} onPrintConcentradoParcial={handlePrintConcentradoParcial} />
       )}
 
       {/* Bitacora */}

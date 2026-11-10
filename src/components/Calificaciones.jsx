@@ -31,11 +31,23 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   const [highlightEmptyCells, setHighlightEmptyCells] = useState(false);
   const [filterOnlyIncomplete, setFilterOnlyIncomplete] = useState(false);
 
-  // Filtrar alumnos activos por grado y grupo usando el mismo orden oficial de Lista de Asistencia (Altas al final)
+  // Filtrar alumnos por grado y grupo conservando las Bajas Oficiales en su lugar exacto de lista (y Altas al final)
   const alumnos = useMemo(() => {
-    const filtrados = activos.filter(a => a.grado === grado && a.grupo === grupo && (a.status || 'Activo') === 'Activo');
+    const filtrados = activos.filter(a => {
+      if (a.grado !== grado || a.grupo !== grupo) return false;
+      const st = (a.status || 'Activo').toLowerCase();
+      if (st === 'activo') return true;
+      if (st === 'baja' && a.motivoBaja !== 'No Inscrito' && a.tipoBaja !== 'No Inscrito') return true;
+      return false;
+    });
     return sortAttendanceListStudents(filtrados);
   }, [activos, grado, grupo]);
+
+  // Solo alumnos activos vigentes (para promedios grupales, semáforo, detector de celdas vacías y boletas)
+  const alumnosActivosGrupo = useMemo(
+    () => alumnos.filter(a => (a.status || 'Activo').toLowerCase() !== 'baja'),
+    [alumnos]
+  );
 
   const materias = materiasPorGrado[grado] || [];
 
@@ -65,21 +77,27 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     }));
   };
 
-  // Navegación rápida tipo Excel con Enter y Flechas en la Sábana General de Secretarios
+  // Navegación rápida tipo Excel con Enter y Flechas en la Sábana General de Secretarios (salta automáticamente filas de Baja)
   const handleCellKeyDown = (e, rowIdx, colIdx) => {
     if (e.key === 'Enter' || e.key === 'ArrowDown') {
       e.preventDefault();
-      const nextInput = document.querySelector(`input[data-sabana-cell="${rowIdx + 1}-${colIdx}"]`);
-      if (nextInput) {
-        nextInput.focus();
-        nextInput.select();
+      for (let r = rowIdx + 1; r < alumnosMostrados.length; r++) {
+        const nextInput = document.querySelector(`input[data-sabana-cell="${r}-${colIdx}"]`);
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.select();
+          break;
+        }
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      const prevInput = document.querySelector(`input[data-sabana-cell="${rowIdx - 1}-${colIdx}"]`);
-      if (prevInput) {
-        prevInput.focus();
-        prevInput.select();
+      for (let r = rowIdx - 1; r >= 0; r--) {
+        const prevInput = document.querySelector(`input[data-sabana-cell="${r}-${colIdx}"]`);
+        if (prevInput) {
+          prevInput.focus();
+          prevInput.select();
+          break;
+        }
       }
     }
   };
@@ -129,13 +147,13 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     return count === 0 ? '-' : truncateTo1Dec(sum / count);
   };
 
-  // Auditoría de Celdas Vacías y Alumnos Incompletos en el Grupo Actual
+  // Auditoría de Celdas Vacías y Alumnos Incompletos en el Grupo Actual (excluyendo Bajas para no afectar avance)
   const auditoriaGrupo = useMemo(() => {
     let alumnosIncompletos = 0;
     let celdasVacias = 0;
     const incompletosMap = {};
 
-    alumnos.forEach(al => {
+    alumnosActivosGrupo.forEach(al => {
       let faltanAlumno = 0;
       materias.forEach(mat => {
         const val = (localGrades[al.id]?.[mat.id] ?? '').toString().trim();
@@ -154,23 +172,23 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       alumnosIncompletos,
       celdasVacias,
       incompletosMap,
-      grupoCompleto: alumnos.length > 0 && celdasVacias === 0
+      grupoCompleto: alumnosActivosGrupo.length > 0 && celdasVacias === 0
     };
-  }, [alumnos, materias, localGrades]);
+  }, [alumnosActivosGrupo, materias, localGrades]);
 
-  // Lista mostrada en la tabla (con su número de lista original intacto)
+  // Lista mostrada en la tabla (con su número de lista oficial intacto, incluyendo Bajas en su lugar)
   const alumnosMostrados = useMemo(() => {
     const conNumero = alumnos.map((al, idx) => ({ ...al, numeroListaOficial: idx + 1 }));
     if (!filterOnlyIncomplete) return conNumero;
-    return conNumero.filter(al => auditoriaGrupo.incompletosMap[al.id] > 0);
+    return conNumero.filter(al => (al.status || 'Activo').toLowerCase() !== 'baja' && auditoriaGrupo.incompletosMap[al.id] > 0);
   }, [alumnos, filterOnlyIncomplete, auditoriaGrupo]);
 
-  // Semáforo de avance de captura por asignatura en el grupo actual
+  // Semáforo de avance de captura por asignatura en el grupo actual (solo cuenta alumnos activos)
   const semaforoMaterias = useMemo(() => {
     return materias.map(mat => {
       let capturados = 0;
       let docente = '';
-      alumnos.forEach(al => {
+      alumnosActivosGrupo.forEach(al => {
         const val = localGrades[al.id]?.[mat.id];
         if (val !== undefined && val !== '') {
           capturados++;
@@ -178,18 +196,18 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         const detDoc = al.evaluacionDetalle?.[trimestre]?.[mat.id]?.docente;
         if (detDoc && !docente) docente = detDoc;
       });
-      const completo = alumnos.length > 0 && capturados === alumnos.length;
-      const parcial = capturados > 0 && capturados < alumnos.length;
+      const completo = alumnosActivosGrupo.length > 0 && capturados === alumnosActivosGrupo.length;
+      const parcial = capturados > 0 && capturados < alumnosActivosGrupo.length;
       return {
         ...mat,
         capturados,
-        total: alumnos.length,
+        total: alumnosActivosGrupo.length,
         completo,
         parcial,
         docente
       };
     });
-  }, [materias, alumnos, localGrades, trimestre]);
+  }, [materias, alumnosActivosGrupo, localGrades, trimestre]);
 
   // Controles de Candado Docente y Visibilidad a Padres
   const isDocenteLocked = Boolean(config?.trimestresBloqueadosDocentes?.[trimestre]);
@@ -238,8 +256,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   };
 
   const handleSaveAll = async () => {
-    // Validar que todas las calificaciones capturadas estén en escala oficial PASEG (5 a 10)
-    for (const al of alumnos) {
+    // Validar que todas las calificaciones capturadas de alumnos activos estén en escala oficial PASEG (5 a 10)
+    for (const al of alumnosActivosGrupo) {
       const grades = localGrades[al.id] || {};
       for (const mat of materias) {
         const raw = (grades[mat.id] ?? '').toString().trim();
@@ -255,7 +273,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
 
     setIsSaving(true);
     try {
-      const promises = alumnos.map(al => {
+      const promises = alumnosActivosGrupo.map(al => {
         const docRef = doc(db, 'students', al.id);
         const rawGrades = localGrades[al.id] || {};
         const roundedGrades = {};
@@ -280,7 +298,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         currentUser?.email,
         'Control Escolar (Calificaciones)',
         'Captura Sábana General',
-        `Guardó la sábana general de calificaciones de ${grado} "${grupo}" (${trimestre.toUpperCase()}) para ${alumnos.length} alumnos.`
+        `Guardó la sábana general de calificaciones de ${grado} "${grupo}" (${trimestre.toUpperCase()}) para ${alumnosActivosGrupo.length} alumnos activos.`
       );
       setSuccessMsg('Calificaciones guardadas exitosamente.');
       toast.success('Sábana general guardada correctamente.');
@@ -299,13 +317,14 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     }
     const headers = ['No_Lista', 'Matricula', 'Nombre Completo', ...materias.map(m => m.name)];
     const data = alumnos.map((al, idx) => {
+      const isBaja = (al.status || '').toLowerCase() === 'baja';
       const row = [
         idx + 1,
         al.matricula,
-        `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`
+        `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}${isBaja ? ' (BAJA)' : ''}`
       ];
       materias.forEach(mat => {
-        row.push(localGrades[al.id]?.[mat.id] || '');
+        row.push(isBaja ? 'BAJA' : (localGrades[al.id]?.[mat.id] || ''));
       });
       return row;
     });
@@ -323,7 +342,13 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     if (alumnos.length === 0) return;
     const headers = ['N°', 'Matrícula', 'Nombre del Alumno', ...materias.map(m => m.name), 'Promedio General PASEG', 'Materias Reprobadas'];
     const data = alumnos.map((al, idx) => {
-      const row = [idx + 1, al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`];
+      const isBaja = (al.status || '').toLowerCase() === 'baja';
+      const row = [idx + 1, al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}${isBaja ? ' (BAJA)' : ''}`];
+      if (isBaja) {
+        materias.forEach(() => row.push('BAJA'));
+        row.push('BAJA', '-');
+        return row;
+      }
       let sum = 0, count = 0, reprobadas = 0;
       materias.forEach(mat => {
         const pf = getPromedioFinal(al, mat.id);
@@ -351,7 +376,13 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     headers.push('Promedio General PASEG');
 
     const data = alumnos.map((al, idx) => {
-      const row = [idx + 1, al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}`];
+      const isBaja = (al.status || '').toLowerCase() === 'baja';
+      const row = [idx + 1, al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}${isBaja ? ' (BAJA)' : ''}`];
+      if (isBaja) {
+        materias.forEach(() => row.push('BAJA', 'BAJA', 'BAJA', 'BAJA'));
+        row.push('BAJA');
+        return row;
+      }
       let sum = 0, count = 0;
       materias.forEach(mat => {
         const t1 = roundToIntGrade(al.calificaciones?.['t1']?.[mat.id], '');
@@ -394,13 +425,14 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
 
         results.data.forEach(row => {
           const matricula = row['MATRICULA'] || row['MATRÍCULA'];
-          const student = alumnos.find(a => (a.matricula || '').toUpperCase() === (matricula || '').toUpperCase());
+          const student = alumnosActivosGrupo.find(a => (a.matricula || '').toUpperCase() === (matricula || '').toUpperCase());
           if (student) {
             matchCount++;
             materias.forEach(mat => {
               const subjectKey = mat.name.toUpperCase();
-              if (row[subjectKey] !== undefined) {
-                newLocalGrades[student.id][mat.id] = row[subjectKey];
+              const cellVal = (row[subjectKey] ?? '').toString().trim();
+              if (cellVal !== '' && cellVal !== 'BAJA') {
+                newLocalGrades[student.id][mat.id] = cellVal;
               }
             });
           }
@@ -692,84 +724,103 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {alumnosMostrados.map((al, rowIdx) => {
-                      const promTrimStr = calcularPromedioTrimestre(al.id);
+                      const isBaja = (al.status || '').toLowerCase() === 'baja';
+                      const promTrimStr = isBaja ? '-' : calcularPromedioTrimestre(al.id);
                       const promTrim = parseFloat(promTrimStr);
-                      const isReprobadoTrim = !isNaN(promTrim) && promTrim < 6.0;
+                      const isReprobadoTrim = !isBaja && !isNaN(promTrim) && promTrim < 6.0;
 
-                      const promGralStr = calcularPromedioGeneralPASEGEnVivo(al);
+                      const promGralStr = isBaja ? '-' : calcularPromedioGeneralPASEGEnVivo(al);
                       const promGral = parseFloat(promGralStr);
-                      const isReprobadoGral = !isNaN(promGral) && promGral < 6.0;
-                      const faltantesAlumno = auditoriaGrupo.incompletosMap[al.id] || 0;
+                      const isReprobadoGral = !isBaja && !isNaN(promGral) && promGral < 6.0;
+                      const faltantesAlumno = isBaja ? 0 : (auditoriaGrupo.incompletosMap[al.id] || 0);
 
                       return (
-                        <tr key={al.id} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                        <tr key={al.id} className={isBaja ? 'bg-slate-100 text-slate-400' : (rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50')}>
                           <td className="px-2 py-3 text-center text-xs font-bold text-slate-500 sticky left-0 z-10 bg-inherit border-r border-slate-200">
                             {al.numeroListaOficial}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-xs font-bold text-slate-800 sticky left-10 z-10 bg-inherit border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                            {autoAcentuar(`${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''}`.trim())} <span className="font-medium">{autoAcentuar(al.nombres || '')}</span>
-                            {al.tipoIngreso === 'Alta' && (
+                            <span className={isBaja ? 'line-through text-slate-400' : ''}>
+                              {autoAcentuar(`${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''}`.trim())} <span className="font-medium">{autoAcentuar(al.nombres || '')}</span>
+                            </span>
+                            {!isBaja && al.tipoIngreso === 'Alta' && (
                               <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-black bg-emerald-100 text-emerald-800 rounded border border-emerald-300">ALTA</span>
                             )}
-                            {highlightEmptyCells && faltantesAlumno > 0 && (
+                            {isBaja && (
+                              <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-black bg-red-100 text-red-800 rounded border border-red-300">
+                                BAJA {al.fechaBaja ? `(${al.fechaBaja})` : ''}
+                              </span>
+                            )}
+                            {!isBaja && highlightEmptyCells && faltantesAlumno > 0 && (
                               <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-black bg-amber-200 text-amber-950 rounded border border-amber-400">
                                 Faltan {faltantesAlumno}
                               </span>
                             )}
                           </td>
-                          {materias.map((mat, colIdx) => {
-                            const val = localGrades[al.id]?.[mat.id] ?? '';
-                            const isEmpty = val.toString().trim() === '';
-                            const numVal = parseFloat(val);
-                            const isOutOfRange = !isEmpty && (isNaN(numVal) || numVal < 5 || numVal > 10);
-                            const isFailing = !isEmpty && !isOutOfRange && numVal < 6.0;
-                            return (
-                              <td key={mat.id} className="px-1 py-2 text-center">
-                                <input 
-                                  type="number" 
-                                  min="5" max="10" step="1"
-                                  data-sabana-cell={`${rowIdx}-${colIdx}`}
-                                  value={val}
-                                  onKeyDown={(e) => handleCellKeyDown(e, rowIdx, colIdx)}
-                                  onChange={(e) => handleGradeChange(al.id, mat.id, e.target.value)}
-                                  onBlur={(e) => {
-                                    const rawVal = e.target.value.trim();
-                                    if (rawVal !== '') {
-                                      const intVal = roundToIntNumber(rawVal);
-                                      if (intVal !== null) {
-                                        handleGradeChange(al.id, mat.id, String(intVal));
-                                      }
-                                    }
-                                  }}
-                                  placeholder={highlightEmptyCells && isEmpty ? '!' : ''}
-                                  className={`w-14 text-center p-1.5 border rounded font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-colors
-                                    ${isOutOfRange
-                                      ? 'bg-red-100 border-red-500 text-red-900 ring-2 ring-red-400'
-                                      : highlightEmptyCells && isEmpty
-                                        ? 'bg-amber-100 border-amber-500 text-amber-950 ring-2 ring-amber-300'
-                                        : isFailing
-                                          ? 'bg-red-50 border-red-300 text-red-700'
-                                          : 'bg-white border-slate-300 text-slate-700'}
-                                  `}
-                                />
+                          {isBaja ? (
+                            <td
+                              colSpan={materias.length + 3}
+                              className="px-4 py-2.5 text-center font-bold text-xs tracking-widest text-slate-400 uppercase bg-slate-100"
+                            >
+                              — B A J A &nbsp; O F I C I A L — (En su lugar de lista N° {al.numeroListaOficial} · No afecta promedios ni estadística)
+                            </td>
+                          ) : (
+                            <>
+                              {materias.map((mat, colIdx) => {
+                                const val = localGrades[al.id]?.[mat.id] ?? '';
+                                const isEmpty = val.toString().trim() === '';
+                                const numVal = parseFloat(val);
+                                const isOutOfRange = !isEmpty && (isNaN(numVal) || numVal < 5 || numVal > 10);
+                                const isFailing = !isEmpty && !isOutOfRange && numVal < 6.0;
+                                return (
+                                  <td key={mat.id} className="px-1 py-2 text-center">
+                                    <input 
+                                      type="number" 
+                                      min="5" max="10" step="1"
+                                      data-sabana-cell={`${rowIdx}-${colIdx}`}
+                                      value={val}
+                                      onKeyDown={(e) => handleCellKeyDown(e, rowIdx, colIdx)}
+                                      onChange={(e) => handleGradeChange(al.id, mat.id, e.target.value)}
+                                      onBlur={(e) => {
+                                        const rawVal = e.target.value.trim();
+                                        if (rawVal !== '') {
+                                          const intVal = roundToIntNumber(rawVal);
+                                          if (intVal !== null) {
+                                            handleGradeChange(al.id, mat.id, String(intVal));
+                                          }
+                                        }
+                                      }}
+                                      placeholder={highlightEmptyCells && isEmpty ? '!' : ''}
+                                      className={`w-14 text-center p-1.5 border rounded font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-colors
+                                        ${isOutOfRange
+                                          ? 'bg-red-100 border-red-500 text-red-900 ring-2 ring-red-400'
+                                          : highlightEmptyCells && isEmpty
+                                            ? 'bg-amber-100 border-amber-500 text-amber-950 ring-2 ring-amber-300'
+                                            : isFailing
+                                              ? 'bg-red-50 border-red-300 text-red-700'
+                                              : 'bg-white border-slate-300 text-slate-700'}
+                                      `}
+                                    />
+                                  </td>
+                                );
+                              })}
+                              <td className="px-3 py-3 text-center bg-inherit border-l border-slate-200">
+                                <span className={`inline-block px-2 py-0.5 rounded text-xs font-black ${promTrimStr === '-' ? 'text-slate-400' : isReprobadoTrim ? 'bg-red-100 text-red-700' : 'bg-sky-50 text-sky-800 border border-sky-200'}`}>
+                                  {promTrimStr}
+                                </span>
                               </td>
-                            );
-                          })}
-                          <td className="px-3 py-3 text-center bg-inherit border-l border-slate-200">
-                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-black ${promTrimStr === '-' ? 'text-slate-400' : isReprobadoTrim ? 'bg-red-100 text-red-700' : 'bg-sky-50 text-sky-800 border border-sky-200'}`}>
-                              {promTrimStr}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-center bg-inherit border-l border-slate-200">
-                            <span className={`inline-block px-2.5 py-1 rounded-md text-sm font-black ${promGralStr === '-' ? 'text-slate-400' : isReprobadoGral ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>
-                              {promGralStr}
-                            </span>
-                          </td>
-                          <td className="px-2 py-3 text-center bg-inherit border-l border-slate-200">
-                            <button onClick={() => onPrintBoleta && onPrintBoleta(al)} className="text-slate-500 hover:text-slate-800 transition" title="Imprimir Boleta Individual">
-                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                            </button>
-                          </td>
+                              <td className="px-3 py-3 text-center bg-inherit border-l border-slate-200">
+                                <span className={`inline-block px-2.5 py-1 rounded-md text-sm font-black ${promGralStr === '-' ? 'text-slate-400' : isReprobadoGral ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>
+                                  {promGralStr}
+                                </span>
+                              </td>
+                              <td className="px-2 py-3 text-center bg-inherit border-l border-slate-200">
+                                <button onClick={() => onPrintBoleta && onPrintBoleta(al)} className="text-slate-500 hover:text-slate-800 transition" title="Imprimir Boleta Individual">
+                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                </button>
+                              </td>
+                            </>
+                          )}
                         </tr>
                       );
                     })}
@@ -780,7 +831,9 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
               {/* Action Bar */}
               <div className="bg-slate-50 border-t border-slate-200 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-4 relative">
-                  <span className="text-sm font-medium text-slate-500">{alumnos.length} alumnos activos listados (Método PASEG: truncado a 1 décima)</span>
+                  <span className="text-sm font-medium text-slate-500">
+                    {alumnosActivosGrupo.length} alumnos activos listados{alumnos.length > alumnosActivosGrupo.length ? ` (+${alumnos.length - alumnosActivosGrupo.length} baja en su N° de lista)` : ''} (Método PASEG: truncado a 1 décima)
+                  </span>
                   
                   <div className="relative">
                     <button 
@@ -821,7 +874,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
 
                 <div className="flex gap-2">
                   <button 
-                    onClick={() => onPrintBoleta && onPrintBoleta(alumnos)}
+                    onClick={() => onPrintBoleta && onPrintBoleta(alumnosActivosGrupo)}
                     className="flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-100 transition shadow-sm text-sm"
                   >
                      Imprimir Grupo (Boletas)

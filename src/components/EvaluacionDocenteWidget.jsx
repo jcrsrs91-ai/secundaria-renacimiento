@@ -174,21 +174,27 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     setHasUnsavedChanges(true);
   };
 
-  // Navegación con Enter / Flecha Abajo entre alumnos dentro de la Lista Oficial
+  // Navegación con Enter / Flecha Abajo entre alumnos dentro de la Lista Oficial (salta automáticamente filas de Baja)
   const handleGridKeyDown = (e, rowIdx, colKey) => {
     if (e.key === 'Enter' || e.key === 'ArrowDown') {
       e.preventDefault();
-      const next = document.querySelector(`input[data-docente-cell="${rowIdx + 1}-${colKey}"]`);
-      if (next) {
-        next.focus();
-        next.select();
+      for (let r = rowIdx + 1; r < alumnosGrupo.length; r++) {
+        const next = document.querySelector(`input[data-docente-cell="${r}-${colKey}"]`);
+        if (next) {
+          next.focus();
+          next.select();
+          break;
+        }
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      const prev = document.querySelector(`input[data-docente-cell="${rowIdx - 1}-${colKey}"]`);
-      if (prev) {
-        prev.focus();
-        prev.select();
+      for (let r = rowIdx - 1; r >= 0; r--) {
+        const prev = document.querySelector(`input[data-docente-cell="${r}-${colKey}"]`);
+        if (prev) {
+          prev.focus();
+          prev.select();
+          break;
+        }
       }
     }
   };
