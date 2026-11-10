@@ -19,6 +19,7 @@ import ScannerInventarioModal from '../../components/ScannerInventarioModal';
 import EtiquetasPrint from '../../components/EtiquetasPrint';
 import ActaBajaPrint from '../../components/ActaBajaPrint';
 import CedulaCensalPrint from '../../components/CedulaCensalPrint';
+import { inferirModeloAutomatico, resolverModeloArticulo } from '../../utils/modeloHelper';
 
 // Funciones auxiliares para el manejo de rangos de folios de inventario
 const generateCodeRange = (rawBaseCode, quantity) => {
@@ -642,151 +643,129 @@ export default function Inventario() {
   const [formData, setFormData] = useState({ articulos: [{ cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: '', inventario: '' }] });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Limpia valores basura o auto-rellenados por el navegador en el campo Modelo
+  // Resuelve o auto-rellena el campo Modelo del artículo (conservando modelos explícitos o infiriéndolo de su descripción/medida)
   const sanitizeModeloVal = (rawModelo, art = {}, parentDoc = {}) => {
-    const str = String(rawModelo || '').trim();
-    if (!str) return '';
-    const upper = str.toUpperCase();
-    if (['S/M', 'S/N', 'N/A', 'NA', 'SIN MODELO', 'SIN MARCA', 'SIN SERIE', 'NINGUNO', '-', '--', 'NULL', 'UNDEFINED'].includes(upper)) {
-      return '';
-    }
-    const forbidden = [
-      String(art?.marca || '').trim().toUpperCase(),
-      String(art?.descripcion || '').trim().toUpperCase(),
-      String(art?.articulo || '').trim().toUpperCase(),
-      String(art?.codigo || '').trim().toUpperCase(),
-      String(art?.ubicacion || '').trim().toUpperCase(),
-      String(parentDoc?.nombreResguardante || parentDoc?.resguardante || '').trim().toUpperCase(),
-      String(parentDoc?.areaResguardante || parentDoc?.area || parentDoc?.cargo || '').trim().toUpperCase(),
-      String(parentDoc?.folio || '').trim().toUpperCase(),
-      'BUENO', 'REGULAR', 'MALO', 'NUEVO', 'BAJA',
-      'ACAPULCO', 'ACAPULCO DE JUAREZ', 'ACAPULCO DE JUÁREZ', 'CD. RENACIMIENTO', 'CIUDAD RENACIMIENTO', 'RENACIMIENTO', 'GUERRERO', '39715'
-    ].filter(Boolean);
-    if (forbidden.includes(upper)) return '';
-    if (upper.includes('@') || /^\d{10}$/.test(upper)) return '';
-    return str;
+    return resolverModeloArticulo({ ...art, modelo: rawModelo }, inventario, parentDoc);
   };
 
-  // Auto-limpieza automática en segundo plano para corregir resguardos/inventario donde el navegador haya auto-rellenado Modelo
+  // Auto-relleno inteligente en segundo plano para asegurar que todos los artículos en resguardos e inventario tengan su Modelo
   useEffect(() => {
     if (autoCleanModelosDone) return;
     if (resguardos.length === 0 && inventario.length === 0) return;
 
-    const runAutoSanitize = async () => {
+    const runAutoFillModelos = async () => {
       setAutoCleanModelosDone(true);
       try {
-        const batch = writeBatch(db);
-        let ops = 0;
+        const operations = [];
 
         for (const res of resguardos) {
           if (!Array.isArray(res.articulos) || res.articulos.length === 0) continue;
-          const nonEmptyMods = res.articulos.map(a => String(a.modelo || '').trim().toUpperCase()).filter(Boolean);
-          const uniqueConcepts = new Set(res.articulos.map(a => String(a.descripcion || a.articulo || '').trim().toUpperCase()).filter(Boolean));
-          // Si 2 o más artículos distintos en la misma acta tienen exactamente el mismo texto en modelo, fue autocompletado del navegador
-          const sameAutofillAcrossDistinctRows =
-            nonEmptyMods.length >= 2 &&
-            uniqueConcepts.size >= 2 &&
-            new Set(nonEmptyMods).size === 1;
-
           let changed = false;
-          const cleanedArts = res.articulos.map(art => {
-            const currentMod = String(art.modelo || '');
-            const safeMod = sameAutofillAcrossDistinctRows ? '' : sanitizeModeloVal(currentMod, art, res);
-            if (currentMod !== safeMod) {
+          const updatedArts = res.articulos.map(art => {
+            const currentMod = String(art.modelo || '').trim();
+            const resolvedMod = resolverModeloArticulo(art, inventario, res);
+            if (!currentMod && resolvedMod) {
               changed = true;
-              return { ...art, modelo: safeMod };
+              return { ...art, modelo: resolvedMod };
             }
             return art;
           });
 
-          if (changed && ops < 450) {
-            batch.update(doc(db, 'resguardos', res.id), { articulos: cleanedArts });
-            ops++;
+          if (changed) {
+            operations.push({ ref: doc(db, 'resguardos', res.id), data: { articulos: updatedArts } });
           }
         }
 
         for (const item of inventario) {
-          const currentMod = String(item.modelo || '');
-          if (!currentMod) continue;
-          const safeMod = sanitizeModeloVal(currentMod, item);
-          if (currentMod !== safeMod && ops < 450) {
-            batch.update(doc(db, 'inventario', item.id), { modelo: safeMod });
-            ops++;
+          const currentMod = String(item.modelo || '').trim();
+          if (!currentMod) {
+            const resolvedMod = inferirModeloAutomatico(item);
+            if (resolvedMod) {
+              operations.push({ ref: doc(db, 'inventario', item.id), data: { modelo: resolvedMod } });
+            }
           }
         }
 
-        if (ops > 0) {
+        for (const acta of actasRecepcion) {
+          if (!Array.isArray(acta.articulos) || acta.articulos.length === 0) continue;
+          let changed = false;
+          const updatedArts = acta.articulos.map(art => {
+            const currentMod = String(art.modelo || '').trim();
+            const resolvedMod = resolverModeloArticulo(art, inventario, acta);
+            if (!currentMod && resolvedMod) {
+              changed = true;
+              return { ...art, modelo: resolvedMod };
+            }
+            return art;
+          });
+          if (changed) {
+            operations.push({ ref: doc(db, 'actas_recepcion', acta.id), data: { articulos: updatedArts } });
+          }
+        }
+
+        // Ejecutar en lotes seguros de 400 escrituras
+        for (let i = 0; i < operations.length; i += 400) {
+          const chunk = operations.slice(i, i + 400);
+          const batch = writeBatch(db);
+          chunk.forEach(op => batch.update(op.ref, op.data));
           await batch.commit();
         }
       } catch (e) {
-        console.error('Error en auto-limpieza de modelos:', e);
+        console.error('Error en auto-relleno de modelos:', e);
       }
     };
 
-    runAutoSanitize();
-  }, [resguardos, inventario, autoCleanModelosDone]);
+    runAutoFillModelos();
+  }, [resguardos, inventario, actasRecepcion, autoCleanModelosDone]);
 
-  const handleClearResguardoModelos = async (resDoc) => {
-    if (!resDoc || !resDoc.id) return;
-    if (!window.confirm(`¿Deseas vaciar el campo "Modelo" de todos los artículos del resguardo Folio ${resDoc.folio || 'S/F'} (${resDoc.nombreResguardante || 'S/N'})?`)) return;
-    const toastId = toast.loading('Limpiando campo Modelo del acta...');
+  const handleAutoRellenarModelosResguardos = async () => {
+    const toastId = toast.loading('Auto-rellenando el campo Modelo en todas las actas y bienes...');
     try {
-      const cleanedArts = (resDoc.articulos || []).map(a => ({ ...a, modelo: '' }));
-      await updateDoc(doc(db, 'resguardos', resDoc.id), { articulos: cleanedArts });
-
-      // También limpiar el campo modelo en los bienes de inventario vinculados a esta acta
-      for (const art of cleanedArts) {
-        const codes = expandCodeRange(art.codigo || art.inventario || '');
-        for (const c of codes) {
-          const invItem = inventario.find(i => i.codigo === c || (art.id && i.id === art.id));
-          if (invItem && invItem.modelo) {
-            await updateDoc(doc(db, 'inventario', invItem.id), { modelo: '' });
-          }
-        }
-      }
-
-      if (printData && printData.id === resDoc.id) {
-        setPrintData({ ...printData, articulos: cleanedArts });
-      }
-      toast.success('¡Campo Modelo limpiado correctamente en esta acta!', { id: toastId });
-    } catch (err) {
-      console.error(err);
-      toast.error('Error al limpiar los modelos del acta.', { id: toastId });
-    }
-  };
-
-  const handleLimpiarTodosLosModelosResguardos = async () => {
-    if (!window.confirm('¿Deseas vaciar el campo "Modelo" en TODAS las Actas de Resguardo y sus artículos en el Inventario General para eliminar cualquier texto auto-rellenado?')) return;
-    const toastId = toast.loading('Limpiando campo Modelo en todos los resguardos...');
-    try {
-      const batch = writeBatch(db);
+      const operations = [];
       let updatedRes = 0;
       let updatedInv = 0;
 
       for (const res of resguardos) {
-        if (Array.isArray(res.articulos) && res.articulos.some(a => a.modelo && String(a.modelo).trim() !== '')) {
-          const cleaned = res.articulos.map(a => ({ ...a, modelo: '' }));
-          batch.update(doc(db, 'resguardos', res.id), { articulos: cleaned });
+        if (!Array.isArray(res.articulos) || res.articulos.length === 0) continue;
+        let changed = false;
+        const updatedArts = res.articulos.map(a => {
+          const mod = resolverModeloArticulo(a, inventario, res);
+          if (String(a.modelo || '').trim() !== mod) {
+            changed = true;
+            return { ...a, modelo: mod };
+          }
+          return a;
+        });
+        if (changed) {
+          operations.push({ ref: doc(db, 'resguardos', res.id), data: { articulos: updatedArts } });
           updatedRes++;
         }
       }
 
       for (const item of inventario) {
-        if (item.modelo && String(item.modelo).trim() !== '') {
-          batch.update(doc(db, 'inventario', item.id), { modelo: '' });
+        const mod = resolverModeloArticulo(item, inventario);
+        if (String(item.modelo || '').trim() !== mod) {
+          operations.push({ ref: doc(db, 'inventario', item.id), data: { modelo: mod } });
           updatedInv++;
         }
       }
 
-      if (updatedRes > 0 || updatedInv > 0) {
+      for (let i = 0; i < operations.length; i += 400) {
+        const chunk = operations.slice(i, i + 400);
+        const batch = writeBatch(db);
+        chunk.forEach(op => batch.update(op.ref, op.data));
         await batch.commit();
-        toast.success(`¡Listo! Se limpió el campo Modelo en ${updatedRes} acta(s) de resguardo y ${updatedInv} artículo(s).`, { id: toastId });
-      } else {
-        toast.success('Todas las actas de resguardo ya tienen el campo Modelo limpio.', { id: toastId });
       }
+
+      toast.success(
+        updatedRes > 0 || updatedInv > 0
+          ? `¡Listo! Se completó el Modelo en ${updatedRes} acta(s) de resguardo y ${updatedInv} artículo(s).`
+          : '¡Todas las actas de resguardo y bienes ya tienen su Modelo completo!',
+        { id: toastId }
+      );
     } catch (err) {
       console.error(err);
-      toast.error('Hubo un error al limpiar los modelos.', { id: toastId });
+      toast.error('Hubo un error al auto-rellenar los modelos.', { id: toastId });
     }
   };
 
@@ -933,7 +912,7 @@ export default function Inventario() {
                 articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || 'Sin nombre',
                 descripcion: art.descripcion || art.articulo || '',
                 marca: art.marca || '',
-                modelo: art.modelo || '',
+                modelo: sanitizeModeloVal(art.modelo, art, formData),
                 serie: art.serie || '',
                 observaciones: art.observaciones || formData.observaciones || '',
                 ubicacion: ubicacionInicial,
@@ -958,7 +937,7 @@ export default function Inventario() {
               articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || '',
               descripcion: art.descripcion || art.articulo || '',
               marca: art.marca || '',
-              modelo: art.modelo || '',
+              modelo: sanitizeModeloVal(art.modelo, art, formData),
               serie: art.serie || '',
               estado: art.estado || 'Nuevo',
               observaciones: art.observaciones || '',
@@ -2164,7 +2143,7 @@ Esta acción no se puede deshacer.`);
               articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || invItem.articulo || 'Sin nombre',
               descripcion: art.descripcion || art.articulo || invItem.descripcion || '',
               marca: art.marca || '',
-              modelo: art.modelo || '',
+              modelo: sanitizeModeloVal(art.modelo, art, editingRecepcion),
               serie: art.serie || '',
               observaciones: art.observaciones || editingRecepcion.observaciones || '',
               estado: art.estado || invItem.estado || 'Nuevo',
@@ -2186,7 +2165,7 @@ Esta acción no se puede deshacer.`);
               articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || 'Sin nombre',
               descripcion: art.descripcion || art.articulo || '',
               marca: art.marca || '',
-              modelo: art.modelo || '',
+              modelo: sanitizeModeloVal(art.modelo, art, editingRecepcion),
               serie: art.serie || '',
               observaciones: art.observaciones || editingRecepcion.observaciones || '',
               ubicacion: 'Bodega Contraloría',
@@ -2220,7 +2199,7 @@ Esta acción no se puede deshacer.`);
           articulo: `${art.descripcion || ''} ${art.marca || ''}`.trim() || art.articulo || '',
           descripcion: art.descripcion || art.articulo || '',
           marca: art.marca || '',
-          modelo: art.modelo || '',
+          modelo: sanitizeModeloVal(art.modelo, art, editingRecepcion),
           serie: art.serie || '',
           estado: art.estado || 'Nuevo',
           observaciones: art.observaciones || '',
@@ -2677,6 +2656,7 @@ Esta acción no se puede deshacer.`);
             'Código(s)': art.codigo || art.inventario || '',
             'Artículo / Descripción': art.descripcion || art.articulo || '',
             'Marca': art.marca || '',
+            'Modelo': resolverModeloArticulo(art, inventario, r),
             'No. Serie': art.serie || '',
             'Estado': art.estado || 'Bueno',
             'Observaciones': r.observaciones || ''
@@ -2692,6 +2672,7 @@ Esta acción no se puede deshacer.`);
           'Código(s)': '',
           'Artículo / Descripción': 'SIN ARTÍCULOS',
           'Marca': '',
+          'Modelo': '',
           'No. Serie': '',
           'Estado': '',
           'Observaciones': r.observaciones || ''
@@ -3660,11 +3641,11 @@ Esta acción no se puede deshacer.`);
                 <Printer className="w-4 h-4 mr-2" /> Imprimir en Blanco
               </button>
               <button
-                onClick={handleLimpiarTodosLosModelosResguardos}
-                className="flex items-center justify-center px-3.5 py-2 bg-amber-50 border border-amber-300 text-amber-800 rounded-lg text-sm font-bold hover:bg-amber-100 shadow-sm transition-colors whitespace-nowrap"
-                title="Vaciar el campo Modelo en todas las actas de resguardo si se auto-rellenó"
+                onClick={handleAutoRellenarModelosResguardos}
+                className="flex items-center justify-center px-3.5 py-2 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-lg text-sm font-bold hover:bg-emerald-100 shadow-sm transition-colors whitespace-nowrap"
+                title="Auto-rellenar el campo Modelo en todas las actas de resguardo e inventario"
               >
-                <X className="w-4 h-4 mr-1.5" /> Limpiar Modelos Auto-rellenados
+                <CheckCircle className="w-4 h-4 mr-1.5" /> Auto-rellenar Modelos
               </button>
               <button
                 onClick={handleExportResguardosCSV}
@@ -4429,13 +4410,16 @@ Esta acción no se puede deshacer.`);
                       <button
                         type="button"
                         onClick={() => {
-                          const cleared = editingResguardo.articulos.map(a => ({ ...a, modelo: '' }));
-                          setEditingResguardo({ ...editingResguardo, articulos: cleared });
-                          toast.success('Se vació el campo Modelo de todas las filas. Recuerda dar clic en Guardar Cambios.');
+                          const filled = editingResguardo.articulos.map(a => ({
+                            ...a,
+                            modelo: resolverModeloArticulo(a, inventario, editingResguardo)
+                          }));
+                          setEditingResguardo({ ...editingResguardo, articulos: filled });
+                          toast.success('Se auto-rellenó el campo Modelo en todas las filas. Recuerda dar clic en Guardar Cambios.');
                         }}
-                        className="text-xs px-2.5 py-1 bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 rounded-md font-bold"
+                        className="text-xs px-2.5 py-1 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300 rounded-md font-bold"
                       >
-                        Vaciar Modelo en todas las filas
+                        Auto-rellenar Modelo en todas las filas
                       </button>
                       <button type="button" onClick={() => setEditingResguardo({ ...editingResguardo, articulos: [...editingResguardo.articulos, { cantidad: '', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Bueno', codigo: '' }] })} className="text-sm text-primary-600 hover:text-primary-700 font-bold">
                         + Añadir fila
@@ -4897,13 +4881,16 @@ Esta acción no se puede deshacer.`);
                       <button
                         type="button"
                         onClick={() => {
-                          const cleared = formData.articulos.map(a => ({ ...a, modelo: '' }));
-                          setFormData({ ...formData, articulos: cleared });
-                          toast.success('Se vació el campo Modelo de todas las filas.');
+                          const filled = formData.articulos.map(a => ({
+                            ...a,
+                            modelo: resolverModeloArticulo(a, inventario, formData)
+                          }));
+                          setFormData({ ...formData, articulos: filled });
+                          toast.success('Se auto-rellenó el campo Modelo en todas las filas.');
                         }}
-                        className="text-xs px-2.5 py-1 bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 rounded-md font-bold"
+                        className="text-xs px-2.5 py-1 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300 rounded-md font-bold"
                       >
-                        Vaciar Modelo en todas las filas
+                        Auto-rellenar Modelo en todas las filas
                       </button>
                       <button type="button" onClick={handleAddRow} className="text-sm text-primary-600 hover:text-primary-700 font-bold">
                         + Añadir fila
@@ -5048,7 +5035,7 @@ Esta acción no se puede deshacer.`);
     )}
 
     {printMode === 'recepcion' && printData && <ActaRecepcionPrint data={printData} onBack={() => setPrintMode(null)} />}
-    {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} onBack={() => setPrintMode(null)} onClearModelos={handleClearResguardoModelos} />}
+    {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} inventario={inventario} onBack={() => setPrintMode(null)} />}
     {printMode === 'baja' && printData && <ActaBajaPrint data={printData} onBack={() => setPrintMode(null)} />}
     {printMode === 'etiquetas' && printData && <EtiquetasPrint items={printData} onBack={() => setPrintMode(null)} />}
     {(printMode === 'cedula_censal' || printMode === 'cedula_censal_blank') && (

@@ -3,6 +3,7 @@ import { Printer, ArrowLeft, Settings, Layers, List, FileText, Download } from '
 import Papa from 'papaparse';
 import toast from 'react-hot-toast';
 import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
+import { resolverModeloArticulo } from '../utils/modeloHelper';
 
 const DEFAULT_CONFIG = {
   // Datos Personales del Responsable
@@ -53,7 +54,7 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
     }
   }, [config]);
 
-  const cleanField = (val, placeholders = ['S/M', 'S/N', 'N/A', 'NA', 'SIN MODELO', 'SIN MARCA', 'SIN SERIE', 'NINGUNO', '-', '--', 'NULL', 'UNDEFINED']) => {
+  const cleanField = (val, placeholders = ['NULL', 'UNDEFINED']) => {
     const str = String(val || '').trim();
     if (!str) return '';
     if (placeholders.includes(str.toUpperCase())) return '';
@@ -61,23 +62,7 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
   };
 
   const cleanModelo = (rawModelo, item = {}, parentDoc = {}) => {
-    const m = cleanField(rawModelo);
-    if (!m) return '';
-    // Evitar valores auto-rellenados por el navegador o copiados de otros campos
-    const forbidden = [
-      cleanField(item.marca),
-      cleanField(item.descripcion),
-      cleanField(item.articulo),
-      cleanField(item.ubicacion),
-      cleanField(parentDoc.nombreResguardante || parentDoc.resguardante),
-      cleanField(parentDoc.areaResguardante || parentDoc.area || parentDoc.cargo),
-      cleanField(parentDoc.folio),
-      'BUENO', 'REGULAR', 'MALO', 'NUEVO', 'BAJA',
-      'ACAPULCO', 'ACAPULCO DE JUAREZ', 'ACAPULCO DE JUÁREZ', 'CD. RENACIMIENTO', 'CIUDAD RENACIMIENTO', 'RENACIMIENTO', 'GUERRERO', '39715'
-    ].filter(Boolean);
-    if (forbidden.includes(m)) return '';
-    if (m.includes('@') || /^\d{10}$/.test(m)) return '';
-    return m;
+    return resolverModeloArticulo({ ...item, modelo: rawModelo }, inventario, parentDoc).toUpperCase();
   };
 
   const filasMostradas = useMemo(() => {
@@ -89,17 +74,6 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
       resguardos.forEach(res => {
         const area = res.areaResguardante || res.area || res.cargo || '';
         const resguardante = res.nombreResguardante || res.resguardante || '';
-        // Si todos los artículos distintos de un mismo resguardo tienen exactamente el mismo texto en modelo, fue auto-relleno del navegador
-        const nonEmptyModelos = Array.isArray(res.articulos)
-          ? res.articulos.map(a => cleanField(a.modelo)).filter(Boolean)
-          : [];
-        const uniqueDescs = Array.isArray(res.articulos)
-          ? new Set(res.articulos.map(a => (a.descripcion || a.articulo || '').trim().toUpperCase()).filter(Boolean))
-          : new Set();
-        const isBrowserAutofillAcrossRows =
-          nonEmptyModelos.length >= 2 &&
-          uniqueDescs.size >= 2 &&
-          new Set(nonEmptyModelos).size === 1;
 
         if (Array.isArray(res.articulos)) {
           res.articulos.forEach(art => {
@@ -108,7 +82,7 @@ export default function CedulaCensalPrint({ resguardos = [], inventario = [], in
               cantidad: Number(art.cantidad) || 1,
               concepto: (art.descripcion || art.articulo || 'SIN DESCRIPCIÓN').trim().toUpperCase(),
               marca: cleanField(art.marca),
-              modelo: isBrowserAutofillAcrossRows ? '' : cleanModelo(art.modelo, art, res),
+              modelo: cleanModelo(art.modelo, art, res),
               serie: cleanField(art.serie),
               estado: (art.estado || 'BUENO').trim().toUpperCase(),
               observaciones: (

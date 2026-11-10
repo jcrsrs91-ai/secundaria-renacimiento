@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { resolverModeloArticulo } from '../utils/modeloHelper';
 
-export default function CartaResguardoPrint({ data, onBack, onClearModelos }) {
-  const [ocultarModelo, setOcultarModelo] = useState(false);
-
+export default function CartaResguardoPrint({ data, inventario = [], onBack }) {
   if (!data) return null;
 
   const cleanField = (val) => {
     const str = String(val || '').trim();
     if (!str) return '';
-    if (['S/M', 'S/N', 'N/A', 'NA', 'SIN MODELO', 'SIN MARCA', 'SIN SERIE', 'NINGUNO', '-', '--', 'NULL', 'UNDEFINED'].includes(str.toUpperCase())) {
+    if (['NULL', 'UNDEFINED'].includes(str.toUpperCase())) {
       return '';
     }
     return str;
@@ -17,36 +16,11 @@ export default function CartaResguardoPrint({ data, onBack, onClearModelos }) {
   const validArts = Array.isArray(data.articulos)
     ? data.articulos.filter(art => art.cantidad || art.descripcion || art.articulo || art.marca)
     : [];
-  const nonEmptyModelos = validArts.map(a => cleanField(a.modelo).toUpperCase()).filter(Boolean);
-  const uniqueConcepts = new Set(validArts.map(a => String(a.descripcion || a.articulo || '').trim().toUpperCase()).filter(Boolean));
-  const isBrowserAutofillAcrossRows =
-    nonEmptyModelos.length >= 2 &&
-    uniqueConcepts.size >= 2 &&
-    new Set(nonEmptyModelos).size === 1;
 
-  const getSafeModelo = (art) => {
-    if (ocultarModelo || isBrowserAutofillAcrossRows) return '';
-    const m = cleanField(art?.modelo);
-    if (!m) return '';
-    const upper = m.toUpperCase();
-    const forbidden = [
-      cleanField(art?.marca).toUpperCase(),
-      cleanField(art?.descripcion).toUpperCase(),
-      cleanField(art?.articulo).toUpperCase(),
-      cleanField(art?.codigo).toUpperCase(),
-      cleanField(data.nombreResguardante || data.resguardante).toUpperCase(),
-      cleanField(data.areaResguardante || data.area || data.cargo).toUpperCase(),
-      cleanField(data.domicilioResguardante).toUpperCase(),
-      cleanField(data.folio).toUpperCase(),
-      'BUENO', 'REGULAR', 'MALO', 'NUEVO', 'BAJA',
-      'ACAPULCO', 'ACAPULCO DE JUAREZ', 'ACAPULCO DE JUÁREZ', 'CD. RENACIMIENTO', 'CIUDAD RENACIMIENTO', 'RENACIMIENTO', 'GUERRERO', '39715'
-    ].filter(Boolean);
-    if (forbidden.includes(upper)) return '';
-    if (upper.includes('@') || /^\d{10}$/.test(upper)) return '';
-    return m;
+  const getModeloParaImprimir = (art) => {
+    if (data.isBlank) return '';
+    return resolverModeloArticulo(art, inventario, data);
   };
-
-  const tieneAlgunModeloEnDatos = validArts.some(art => Boolean(String(art?.modelo || '').trim()));
 
   const formatDate = (dateString) => {
     if (dateString && dateString.toDate) {
@@ -79,31 +53,6 @@ export default function CartaResguardoPrint({ data, onBack, onClearModelos }) {
           <button onClick={onBack} className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium text-sm">
             Volver a Inventario
           </button>
-          {tieneAlgunModeloEnDatos && (
-            <>
-              <button
-                type="button"
-                onClick={() => setOcultarModelo(!ocultarModelo)}
-                className={`px-3.5 py-2 rounded-lg font-bold text-xs border transition ${
-                  ocultarModelo
-                    ? 'bg-amber-100 text-amber-900 border-amber-300'
-                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                }`}
-              >
-                {ocultarModelo ? 'Mostrar columna Modelo' : 'Dejar columna Modelo en blanco'}
-              </button>
-              {onClearModelos && data.id && (
-                <button
-                  type="button"
-                  onClick={() => onClearModelos(data)}
-                  className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg font-bold text-xs transition"
-                  title="Vaciar permanentemente el campo Modelo de todos los artículos de esta acta en la base de datos"
-                >
-                  Limpiar Modelos de esta Acta (Guardar)
-                </button>
-              )}
-            </>
-          )}
         </div>
         <button onClick={() => window.print()} className="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-bold shadow-sm text-sm">
           Imprimir Documento
@@ -256,7 +205,7 @@ export default function CartaResguardoPrint({ data, onBack, onClearModelos }) {
                 <td className="border border-black p-1 font-bold">{art.cantidad}</td>
                 <td className="border border-black p-1 uppercase">{art.descripcion || art.articulo}</td>
                 <td className="border border-black p-1 uppercase">{cleanField(art.marca)}</td>
-                <td className="border border-black p-1 uppercase">{getSafeModelo(art)}</td>
+                <td className="border border-black p-1 uppercase">{getModeloParaImprimir(art)}</td>
                 <td className="border border-black p-1 uppercase font-mono">{cleanField(art.serie)}</td>
                 <td className="border border-black p-1 uppercase">{art.estado || ''}</td>
                 <td className="border border-black p-1 uppercase text-[8px]">{art.observaciones || ''}</td>

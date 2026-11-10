@@ -6,6 +6,7 @@ import { db } from '../firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { registrarMovimiento } from '../utils/bitacora';
+import { inferirModeloAutomatico } from '../utils/modeloHelper';
 
 // Configurar el worker de PDF.js usando Vite
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -130,6 +131,7 @@ Devuelve EXCLUSIVAMENTE un único arreglo JSON válido donde cada objeto tenga e
 "inventario" (string, código o clave),
 "descripcion" (string),
 "marca" (string, vacío si no hay),
+"modelo" (string, modelo o medida del artículo; vacío si no aparece explícito),
 "serie" (string, vacío si no hay)
 
 No incluyas texto fuera del JSON. Ni siquiera bloques de código markdown (\`\`\`json). SOLO el arreglo puro con los objetos combinados de todas las páginas.`;
@@ -180,6 +182,7 @@ No incluyas texto fuera del JSON. Ni siquiera bloques de código markdown (\`\`\
         cantidad: item.cantidad?.toString() || '1',
         descripcion: item.descripcion || '',
         marca: item.marca || '',
+        modelo: item.modelo || inferirModeloAutomatico(item),
         serie: item.serie || '',
         estado: 'Bueno',
         inventario: item.inventario || ''
@@ -242,7 +245,7 @@ No incluyas texto fuera del JSON. Ni siquiera bloques de código markdown (\`\`\
               articulo: `${item.descripcion || ''} ${item.marca || ''}`.trim() || 'Artículo Escaneado',
               descripcion: item.descripcion || '',
               marca: item.marca || '',
-              modelo: '',
+              modelo: item.modelo || inferirModeloAutomatico(item),
               ubicacion: 'Bodega Contraloría',
               cantidad: 1,
               estado: item.estado || 'Bueno',
@@ -408,6 +411,7 @@ No incluyas texto fuera del JSON. Ni siquiera bloques de código markdown (\`\`\
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase w-32">Clave / Inv</th>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Descripción</th>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase w-28">Marca</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase w-28">Modelo</th>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase w-32">Serie</th>
                         <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase w-16">Acción</th>
                       </tr>
@@ -447,6 +451,14 @@ No incluyas texto fuera del JSON. Ni siquiera bloques de código markdown (\`\`\
                           <td className="px-2 py-2">
                             <input 
                               type="text" 
+                              className="w-full p-2 text-sm border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 bg-white" 
+                              value={item.modelo || ''} onChange={e => updateItem(i, 'modelo', e.target.value)}
+                              placeholder="Auto"
+                            />
+                          </td>
+                          <td className="px-2 py-2">
+                            <input 
+                              type="text" 
                               className="w-full p-2 text-sm border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 bg-white font-mono" 
                               value={item.serie} onChange={e => updateItem(i, 'serie', e.target.value)}
                             />
@@ -463,7 +475,7 @@ No incluyas texto fuera del JSON. Ni siquiera bloques de código markdown (\`\`\
                 </div>
                 <div className="p-3 bg-slate-50 border-t flex justify-center">
                   <button 
-                    onClick={() => setExtractedData([...extractedData, { cantidad: '1', descripcion: '', marca: '', serie: '', estado: 'Bueno', inventario: '' }])}
+                    onClick={() => setExtractedData([...extractedData, { cantidad: '1', descripcion: '', marca: '', modelo: '', serie: '', estado: 'Bueno', inventario: '' }])}
                     className="flex items-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                   >
                     <Plus className="w-4 h-4 mr-2" /> Añadir Fila Manual
