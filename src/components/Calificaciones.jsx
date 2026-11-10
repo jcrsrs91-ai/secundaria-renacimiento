@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Download, Upload, Save, CheckCircle, AlertTriangle, Grid, GraduationCap, Lock, Unlock, Eye, EyeOff, Filter, Sparkles } from 'lucide-react';
+import { Download, Upload, Save, CheckCircle, AlertTriangle, Grid, GraduationCap, Lock, Unlock, Eye, EyeOff, Filter, Sparkles, Loader2 } from 'lucide-react';
 import Papa from 'papaparse';
 import toast from 'react-hot-toast';
 import { db } from '../firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { truncateTo1Dec, roundToIntGrade, roundToIntNumber, getCalificacionFinal, autoAcentuar } from '../utils/format';
 import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
 import { registrarMovimiento } from '../utils/bitacora';
@@ -26,6 +26,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   const [grupo, setGrupo] = useState('A');
   const [trimestre, setTrimestre] = useState('t1');
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatusModal, setSaveStatusModal] = useState(null); // null | { phase: 'saving' | 'done', count: number, text: string }
+  const [dirtyStudents, setDirtyStudents] = useState({});
   const [successMsg, setSuccessMsg] = useState('');
   const [showConcentradoMenu, setShowConcentradoMenu] = useState(false);
   const [highlightEmptyCells, setHighlightEmptyCells] = useState(false);
@@ -49,25 +51,38 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     [alumnos]
   );
 
-  const materias = materiasPorGrado[grado] || [];
+  const materias = useMemo(() => materiasPorGrado[grado] || [], [materiasPorGrado, grado]);
 
   // Estado local para editar calificaciones antes de guardar
   const [localGrades, setLocalGrades] = useState({});
 
+  // Al cambiar de grado, grupo o trimestre se limpian las marcas de edición pendiente
   useEffect(() => {
-    const grades = {};
-    alumnos.forEach(al => {
-      grades[al.id] = {};
-      materias.forEach(mat => {
-        const raw = al.calificaciones?.[trimestre]?.[mat.id] ?? '';
-        const intVal = roundToIntNumber(raw);
-        grades[al.id][mat.id] = intVal !== null ? String(intVal) : '';
+    setDirtyStudents({});
+  }, [grado, grupo, trimestre]);
+
+  useEffect(() => {
+    setLocalGrades(prev => {
+      const grades = {};
+      alumnos.forEach(al => {
+        // Si el usuario está editando a este alumno en pantalla, conservar sus cambios locales sin que un snapshot los pise
+        if (dirtyStudents[al.id] && prev[al.id]) {
+          grades[al.id] = prev[al.id];
+          return;
+        }
+        grades[al.id] = {};
+        materias.forEach(mat => {
+          const raw = al.calificaciones?.[trimestre]?.[mat.id] ?? '';
+          const intVal = roundToIntNumber(raw);
+          grades[al.id][mat.id] = intVal !== null ? String(intVal) : '';
+        });
       });
+      return grades;
     });
-    setLocalGrades(grades);
-  }, [alumnos, materias, trimestre]);
+  }, [alumnos, materias, trimestre, dirtyStudents]);
 
   const handleGradeChange = (studentId, materiaId, value) => {
+    setDirtyStudents(prev => (prev[studentId] ? prev : { ...prev, [studentId]: true }));
     setLocalGrades(prev => ({
       ...prev,
       [studentId]: {
@@ -76,6 +91,37 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       }
     }));
   };
+
+  // Detectar cuántos alumnos activos realmente tienen calificaciones modificadas respecto a la base de datos
+  const alumnosConCambios = useMemo(() => {
+    const list = [];
+    alumnosActivosGrupo.forEach(al => {
+      const rawGrades = localGrades[al.id] || {};
+      const currentSaved = al.calificaciones?.[trimestre] || {};
+      const roundedGrades = {};
+      let hasDiff = false;
+
+      materias.forEach(mat => {
+        const r = (rawGrades[mat.id] ?? '').toString().trim();
+        const newVal = r === '' ? '' : (roundToIntNumber(r) !== null ? String(roundToIntNumber(r)) : '');
+        roundedGrades[mat.id] = newVal;
+
+        const oldRaw = (currentSaved[mat.id] ?? '').toString().trim();
+        const oldVal = oldRaw === '' ? '' : (roundToIntNumber(oldRaw) !== null ? String(roundToIntNumber(oldRaw)) : '');
+        if (newVal !== oldVal) {
+          hasDiff = true;
+        }
+      });
+
+      if (hasDiff) {
+        list.push({
+          student: al,
+          newTrimestreData: { ...currentSaved, ...roundedGrades }
+        });
+      }
+    });
+    return list;
+  }, [alumnosActivosGrupo, localGrades, materias, trimestre]);
 
   // Navegación rápida tipo Excel con Enter y Flechas en la Sábana General de Secretarios (salta automáticamente filas de Baja)
   const handleCellKeyDown = (e, rowIdx, colIdx) => {
@@ -256,6 +302,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   };
 
   const handleSaveAll = async () => {
+    if (isSaving) return;
+
     // Validar que todas las calificaciones capturadas de alumnos activos estén en escala oficial PASEG (5 a 10)
     for (const al of alumnosActivosGrupo) {
       const grades = localGrades[al.id] || {};
@@ -271,44 +319,75 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       }
     }
 
+    const totalModificados = alumnosConCambios.length;
+
     setIsSaving(true);
+    setSaveStatusModal({
+      phase: 'saving',
+      count: totalModificados || alumnosActivosGrupo.length,
+      text: totalModificados > 0
+        ? `Trabajando... Guardando calificaciones de ${totalModificados} alumno(s) modificado(s) en ${grado} "${grupo}" (${TRIMESTRE_NAMES[trimestre]}).`
+        : `Trabajando... Verificando y sincronizando sábana de ${grado} "${grupo}" (${TRIMESTRE_NAMES[trimestre]}).`
+    });
+
     try {
-      const promises = alumnosActivosGrupo.map(al => {
-        const docRef = doc(db, 'students', al.id);
-        const rawGrades = localGrades[al.id] || {};
-        const roundedGrades = {};
-        Object.keys(rawGrades).forEach(mId => {
-          const r = (rawGrades[mId] ?? '').toString().trim();
-          if (r === '') {
-            roundedGrades[mId] = '';
-          } else {
-            const intVal = roundToIntNumber(r);
-            roundedGrades[mId] = intVal !== null ? String(intVal) : '';
-          }
+      if (totalModificados > 0) {
+        // Guardar en un solo lote atómico (writeBatch) únicamente los alumnos que tuvieron cambios reales
+        const batch = writeBatch(db);
+        alumnosConCambios.forEach(({ student, newTrimestreData }) => {
+          const docRef = doc(db, 'students', student.id);
+          batch.update(docRef, {
+            [`calificaciones.${trimestre}`]: newTrimestreData
+          });
         });
-        const currentCalif = al.calificaciones || {};
-        const newTrimestreData = { ...currentCalif[trimestre], ...roundedGrades };
-        
-        return updateDoc(docRef, {
-          [`calificaciones.${trimestre}`]: newTrimestreData
-        });
+        await batch.commit();
+
+        // Registrar en bitácora en segundo plano sin bloquear la pantalla del usuario
+        registrarMovimiento(
+          currentUser?.email,
+          'Control Escolar (Calificaciones)',
+          'Captura Sábana General',
+          `Guardó calificaciones en sábana general de ${grado} "${grupo}" (${trimestre.toUpperCase()}) — ${totalModificados} alumno(s) actualizados.`
+        ).catch(console.error);
+      }
+
+      setDirtyStudents({});
+      const msgExito = totalModificados > 0
+        ? `¡Terminó de guardar! Se actualizaron ${totalModificados} alumno(s) de ${grado} "${grupo}" (${TRIMESTRE_NAMES[trimestre]}) al instante.`
+        : `¡Terminó de guardar! Todas las calificaciones de ${grado} "${grupo}" ya estaban sincronizadas.`;
+
+      setSuccessMsg(msgExito);
+      setSaveStatusModal({
+        phase: 'done',
+        count: totalModificados,
+        text: msgExito
       });
-      await Promise.all(promises);
-      await registrarMovimiento(
-        currentUser?.email,
-        'Control Escolar (Calificaciones)',
-        'Captura Sábana General',
-        `Guardó la sábana general de calificaciones de ${grado} "${grupo}" (${trimestre.toUpperCase()}) para ${alumnosActivosGrupo.length} alumnos activos.`
-      );
-      setSuccessMsg('Calificaciones guardadas exitosamente.');
-      toast.success('Sábana general guardada correctamente.');
-      setTimeout(() => setSuccessMsg(''), 3000);
+      toast.success(msgExito);
+      setTimeout(() => setSuccessMsg(''), 4000);
+      setTimeout(() => {
+        setSaveStatusModal(prev => (prev?.phase === 'done' ? null : prev));
+      }, 1800);
     } catch (error) {
       console.error(error);
+      setSaveStatusModal(null);
+      toast.error('Error al guardar calificaciones.');
       alert('Error al guardar calificaciones.');
     }
     setIsSaving(false);
   };
+
+  // Atajo de teclado Ctrl + S para guardar rápidamente desde cualquier celda de la sábana
+  useEffect(() => {
+    if (subMode !== 'sabana') return;
+    const onKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSaveAll();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  });
 
   const handleDownloadTemplate = () => {
     if (alumnos.length === 0) {
@@ -439,6 +518,9 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         });
 
         if (matchCount > 0) {
+          const dirtyMap = {};
+          alumnosActivosGrupo.forEach(a => { dirtyMap[a.id] = true; });
+          setDirtyStudents(dirtyMap);
           setLocalGrades(newLocalGrades);
           alert(`Se cargaron calificaciones para ${matchCount} alumnos. ¡No olvides darle al botón Guardar!`);
         } else {
@@ -595,14 +677,39 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                 <option value="t3">Trimestre 3 {config?.trimestresBloqueadosDocentes?.t3 ? '🔒' : ''}</option>
               </select>
             </div>
-            <div className="flex-1 flex justify-end gap-2">
-              <button onClick={handleDownloadTemplate} className="flex items-center px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium text-sm">
-                <Download className="w-4 h-4 mr-2 text-slate-500" /> Plantilla
+            <div className="flex-1 flex flex-wrap justify-end items-center gap-2">
+              <button onClick={handleDownloadTemplate} className="flex items-center px-3.5 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium text-sm">
+                <Download className="w-4 h-4 mr-1.5 text-slate-500" /> Plantilla
               </button>
-              <label className="cursor-pointer flex items-center px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition font-medium text-sm">
-                <Upload className="w-4 h-4 mr-2" /> Subir CSV
+              <label className="cursor-pointer flex items-center px-3.5 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition font-medium text-sm">
+                <Upload className="w-4 h-4 mr-1.5" /> Subir CSV
                 <input type="file" accept=".csv" className="hidden" onChange={handleUploadCSV} />
               </label>
+              <button
+                type="button"
+                onClick={handleSaveAll}
+                disabled={isSaving}
+                title="Atajo rápido: Ctrl + S"
+                className={`flex items-center px-4 py-2.5 rounded-lg font-extrabold text-sm transition shadow-md disabled:opacity-50 ${
+                  alumnosConCambios.length > 0
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white ring-2 ring-amber-400 animate-pulse'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Trabajando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    {alumnosConCambios.length > 0
+                      ? `Guardar (${alumnosConCambios.length} mod.)`
+                      : 'Guardar Calificaciones'}
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
@@ -882,15 +989,78 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                   <button 
                     onClick={handleSaveAll}
                     disabled={isSaving}
-                    className="flex items-center px-6 py-2.5 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition shadow-md disabled:opacity-50"
+                    title="Atajo rápido: Ctrl + S"
+                    className={`flex items-center px-6 py-2.5 text-white rounded-lg font-bold transition shadow-md disabled:opacity-50 ${
+                      alumnosConCambios.length > 0
+                        ? 'bg-emerald-600 hover:bg-emerald-500 ring-2 ring-amber-400'
+                        : 'bg-emerald-600 hover:bg-emerald-700'
+                    }`}
                   >
-                    <Save className="w-5 h-5 mr-2" /> {isSaving ? 'Guardando...' : 'Guardar Calificaciones'}
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Trabajando... Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5 mr-2" />
+                        {alumnosConCambios.length > 0
+                          ? `Guardar Calificaciones (${alumnosConCambios.length} con cambios)`
+                          : 'Guardar Calificaciones'}
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
             </div>
           )}
         </>
+      )}
+
+      {/* Modal / Aviso Flotante de Progreso ("Trabajando..." -> "¡Ya terminó de guardar!") */}
+      {saveStatusModal && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center p-4 no-print">
+          <div className="bg-white rounded-2xl shadow-2xl border-2 border-slate-200 max-w-md w-full p-6 text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            {saveStatusModal.phase === 'saving' ? (
+              <>
+                <div className="w-16 h-16 rounded-full bg-indigo-50 border-2 border-indigo-200 text-indigo-600 flex items-center justify-center mx-auto">
+                  <Loader2 className="w-9 h-9 animate-spin" />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-wide">
+                  ⏳ Trabajando... Guardando Calificaciones
+                </h3>
+                <p className="text-sm font-medium text-slate-600 leading-relaxed">
+                  {saveStatusModal.text}
+                </p>
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div className="bg-indigo-600 h-full w-3/4 animate-pulse rounded-full"></div>
+                </div>
+                <p className="text-xs font-bold text-indigo-600">
+                  Por favor espera un instante, no cierres la ventana...
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-300 text-emerald-600 flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-10 h-10" />
+                </div>
+                <h3 className="text-lg font-black text-emerald-900 uppercase tracking-wide">
+                  ✅ ¡Ya Terminó de Guardar!
+                </h3>
+                <p className="text-sm font-semibold text-slate-700 leading-relaxed">
+                  {saveStatusModal.text}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSaveStatusModal(null)}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition text-sm"
+                >
+                  Continuar Capturando
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Save, Printer, CheckCircle, FileSpreadsheet, ClipboardList, Calculator, UserCheck, AlertCircle, Lock, Eye, Calendar, Download, Upload } from 'lucide-react';
+import { Save, Printer, CheckCircle, FileSpreadsheet, ClipboardList, Calculator, UserCheck, AlertCircle, Lock, Eye, Calendar, Download, Upload, Loader2 } from 'lucide-react';
 import { db } from '../firebase';
-import { doc, updateDoc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
@@ -34,6 +34,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
   const [modoDivisorDias, setModoDivisorDias] = useState('clases_grupo'); // 'clases_grupo' | 'celdas_alumno'
   const [paperSize, setPaperSize] = useState('letter');
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatusModal, setSaveStatusModal] = useState(null); // null | { phase: 'saving' | 'done', text: string }
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [printOption, setPrintOption] = useState(null); // 'opcion1_lista' | 'opcion2_cuadro'
   const [highlightEmpty, setHighlightEmpty] = useState(false);
@@ -80,8 +81,35 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
   // evalData[studentId] = { dias: { d1..d20 }, faltas, t1..t6, examen, participacion, extraEval, calificacion, observaciones }
   const [evalData, setEvalData] = useState({});
 
-  // Cargar datos de los alumnos y metadatos del docente para esa materia/grupo/trimestre
+  // Al cambiar de grado, grupo, materia o trimestre, limpiar bandera de cambios sin guardar y cargar metadatos del docente
   useEffect(() => {
+    setHasUnsavedChanges(false);
+    const fetchSavedDocente = async () => {
+      try {
+        const capId = `${grado.replace(/\s+/g, '')}_${grupo}_${materiaId}_${trimestre}`;
+        const snap = await getDoc(doc(db, 'capturas_docentes', capId));
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.docente && (userRole !== 'docente' || !userName)) {
+            setDocenteNombre(data.docente);
+          } else if (userName) {
+            setDocenteNombre(userName);
+          }
+          setContenidosFecha(data.contenidosFecha || {});
+        } else {
+          if (userName) setDocenteNombre(userName);
+          setContenidosFecha({});
+        }
+      } catch (err) {
+        console.error('Error loading docente metadata:', err);
+      }
+    };
+    fetchSavedDocente();
+  }, [grado, grupo, materiaId, trimestre, userName, userRole]);
+
+  // Cargar datos de los alumnos cuando cambia el grupo/materia/trimestre (sin sobrescribir ediciones en curso)
+  useEffect(() => {
+    if (hasUnsavedChanges) return;
     const initial = {};
     alumnosGrupo.forEach(al => {
       const savedCalif = al.calificaciones?.[trimestre]?.[materiaId] ?? '';
@@ -109,31 +137,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       };
     });
     setEvalData(initial);
-    setHasUnsavedChanges(false);
-
-    // Cargar nombre del docente y contenidos/fechas guardados en capturas_docentes
-    const fetchSavedDocente = async () => {
-      try {
-        const capId = `${grado.replace(/\s+/g, '')}_${grupo}_${materiaId}_${trimestre}`;
-        const snap = await getDoc(doc(db, 'capturas_docentes', capId));
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data.docente && (userRole !== 'docente' || !userName)) {
-            setDocenteNombre(data.docente);
-          } else if (userName) {
-            setDocenteNombre(userName);
-          }
-          setContenidosFecha(data.contenidosFecha || {});
-        } else {
-          if (userName) setDocenteNombre(userName);
-          setContenidosFecha({});
-        }
-      } catch (err) {
-        console.error('Error loading docente metadata:', err);
-      }
-    };
-    fetchSavedDocente();
-  }, [alumnosGrupo, grado, grupo, materiaId, trimestre, userName, userRole]);
+  }, [alumnosGrupo, grado, grupo, materiaId, trimestre, hasUnsavedChanges]);
 
   const handleFieldChange = (studentId, field, value) => {
     if (isReadOnlyForCurrentUser) return;
@@ -398,8 +402,9 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     };
   }, [alumnosGrupo, evalData]);
 
-  // Guardar calificaciones, celdas diarias y encabezados de fecha/contenido en Firestore
+  // Guardar calificaciones, celdas diarias y encabezados de fecha/contenido en Firestore en un solo lote atómico (writeBatch)
   const handleSaveGrades = async (silent = false) => {
+    if (isSaving) return false;
     if (isReadOnlyForCurrentUser) {
       toast.error('La captura para este trimestre ha sido bloqueada por Control Escolar.');
       return false;
@@ -421,78 +426,143 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     }
 
     setIsSaving(true);
+    if (!silent) {
+      setSaveStatusModal({
+        phase: 'saving',
+        text: `Trabajando... Guardando calificaciones de ${asignaturaActual} (${grado} "${grupo}" - Trimestre ${TRIMESTRE_LABELS[trimestre]}).`
+      });
+    }
+
     try {
-      const promises = alumnosGrupo.map(al => {
+      const batch = writeBatch(db);
+      let changedCount = 0;
+      const nowIso = new Date().toISOString();
+
+      alumnosGrupo.forEach(al => {
         const isBaja = (al.status || '').toLowerCase() === 'baja';
-        if (isBaja) return Promise.resolve();
+        if (isBaja) return;
 
         const row = evalData[al.id] || {};
-        const docRef = doc(db, 'students', al.id);
         const califEnteraOficial = roundToIntGrade(row.calificacion, '');
-        return updateDoc(docRef, {
-          [`calificaciones.${trimestre}.${materiaId}`]: califEnteraOficial,
-          [`evaluacionDetalle.${trimestre}.${materiaId}`]: {
-            dias: row.dias || {},
-            faltas: row.faltas ?? '',
-            t1: row.t1 ?? '',
-            t2: row.t2 ?? '',
-            t3: row.t3 ?? '',
-            t4: row.t4 ?? '',
-            t5: row.t5 ?? '',
-            t6: row.t6 ?? '',
-            examen: row.examen ?? '',
-            participacion: row.participacion ?? '',
-            extraEval: row.extraEval ?? '',
-            calificacion: califEnteraOficial !== '' ? califEnteraOficial : (row.calificacion ?? ''),
-            observaciones: row.observaciones ?? '',
-            docente: docenteNombre.trim(),
-            updatedAt: new Date().toISOString()
-          }
-        });
+        const newPayload = {
+          dias: row.dias || {},
+          faltas: row.faltas ?? '',
+          t1: row.t1 ?? '',
+          t2: row.t2 ?? '',
+          t3: row.t3 ?? '',
+          t4: row.t4 ?? '',
+          t5: row.t5 ?? '',
+          t6: row.t6 ?? '',
+          examen: row.examen ?? '',
+          participacion: row.participacion ?? '',
+          extraEval: row.extraEval ?? '',
+          calificacion: califEnteraOficial !== '' ? califEnteraOficial : (row.calificacion ?? ''),
+          observaciones: row.observaciones ?? '',
+          docente: docenteNombre.trim()
+        };
+
+        const oldCalif = (al.calificaciones?.[trimestre]?.[materiaId] ?? '').toString();
+        const oldDet = al.evaluacionDetalle?.[trimestre]?.[materiaId] || {};
+        const oldComparable = {
+          dias: oldDet.dias || {},
+          faltas: oldDet.faltas ?? '',
+          t1: oldDet.t1 ?? '',
+          t2: oldDet.t2 ?? '',
+          t3: oldDet.t3 ?? '',
+          t4: oldDet.t4 ?? '',
+          t5: oldDet.t5 ?? '',
+          t6: oldDet.t6 ?? '',
+          examen: oldDet.examen ?? '',
+          participacion: oldDet.participacion ?? '',
+          extraEval: oldDet.extraEval ?? '',
+          calificacion: oldDet.calificacion ?? '',
+          observaciones: oldDet.observaciones ?? '',
+          docente: oldDet.docente ?? ''
+        };
+
+        const hasStudentChanged =
+          oldCalif !== String(califEnteraOficial) ||
+          JSON.stringify(newPayload) !== JSON.stringify(oldComparable);
+
+        if (hasStudentChanged) {
+          changedCount++;
+          const docRef = doc(db, 'students', al.id);
+          batch.update(docRef, {
+            [`calificaciones.${trimestre}.${materiaId}`]: califEnteraOficial,
+            [`evaluacionDetalle.${trimestre}.${materiaId}`]: {
+              ...newPayload,
+              updatedAt: nowIso
+            }
+          });
+        }
       });
 
-      // Guardar metadatos de entrega y encabezados de CONTENIDOS / FECHA para la lista
+      // Guardar metadatos de entrega y encabezados de CONTENIDOS / FECHA para la lista dentro del mismo lote
       const capId = `${grado.replace(/\s+/g, '')}_${grupo}_${materiaId}_${trimestre}`;
-      promises.push(
-        setDoc(doc(db, 'capturas_docentes', capId), {
-          grado,
-          grupo,
-          materiaId,
-          asignatura: asignaturaActual,
-          trimestre,
-          docente: docenteNombre.trim(),
-          emailDocente: currentUser?.email || '',
-          contenidosFecha: contenidosFecha || {},
-          existenciaT: stats.existenciaT,
-          totalEvaluados: stats.totalEvaluados,
-          regularesT: stats.regularesT === '' ? 0 : stats.regularesT,
-          irregularesT: stats.irregularesT === '' ? 0 : stats.irregularesT,
-          promedioAprovechamiento: stats.promedioAprovechamiento,
-          porcentajeAprobacion: stats.porcentajeAprobacion,
-          updatedAt: serverTimestamp()
-        }, { merge: true })
-      );
+      batch.set(doc(db, 'capturas_docentes', capId), {
+        grado,
+        grupo,
+        materiaId,
+        asignatura: asignaturaActual,
+        trimestre,
+        docente: docenteNombre.trim(),
+        emailDocente: currentUser?.email || '',
+        contenidosFecha: contenidosFecha || {},
+        existenciaT: stats.existenciaT,
+        totalEvaluados: stats.totalEvaluados,
+        regularesT: stats.regularesT === '' ? 0 : stats.regularesT,
+        irregularesT: stats.irregularesT === '' ? 0 : stats.irregularesT,
+        promedioAprovechamiento: stats.promedioAprovechamiento,
+        porcentajeAprobacion: stats.porcentajeAprobacion,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
 
-      await Promise.all(promises);
-      await registrarMovimiento(
+      await batch.commit();
+
+      // Registrar en bitácora en segundo plano sin hacer esperar al usuario
+      registrarMovimiento(
         currentUser?.email,
         userRole === 'docente' ? 'Portal Docente' : 'Control Escolar (Calificaciones)',
         'Captura por Disciplina',
-        `Guardó calificaciones de ${asignaturaActual} (${grado} "${grupo}" - Trimestre ${TRIMESTRE_LABELS[trimestre] || trimestre}) | Docente: ${docenteNombre.trim() || 'S/N'} | Evaluados: ${stats.totalEvaluados}/${stats.existenciaT} | Prom: ${stats.promedioAprovechamiento || '-'}`
-      );
+        `Guardó calificaciones de ${asignaturaActual} (${grado} "${grupo}" - Trimestre ${TRIMESTRE_LABELS[trimestre] || trimestre}) | Docente: ${docenteNombre.trim() || 'S/N'} | Modificados: ${changedCount} | Evaluados: ${stats.totalEvaluados}/${stats.existenciaT} | Prom: ${stats.promedioAprovechamiento || '-'}`
+      ).catch(console.error);
+
       setHasUnsavedChanges(false);
       if (!silent) {
-        toast.success('¡Lista, calificaciones diarias y estadística guardadas en el sistema!');
+        const doneMsg = changedCount > 0
+          ? `¡Ya terminó de guardar! Se actualizaron ${changedCount} alumno(s) de ${asignaturaActual} (${grado} "${grupo}").`
+          : `¡Ya terminó de guardar! La lista y estadística de ${asignaturaActual} (${grado} "${grupo}") quedaron sincronizadas.`;
+        setSaveStatusModal({
+          phase: 'done',
+          text: doneMsg
+        });
+        toast.success(doneMsg);
+        setTimeout(() => {
+          setSaveStatusModal(prev => (prev?.phase === 'done' ? null : prev));
+        }, 1800);
       }
       setIsSaving(false);
       return true;
     } catch (error) {
       console.error('Error al guardar evaluación docente:', error);
+      setSaveStatusModal(null);
       toast.error('Hubo un error al guardar las calificaciones.');
       setIsSaving(false);
       return false;
     }
   };
+
+  // Atajo de teclado Ctrl + S para guardar rápidamente desde cualquier celda
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSaveGrades(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  });
 
   const handlePrint = async (option) => {
     if (alumnosGrupo.length === 0) {
@@ -891,10 +961,21 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
             type="button"
             onClick={() => handleSaveGrades(false)}
             disabled={isSaving || isReadOnlyForCurrentUser}
-            className="flex items-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Atajo rápido: Ctrl + S"
+            className={`flex items-center px-5 py-2.5 text-white rounded-lg font-bold text-sm transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+              hasUnsavedChanges
+                ? 'bg-emerald-600 hover:bg-emerald-500 ring-2 ring-amber-400'
+                : 'bg-emerald-600 hover:bg-emerald-500'
+            }`}
           >
-            {isReadOnlyForCurrentUser ? <Lock className="w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-            {isReadOnlyForCurrentUser ? 'Captura Cerrada' : isSaving ? 'Guardando...' : 'Guardar Calificaciones en Sistema'}
+            {isReadOnlyForCurrentUser ? (
+              <Lock className="w-4 h-4 mr-2" />
+            ) : isSaving ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            {isReadOnlyForCurrentUser ? 'Captura Cerrada' : isSaving ? 'Trabajando... Guardando...' : 'Guardar Calificaciones en Sistema'}
           </button>
           {hasUnsavedChanges ? (
             <span className="text-xs text-amber-300 font-semibold flex items-center gap-1">
@@ -1287,7 +1368,93 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
             </tbody>
           </table>
         </div>
+
+        {/* Barra Inferior de Guardado Rápido */}
+        <div className="bg-slate-50 border-t border-slate-200 px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs font-semibold text-slate-600">
+            {hasUnsavedChanges ? (
+              <span className="text-amber-700 font-bold flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                Tienes cambios pendientes por guardar (puedes presionar <strong>Ctrl + S</strong> o el botón verde).
+              </span>
+            ) : (
+              <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                Todas las calificaciones de esta asignatura están guardadas y sincronizadas.
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => handleSaveGrades(false)}
+            disabled={isSaving || isReadOnlyForCurrentUser}
+            title="Atajo rápido: Ctrl + S"
+            className={`flex items-center px-6 py-2.5 text-white rounded-lg font-bold text-sm transition shadow-md disabled:opacity-50 ${
+              hasUnsavedChanges
+                ? 'bg-emerald-600 hover:bg-emerald-500 ring-2 ring-amber-400'
+                : 'bg-emerald-600 hover:bg-emerald-700'
+            }`}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Trabajando... Guardando...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Guardar Calificaciones en Sistema
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Modal / Aviso Flotante de Progreso ("Trabajando..." -> "¡Ya terminó de guardar!") */}
+      {saveStatusModal && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-[2px] flex items-center justify-center p-4 no-print">
+          <div className="bg-white rounded-2xl shadow-2xl border-2 border-slate-200 max-w-md w-full p-6 text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            {saveStatusModal.phase === 'saving' ? (
+              <>
+                <div className="w-16 h-16 rounded-full bg-indigo-50 border-2 border-indigo-200 text-indigo-600 flex items-center justify-center mx-auto">
+                  <Loader2 className="w-9 h-9 animate-spin" />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-wide">
+                  ⏳ Trabajando... Guardando Calificaciones
+                </h3>
+                <p className="text-sm font-medium text-slate-600 leading-relaxed">
+                  {saveStatusModal.text}
+                </p>
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div className="bg-indigo-600 h-full w-3/4 animate-pulse rounded-full"></div>
+                </div>
+                <p className="text-xs font-bold text-indigo-600">
+                  Por favor espera un instante, no cierres la ventana...
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-300 text-emerald-600 flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-10 h-10" />
+                </div>
+                <h3 className="text-lg font-black text-emerald-900 uppercase tracking-wide">
+                  ✅ ¡Ya Terminó de Guardar!
+                </h3>
+                <p className="text-sm font-semibold text-slate-700 leading-relaxed">
+                  {saveStatusModal.text}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSaveStatusModal(null)}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition text-sm"
+                >
+                  Continuar Capturando
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Renderizado de Impresión: Opción 1 (Lista de Evaluación Llena) u Opción 2 (Cuadro de Concentración por Asignatura) */}
       {printOption === 'opcion1_lista' && (
