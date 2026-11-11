@@ -8,6 +8,7 @@ import { isBeforeSept30, formatearFechaCorta, fechaRegistroDeAlumno } from '../u
 import { registrarMovimiento, detectarCambiosExpediente } from '../utils/bitacora';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
+import BajaTrasladoPrint from './BajaTrasladoPrint';
 import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal } from '../utils/format';
 
 export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, onSave, readOnly = false }) {
@@ -17,9 +18,17 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
   const isReadOnly = readOnly || (userRole !== 'superadmin' && !(userPermissions || []).includes('control-escolar'));
 
   const [showPrintMode, setShowPrintMode] = useState(false);
+  const [printModeType, setPrintModeType] = useState('ficha'); // 'ficha' | 'extraordinario' | 'baja_traslado'
   const [printExtraordinarioSelected, setPrintExtraordinarioSelected] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [statusActual, setStatusActual] = useState(student.status || 'Activo');
+  const [motivoBajaInput, setMotivoBajaInput] = useState(
+    student.motivoBaja && student.motivoBaja !== 'Baja Oficial' && student.motivoBaja !== 'No Inscrito'
+      ? student.motivoBaja
+      : 'Cambio de domicilio'
+  );
+  const [fechaBajaInput, setFechaBajaInput] = useState(student.fechaBaja || formatearFechaCorta(new Date()));
   
   const [grupo, setGrupo] = useState(student.grupo || '');
   const [taller, setTaller] = useState(student.taller || '');
@@ -210,12 +219,16 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     data.nombreBeca = tieneBeca === 'SÍ' ? (nombreBeca || '').trim().toUpperCase() : '';
 
     // --- NUEVA LÓGICA DE BAJAS Y FECHAS ---
-    if (data.status === 'Baja' && student.status !== 'Baja') {
-        if (isBeforeSept30()) {
+    const dandoDeBajaAhora = data.status === 'Baja' && student.status !== 'Baja';
+    if (data.status === 'Baja') {
+        if (isBeforeSept30() && dandoDeBajaAhora) {
             data.motivoBaja = 'No Inscrito';
+            data.tipoBaja = 'No Inscrito';
             alert("⚠️ AVISO: Al dar de baja antes del 30 de septiembre, este alumno se clasifica como 'No Inscrito' y no aparecerá en las Bajas Oficiales.");
         } else {
-            data.motivoBaja = 'Baja Oficial';
+            data.motivoBaja = (motivoBajaInput || data.motivoBaja || 'Cambio de domicilio').trim();
+            data.tipoBaja = 'Baja Oficial';
+            data.fechaBaja = (fechaBajaInput || student.fechaBaja || formatearFechaCorta(new Date())).trim();
         }
     }
 
@@ -239,9 +252,17 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
           alumnoNombre: infoBitacora.alumnoNombre
         }
       );
-      alert("Expediente actualizado exitosamente.");
+      setStatusActual(data.status || student.status || 'Activo');
       onSave({ ...student, ...data });
       setIsEditing(false);
+      if (data.status === 'Baja' && (!isBeforeSept30() || !dandoDeBajaAhora)) {
+        if (window.confirm("✅ Expediente actualizado como BAJA.\n\n¿Deseas abrir e imprimir ahora mismo el formato oficial de BAJA POR TRASLADO?")) {
+          setPrintModeType('baja_traslado');
+          setShowPrintMode(true);
+        }
+      } else {
+        alert("Expediente actualizado exitosamente.");
+      }
     } catch (err) {
       console.error(err);
       alert("Error al guardar los cambios.");
@@ -252,6 +273,9 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
   if (showPrintMode) {
     const printStudentData = {
       ...student,
+      status: statusActual,
+      motivoBaja: motivoBajaInput || student.motivoBaja || 'Cambio de domicilio',
+      fechaBaja: fechaBajaInput || student.fechaBaja || formatearFechaCorta(new Date()),
       grupo: grupo || student.grupo,
       taller: taller || student.taller,
       fotoUrl: fotoPreview || student.fotoUrl,
@@ -295,6 +319,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
         <div className="py-8 print:py-0">
           {printExtraordinarioSelected ? (
             <ConstanciaPrint student={printStudentData} type="acreditacion_extraordinario" materiasPorGrado={materiasPorGrado} extraordinarioSelected={printExtraordinarioSelected} />
+          ) : printModeType === 'baja_traslado' ? (
+            <BajaTrasladoPrint
+              student={printStudentData}
+              materiasPorGrado={materiasPorGrado}
+              motivoPersonalizado={printStudentData.motivoBaja}
+              fechaExpedicion={printStudentData.fechaBaja}
+            />
           ) : (
             <HojaInscripcionPrint data={printStudentData} />
           )}
@@ -327,9 +358,27 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
               </div>
             )}
           </div>
-          <div className="flex space-x-2">
-            <button onClick={() => setShowPrintMode(true)} className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition">
-              <Printer className="w-4 h-4 mr-2" /> Ficha de Inscripción
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => {
+                setPrintExtraordinarioSelected(null);
+                setPrintModeType('ficha');
+                setShowPrintMode(true);
+              }}
+              className="flex items-center px-3.5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition"
+            >
+              <Printer className="w-4 h-4 mr-1.5" /> Ficha de Inscripción
+            </button>
+            <button
+              onClick={() => {
+                setPrintExtraordinarioSelected(null);
+                setPrintModeType('baja_traslado');
+                setShowPrintMode(true);
+              }}
+              className="flex items-center px-3.5 py-2 bg-[#8b0d37] text-white rounded-lg text-sm font-bold hover:bg-rose-800 shadow-sm transition"
+              title="Generar e imprimir el Formato Oficial de Baja por Traslado con tabla de calificaciones y cancelación diagonal SEP"
+            >
+              <Printer className="w-4 h-4 mr-1.5" /> Formato Baja por Traslado
             </button>
             {!isEditing && !isReadOnly && (
               <button onClick={() => setIsEditing(true)} className="flex items-center px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-medium hover:bg-indigo-600 shadow-sm transition">
@@ -396,7 +445,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Estatus</label>
-                      <select name="status" defaultValue={student.status || 'Activo'} className="mt-1 w-full p-2 border rounded" required>
+                      <select
+                        name="status"
+                        value={statusActual}
+                        onChange={(e) => setStatusActual(e.target.value)}
+                        className="mt-1 w-full p-2 border rounded font-bold"
+                        required
+                      >
                         <option value="Activo">Activo</option>
                         <option value="Baja">Baja</option>
                         <option value="No Inscrito">No Inscrito</option>
@@ -404,6 +459,60 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                         <option value="Pendiente">Pendiente</option>
                       </select>
                     </div>
+                    {statusActual === 'Baja' && (
+                      <div className="md:col-span-4 p-4 rounded-xl bg-rose-50 border-2 border-rose-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-extrabold text-rose-900 uppercase">
+                            Motivo de la Baja por Traslado (Aparecerá en la Constancia de Baja)
+                          </label>
+                          <input
+                            type="text"
+                            name="motivoBaja"
+                            value={motivoBajaInput}
+                            onChange={(e) => setMotivoBajaInput(e.target.value)}
+                            placeholder="Ej. Cambio de domicilio, traslado a otro plantel..."
+                            className="mt-1 w-full p-2 border border-rose-300 rounded font-semibold text-slate-800 bg-white"
+                          />
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {[
+                              'Cambio de domicilio',
+                              'Traslado a otra institución educativa',
+                              'Cambio de residencia a otro estado',
+                              'Motivos personales y familiares'
+                            ].map((sug) => (
+                              <button
+                                key={sug}
+                                type="button"
+                                onClick={() => setMotivoBajaInput(sug)}
+                                className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold border transition ${
+                                  motivoBajaInput.toLowerCase() === sug.toLowerCase()
+                                    ? 'bg-[#8b0d37] text-white border-[#8b0d37]'
+                                    : 'bg-white text-rose-800 border-rose-300 hover:bg-rose-100'
+                                }`}
+                              >
+                                {sug}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-extrabold text-rose-900 uppercase">
+                            Fecha de la Baja
+                          </label>
+                          <input
+                            type="text"
+                            name="fechaBaja"
+                            value={fechaBajaInput}
+                            onChange={(e) => setFechaBajaInput(e.target.value)}
+                            placeholder="DD/MM/AAAA"
+                            className="mt-1 w-full p-2 border border-rose-300 rounded font-semibold text-slate-800 bg-white"
+                          />
+                          <p className="text-[11px] text-rose-700 mt-1 font-medium">
+                            Al guardar, el sistema te ofrecerá imprimir automáticamente la <strong>Baja por Traslado</strong>.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <label className="block text-xs font-medium text-slate-500">Tipo Ingreso (Matrícula)</label>
                       <select name="tipoIngreso" defaultValue={student.tipoIngreso || 'Nuevo Ingreso'} className="mt-1 w-full p-2 border rounded border-indigo-200 bg-indigo-50" required>

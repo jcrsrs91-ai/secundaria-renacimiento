@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import HojaDeVida from '../../components/HojaDeVida';
 import CredencialPrint from '../../components/CredencialPrint';
 import ConstanciaPrint from '../../components/ConstanciaPrint';
+import BajaTrasladoPrint from '../../components/BajaTrasladoPrint';
 import BoletaPrint from '../../components/BoletaPrint';
 import DirectorioEmergenciaPrint from '../../components/DirectorioEmergenciaPrint';
 import Calificaciones from '../../components/Calificaciones';
@@ -2252,6 +2253,36 @@ export default function ControlEscolar() {
                   <p className="text-xs text-slate-500 mt-1">Incluye promedio de primaria. Solo para alumnos de 1er grado.</p>
                 </div>
               </button>
+
+              <button
+                onClick={() => {
+                  const motivoDefault = selectedStudent?.motivoBaja || 'Cambio de domicilio';
+                  const motivo = window.prompt('Motivo de la Baja por Traslado (aparecerá en el documento oficial):', motivoDefault);
+                  if (motivo === null) return;
+                  setPrintData({
+                    ...selectedStudent,
+                    motivoBaja: motivo.trim() || 'Cambio de domicilio'
+                  });
+                  setPrintMode('baja_traslado');
+                  closeModal();
+                }}
+                className="w-full flex items-start p-4 border-2 border-rose-200 bg-rose-50/40 rounded-xl hover:border-rose-600 hover:bg-rose-50 transition text-left group"
+              >
+                <div className="bg-rose-100 text-rose-700 p-2 rounded-lg mr-4 group-hover:bg-rose-600 group-hover:text-white transition shrink-0">
+                  <UserMinus className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-rose-900">Formato Oficial: Baja por Traslado (SEG / SEP)</h3>
+                    <span className="text-[10px] font-extrabold bg-rose-600 text-white px-2 py-0.5 rounded-full uppercase">
+                      Con Fundamento SEP
+                    </span>
+                  </div>
+                  <p className="text-xs text-rose-700 mt-1">
+                    Incluye tabla de periodos cursados, líneas rojas diagonales automáticas en trimestres sin cursar, taller asignado y fundamento legal de las Normas de Control Escolar SEP.
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -2427,6 +2458,7 @@ export default function ControlEscolar() {
       {printMode === 'acuse' && printData && <AcuseDocumentosPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} extraordinarioSelected={extraordinarioToPrint} tramite={printData?.tramite} />}
+      {printMode === 'baja_traslado' && printData && <BajaTrasladoPrint student={printData} materiasPorGrado={materiasPorGrado} motivoPersonalizado={printData?.motivoBaja} onClose={() => setPrintMode(null)} />}
       {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'constancia_eer' && eerToPrint && <ConstanciaEERPrint student={printData} regularizadas={eerToPrint.regularizadas} adeudos={eerToPrint.adeudos} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
       {printMode === 'constancia_eer_batch' && eerToPrint && <BatchConstanciaEERPrint data={printData} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
