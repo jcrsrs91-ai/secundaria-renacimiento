@@ -666,7 +666,8 @@ export default function ControlEscolar() {
       'fechaAlta',
       'motivoBaja',
       'fechaBaja',
-      'fechaRegistro'
+      'fechaRegistro',
+      'fotoUrl'
     ]);
 
     const updatePayload = {};

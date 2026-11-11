@@ -32,7 +32,7 @@ const resolverExpedienteUnificado = (docsSnap) => {
     }
     // Copiar campos que estén vacíos en primary pero llenos en el registro secundario (Pendiente)
     Object.keys(sec).forEach(key => {
-      if (['id', 'status', 'grado', 'grupo', 'turno', 'taller', 'matricula', 'calificaciones', 'asistencias', 'historial', 'extraordinarios', 'tipoIngreso', 'fechaAlta'].includes(key)) {
+      if (['id', 'status', 'grado', 'grupo', 'turno', 'taller', 'matricula', 'fotoUrl', 'calificaciones', 'asistencias', 'historial', 'extraordinarios', 'tipoIngreso', 'fechaAlta'].includes(key)) {
         return;
       }
       const valPrimary = primary[key];
@@ -194,6 +194,11 @@ export default function PreInscripcion() {
   };
 
   const handleFileChange = (e) => {
+    if (activeTab === 'completar' || Boolean(studentData?.id)) {
+      e.target.value = '';
+      setPhotoFile(null);
+      return;
+    }
     if (e.target.files[0]) {
       setPhotoFile(e.target.files[0]);
     }
@@ -247,6 +252,7 @@ export default function PreInscripcion() {
             const snap = await getDocs(q);
             if (!snap.empty) {
               const unified = resolverExpedienteUnificado(snap.docs);
+              setPhotoFile(null);
               setStudentData(unified);
               if (config?.inscripcionesAbiertas !== false) {
                 setActiveTab('completar');
@@ -294,8 +300,10 @@ export default function PreInscripcion() {
       }
 
       let fotoUrl = targetExisting?.fotoUrl || null;
+      const esActualizacionDeExistente = activeTab === 'completar' || Boolean(targetExisting?.id);
 
-      if (photoFile) {
+      // En Actualización de Datos (o si el alumno ya existe en la escuela), bloquear subida de foto para conservar la foto oficial de Control Escolar
+      if (photoFile && !esActualizacionDeExistente) {
         const photoRef = ref(storage, `student_photos/${currentCurp}_${Date.now()}`);
         await uploadBytes(photoRef, photoFile);
         fotoUrl = await getDownloadURL(photoRef);
@@ -409,6 +417,7 @@ export default function PreInscripcion() {
   const changeTab = (tab) => {
     setActiveTab(tab);
     setStudentData(null);
+    setPhotoFile(null);
     setLookupError('');
     setLookupCurp('');
   };
@@ -582,8 +591,27 @@ export default function PreInscripcion() {
                   </div>
                 )}
 
-                {/* Fotografía (Oculta al actualizar datos) */}
-                {activeTab !== 'completar' && (
+                {/* Fotografía: Bloqueada en Actualización de Datos / Expedientes Existentes */}
+                {activeTab === 'completar' || Boolean(studentData?.id) ? (
+                  <div className="flex flex-col sm:flex-row items-center gap-4 p-5 bg-slate-100 border border-slate-300 rounded-xl">
+                    <div className="w-24 h-32 bg-white border border-slate-300 rounded shadow-xs flex items-center justify-center overflow-hidden shrink-0">
+                      {studentData?.fotoUrl ? (
+                        <img src={studentData.fotoUrl} alt="Fotografía Oficial" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[11px] text-slate-400 text-center px-2 font-medium">Fotografía en Control Escolar</span>
+                      )}
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 text-xs font-bold mb-1.5">
+                        <Lock className="w-3.5 h-3.5 text-slate-600" />
+                        Fotografía Oficial Bloqueada
+                      </div>
+                      <p className="text-sm text-slate-600 font-medium">
+                        La fotografía del alumno ya es administrada directamente por <strong>Control Escolar</strong> de la escuela y no requiere ni permite ser modificada en la actualización de datos.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
                   <div className="flex flex-col items-center p-6 bg-slate-50 border border-dashed border-slate-300 rounded-xl">
                     <div className="w-24 h-32 bg-slate-200 border border-slate-400 mb-4 flex items-center justify-center overflow-hidden">
                       {photoFile ? (
@@ -599,7 +627,6 @@ export default function PreInscripcion() {
                       <input type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
                     </label>
                     {photoFile && <p className="mt-2 text-sm text-emerald-600 font-medium">Foto seleccionada: {photoFile.name}</p>}
-                    {studentData?.fotoUrl && !photoFile && <p className="mt-2 text-sm text-slate-500">Ya tienes una foto guardada. Sube otra solo si deseas cambiarla.</p>}
                   </div>
                 )}
                 {/* Secciones 1 a 4 */}
