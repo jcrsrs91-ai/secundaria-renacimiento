@@ -9,6 +9,7 @@ import { autoAcentuar, truncateTo1Dec, roundToIntGrade, roundToIntNumber } from 
 import { materiasPorGrado } from '../utils/materias';
 import { registrarMovimiento } from '../utils/bitacora';
 import ListaAsistenciaPrint, { TALLER_POR_GRUPO, getStudentGender, sortAttendanceListStudents } from './ListaAsistenciaPrint';
+import { esBajaOficial } from '../utils/dateRules';
 import CuadroAsignaturaPrint from './CuadroAsignaturaPrint';
 import { descargarListaAsistenciaEditableExcel, importarListaAsistenciaEditableExcel } from '../utils/exportListaExcel';
 
@@ -71,7 +72,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       if (s.grado !== grado || s.grupo !== grupo) return false;
       const stStatus = (s.status || 'Activo').toLowerCase();
       if (stStatus === 'activo') return true;
-      if (stStatus === 'baja' && s.motivoBaja !== 'No Inscrito' && s.tipoBaja !== 'No Inscrito') return true;
+      if (esBajaOficial(s)) return true;
       return false;
     });
     return sortAttendanceListStudents(filtered);

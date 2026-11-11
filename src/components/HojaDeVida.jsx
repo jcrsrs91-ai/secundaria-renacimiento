@@ -4,7 +4,7 @@ import { X, Save, Edit, User, Heart, Users, Camera, Upload, StopCircle, Printer,
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
-import { isBeforeSept30, formatearFechaCorta, fechaRegistroDeAlumno } from '../utils/dateRules';
+import { isBeforeSept30, formatearFechaCorta, fechaRegistroDeAlumno, obtenerFechaBajaTexto } from '../utils/dateRules';
 import { registrarMovimiento, detectarCambiosExpediente } from '../utils/bitacora';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
@@ -28,7 +28,9 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
       ? student.motivoBaja
       : 'Cambio de domicilio'
   );
-  const [fechaBajaInput, setFechaBajaInput] = useState(student.fechaBaja || formatearFechaCorta(new Date()));
+  const [fechaBajaInput, setFechaBajaInput] = useState(
+    obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date())
+  );
   
   const [grupo, setGrupo] = useState(student.grupo || '');
   const [taller, setTaller] = useState(student.taller || '');
@@ -218,17 +220,19 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     data.tieneBeca = tieneBeca;
     data.nombreBeca = tieneBeca === 'SÍ' ? (nombreBeca || '').trim().toUpperCase() : '';
 
-    // --- NUEVA LÓGICA DE BAJAS Y FECHAS ---
-    const dandoDeBajaAhora = data.status === 'Baja' && student.status !== 'Baja';
+    // --- NUEVA LÓGICA DE BAJAS Y FECHAS (REGLA 30 DE SEPTIEMBRE) ---
+    const fechaBajaEvaluada = (fechaBajaInput || obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date())).trim();
+    const esAntesOIgual30Sept = isBeforeSept30(fechaBajaEvaluada);
     if (data.status === 'Baja') {
-        if (isBeforeSept30() && dandoDeBajaAhora) {
+        if (esAntesOIgual30Sept) {
             data.motivoBaja = 'No Inscrito';
             data.tipoBaja = 'No Inscrito';
-            alert("⚠️ AVISO: Al dar de baja antes del 30 de septiembre, este alumno se clasifica como 'No Inscrito' y no aparecerá en las Bajas Oficiales.");
+            data.fechaBaja = fechaBajaEvaluada;
+            alert(`⚠️ AVISO NORMATIVO SEP: Recuerda que solo se toman como Bajas Oficiales las ocurridas DESPUÉS del 30 de septiembre (a partir del 1 de octubre).\n\nComo la fecha registrada (${fechaBajaEvaluada}) es del 30 de septiembre o anterior, este alumno se clasifica como 'No Inscrito' y no aparecerá en las Bajas Oficiales.`);
         } else {
             data.motivoBaja = (motivoBajaInput || data.motivoBaja || 'Cambio de domicilio').trim();
             data.tipoBaja = 'Baja Oficial';
-            data.fechaBaja = (fechaBajaInput || student.fechaBaja || formatearFechaCorta(new Date())).trim();
+            data.fechaBaja = fechaBajaEvaluada;
         }
     }
 
@@ -255,8 +259,8 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
       setStatusActual(data.status || student.status || 'Activo');
       onSave({ ...student, ...data });
       setIsEditing(false);
-      if (data.status === 'Baja' && (!isBeforeSept30() || !dandoDeBajaAhora)) {
-        if (window.confirm("✅ Expediente actualizado como BAJA.\n\n¿Deseas abrir e imprimir ahora mismo el formato oficial de BAJA POR TRASLADO?")) {
+      if (data.status === 'Baja' && !esAntesOIgual30Sept) {
+        if (window.confirm(`✅ Expediente actualizado como BAJA OFICIAL (Fecha de baja y expedición: ${fechaBajaEvaluada}).\n\n¿Deseas abrir e imprimir ahora mismo el formato oficial de BAJA POR TRASLADO?`)) {
           setPrintModeType('baja_traslado');
           setShowPrintMode(true);
         }
@@ -275,7 +279,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
       ...student,
       status: statusActual,
       motivoBaja: motivoBajaInput || student.motivoBaja || 'Cambio de domicilio',
-      fechaBaja: fechaBajaInput || student.fechaBaja || formatearFechaCorta(new Date()),
+      fechaBaja: fechaBajaInput || obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date()),
       grupo: grupo || student.grupo,
       taller: taller || student.taller,
       fotoUrl: fotoPreview || student.fotoUrl,
@@ -497,7 +501,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                         </div>
                         <div>
                           <label className="block text-xs font-extrabold text-rose-900 uppercase">
-                            Fecha de la Baja
+                            Fecha de la Baja (Fecha de Expedición)
                           </label>
                           <input
                             type="text"
@@ -507,9 +511,15 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                             placeholder="DD/MM/AAAA"
                             className="mt-1 w-full p-2 border border-rose-300 rounded font-semibold text-slate-800 bg-white"
                           />
-                          <p className="text-[11px] text-rose-700 mt-1 font-medium">
-                            Al guardar, el sistema te ofrecerá imprimir automáticamente la <strong>Baja por Traslado</strong>.
-                          </p>
+                          {isBeforeSept30(fechaBajaInput) ? (
+                            <p className="text-[11px] text-amber-800 bg-amber-100 border border-amber-300 rounded px-2 py-1 mt-1 font-bold">
+                              ⚠️ Recuerda: Solo se toman como Bajas Oficiales después del 30 de septiembre (a partir del 01/10). Con esta fecha se registrará como &ldquo;No Inscrito&rdquo;.
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-rose-700 mt-1 font-medium">
+                              Esta misma fecha saldrá como <strong>fecha de expedición</strong> cada vez que imprimas o reimprimas su <strong>Baja por Traslado</strong>.
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}

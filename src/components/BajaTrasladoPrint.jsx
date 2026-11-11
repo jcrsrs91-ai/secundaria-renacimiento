@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { roundToIntGrade, autoAcentuar } from '../utils/format';
 import { TALLER_POR_GRUPO } from './ListaAsistenciaPrint';
+import { parseFechaFlexible, obtenerFechaBajaTexto, formatearFechaCorta, isBeforeSept30 } from '../utils/dateRules';
+import { db } from '../firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
 const extraerFechaDeCurp = (curp) => {
   if (!curp || curp.length < 10) return null;
@@ -51,17 +55,11 @@ const formatearNombreAsignaturaTabla = (nombre = '') => {
     .replace('CIENCIAS III (QUÍMICA)', 'CIENCIAS III (QUÍMICA)');
 };
 
-const formatearFechaCompletaEs = (fechaIsoOTexto) => {
-  let dateObj = new Date();
-  if (fechaIsoOTexto && typeof fechaIsoOTexto === 'string') {
-    const mIso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fechaIsoOTexto.trim());
-    const mMx = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(fechaIsoOTexto.trim());
-    if (mIso) {
-      dateObj = new Date(Number(mIso[1]), Number(mIso[2]) - 1, Number(mIso[3]), 12, 0, 0);
-    } else if (mMx) {
-      dateObj = new Date(Number(mMx[3]), Number(mMx[2]) - 1, Number(mMx[1]), 12, 0, 0);
-    }
-  }
+const formatearFechaCompletaEs = (fechaIsoOTexto, studentFallback = null) => {
+  const dateObj =
+    parseFechaFlexible(fechaIsoOTexto) ||
+    parseFechaFlexible(obtenerFechaBajaTexto(studentFallback)) ||
+    new Date();
   const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   const diaSemana = diasSemana[dateObj.getDay()];
@@ -79,7 +77,28 @@ export default function BajaTrasladoPrint({
   onClose = null
 }) {
   const { config } = useGlobalConfig();
+  const fechaInicialBaja = fechaExpedicion || obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date());
+  const [fechaBajaActiva, setFechaBajaActiva] = useState(fechaInicialBaja);
+
+  useEffect(() => {
+    setFechaBajaActiva(fechaExpedicion || obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date()));
+  }, [student, fechaExpedicion]);
+
   if (!student) return null;
+
+  const guardarFechaBajaEnExpediente = async (nuevaFecha) => {
+    setFechaBajaActiva(nuevaFecha);
+    if (student?.id && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nuevaFecha.trim())) {
+      try {
+        await updateDoc(doc(db, 'students', student.id), {
+          fechaBaja: nuevaFecha.trim()
+        });
+        toast.success(`Fecha de baja/expedición actualizada (${nuevaFecha.trim()})`);
+      } catch (e) {
+        console.error('Error al actualizar fechaBaja:', e);
+      }
+    }
+  };
 
   const gradoKey = normalizarGradoKey(student.grado);
   const numeroGrado = obtenerNumeroGrado(student.grado);
@@ -196,17 +215,29 @@ export default function BajaTrasladoPrint({
       `}</style>
 
       {/* Barra de controles en pantalla (no se imprime) */}
-      {onClose && (
-        <div className="no-print w-full max-w-[21.59cm] mb-3 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between gap-3">
+      <div className="no-print w-full max-w-[21.59cm] mb-3 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h4 className="text-sm font-black uppercase tracking-wider text-rose-300">
               Vista Previa — Constancia Oficial de Baja por Traslado
             </h4>
             <p className="text-xs text-slate-300">
-              Incluye las asignaturas oficiales del grado ({gradoKey}), cancelación diagonal de periodos sin evaluar y leyenda normativa SEP.
+              La fecha de expedición corresponde exactamente a la <strong>fecha en que se dio de baja al alumno</strong> ({fechaBajaActiva}).
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
+              <span className="text-[11px] font-bold text-rose-200 uppercase">Fecha de Baja / Expedición:</span>
+              <input
+                type="text"
+                value={fechaBajaActiva}
+                onChange={(e) => setFechaBajaActiva(e.target.value)}
+                onBlur={(e) => guardarFechaBajaEnExpediente(e.target.value)}
+                placeholder="DD/MM/AAAA"
+                className="w-24 bg-slate-900 text-white border border-slate-600 rounded px-2 py-0.5 text-xs font-extrabold text-center"
+                title="Fecha en que se dio de baja al alumno (se usa como fecha de expedición)"
+              />
+            </div>
             <button
               type="button"
               onClick={() => window.print()}
@@ -214,16 +245,23 @@ export default function BajaTrasladoPrint({
             >
               🖨️ Imprimir Formato
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-lg text-xs transition"
-            >
-              Cerrar
-            </button>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-lg text-xs transition"
+              >
+                Cerrar
+              </button>
+            )}
           </div>
         </div>
-      )}
+        {isBeforeSept30(fechaBajaActiva) && (
+          <div className="bg-amber-500/20 border border-amber-400 text-amber-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+            ⚠️ Nota Normativa SEP: Recuerda que solo se toman como Bajas Oficiales las ocurridas <strong>después del 30 de septiembre</strong> (a partir del 1 de octubre). Antes o el 30 de septiembre se clasifican como &ldquo;No Inscrito&rdquo;.
+          </div>
+        )}
+      </div>
 
       <div className="baja-traslado-page font-sans">
         {/* Marca de agua institucional sutil */}
@@ -414,7 +452,7 @@ export default function BajaTrasladoPrint({
 
           <p className="text-[9.5pt] leading-snug text-justify text-slate-900 mt-1">
             A petición del (la) interesado(a), y para los usos y fines legales a que haya lugar, se extiende la presente en la Ciudad
-            y Puerto de Acapulco de Juárez, Guerrero, <strong>{formatearFechaCompletaEs(fechaExpedicion || student.fechaBaja)}</strong>.
+            y Puerto de Acapulco de Juárez, Guerrero, <strong>{formatearFechaCompletaEs(fechaBajaActiva, student)}</strong>.
           </p>
         </div>
 

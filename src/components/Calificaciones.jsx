@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import EvaluacionDocenteWidget from './EvaluacionDocenteWidget';
 import { sortAttendanceListStudents } from './ListaAsistenciaPrint';
+import { esBajaOficial } from '../utils/dateRules';
 
 const TRIMESTRE_NAMES = {
   t1: 'Trimestre 1',
@@ -33,13 +34,13 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   const [highlightEmptyCells, setHighlightEmptyCells] = useState(false);
   const [filterOnlyIncomplete, setFilterOnlyIncomplete] = useState(false);
 
-  // Filtrar alumnos por grado y grupo conservando las Bajas Oficiales en su lugar exacto de lista (y Altas al final)
+  // Filtrar alumnos por grado y grupo conservando las Bajas Oficiales (posteriores al 30 de sept) en su lugar exacto de lista
   const alumnos = useMemo(() => {
     const filtrados = activos.filter(a => {
       if (a.grado !== grado || a.grupo !== grupo) return false;
       const st = (a.status || 'Activo').toLowerCase();
       if (st === 'activo') return true;
-      if (st === 'baja' && a.motivoBaja !== 'No Inscrito' && a.tipoBaja !== 'No Inscrito') return true;
+      if (esBajaOficial(a)) return true;
       return false;
     });
     return sortAttendanceListStudents(filtrados);

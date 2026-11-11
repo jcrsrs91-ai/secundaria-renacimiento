@@ -44,7 +44,7 @@ import { searchIncludes } from '../../utils/search';
 import { sortStudents } from '../../utils/sortUtils';
 import { registrarMovimiento } from '../../utils/bitacora';
 import BitacoraTab from '../../components/BitacoraTab';
-import { esPeriodoDeAlta, formatearFechaCorta } from '../../utils/dateRules';
+import { esPeriodoDeAlta, formatearFechaCorta, esBajaOficial, obtenerFechaBajaTexto, obtenerFechaBajaDate, isBeforeSept30 } from '../../utils/dateRules';
 
 export default function ControlEscolar() {
   const { config, updateConfig } = useGlobalConfig();
@@ -237,11 +237,32 @@ export default function ControlEscolar() {
                }
           }
 
-          // Auto-reparar Bajas que no tengan motivo (después del 30 de sept es Baja Oficial; antes es No Inscrito)
-          if (data.status === 'Baja' && !data.motivoBaja) {
-             const defaultMotivo = esPeriodoDeAlta() ? 'Baja Oficial' : 'No Inscrito';
-             if (doc.id) updateDoc(doc.ref, { motivoBaja: defaultMotivo }).catch(console.error);
-             data.motivoBaja = defaultMotivo;
+          // Auto-reparar Bajas: asegurar que tengan su fechaBaja histórica (fecha en que se dieron de baja)
+          // y clasificar como Baja Oficial únicamente si fue DESPUÉS del 30 de septiembre (de lo contrario es No Inscrito)
+          if (data.status === 'Baja') {
+             const updatesBaja = {};
+             if (!data.fechaBaja && data.lastModifiedAt) {
+               const dHist = obtenerFechaBajaDate(data);
+               if (dHist) {
+                 data.fechaBaja = formatearFechaCorta(dHist);
+                 updatesBaja.fechaBaja = data.fechaBaja;
+               }
+             }
+             const fechaRefBaja = obtenerFechaBajaDate(data) || new Date();
+             if (!data.motivoBaja) {
+               const defaultMotivo = !isBeforeSept30(fechaRefBaja) ? 'Baja Oficial' : 'No Inscrito';
+               data.motivoBaja = defaultMotivo;
+               updatesBaja.motivoBaja = defaultMotivo;
+             }
+             if (isBeforeSept30(fechaRefBaja) && data.tipoBaja !== 'No Inscrito') {
+               data.motivoBaja = 'No Inscrito';
+               data.tipoBaja = 'No Inscrito';
+               updatesBaja.motivoBaja = 'No Inscrito';
+               updatesBaja.tipoBaja = 'No Inscrito';
+             }
+             if (doc.id && Object.keys(updatesBaja).length > 0) {
+               updateDoc(doc.ref, updatesBaja).catch(console.error);
+             }
           }
 
         return { id: doc.id, ...data };
@@ -272,7 +293,9 @@ export default function ControlEscolar() {
     const matchesGrade = gradeFilter === 'Todos' || a.grado === gradeFilter;
     const matchesGroup = groupFilter === 'Todos' || a.grupo === groupFilter;
     const matchesShift = globalShiftFilter === 'Todos' || a.turno === globalShiftFilter;
-    const matchesStatus = (statusFilter === 'Todos' && a.status !== 'Egresado' && a.status !== 'No Inscrito') || a.status === statusFilter;
+    const matchesStatus =
+      (statusFilter === 'Todos' && a.status !== 'Egresado' && a.status !== 'No Inscrito' && !(a.status === 'Baja' && !esBajaOficial(a))) ||
+      (statusFilter === 'Baja' ? esBajaOficial(a) : a.status === statusFilter);
     const matchesCycle = cycleFilter === 'Todos' || a.cicloEscolar === cycleFilter;
     return matchesSearch && matchesGrade && matchesGroup && matchesShift && matchesStatus && matchesCycle;
   }).sort(sortStudents);
@@ -282,7 +305,7 @@ export default function ControlEscolar() {
       if (a.grado !== asisGrado || a.grupo !== asisGrupo) return false;
       const st = (a.status || 'Activo').toLowerCase();
       if (st === 'activo') return true;
-      if (st === 'baja' && a.motivoBaja !== 'No Inscrito' && a.tipoBaja !== 'No Inscrito') return true;
+      if (esBajaOficial(a)) return true;
       return false;
     });
     return sortAttendanceListStudents(groupStudents);
@@ -1539,18 +1562,19 @@ export default function ControlEscolar() {
                           {isBaja && (
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="px-2 py-0.5 bg-red-100 text-red-800 border border-red-400 rounded uppercase">
-                                BAJA {al.fechaBaja ? `(${al.fechaBaja})` : ''}
+                                BAJA {obtenerFechaBajaTexto(al) ? `(${obtenerFechaBajaTexto(al)})` : ''}
                               </span>
                               <button
                                 onClick={() => {
                                   setPrintData({
                                     ...al,
-                                    motivoBaja: al.motivoBaja || 'Cambio de domicilio'
+                                    motivoBaja: al.motivoBaja || 'Cambio de domicilio',
+                                    fechaBaja: obtenerFechaBajaTexto(al) || al.fechaBaja
                                   });
                                   setPrintMode('baja_traslado');
                                 }}
                                 className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-bold shadow-sm transition-colors"
-                                title="Reimprimir Formato Oficial de Baja por Traslado"
+                                title="Reimprimir Formato Oficial de Baja por Traslado (con fecha de cuando se dio de baja)"
                               >
                                 <Printer className="w-3 h-3" /> Reimprimir Baja
                               </button>
@@ -1647,7 +1671,7 @@ export default function ControlEscolar() {
                   <UserMinus className="w-4 h-4 mr-1.5" />
                   {statusFilter === 'Baja'
                     ? 'Viendo Bajas (Volver a Activos)'
-                    : `Ver Bajas (${directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito' && s.tipoBaja !== 'No Inscrito').length})`}
+                    : `Ver Bajas (${directorio.filter(s => esBajaOficial(s)).length})`}
                 </button>
                 <button onClick={() => setShowPrintDir(true)} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors shadow-sm flex items-center">
                   <Printer className="w-4 h-4 mr-2" /> Directorio de Emergencias
@@ -1697,9 +1721,9 @@ export default function ControlEscolar() {
                     <td className="px-6 py-4 text-sm text-slate-600 font-medium uppercase">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span>{a.apellidoPaterno} {a.apellidoMaterno} {a.nombres}</span>
-                        {a.status === 'Baja' && (
+                        {esBajaOficial(a) && (
                           <span className="px-2 py-0.5 bg-rose-100 text-rose-800 border border-rose-300 rounded text-[10px] font-extrabold uppercase">
-                            BAJA {a.fechaBaja ? `• ${a.fechaBaja}` : ''}
+                            BAJA {obtenerFechaBajaTexto(a) ? `• ${obtenerFechaBajaTexto(a)}` : ''}
                           </span>
                         )}
                       </div>
@@ -1715,17 +1739,18 @@ export default function ControlEscolar() {
                       <div className="text-xs text-slate-400">{a.turno || '-'}</div>
                     </td>
                     <td className="px-6 py-4 text-right space-x-4">
-                      {a.status === 'Baja' && (
+                      {esBajaOficial(a) && (
                         <button
                           onClick={() => {
                             setPrintData({
                               ...a,
-                              motivoBaja: a.motivoBaja || 'Cambio de domicilio'
+                              motivoBaja: a.motivoBaja || 'Cambio de domicilio',
+                              fechaBaja: obtenerFechaBajaTexto(a) || a.fechaBaja
                             });
                             setPrintMode('baja_traslado');
                           }}
                           className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg inline-flex items-center shadow-sm transition-colors"
-                          title="Reimprimir Formato Oficial de Baja por Traslado"
+                          title="Reimprimir Formato Oficial de Baja por Traslado (con fecha de cuando se dio de baja)"
                         >
                           <Printer className="w-3.5 h-3.5 mr-1" /> Reimprimir Baja
                         </button>
@@ -2307,12 +2332,21 @@ export default function ControlEscolar() {
 
               <button
                 onClick={() => {
-                  const motivoDefault = selectedStudent?.motivoBaja || 'Cambio de domicilio';
+                  const fechaBajaReal = obtenerFechaBajaTexto(selectedStudent) || selectedStudent?.fechaBaja || formatearFechaCorta(new Date());
+                  if (isBeforeSept30(fechaBajaReal)) {
+                    alert(`⚠️ AVISO NORMATIVO SEP: Recuerda que solo se toman como Bajas Oficiales las ocurridas DESPUÉS del 30 de septiembre (a partir del 1 de octubre).\n\nLa fecha de este movimiento (${fechaBajaReal}) corresponde al 30 de septiembre o anterior ("No Inscrito").`);
+                    return;
+                  }
+                  const motivoDefault =
+                    selectedStudent?.motivoBaja && selectedStudent.motivoBaja !== 'Baja Oficial' && selectedStudent.motivoBaja !== 'No Inscrito'
+                      ? selectedStudent.motivoBaja
+                      : 'Cambio de domicilio';
                   const motivo = window.prompt('Motivo de la Baja por Traslado (aparecerá en el documento oficial):', motivoDefault);
                   if (motivo === null) return;
                   setPrintData({
                     ...selectedStudent,
-                    motivoBaja: motivo.trim() || 'Cambio de domicilio'
+                    motivoBaja: motivo.trim() || 'Cambio de domicilio',
+                    fechaBaja: fechaBajaReal
                   });
                   setPrintMode('baja_traslado');
                   closeModal();
@@ -2477,7 +2511,7 @@ export default function ControlEscolar() {
 
       {/* Sección Eficiencia Terminal */}
       {!loading && activeTab === 'eficiencia' && !printMode && (
-        <EficienciaTerminalPrint activos={directorio.filter(s => s.status === 'Activo' || s.status === 'Egresado')} bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito' && s.tipoBaja !== 'No Inscrito')} materiasPorGrado={materiasPorGrado} onClose={() => setActiveTab('activos')} />
+        <EficienciaTerminalPrint activos={directorio.filter(s => s.status === 'Activo' || s.status === 'Egresado')} bajas={directorio.filter(s => esBajaOficial(s))} materiasPorGrado={materiasPorGrado} onClose={() => setActiveTab('activos')} />
       )}
 
       {/* Sección Desempeño Alcanzado */}
@@ -2488,12 +2522,13 @@ export default function ControlEscolar() {
       {/* Sección Desertores (Oficiales E6) */}
       {!loading && activeTab === 'desertores' && !printMode && (
         <DesertoresPrint
-          bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito' && s.tipoBaja !== 'No Inscrito')}
+          bajas={directorio.filter(s => esBajaOficial(s))}
           onClose={() => setActiveTab('activos')}
           onPrintBajaTraslado={(studentBaja) => {
             setPrintData({
               ...studentBaja,
-              motivoBaja: studentBaja.motivoBaja || 'Cambio de domicilio'
+              motivoBaja: studentBaja.motivoBaja || 'Cambio de domicilio',
+              fechaBaja: obtenerFechaBajaTexto(studentBaja) || studentBaja.fechaBaja
             });
             setPrintMode('baja_traslado');
           }}
@@ -2502,7 +2537,7 @@ export default function ControlEscolar() {
 
       {/* Sección No Inscritos (Uso Interno) */}
       {!loading && activeTab === 'no_inscritos' && !printMode && (
-        <NoInscritosPrint bajas={directorio.filter(s => s.status === 'No Inscrito' || (s.status === 'Baja' && (s.motivoBaja === 'No Inscrito' || s.tipoBaja === 'No Inscrito')))} onClose={() => setActiveTab('activos')} />
+        <NoInscritosPrint bajas={directorio.filter(s => s.status === 'No Inscrito' || (s.status === 'Baja' && !esBajaOficial(s)))} onClose={() => setActiveTab('activos')} />
       )}
 
       
@@ -2519,7 +2554,7 @@ export default function ControlEscolar() {
       {printMode === 'acuse' && printData && <AcuseDocumentosPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} extraordinarioSelected={extraordinarioToPrint} tramite={printData?.tramite} />}
-      {printMode === 'baja_traslado' && printData && <BajaTrasladoPrint student={printData} materiasPorGrado={materiasPorGrado} motivoPersonalizado={printData?.motivoBaja} onClose={() => setPrintMode(null)} />}
+      {printMode === 'baja_traslado' && printData && <BajaTrasladoPrint student={printData} materiasPorGrado={materiasPorGrado} motivoPersonalizado={printData?.motivoBaja} fechaExpedicion={printData?.fechaBaja || obtenerFechaBajaTexto(printData)} onClose={() => setPrintMode(null)} />}
       {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'constancia_eer' && eerToPrint && <ConstanciaEERPrint student={printData} regularizadas={eerToPrint.regularizadas} adeudos={eerToPrint.adeudos} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
       {printMode === 'constancia_eer_batch' && eerToPrint && <BatchConstanciaEERPrint data={printData} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
