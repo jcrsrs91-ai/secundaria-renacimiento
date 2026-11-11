@@ -4,7 +4,7 @@ import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { UserMinus, Printer, X, Calendar, MapPin, AlertCircle, Hash, GraduationCap } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
 
-export default function DesertoresPrint({ bajas = [], onClose }) {
+export default function DesertoresPrint({ bajas = [], onClose, onPrintBajaTraslado }) {
   const { config } = useGlobalConfig();
 
   const getGradoBase = (g) => {
@@ -158,6 +158,9 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
                       <th className="px-3 py-3 text-center font-bold border-r border-slate-700 print:border-slate-400 print:py-1">SEXO</th>
                       <th className="px-3 py-3 text-center font-bold border-r border-slate-700 print:border-slate-400 print:py-1">GRADO Y GRUPO</th>
                       <th className="px-4 py-3 text-left font-bold border-r border-slate-700 print:border-slate-400 print:py-1">CAUSA DE DESERCIÓN OFICIAL</th>
+                      {onPrintBajaTraslado && (
+                        <th className="px-4 py-3 text-center font-bold print:hidden no-print">FORMATO INDIVIDUAL</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-white print:divide-slate-400">
@@ -171,7 +174,19 @@ export default function DesertoresPrint({ bajas = [], onClose }) {
                           <td className="px-4 py-2 text-left border-r border-slate-200 print:border-slate-400 print:py-1 font-semibold">{nombreCompleto}</td>
                           <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-1">{s.genero === 'Mujer' ? 'M' : 'H'}</td>
                           <td className="px-3 py-2 text-center border-r border-slate-200 print:border-slate-400 print:py-1 font-bold">{gradoGrupo}</td>
-                          <td className="px-4 py-2 text-left print:py-1 text-sky-700 font-bold print:text-black">{motivo}</td>
+                          <td className="px-4 py-2 text-left border-r border-slate-200 print:border-r-0 print:py-1 text-sky-700 font-bold print:text-black">{motivo}</td>
+                          {onPrintBajaTraslado && (
+                            <td className="px-3 py-2 text-center print:hidden no-print">
+                              <button
+                                onClick={() => onPrintBajaTraslado(s)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors"
+                                title="Reimprimir Formato Oficial de Baja por Traslado de este alumno"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                                Reimprimir Baja por Traslado
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}

@@ -1537,9 +1537,24 @@ export default function ControlEscolar() {
                             </span>
                           )}
                           {isBaja && (
-                            <span className="px-2 py-0.5 bg-red-100 text-red-800 border border-red-400 rounded uppercase">
-                              BAJA {al.fechaBaja ? `(${al.fechaBaja})` : ''}
-                            </span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="px-2 py-0.5 bg-red-100 text-red-800 border border-red-400 rounded uppercase">
+                                BAJA {al.fechaBaja ? `(${al.fechaBaja})` : ''}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  setPrintData({
+                                    ...al,
+                                    motivoBaja: al.motivoBaja || 'Cambio de domicilio'
+                                  });
+                                  setPrintMode('baja_traslado');
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-bold shadow-sm transition-colors"
+                                title="Reimprimir Formato Oficial de Baja por Traslado"
+                              >
+                                <Printer className="w-3 h-3" /> Reimprimir Baja
+                              </button>
+                            </div>
                           )}
                           {!isAlta && !isBaja && <span className="text-slate-400 font-normal">Inicial</span>}
                         </td>
@@ -1618,8 +1633,22 @@ export default function ControlEscolar() {
                 </select>
               </div>
               
-              {/* Acciones para el grupo o masivas */}
+               {/* Acciones para el grupo o masivas */}
               <div className="flex-1 flex justify-end gap-2 flex-wrap">
+                <button
+                  onClick={() => setStatusFilter(statusFilter === 'Baja' ? 'Activo' : 'Baja')}
+                  className={`px-3.5 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center border ${
+                    statusFilter === 'Baja'
+                      ? 'bg-rose-700 text-white border-rose-800 ring-2 ring-rose-300'
+                      : 'bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100'
+                  }`}
+                  title="Ver alumnos dados de Baja para consultar su expediente o reimprimir su Baja por Traslado"
+                >
+                  <UserMinus className="w-4 h-4 mr-1.5" />
+                  {statusFilter === 'Baja'
+                    ? 'Viendo Bajas (Volver a Activos)'
+                    : `Ver Bajas (${directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito' && s.tipoBaja !== 'No Inscrito').length})`}
+                </button>
                 <button onClick={() => setShowPrintDir(true)} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors shadow-sm flex items-center">
                   <Printer className="w-4 h-4 mr-2" /> Directorio de Emergencias
                 </button>
@@ -1666,7 +1695,14 @@ export default function ControlEscolar() {
                     </td>
                     <td className="px-6 py-4 text-sm font-bold text-primary-700">{a.matricula}</td>
                     <td className="px-6 py-4 text-sm text-slate-600 font-medium uppercase">
-                      {a.apellidoPaterno} {a.apellidoMaterno} {a.nombres}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span>{a.apellidoPaterno} {a.apellidoMaterno} {a.nombres}</span>
+                        {a.status === 'Baja' && (
+                          <span className="px-2 py-0.5 bg-rose-100 text-rose-800 border border-rose-300 rounded text-[10px] font-extrabold uppercase">
+                            BAJA {a.fechaBaja ? `• ${a.fechaBaja}` : ''}
+                          </span>
+                        )}
+                      </div>
                       {(!a.documentos?.acta || !a.documentos?.curp || !a.documentos?.certificado || !a.documentos?.ine || !a.documentos?.domicilio) && (
                         <span className="mt-1 flex items-center text-[10px] text-red-500 font-bold normal-case">
                           <AlertTriangle className="w-3 h-3 mr-1" /> Faltan Documentos Digitales
@@ -1679,6 +1715,21 @@ export default function ControlEscolar() {
                       <div className="text-xs text-slate-400">{a.turno || '-'}</div>
                     </td>
                     <td className="px-6 py-4 text-right space-x-4">
+                      {a.status === 'Baja' && (
+                        <button
+                          onClick={() => {
+                            setPrintData({
+                              ...a,
+                              motivoBaja: a.motivoBaja || 'Cambio de domicilio'
+                            });
+                            setPrintMode('baja_traslado');
+                          }}
+                          className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg inline-flex items-center shadow-sm transition-colors"
+                          title="Reimprimir Formato Oficial de Baja por Traslado"
+                        >
+                          <Printer className="w-3.5 h-3.5 mr-1" /> Reimprimir Baja
+                        </button>
+                      )}
                       <button onClick={() => openModal('hoja', a)} className="text-blue-600 hover:text-blue-800 font-medium text-sm inline-flex items-center">
                         <User className="w-4 h-4 mr-1" /> Expediente
                       </button>
@@ -2436,7 +2487,17 @@ export default function ControlEscolar() {
 
       {/* Sección Desertores (Oficiales E6) */}
       {!loading && activeTab === 'desertores' && !printMode && (
-        <DesertoresPrint bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito' && s.tipoBaja !== 'No Inscrito')} onClose={() => setActiveTab('activos')} />
+        <DesertoresPrint
+          bajas={directorio.filter(s => s.status === 'Baja' && s.motivoBaja !== 'No Inscrito' && s.tipoBaja !== 'No Inscrito')}
+          onClose={() => setActiveTab('activos')}
+          onPrintBajaTraslado={(studentBaja) => {
+            setPrintData({
+              ...studentBaja,
+              motivoBaja: studentBaja.motivoBaja || 'Cambio de domicilio'
+            });
+            setPrintMode('baja_traslado');
+          }}
+        />
       )}
 
       {/* Sección No Inscritos (Uso Interno) */}
