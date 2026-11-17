@@ -30,9 +30,14 @@ const resolverExpedienteUnificado = (docsSnap) => {
     if (sec.status === 'Pendiente') {
       duplicatePendingIds.push(sec.id);
     }
-    // Copiar campos que estén vacíos en primary pero llenos en el registro secundario (Pendiente)
+    // Copiar campos que estén vacíos en primary pero llenos en el registro secundario (Pendiente), nunca sobrescribiendo identidad o control escolar
     Object.keys(sec).forEach(key => {
-      if (['id', 'status', 'grado', 'grupo', 'turno', 'taller', 'matricula', 'fotoUrl', 'calificaciones', 'asistencias', 'historial', 'extraordinarios', 'tipoIngreso', 'fechaAlta'].includes(key)) {
+      if ([
+        'id', 'status', 'grado', 'grupo', 'turno', 'taller', 'matricula', 'fotoUrl',
+        'calificaciones', 'recuperacion', 'regularizacion', 'evaluacionDetalle',
+        'asistencias', 'historial', 'extraordinarios', 'tipoIngreso', 'fechaAlta',
+        'nombres', 'apellidoPaterno', 'apellidoMaterno', 'curp'
+      ].includes(key)) {
         return;
       }
       const valPrimary = primary[key];
@@ -283,7 +288,12 @@ export default function PreInscripcion() {
     const data = Object.fromEntries(formData.entries());
 
     try {
-      const currentCurp = (data.curp ? data.curp : (studentData?.curp || '')).trim().toUpperCase();
+      const hasLoadedStudent = Boolean(studentData?.id);
+      const currentCurp = (
+        hasLoadedStudent && studentData?.curp
+          ? studentData.curp
+          : (data.curp || studentData?.curp || '')
+      ).trim().toUpperCase();
 
       // SIEMPRE verificar en Firestore si ya existe un alumno con esa CURP (evita duplicados cuando el padre entró en "Nuevo Ingreso")
       let targetExisting = studentData;
@@ -298,6 +308,13 @@ export default function PreInscripcion() {
           duplicateIdsToClean = unified._duplicatePendingIds || [];
         }
       }
+
+      // Eliminar cualquier campo protegido que pudiera venir del formulario antes de fusionar datos
+      [
+        'id', 'status', 'matricula', 'fotoUrl', 'calificaciones',
+        'recuperacion', 'regularizacion', 'evaluacionDetalle',
+        'asistencias', 'historial', 'extraordinarios', 'tipoIngreso', 'fechaAlta'
+      ].forEach(k => delete data[k]);
 
       let fotoUrl = targetExisting?.fotoUrl || null;
       const esActualizacionDeExistente = activeTab === 'completar' || Boolean(targetExisting?.id);
@@ -332,9 +349,21 @@ export default function PreInscripcion() {
       const ineContacto1Url = await uploadDoc(ineContacto1File, 'ineContacto1');
       const ineContacto2Url = await uploadDoc(ineContacto2File, 'ineContacto2');
 
-      // Si el alumno ya existe en la escuela como Activo (o estamos en completar), preservar su grado, grupo, turno, taller, matrícula y estatus
+      // Si el alumno ya existe en la escuela, preservar sus datos de identidad cotejados (Nombre, CURP, Matrícula, F. Nacimiento, Género)
+      // y cuando está activo/actualizando, preservar también Grado, Grupo, Turno y Taller.
       const isAlreadyRegistered = Boolean(targetExisting?.id);
       const isAlreadyActive = isAlreadyRegistered && (targetExisting.status || 'Activo') !== 'Pendiente';
+
+      if (isAlreadyRegistered && targetExisting) {
+        if (targetExisting.nombres) data.nombres = targetExisting.nombres;
+        if (targetExisting.apellidoPaterno) data.apellidoPaterno = targetExisting.apellidoPaterno;
+        if (targetExisting.nombres || targetExisting.apellidoPaterno || targetExisting.apellidoMaterno) {
+          data.apellidoMaterno = targetExisting.apellidoMaterno || '';
+        }
+        if (targetExisting.curp) data.curp = targetExisting.curp.trim().toUpperCase();
+        if (targetExisting.fechaNacimiento) data.fechaNacimiento = targetExisting.fechaNacimiento;
+        if (targetExisting.genero) data.genero = targetExisting.genero;
+      }
 
       if ((activeTab === 'completar' || isAlreadyActive) && targetExisting) {
         if (targetExisting.grado) data.grado = targetExisting.grado;
@@ -347,9 +376,14 @@ export default function PreInscripcion() {
       delete cleanTarget._duplicatePendingIds;
       delete cleanTarget.id;
 
+      const finalCurpProtected = isAlreadyRegistered && targetExisting?.curp
+        ? targetExisting.curp.trim().toUpperCase()
+        : currentCurp;
+
       const submissionData = {
         ...cleanTarget,
         ...data,
+        ...(isAlreadyRegistered && targetExisting?.matricula ? { matricula: targetExisting.matricula } : {}),
         fotoUrl,
         actaUrl,
         curpUrl,
@@ -360,7 +394,7 @@ export default function PreInscripcion() {
         ineContacto1Url,
         ineContacto2Url,
         documentos,
-        curp: currentCurp,
+        curp: finalCurpProtected,
         tipoTramite: activeTab === 'reinscripcion'
           ? "Reinscripción"
           : isAlreadyActive
@@ -421,6 +455,9 @@ export default function PreInscripcion() {
     setLookupError('');
     setLookupCurp('');
   };
+
+  const isExpedienteCotejado = activeTab === 'completar' || activeTab === 'reinscripcion' || Boolean(studentData?.id);
+  const bloquearAcademicos = activeTab === 'completar' || (Boolean(studentData?.id) && activeTab !== 'reinscripcion');
 
   return (
     <div className="min-h-screen bg-slate-100 py-10 px-4 sm:px-6 lg:px-8">
@@ -635,7 +672,20 @@ export default function PreInscripcion() {
                     <div>
                       <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">1. Datos Académicos</h3>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        {activeTab === 'nuevo' ? (
+                        {isExpedienteCotejado && (
+                          <div>
+                            <label className="flex items-center gap-1 text-sm font-medium text-slate-700">
+                              <Lock className="w-3.5 h-3.5 text-amber-600" /> Matrícula Oficial
+                            </label>
+                            <input
+                              type="text"
+                              readOnly
+                              value={studentData?.matricula || 'Asignada en Control Escolar'}
+                              className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-slate-100 text-indigo-800 border-slate-300 cursor-not-allowed font-mono font-bold"
+                            />
+                          </div>
+                        )}
+                        {activeTab === 'nuevo' && !isExpedienteCotejado ? (
                           <div>
                             <label className="block text-sm font-medium">Grado al que Ingresa</label>
                             <select name="grado" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.grado || ''}>
@@ -650,7 +700,7 @@ export default function PreInscripcion() {
                         )}
                         <div>
                           <label className="block text-sm font-medium">Grupo</label>
-                          {activeTab === 'completar' ? (
+                          {bloquearAcademicos ? (
                             <input type="text" name="grupo" className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-gray-100 text-slate-600 cursor-not-allowed notranslate" readOnly value={studentData?.grupo || ''} />
                           ) : (
                             <select name="grupo" className="mt-1 block w-full rounded-md shadow-sm p-2 border notranslate" required defaultValue={studentData?.grupo}
@@ -705,7 +755,7 @@ export default function PreInscripcion() {
                           </div>
                           <div>
                             <label className="block text-sm font-medium">Turno</label>
-                          {activeTab === 'completar' ? (
+                          {bloquearAcademicos ? (
                             <input type="text" name="turno" className="mt-1 block w-full rounded-md shadow-sm p-2 border bg-gray-100 text-slate-600 cursor-not-allowed" readOnly value={studentData?.turno || ''} />
                           ) : (
                             <select id="turnoSelect" name="turno" className="mt-1 block w-full rounded-md shadow-sm p-2 border" required defaultValue={studentData?.turno}>
@@ -771,33 +821,116 @@ export default function PreInscripcion() {
                     {/* 2. Datos Personales */}
                     <div>
                       <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">2. Datos del Alumno</h3>
+                      {isExpedienteCotejado && (
+                        <div className="mb-5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                          <Lock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                          <div className="text-xs sm:text-sm text-amber-900">
+                            <p className="font-bold">Datos de Identidad Oficial Cotejados y Protegidos</p>
+                            <p className="mt-0.5 text-amber-800">
+                              El <strong>Nombre completo, CURP, Matrícula, Fecha de Nacimiento y Género</strong> ya fueron cotejados por Control Escolar y están bloqueados para evitar errores en certificados y boletas. Si requieren alguna corrección ortográfica, acude directamente a ventanilla de Control Escolar con tu Acta de Nacimiento y CURP.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                          <label className="block text-sm font-medium">Apellido Paterno</label>
-                          <input type="text" name="apellidoPaterno" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.apellidoPaterno} />
+                          <label className="flex items-center gap-1 text-sm font-medium text-slate-700">
+                            {isExpedienteCotejado && <Lock className="w-3.5 h-3.5 text-amber-600" />} Apellido Paterno
+                          </label>
+                          {isExpedienteCotejado ? (
+                            <input
+                              type="text"
+                              name="apellidoPaterno"
+                              readOnly
+                              value={studentData?.apellidoPaterno || ''}
+                              className="mt-1 block w-full rounded-md p-2 border bg-slate-100 text-slate-700 border-slate-300 cursor-not-allowed font-bold uppercase"
+                            />
+                          ) : (
+                            <input type="text" name="apellidoPaterno" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.apellidoPaterno} />
+                          )}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">Apellido Materno</label>
-                          <input type="text" name="apellidoMaterno" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.apellidoMaterno} />
+                          <label className="flex items-center gap-1 text-sm font-medium text-slate-700">
+                            {isExpedienteCotejado && <Lock className="w-3.5 h-3.5 text-amber-600" />} Apellido Materno
+                          </label>
+                          {isExpedienteCotejado ? (
+                            <input
+                              type="text"
+                              name="apellidoMaterno"
+                              readOnly
+                              value={studentData?.apellidoMaterno || ''}
+                              className="mt-1 block w-full rounded-md p-2 border bg-slate-100 text-slate-700 border-slate-300 cursor-not-allowed font-bold uppercase"
+                            />
+                          ) : (
+                            <input type="text" name="apellidoMaterno" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.apellidoMaterno} />
+                          )}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">Nombre(s)</label>
-                          <input type="text" name="nombres" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nombres} />
+                          <label className="flex items-center gap-1 text-sm font-medium text-slate-700">
+                            {isExpedienteCotejado && <Lock className="w-3.5 h-3.5 text-amber-600" />} Nombre(s)
+                          </label>
+                          {isExpedienteCotejado ? (
+                            <input
+                              type="text"
+                              name="nombres"
+                              readOnly
+                              value={studentData?.nombres || ''}
+                              className="mt-1 block w-full rounded-md p-2 border bg-slate-100 text-slate-700 border-slate-300 cursor-not-allowed font-bold uppercase"
+                            />
+                          ) : (
+                            <input type="text" name="nombres" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.nombres} />
+                          )}
                         </div>
-                        
+
                         <div>
-                          <label className="block text-sm font-medium">CURP</label>
-                          <input type="text" name="curp" required maxLength="18" minLength="18" onChange={handleCurpInput} className="mt-1 block w-full rounded-md p-2 border uppercase" defaultValue={studentData?.curp} />
+                          <label className="flex items-center gap-1 text-sm font-medium text-slate-700">
+                            {isExpedienteCotejado && <Lock className="w-3.5 h-3.5 text-amber-600" />} CURP
+                          </label>
+                          {isExpedienteCotejado ? (
+                            <input
+                              type="text"
+                              name="curp"
+                              readOnly
+                              value={studentData?.curp || ''}
+                              className="mt-1 block w-full rounded-md p-2 border bg-slate-100 text-indigo-900 border-slate-300 cursor-not-allowed font-mono font-bold uppercase"
+                            />
+                          ) : (
+                            <input type="text" name="curp" required maxLength="18" minLength="18" onChange={handleCurpInput} className="mt-1 block w-full rounded-md p-2 border uppercase" defaultValue={studentData?.curp} />
+                          )}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">Género</label>
-                          <select name="genero" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.genero}>
-                            <option>Seleccionar</option><option>Hombre</option><option>Mujer</option>
-                          </select>
+                          <label className="flex items-center gap-1 text-sm font-medium text-slate-700">
+                            {isExpedienteCotejado && studentData?.genero && <Lock className="w-3.5 h-3.5 text-amber-600" />} Género
+                          </label>
+                          {isExpedienteCotejado && studentData?.genero ? (
+                            <input
+                              type="text"
+                              name="genero"
+                              readOnly
+                              value={studentData.genero}
+                              className="mt-1 block w-full rounded-md p-2 border bg-slate-100 text-slate-700 border-slate-300 cursor-not-allowed font-semibold"
+                            />
+                          ) : (
+                            <select name="genero" className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.genero}>
+                              <option>Seleccionar</option><option>Hombre</option><option>Mujer</option>
+                            </select>
+                          )}
                         </div>
                         <div>
-                          <label className="block text-sm font-medium">Fecha de Nacimiento</label>
-                          <input type="date" name="fechaNacimiento" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.fechaNacimiento} />
+                          <label className="flex items-center gap-1 text-sm font-medium text-slate-700">
+                            {isExpedienteCotejado && studentData?.fechaNacimiento && <Lock className="w-3.5 h-3.5 text-amber-600" />} Fecha de Nacimiento
+                          </label>
+                          {isExpedienteCotejado && studentData?.fechaNacimiento ? (
+                            <input
+                              type="date"
+                              name="fechaNacimiento"
+                              readOnly
+                              value={studentData.fechaNacimiento}
+                              className="mt-1 block w-full rounded-md p-2 border bg-slate-100 text-slate-700 border-slate-300 cursor-not-allowed font-semibold"
+                            />
+                          ) : (
+                            <input type="date" name="fechaNacimiento" required className="mt-1 block w-full rounded-md p-2 border" defaultValue={studentData?.fechaNacimiento} />
+                          )}
                         </div>
                         <div>
                           <label className="block text-sm font-medium">Nacionalidad (País de Nacimiento)</label>
