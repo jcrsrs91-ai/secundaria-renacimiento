@@ -1,7 +1,7 @@
 import React from 'react';
 import { resolverModeloArticulo } from '../utils/modeloHelper';
 
-export default function CartaResguardoPrint({ data, inventario = [], onBack }) {
+export default function CartaResguardoPrint({ data, inventario = [], onBack, onEdit }) {
   if (!data) return null;
 
   const cleanField = (val) => {
@@ -14,8 +14,14 @@ export default function CartaResguardoPrint({ data, inventario = [], onBack }) {
   };
 
   const validArts = Array.isArray(data.articulos)
-    ? data.articulos.filter(art => art.cantidad || art.descripcion || art.articulo || art.marca)
+    ? data.articulos.filter(
+        art => art.cantidad || art.descripcion || art.articulo || art.concepto || art.marca || art.codigo
+      )
     : [];
+
+  const totalPiezas = validArts.reduce((sum, art) => sum + (Number(art.cantidad) || 1), 0);
+  const nombreResponsable = data.nombreResguardante || data.resguardante || '';
+  const areaCargo = data.areaResguardante || data.area || data.cargo || '';
 
   const getModeloParaImprimir = (art) => {
     if (data.isBlank) return '';
@@ -23,12 +29,18 @@ export default function CartaResguardoPrint({ data, inventario = [], onBack }) {
   };
 
   const formatDate = (dateString) => {
-    if (dateString && dateString.toDate) {
+    if (data.isBlank || !dateString) return '___/___/_____';
+    if (typeof dateString === 'object' && typeof dateString.toDate === 'function') {
       const d = dateString.toDate();
-      return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+      if (!isNaN(d.getTime())) {
+        return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+      }
     }
-    if (!dateString) return '___/___/_____';
-    const d = new Date(dateString + 'T00:00:00');
+    const raw = String(dateString).trim();
+    if (!raw) return '___/___/_____';
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) return raw;
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T00:00:00`) : new Date(raw);
+    if (isNaN(d.getTime())) return raw;
     return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
   };
 
@@ -48,15 +60,46 @@ export default function CartaResguardoPrint({ data, inventario = [], onBack }) {
         }
       `}</style>
       
-      <div className="no-print flex flex-wrap justify-between items-center gap-3 mb-2 border-b border-slate-200 pb-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <button onClick={onBack} className="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium text-sm">
-            Volver a Inventario
+      <div className="no-print mb-5 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-lg flex flex-wrap justify-between items-center gap-3">
+        <div>
+          <h4 className="text-sm font-black uppercase tracking-wider text-indigo-300">
+            Vista Previa — Carta Oficial de Resguardo
+          </h4>
+          <p className="text-xs text-slate-300 mt-0.5">
+            {data.isBlank ? (
+              'Formato oficial en blanco para levantamiento físico a mano (Orientación Horizontal)'
+            ) : (
+              <>
+                Folio: <strong>{data.folio || 'S/F'}</strong> · Responsable: <strong>{nombreResponsable || 'Sin asignar'}</strong> · Área: <strong>{areaCargo || 'N/A'}</strong> · {validArts.length} partida(s) ({totalPiezas} pzas.)
+              </>
+            )}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => (onBack ? onBack() : window.history.back())}
+            className="px-3.5 py-2 text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-bold text-xs transition"
+          >
+            ⬅️ Volver a Inventario / Resguardos
+          </button>
+          {onEdit && !data.isBlank && (
+            <button
+              type="button"
+              onClick={() => onEdit(data)}
+              className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-bold text-xs shadow transition"
+            >
+              ✏️ Editar Resguardo
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow text-xs uppercase tracking-wider transition"
+          >
+            🖨️ Imprimir / Guardar PDF
           </button>
         </div>
-        <button onClick={() => window.print()} className="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-bold shadow-sm text-sm">
-          Imprimir Documento
-        </button>
       </div>
       
       {/* HEADER */}
@@ -93,11 +136,11 @@ export default function CartaResguardoPrint({ data, inventario = [], onBack }) {
           <div className="p-2 text-[10px] space-y-2.5 relative flex-1">
             <div className="flex">
               <span className="font-bold w-24">NOMBRE:</span>
-              <span className="border-b border-black flex-1 uppercase">{data.nombreResguardante || ''}</span>
+              <span className="border-b border-black flex-1 uppercase">{nombreResponsable}</span>
             </div>
             <div className="flex">
               <span className="font-bold w-24">ÁREA / CARGO:</span>
-              <span className="border-b border-black flex-1 uppercase">{data.areaResguardante || data.area || data.cargo || ''}</span>
+              <span className="border-b border-black flex-1 uppercase">{areaCargo}</span>
             </div>
             <div className="flex">
               <span className="font-bold w-24">DOMICILIO:</span>
@@ -203,7 +246,7 @@ export default function CartaResguardoPrint({ data, inventario = [], onBack }) {
             validArts.map((art, idx) => (
               <tr key={idx}>
                 <td className="border border-black p-1 font-bold">{art.cantidad}</td>
-                <td className="border border-black p-1 uppercase">{art.descripcion || art.articulo}</td>
+                <td className="border border-black p-1 uppercase">{art.descripcion || art.articulo || art.concepto || ''}</td>
                 <td className="border border-black p-1 uppercase">{cleanField(art.marca)}</td>
                 <td className="border border-black p-1 uppercase">{getModeloParaImprimir(art)}</td>
                 <td className="border border-black p-1 uppercase font-mono">{cleanField(art.serie)}</td>
@@ -251,7 +294,7 @@ export default function CartaResguardoPrint({ data, inventario = [], onBack }) {
           </div>
           <div className="text-center font-bold text-[10px] mb-1 px-2 uppercase">
             <div className="border-t border-black pt-1 mt-10 w-3/4 mx-auto"></div>
-            {data.nombreResguardante || ''}
+            {nombreResponsable}
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useState, useEffect, useMemo } from 'react';
-import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu, Wallet, AlertTriangle, TrendingUp, TrendingDown, BarChart as BarChartIcon, FileSpreadsheet, PieChart as PieChartIcon, Copy, ArrowRightLeft, ClipboardCheck } from 'lucide-react';
+import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit2, Trash2, ScanLine, Search, Download, History, Monitor, Laptop, Projector, BookOpen, Tv, Speaker, Keyboard, Mouse, Server, Smartphone, Tablet, Archive, PenTool, Box, Armchair, Cpu, Wallet, AlertTriangle, TrendingUp, TrendingDown, BarChart as BarChartIcon, FileSpreadsheet, PieChart as PieChartIcon, Copy, ArrowRightLeft, ClipboardCheck, LayoutGrid, List, Building2, ChevronDown, ChevronUp, SlidersHorizontal, Eye, Sparkles, MapPin, Layers } from 'lucide-react';
 
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
@@ -283,11 +283,17 @@ export default function Inventario() {
   const [selectedItems, setSelectedItems] = useState([]); // Array de IDs seleccionados
   const [showScannerModal, setShowScannerModal] = useState(false);
 
-  // Estados para búsqueda y filtrado de inventario
+  // Estados para búsqueda, filtrado y vistas mejoradas de inventario
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [locationFilter, setLocationFilter] = useState('Todos');
   const [categoryFilter, setCategoryFilter] = useState('Todas');
+  const [inventoryViewMode, setInventoryViewMode] = useState('tabla'); // 'tabla' | 'areas' | 'tarjetas'
+  const [showCategoryBreakdown, setShowCategoryBreakdown] = useState(false);
+  const [breakdownTab, setBreakdownTab] = useState('global'); // 'global' | 'nuevos'
+  const [showMaintenanceMenu, setShowMaintenanceMenu] = useState(false);
+  const [expandedAreaCard, setExpandedAreaCard] = useState(null);
+  const [resguardoAreaFilter, setResguardoAreaFilter] = useState('Todas');
 
   // Estados para resguardos y actas de alta/baja
   const [resguardos, setResguardos] = useState([]);
@@ -769,11 +775,15 @@ export default function Inventario() {
     }
   };
 
-  useEffect(() => {
-    const handleAfterPrint = () => setPrintMode(null);
-    window.addEventListener('afterprint', handleAfterPrint);
-    return () => window.removeEventListener('afterprint', handleAfterPrint);
-  }, []);
+  // Mantener vista previa estable sin cerrar automáticamente por 'afterprint' hasta que el usuario pulse Volver
+  const openPrintPreview = (mode, data, autoPrint = false) => {
+    setPrintData(data);
+    setPrintMode(mode);
+    window.scrollTo(0, 0);
+    if (autoPrint) {
+      setTimeout(() => window.print(), 450);
+    }
+  };
 
   const openModal = (type) => {
     setModalOpen(type);
@@ -2697,31 +2707,125 @@ Esta acción no se puede deshacer.`);
 
   const crearDesglose = (inv) => {
     const agrupado = inv.reduce((acc, item) => {
-      const categoria = getCategoryForArticulo(item.articulo);
+      const categoria = getCategoryForArticulo(item.articulo || item.descripcion);
       if (!acc[categoria]) acc[categoria] = { total: 0, subItems: {} };
-      
-      const cantidad = Number(item.cantidad) || 0;
+
+      const cantidad = Number(item.cantidad) || 1;
       acc[categoria].total += cantidad;
-      
-      const nombreExacto = item.articulo ? item.articulo.trim() : 'Sin descripción';
+
+      const nombreExacto = (item.articulo || item.descripcion || 'Sin descripción').trim();
       acc[categoria].subItems[nombreExacto] = (acc[categoria].subItems[nombreExacto] || 0) + cantidad;
-      
+
       return acc;
     }, {});
 
     return Object.entries(agrupado)
-      .map(([nombre, data]) => ({ 
-        nombre, 
+      .map(([nombre, data]) => ({
+        nombre,
         cantidad: data.total,
         detalles: Object.entries(data.subItems)
           .map(([desc, cant]) => `${cant}x ${desc}`)
-          .sort((a, b) => b.localeCompare(a)) 
+          .sort((a, b) => b.localeCompare(a))
       }))
       .sort((a, b) => b.cantidad - a.cantidad);
   };
 
   const desgloseNuevosArray = crearDesglose(inventarioNuevos);
   const desgloseUsadosArray = crearDesglose(inventarioUsados);
+
+  const totalPiezasFiltradas = filteredInventario.reduce((sum, item) => sum + (Number(item.cantidad) || 1), 0);
+  const hasActiveFilters = Boolean(
+    searchTerm || statusFilter !== 'Todos' || locationFilter !== 'Todos' || categoryFilter !== 'Todas'
+  );
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('Todos');
+    setLocationFilter('Todos');
+    setCategoryFilter('Todas');
+  };
+
+  const inventarioAgrupadoPorArea = useMemo(() => {
+    const groups = {};
+    filteredInventario.forEach(item => {
+      const areaKey = (item.ubicacion || 'Sin ubicar').trim();
+      if (!groups[areaKey]) {
+        const resMatch = resguardos.find(
+          r => (r.areaResguardante || r.area || r.cargo || '').trim().toLowerCase() === areaKey.toLowerCase()
+        );
+        groups[areaKey] = {
+          area: areaKey,
+          items: [],
+          totalPiezas: 0,
+          resguardoRelacionado: resMatch || null,
+          nuevoBuenoCount: 0,
+          regularMaloCount: 0
+        };
+      }
+      const cant = Number(item.cantidad) || 1;
+      const est = item.estadoFisico || item.estado || 'Bueno';
+      groups[areaKey].items.push(item);
+      groups[areaKey].totalPiezas += cant;
+      if (['Regular', 'Malo'].includes(est)) {
+        groups[areaKey].regularMaloCount += cant;
+      } else if (est !== 'Baja') {
+        groups[areaKey].nuevoBuenoCount += cant;
+      }
+    });
+    return Object.values(groups).sort((a, b) =>
+      a.area.localeCompare(b.area, undefined, { numeric: true, sensitivity: 'base' })
+    );
+  }, [filteredInventario, resguardos]);
+
+  const resguardosTotalPiezas = useMemo(
+    () =>
+      resguardos.reduce(
+        (sum, r) =>
+          sum +
+          (Array.isArray(r.articulos)
+            ? r.articulos.reduce((s, a) => s + (Number(a.cantidad) || 1), 0)
+            : 0),
+        0
+      ),
+    [resguardos]
+  );
+
+  const resguardosAreasUnicas = useMemo(
+    () =>
+      [...new Set(resguardos.map(r => (r.areaResguardante || r.area || r.cargo || '').trim()).filter(Boolean))].sort(
+        (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+      ),
+    [resguardos]
+  );
+
+  const filteredResguardos = useMemo(() => {
+    return resguardos.filter(r => {
+      const areaVal = (r.areaResguardante || r.area || r.cargo || '').trim();
+      const matchArea = resguardoAreaFilter === 'Todas' || areaVal === resguardoAreaFilter;
+      const matchSearch =
+        !resguardoSearch ||
+        searchIncludes(r.resguardante || r.nombreResguardante, resguardoSearch) ||
+        searchIncludes(areaVal, resguardoSearch) ||
+        searchIncludes(r.folio, resguardoSearch) ||
+        (Array.isArray(r.articulos) &&
+          r.articulos.some(
+            a =>
+              searchIncludes(a.descripcion || a.articulo || a.concepto, resguardoSearch) ||
+              searchIncludes(a.codigo, resguardoSearch) ||
+              searchIncludes(a.marca, resguardoSearch) ||
+              searchIncludes(a.serie, resguardoSearch)
+          ));
+      return matchArea && matchSearch;
+    });
+  }, [resguardos, resguardoAreaFilter, resguardoSearch]);
+
+  const formatFechaCorta = (fechaVal) => {
+    if (!fechaVal) return 'N/A';
+    if (typeof fechaVal === 'object' && typeof fechaVal.toDate === 'function') {
+      const d = fechaVal.toDate();
+      return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString('es-MX');
+    }
+    return String(fechaVal);
+  };
 
 
   return (
@@ -2731,43 +2835,167 @@ Esta acción no se puede deshacer.`);
          <CajaLockScreen userEmail={currentUser?.email} onCajaAbierta={(id, turno, fondo) => setCajaTurno({id, turno, fondoInicial: fondo})} />
       ) : (
         <>
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">Inventario y Resguardos Escolares</h2>
-          <p className="text-slate-500 text-sm">Control integral de bienes muebles, equipos, resguardos por área y actas oficiales de alta y baja.</p>
+      {/* Encabezado Ejecutivo del Módulo de Inventario */}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-5 sm:p-6 text-white shadow-lg border border-slate-700/60 relative overflow-visible">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-[11px] font-bold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-300" /> Contraloría Interna · EST N° 68
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+              Inventario Escolar y Actas de Resguardo
+            </h2>
+            <p className="text-slate-300 text-xs sm:text-sm max-w-2xl">
+              Administración integral de <strong className="text-white">{totalArticulos} bienes activos</strong> en <strong className="text-white">{ubicacionesUnicas.filter(u => u !== 'Bodega Contraloría').length} áreas</strong> y <strong className="text-white">{resguardos.length} cartas de resguardo</strong>.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 relative">
+            <button
+              type="button"
+              onClick={() => openModal('recepcion')}
+              className="inline-flex items-center px-3.5 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl text-xs font-extrabold shadow-sm transition"
+            >
+              <Plus className="w-4 h-4 mr-1.5" /> Alta de Bienes
+            </button>
+            <button
+              type="button"
+              onClick={() => openModal('resguardo')}
+              className="inline-flex items-center px-3.5 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl text-xs font-extrabold shadow-sm transition"
+            >
+              <FileText className="w-4 h-4 mr-1.5" /> Nueva Carta de Resguardo
+            </button>
+            <button
+              type="button"
+              onClick={() => openPrintPreview('cedula_censal', null)}
+              className="inline-flex items-center px-3.5 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/40 rounded-xl text-xs font-bold transition"
+            >
+              <Layers className="w-4 h-4 mr-1.5" /> Cédula Censal SEG
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowScannerModal(true)}
+              className="inline-flex items-center px-3 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/15 rounded-xl text-xs font-bold transition"
+            >
+              <ScanLine className="w-4 h-4 mr-1.5" /> Escáner
+            </button>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowMaintenanceMenu(prev => !prev)}
+                className={`inline-flex items-center px-3 py-2 rounded-xl text-xs font-bold border transition ${
+                  showMaintenanceMenu
+                    ? 'bg-amber-400 text-slate-950 border-amber-300'
+                    : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-slate-600'
+                }`}
+                title="Herramientas avanzadas de mantenimiento de catálogo"
+              >
+                <SlidersHorizontal className="w-4 h-4 mr-1.5" /> Mantenimiento
+                <ChevronDown className="w-3.5 h-3.5 ml-1" />
+              </button>
+
+              {showMaintenanceMenu && (
+                <div className="absolute right-0 mt-2 w-64 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 py-1.5 z-40">
+                  <button
+                    type="button"
+                    onClick={() => { setShowMaintenanceMenu(false); handleAutoRellenarModelosResguardos(); }}
+                    className="w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-emerald-50 text-emerald-800 flex items-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    Auto-rellenar Modelos Faltantes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowMaintenanceMenu(false); migrateToInitials(); }}
+                    className="w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-indigo-50 text-indigo-800 flex items-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                    Regenerar Códigos por Iniciales
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowMaintenanceMenu(false); cleanOrphanedItems(); }}
+                    className="w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-sky-50 text-sky-800 flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4 text-sky-600 shrink-0" />
+                    Limpiar Bienes Fantasmas
+                  </button>
+                  <div className="border-t border-slate-100 my-1" />
+                  <button
+                    type="button"
+                    onClick={() => { setShowMaintenanceMenu(false); handleExportCSV(); }}
+                    className="w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-slate-50 text-slate-700 flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4 text-slate-500 shrink-0" />
+                    Exportar Inventario Filtrado (CSV)
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Tabs adaptadas para Celular y PC */}
-      <div className="border-b border-slate-200">
-        <nav className="-mb-px grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-4">
+      {/* Pestañas de Navegación Modernas */}
+      <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+        <nav className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
           <button
+            type="button"
             onClick={() => setActiveTab('inventario')}
-            className={`py-3 sm:py-4 px-2.5 sm:px-3 border-b-2 font-bold text-xs sm:text-sm transition-colors flex items-center justify-center sm:justify-start rounded-t-lg ${activeTab === 'inventario' ? 'border-primary-600 text-primary-700 bg-primary-50/60' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+            className={`py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'inventario'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
           >
-            <PackageOpen className="w-4 h-4 mr-1.5 shrink-0" />
-            <span className="truncate">Inventario ({totalArticulos})</span>
+            <PackageOpen className="w-4 h-4 shrink-0" />
+            <span className="truncate">Inventario</span>
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'inventario' ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              {totalArticulos}
+            </span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('resguardos')}
-            className={`py-3 sm:py-4 px-2.5 sm:px-3 border-b-2 font-bold text-xs sm:text-sm transition-colors flex items-center justify-center sm:justify-start rounded-t-lg ${activeTab === 'resguardos' ? 'border-primary-600 text-primary-700 bg-primary-50/60' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+            className={`py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'resguardos'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
           >
-            <FileText className="w-4 h-4 mr-1.5 shrink-0" />
-            <span className="truncate">Resguardos ({resguardos.length})</span>
+            <FileText className="w-4 h-4 shrink-0" />
+            <span className="truncate">Resguardos</span>
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'resguardos' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'}`}>
+              {resguardos.length}
+            </span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('actas')}
-            className={`py-3 sm:py-4 px-2.5 sm:px-3 border-b-2 font-bold text-xs sm:text-sm transition-colors flex items-center justify-center sm:justify-start rounded-t-lg ${activeTab === 'actas' ? 'border-primary-600 text-primary-700 bg-primary-50/60' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+            className={`py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'actas'
+                ? 'bg-sky-600 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
           >
-            <History className="w-4 h-4 mr-1.5 shrink-0" />
-            <span className="truncate">Altas y Bajas ({actasRecepcion.length + actasBaja.length})</span>
+            <History className="w-4 h-4 shrink-0" />
+            <span className="truncate">Altas y Bajas</span>
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === 'actas' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              {actasRecepcion.length + actasBaja.length}
+            </span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('auditoria')}
-            className={`py-3 sm:py-4 px-2.5 sm:px-3 border-b-2 font-bold text-xs sm:text-sm transition-colors flex items-center justify-center sm:justify-start rounded-t-lg ${activeTab === 'auditoria' ? 'border-emerald-600 text-emerald-700 bg-emerald-50/60' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+            className={`py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${
+              activeTab === 'auditoria'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
           >
-            <ClipboardCheck className="w-4 h-4 mr-1.5 shrink-0 text-emerald-600" />
-            <span className="truncate">Auditoría Física (Check-list)</span>
+            <ClipboardCheck className="w-4 h-4 shrink-0" />
+            <span className="truncate">Auditoría Física</span>
           </button>
         </nav>
       </div>
@@ -3120,464 +3348,937 @@ Esta acción no se puede deshacer.`);
 
 
       {activeTab === 'inventario' && (
-        <div className="space-y-6">
-          {/* Tarjetas Ejecutivas de Resumen de Inventario (KPIs) */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            <div onClick={() => { setStatusFilter('Todos'); setLocationFilter('Todos'); }} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-indigo-300 cursor-pointer transition-all">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Bienes Activos</p>
-              <p className="text-2xl font-black text-slate-800 mt-1">{totalArticulos}</p>
-              <p className="text-[11px] text-indigo-600 font-semibold mt-1">{ubicacionesUnicas.filter(u => u !== 'Baja Definitiva').length} áreas registradas</p>
-            </div>
-            <div onClick={() => { setStatusFilter('Todos'); setLocationFilter('Todos'); }} className="bg-white border border-emerald-200 rounded-xl p-4 shadow-sm hover:border-emerald-400 cursor-pointer transition-all">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">En Resguardo (Asignados)</p>
-              <p className="text-2xl font-black text-emerald-700 mt-1">{enResguardoCount}</p>
-              <p className="text-[11px] text-slate-500 mt-1">{resguardos.length} actas de resguardo</p>
-            </div>
-            <div onClick={() => { setStatusFilter('Todos'); setLocationFilter('Bodega Contraloría'); }} className="bg-white border border-blue-200 rounded-xl p-4 shadow-sm hover:border-blue-400 cursor-pointer transition-all">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-blue-600">Disponibles en Bodega</p>
-              <p className="text-2xl font-black text-blue-700 mt-1">{libres}</p>
-              <p className="text-[11px] text-slate-500 mt-1">Clic para filtrar bodega</p>
-            </div>
-            <div onClick={() => { setStatusFilter('Malo'); setLocationFilter('Todos'); }} className="bg-white border border-amber-200 rounded-xl p-4 shadow-sm hover:border-amber-400 cursor-pointer transition-all">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Regular / Mal Estado</p>
-              <p className="text-2xl font-black text-amber-700 mt-1">{porRevisarCount}</p>
-              <p className="text-[11px] text-slate-500 mt-1">Requieren revisión o baja</p>
-            </div>
-            <div onClick={() => { setStatusFilter('Baja'); setLocationFilter('Todos'); }} className="bg-white border border-rose-200 rounded-xl p-4 shadow-sm hover:border-rose-400 cursor-pointer transition-all">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-rose-600">Bajas Definitivas</p>
-              <p className="text-2xl font-black text-rose-700 mt-1">{bajasCount}</p>
-              <p className="text-[11px] text-slate-500 mt-1">Clic para ver bajas</p>
-            </div>
+        <div className="space-y-5 animate-in fade-in-50 duration-200">
+          {/* 1. Tarjetas Ejecutivas de Resumen de Inventario (KPIs) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className={`text-left bg-white border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-3 ${
+                !hasActiveFilters ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-slate-200 hover:border-indigo-300'
+              }`}
+            >
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Bienes Activos</p>
+                <p className="text-2xl font-black text-slate-900 mt-0.5">{totalArticulos}</p>
+                <p className="text-[11px] text-indigo-600 font-semibold mt-1">
+                  {ubicacionesUnicas.filter(u => u !== 'Bodega Contraloría' && u !== 'Baja Definitiva').length} áreas activas
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                <PackageOpen className="w-5 h-5" />
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setStatusFilter('Todos'); setLocationFilter('Todos'); }}
+              className="text-left bg-white border border-emerald-200 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all flex items-center justify-between gap-3"
+            >
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">En Resguardo</p>
+                <p className="text-2xl font-black text-emerald-700 mt-0.5">{enResguardoCount}</p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {totalArticulos > 0 ? `${Math.round((enResguardoCount / totalArticulos) * 100)}%` : '0%'} · {resguardos.length} actas
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter('Todos');
+                setLocationFilter(locationFilter === 'Bodega Contraloría' ? 'Todos' : 'Bodega Contraloría');
+              }}
+              className={`text-left bg-white border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-3 ${
+                locationFilter === 'Bodega Contraloría' ? 'border-sky-500 ring-2 ring-sky-100' : 'border-sky-200 hover:border-sky-400'
+              }`}
+            >
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-sky-600">En Bodega</p>
+                <p className="text-2xl font-black text-sky-700 mt-0.5">{libres}</p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {locationFilter === 'Bodega Contraloría' ? 'Filtro activo' : 'Disponibles libres'}
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <Archive className="w-5 h-5" />
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setLocationFilter('Todos');
+                setStatusFilter(statusFilter === 'Malo' ? 'Regular' : statusFilter === 'Regular' ? 'Todos' : 'Malo');
+              }}
+              className={`text-left bg-white border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-3 ${
+                ['Malo', 'Regular'].includes(statusFilter) ? 'border-amber-500 ring-2 ring-amber-100' : 'border-amber-200 hover:border-amber-400'
+              }`}
+            >
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Regular / Malo</p>
+                <p className="text-2xl font-black text-amber-700 mt-0.5">{porRevisarCount}</p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {['Malo', 'Regular'].includes(statusFilter) ? `Viendo: ${statusFilter}` : 'Por revisar o baja'}
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setLocationFilter('Todos');
+                setStatusFilter(statusFilter === 'Baja' ? 'Todos' : 'Baja');
+              }}
+              className={`col-span-2 sm:col-span-1 text-left bg-white border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-3 ${
+                statusFilter === 'Baja' ? 'border-rose-500 ring-2 ring-rose-100' : 'border-rose-200 hover:border-rose-400'
+              }`}
+            >
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-rose-600">Bajas Definitivas</p>
+                <p className="text-2xl font-black text-rose-700 mt-0.5">{bajasCount}</p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {statusFilter === 'Baja' ? 'Viendo bajas' : 'Clic para consultar'}
+                </p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+            </button>
           </div>
 
-          {/* Desglose de Bienes Nuevos */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-              <h4 className="text-lg font-bold text-slate-800 flex items-center">
-                <PackageOpen className="w-6 h-6 mr-2 text-indigo-600" /> Bienes Nuevos
-              </h4>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto pr-2 custom-scrollbar pb-2">
-              {desgloseNuevosArray.length > 0 ? desgloseNuevosArray.map((item, idx) => (
-                <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center hover:border-indigo-300 hover:shadow-md transition-all group">
-                  <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 mb-3 transition-colors">
-                    {getIconForArticulo(item.nombre)}
-                  </div>
-                  <span className="text-xs font-semibold text-slate-600 mb-1 line-clamp-2 leading-tight min-h-[2.5rem] flex items-center">{item.nombre}</span>
-                  <span className="text-2xl font-black text-indigo-600 mb-2">{item.cantidad}</span>
-                  <div className="w-full text-left text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 flex-1 overflow-y-auto custom-scrollbar min-h-[3rem]">
-                    {item.detalles.map((det, i) => (
-                      <div key={i} className="truncate" title={det}>- {det}</div>
-                    ))}
-                  </div>
-                </div>
-              )) : (
-                <div className="col-span-full py-6 text-center text-slate-500 italic">No hay artículos nuevos registrados.</div>
-              )}
-            </div>
-          </div>
-
-          {/* Desglose de Bienes en Uso */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-inner">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-              <h4 className="text-lg font-bold text-slate-800 flex items-center">
-                <Archive className="w-6 h-6 mr-2 text-indigo-600" /> Inventario Global Consolidado (Nuevos + En Uso)
-              </h4>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 overflow-y-auto pr-2 custom-scrollbar pb-2">
-              {desgloseUsadosArray.length > 0 ? desgloseUsadosArray.map((item, idx) => (
-                <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col items-center justify-center text-center hover:border-indigo-300 hover:shadow-md transition-all group">
-                  <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 mb-3 transition-colors">
-                    {getIconForArticulo(item.nombre)}
-                  </div>
-                  <span className="text-xs font-semibold text-slate-600 mb-1 line-clamp-2 leading-tight min-h-[2.5rem] flex items-center">{item.nombre}</span>
-                  <span className="text-2xl font-black text-indigo-600 mb-2">{item.cantidad}</span>
-                  <div className="w-full text-left text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 flex-1 overflow-y-auto custom-scrollbar min-h-[3rem]">
-                    {item.detalles.map((det, i) => (
-                      <div key={i} className="truncate" title={det}>- {det}</div>
-                    ))}
-                  </div>
-                </div>
-              )) : (
-                <div className="col-span-full py-6 text-center text-slate-500 italic">No hay artículos en uso registrados.</div>
-              )}
-            </div>
-          </div>
-
-          {/* Tarjetas de Formatos Oficiales */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
-              <div className="mb-3">
-                <h4 className="font-bold text-blue-900 text-lg">Acta de Recepción (Alta)</h4>
-                <p className="text-blue-700 text-xs mt-1">Alta oficial de bienes nuevos o donaciones.</p>
-              </div>
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => openModal('recepcion')} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold">
-                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Capturar / Generar
-                  </button>
-                  <button onClick={() => handlePrintBlank('recepcion')} className="bg-white hover:bg-blue-100 text-blue-700 border border-blue-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir formato en blanco con renglones para ir al área y anotar a mano">
-                    <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
-                  </button>
-                </div>
-                {actasRecepcion.length > 0 && (
-                  <button
-                    onClick={() => handleEditRecepcionClick(actasRecepcion[0])}
-                    className="w-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 p-1.5 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold"
-                    title="Abrir la última Acta de Recepción guardada para corregir datos o agregar bienes faltantes"
-                  >
-                    <Edit2 className="w-3.5 h-3.5 mr-1.5" /> Editar Última Alta (+ Agregar Bienes)
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="bg-gradient-to-r from-indigo-50 to-orange-50 border border-indigo-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
-              <div className="mb-3">
-                <h4 className="font-bold text-indigo-900 text-lg">Carta de Resguardo</h4>
-                <p className="text-indigo-700 text-xs mt-1">Asignar bienes a maestros, salones o áreas.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => openModal('resguardo')} className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold">
-                  <Plus className="w-3.5 h-3.5 mr-1.5" /> Capturar / Generar
-                </button>
-                <button onClick={() => handlePrintBlank('resguardo')} className="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir formato de resguardo en blanco para levantamiento físico a mano">
-                  <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
-                </button>
-              </div>
-            </div>
-            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
-              <div className="mb-3">
-                <h4 className="font-bold text-emerald-900 text-lg">Cédula Censal (SEG)</h4>
-                <p className="text-emerald-700 text-xs mt-1">Concentrado general de todas las cédulas de resguardo.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setPrintMode('cedula_censal')} className="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold">
-                  <FileText className="w-3.5 h-3.5 mr-1.5" /> Ver Concentrado
-                </button>
-                <button onClick={() => setPrintMode('cedula_censal_blank')} className="bg-white hover:bg-emerald-100 text-emerald-700 border border-emerald-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir formato oficial de Cédula Censal en blanco">
-                  <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
-                </button>
-              </div>
-            </div>
-            <div className="bg-gradient-to-r from-sky-50 to-pink-50 border border-sky-200 rounded-xl p-5 flex flex-col justify-between shadow-sm">
-              <div className="mb-3">
-                <h4 className="font-bold text-sky-900 text-lg">Acta de Baja</h4>
-                <p className="text-sky-700 text-xs mt-1">Desecho oficial de bienes inservibles.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => openModal('baja')} className="bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold">
-                  <Plus className="w-3.5 h-3.5 mr-1.5" /> Capturar / Generar
-                </button>
-                <button onClick={() => handlePrintBlank('baja')} className="bg-white hover:bg-sky-100 text-sky-700 border border-sky-300 p-2 rounded-lg shadow-sm transition flex items-center justify-center text-xs font-bold" title="Imprimir acta de baja en blanco para anotar bienes dañados a mano">
-                  <Printer className="w-3.5 h-3.5 mr-1.5" /> Formato en Blanco
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* BARRA DE BÚSQUEDA Y FILTRADO */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col lg:flex-row gap-4 items-end">
-            <div className="flex-1 w-full">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Buscar por Código, Artículo, Marca, Serie o Área</label>
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                <input 
-                  type="text" 
-                  className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                  placeholder="Ej. Silla, HP, Serie, Aula 3 o SIL-0001..." 
-                  value={searchTerm} 
-                  onChange={e => setSearchTerm(e.target.value)} 
-                />
-              </div>
-            </div>
-            <div className="w-full lg:w-44">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Categoría</label>
-              <select 
-                className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                value={categoryFilter} 
-                onChange={e => setCategoryFilter(e.target.value)}
-              >
-                <option value="Todas">Todas las categorías</option>
-                {categoriasUnicas.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-            <div className="w-full lg:w-44">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ubicación</label>
-              <select 
-                className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                value={locationFilter} 
-                onChange={e => setLocationFilter(e.target.value)}
-              >
-                <option value="Todos">Todas las ubicaciones</option>
-                {ubicacionesUnicas.map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
-                ))}
-              </select>
-            </div>
-            <div className="w-full lg:w-44">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Estado Físico</label>
-              <select 
-                className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                value={statusFilter} 
-                onChange={e => setStatusFilter(e.target.value)}
-              >
-                <option value="Todos">Activos (Sin Bajas)</option>
-                <option value="Nuevo">Nuevo</option>
-                <option value="Bueno">Bueno</option>
-                <option value="Regular">Regular</option>
-                <option value="Malo">Malo</option>
-                <option value="Baja">Baja Definitiva</option>
-                <option value="Todos_Incl_Baja">Todos (Incl. Bajas)</option>
-              </select>
-            </div>
-            <div className="w-full lg:w-auto flex flex-col sm:flex-row gap-2">
-              <button 
-                onClick={migrateToInitials}
-                title="Actualiza los códigos al nuevo formato de Iniciales (VDT-0001)."
-                className="w-full lg:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 border border-indigo-600 rounded-lg text-xs font-bold shadow-sm transition-colors"
-              >
-                Regenerar Códigos
-              </button>
-              
-              <button 
-                onClick={cleanOrphanedItems}
-                disabled={isSubmitting}
-                title="Elimina bienes que perdieron su resguardo y quedaron atrapados."
-                className="w-full lg:w-auto bg-sky-500 hover:bg-sky-600 text-white px-3 py-2 border border-sky-600 rounded-lg text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
-              >
-                Limpiar Fantasmas
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-              <div className="flex items-center justify-between w-full md:w-auto">
-                <h3 className="font-semibold text-slate-700">
-                  Catálogo de Bienes ({filteredInventario.length})
-                </h3>
+          {/* 2. Tira Horizontal de Categorías (Chips Interactivos) + Toggle de Desglose y Formatos */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
                 <button
                   type="button"
-                  onClick={toggleSelectAll}
-                  className="md:hidden text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-200"
+                  onClick={() => setCategoryFilter('Todas')}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition ${
+                    categoryFilter === 'Todas'
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
                 >
-                  {filteredInventario.length > 0 && filteredInventario.every(item => selectedItems.includes(item.id))
-                    ? 'Deseleccionar todos'
-                    : 'Seleccionar todos'}
+                  <span>Todas</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${categoryFilter === 'Todas' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                    {totalArticulos}
+                  </span>
                 </button>
+                {desgloseUsadosArray.map(cat => {
+                  const isActive = categoryFilter === cat.nombre;
+                  return (
+                    <button
+                      key={cat.nombre}
+                      type="button"
+                      onClick={() => setCategoryFilter(isActive ? 'Todas' : cat.nombre)}
+                      className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition ${
+                        isActive
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/60'
+                      }`}
+                    >
+                      <span className="w-3.5 h-3.5 flex items-center justify-center [&>svg]:w-3.5 [&>svg]:h-3.5">
+                        {getIconForArticulo(cat.nombre)}
+                      </span>
+                      <span>{cat.nombre}</span>
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'}`}>
+                        {cat.cantidad}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full md:w-auto">
-                {selectedItems.length > 0 && (
-                  <>
-                    <button onClick={() => openTraspasoModal()} className="flex items-center justify-center px-3 py-2 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 shadow-sm transition-colors">
-                      <ArrowRightLeft className="w-4 h-4 mr-1.5" /> Traspasar ({selectedItems.length})
-                    </button>
-                    <button onClick={handlePrintEtiquetas} className="flex items-center justify-center px-3 py-2 bg-slate-800 text-white rounded-lg text-xs font-medium hover:bg-slate-900 shadow-sm transition-colors">
-                      <Printer className="w-4 h-4 mr-1.5" /> Etiquetas QR ({selectedItems.length})
-                    </button>
-                    <button onClick={() => openModal('resguardo')} className="flex items-center justify-center px-3 py-2 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-medium hover:bg-indigo-200 shadow-sm transition-colors border border-indigo-200">
-                      <FileText className="w-4 h-4 mr-1.5" /> Asignar Resguardo
-                    </button>
-                    <button onClick={() => openModal('baja')} className="flex items-center justify-center px-3 py-2 bg-sky-100 text-sky-800 rounded-lg text-xs font-medium hover:bg-sky-200 shadow-sm transition-colors border border-sky-200">
-                      <FileText className="w-4 h-4 mr-1.5" /> Dar de Baja
-                    </button>
-                    <button onClick={() => handleBulkStatusChange('Nuevo')} className="flex items-center justify-center px-3 py-2 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-medium hover:bg-emerald-200 shadow-sm transition-colors border border-emerald-200">
-                      <CheckCircle2 className="w-4 h-4 mr-1.5" /> Marcar Nuevo
-                    </button>
-                    <button onClick={handleBulkDelete} className="flex items-center justify-center px-3 py-2 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 shadow-sm transition-colors border border-red-200">
-                      <Trash2 className="w-4 h-4 mr-1.5" /> Eliminar ({selectedItems.length})
-                    </button>
-                  </>
-                )}
-                <button onClick={handleExportCSV} className="flex items-center justify-center px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors">
-                  <Download className="w-4 h-4 mr-1.5 text-primary-600" /> Exportar CSV
-                </button>
-                <button onClick={() => setShowScannerModal(true)} className="flex items-center justify-center px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors">
-                  <ScanLine className="w-4 h-4 mr-1.5" /> Escanear (OCR)
-                </button>
-                <button onClick={() => openModal('recepcion')} className="col-span-2 sm:col-span-1 flex items-center justify-center px-4 py-2 bg-primary-600 text-white rounded-lg text-xs sm:text-sm font-bold hover:bg-primary-700 shadow-sm transition-colors">
-                  <Plus className="w-4 h-4 mr-1" /> Añadir Artículo
-                </button>
-              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowCategoryBreakdown(prev => !prev)}
+                className={`shrink-0 inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold border transition ${
+                  showCategoryBreakdown
+                    ? 'bg-indigo-50 text-indigo-800 border-indigo-300'
+                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200/70'
+                }`}
+              >
+                <BarChartIcon className="w-3.5 h-3.5" />
+                <span>{showCategoryBreakdown ? 'Ocultar Resumen y Formatos' : 'Resumen y Formatos Oficiales'}</span>
+                {showCategoryBreakdown ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
             </div>
 
-            {/* VISTA MÓVIL (TARJETAS TÁCTILES PARA CELULAR) */}
-            <div className="md:hidden divide-y divide-slate-200">
-              {filteredInventario.length > 0 ? filteredInventario.map(item => {
-                const est = item.estadoFisico || item.estado || 'Bueno';
-                return (
-                  <div key={item.id} className={`p-3.5 transition-colors ${selectedItems.includes(item.id) ? 'bg-indigo-50/70' : 'bg-white'}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <label className="flex items-start gap-2.5 cursor-pointer flex-1 min-w-0">
-                        <input
-                          type="checkbox"
-                          className="w-5 h-5 mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 shrink-0"
-                          checked={selectedItems.includes(item.id)}
-                          onChange={() => toggleSelectItem(item.id)}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="font-mono text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                              {item.codigo || 'S/C'}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                              est === 'Baja' ? 'bg-slate-200 text-slate-600 line-through' :
-                              est === 'Nuevo' ? 'bg-emerald-100 text-emerald-700' :
-                              est === 'Malo' ? 'bg-red-100 text-red-700' :
-                              est === 'Regular' ? 'bg-amber-100 text-amber-700' :
-                              'bg-blue-100 text-blue-700'
-                            }`}>
-                              {est}
-                            </span>
-                            <span className="text-xs font-bold text-slate-500">Cant: {item.cantidad || 1}</span>
-                          </div>
-                          <p className="text-sm font-bold text-slate-800 mt-1 break-words">
-                            {item.articulo || item.descripcion || 'Sin nombre'}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            Marca: <strong>{item.marca || 'S/M'}</strong> {item.modelo ? `| Mod: ${item.modelo}` : ''} {item.serie ? `| Serie: ${item.serie}` : ''}
-                          </p>
-                          <div className="mt-1.5">
-                            <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-semibold border border-slate-200">
-                              📍 {item.ubicacion || 'Sin ubicar'}
-                            </span>
-                          </div>
-                        </div>
-                      </label>
-                    </div>
-                    <div className="grid grid-cols-4 gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
+            {showCategoryBreakdown && (
+              <div className="pt-3 border-t border-slate-200 space-y-5">
+                {/* Sub-tabs de Desglose: Global vs Nuevos */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+                    <h4 className="text-sm font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-indigo-600" /> Desglose Detallado por Categoría
+                    </h4>
+                    <div className="inline-flex bg-white p-1 rounded-lg border border-slate-200">
                       <button
-                        onClick={() => { setEditingItem(item); setModalOpen('editItem'); }}
-                        className="py-1.5 px-2 bg-primary-50 text-primary-700 rounded-lg text-xs font-bold flex items-center justify-center border border-primary-200"
+                        type="button"
+                        onClick={() => setBreakdownTab('global')}
+                        className={`px-3 py-1 rounded-md text-xs font-bold transition ${breakdownTab === 'global' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
                       >
-                        <Edit2 className="w-3.5 h-3.5 mr-1" /> Editar
+                        Global Consolidado ({desgloseUsadosArray.length})
                       </button>
                       <button
-                        onClick={() => openTraspasoModal([item.id])}
-                        className="py-1.5 px-2 bg-amber-50 text-amber-800 rounded-lg text-xs font-bold flex items-center justify-center border border-amber-200"
+                        type="button"
+                        onClick={() => setBreakdownTab('nuevos')}
+                        className={`px-3 py-1 rounded-md text-xs font-bold transition ${breakdownTab === 'nuevos' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
                       >
-                        <ArrowRightLeft className="w-3.5 h-3.5 mr-1" /> Mover
-                      </button>
-                      <button
-                        onClick={() => { setHistoryItem(item); setModalOpen('history'); }}
-                        className="py-1.5 px-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center border border-slate-200"
-                      >
-                        <History className="w-3.5 h-3.5 mr-1" /> Hist.
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(item.id)}
-                        className="py-1.5 px-2 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold flex items-center justify-center border border-rose-200"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Borrar
+                        Solo Bienes Nuevos ({desgloseNuevosArray.length})
                       </button>
                     </div>
                   </div>
-                );
-              }) : (
-                <div className="p-8 text-center text-slate-500 italic text-sm">
-                  No se encontraron artículos en el inventario que coincidan con la búsqueda.
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+                    {(breakdownTab === 'global' ? desgloseUsadosArray : desgloseNuevosArray).length > 0 ? (
+                      (breakdownTab === 'global' ? desgloseUsadosArray : desgloseNuevosArray).map((item, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => setCategoryFilter(item.nombre)}
+                          className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex flex-col items-center text-center hover:border-indigo-400 hover:shadow cursor-pointer transition-all"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">
+                            {getIconForArticulo(item.nombre)}
+                          </div>
+                          <span className="text-xs font-bold text-slate-700 line-clamp-2 min-h-[2rem] flex items-center">{item.nombre}</span>
+                          <span className="text-xl font-black text-indigo-600 my-1">{item.cantidad}</span>
+                          <div className="w-full text-left text-[10px] text-slate-500 bg-slate-50 p-1.5 rounded border border-slate-100 max-h-16 overflow-y-auto">
+                            {item.detalles.map((det, i) => (
+                              <div key={i} className="truncate" title={det}>• {det}</div>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="col-span-full py-6 text-center text-slate-500 italic text-xs">
+                        No hay artículos registrados en esta clasificación.
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+
+                {/* Tarjetas de Formatos Oficiales en Blanco o Captura */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 flex flex-col justify-between">
+                    <div className="mb-3">
+                      <h4 className="font-bold text-blue-950 text-sm">Acta de Recepción (Alta)</h4>
+                      <p className="text-blue-700 text-[11px] mt-0.5">Alta oficial de bienes nuevos o donaciones.</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button onClick={() => openModal('recepcion')} className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-xs font-bold flex items-center justify-center">
+                          <Plus className="w-3.5 h-3.5 mr-1" /> Capturar
+                        </button>
+                        <button onClick={() => handlePrintBlank('recepcion')} className="bg-white hover:bg-blue-100 text-blue-700 border border-blue-300 p-2 rounded-lg text-xs font-bold flex items-center justify-center">
+                          <Printer className="w-3.5 h-3.5 mr-1" /> En Blanco
+                        </button>
+                      </div>
+                      {actasRecepcion.length > 0 && (
+                        <button
+                          onClick={() => handleEditRecepcionClick(actasRecepcion[0])}
+                          className="w-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 p-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center"
+                        >
+                          <Edit2 className="w-3 h-3 mr-1" /> Editar Última Alta
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-4 flex flex-col justify-between">
+                    <div className="mb-3">
+                      <h4 className="font-bold text-indigo-950 text-sm">Carta de Resguardo</h4>
+                      <p className="text-indigo-700 text-[11px] mt-0.5">Asignar bienes a docentes, salones o áreas.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button onClick={() => openModal('resguardo')} className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg text-xs font-bold flex items-center justify-center">
+                        <Plus className="w-3.5 h-3.5 mr-1" /> Capturar
+                      </button>
+                      <button onClick={() => handlePrintBlank('resguardo')} className="bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-300 p-2 rounded-lg text-xs font-bold flex items-center justify-center">
+                        <Printer className="w-3.5 h-3.5 mr-1" /> En Blanco
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 flex flex-col justify-between">
+                    <div className="mb-3">
+                      <h4 className="font-bold text-emerald-950 text-sm">Cédula Censal (SEG)</h4>
+                      <p className="text-emerald-700 text-[11px] mt-0.5">Concentrado general de resguardos e inventario.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button onClick={() => openPrintPreview('cedula_censal', null)} className="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg text-xs font-bold flex items-center justify-center">
+                        <FileText className="w-3.5 h-3.5 mr-1" /> Ver
+                      </button>
+                      <button onClick={() => openPrintPreview('cedula_censal_blank', null)} className="bg-white hover:bg-emerald-100 text-emerald-700 border border-emerald-300 p-2 rounded-lg text-xs font-bold flex items-center justify-center">
+                        <Printer className="w-3.5 h-3.5 mr-1" /> En Blanco
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-rose-50 to-orange-50 border border-rose-200 rounded-xl p-4 flex flex-col justify-between">
+                    <div className="mb-3">
+                      <h4 className="font-bold text-rose-950 text-sm">Acta de Baja Oficial</h4>
+                      <p className="text-rose-700 text-[11px] mt-0.5">Desecho oficial de bienes dañados o inservibles.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button onClick={() => openModal('baja')} className="bg-rose-600 hover:bg-rose-700 text-white p-2 rounded-lg text-xs font-bold flex items-center justify-center">
+                        <Plus className="w-3.5 h-3.5 mr-1" /> Capturar
+                      </button>
+                      <button onClick={() => handlePrintBlank('baja')} className="bg-white hover:bg-rose-100 text-rose-700 border border-rose-300 p-2 rounded-lg text-xs font-bold flex items-center justify-center">
+                        <Printer className="w-3.5 h-3.5 mr-1" /> En Blanco
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Catálogo Principal de Bienes (Búsqueda + Filtros + 3 Modos de Visualización) */}
+          <div className="bg-white shadow-sm rounded-2xl border border-slate-200 overflow-hidden">
+            {/* Barra superior de Búsqueda y Filtros */}
+            <div className="p-4 bg-slate-50/80 border-b border-slate-200 space-y-3">
+              <div className="flex flex-col xl:flex-row gap-3 items-stretch xl:items-end justify-between">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 flex-1">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                      Buscar Bien, Código, Marca, Serie o Área
+                    </label>
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        className="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Ej. Silla, HP, Aula 3, SIL-0001..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                      />
+                      {searchTerm && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchTerm('')}
+                          className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                          title="Limpiar búsqueda"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Categoría</label>
+                    <select
+                      className="w-full p-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      value={categoryFilter}
+                      onChange={e => setCategoryFilter(e.target.value)}
+                    >
+                      <option value="Todas">Todas las categorías</option>
+                      {categoriasUnicas.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Ubicación</label>
+                    <select
+                      className="w-full p-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      value={locationFilter}
+                      onChange={e => setLocationFilter(e.target.value)}
+                    >
+                      <option value="Todos">Todas las ubicaciones</option>
+                      {ubicacionesUnicas.map(loc => (
+                        <option key={loc} value={loc}>{loc}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Estado Físico</label>
+                    <select
+                      className="w-full p-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      value={statusFilter}
+                      onChange={e => setStatusFilter(e.target.value)}
+                    >
+                      <option value="Todos">Activos (Sin Bajas)</option>
+                      <option value="Nuevo">Nuevo</option>
+                      <option value="Bueno">Bueno</option>
+                      <option value="Regular">Regular</option>
+                      <option value="Malo">Malo</option>
+                      <option value="Baja">Baja Definitiva</option>
+                      <option value="Todos_Incl_Baja">Todos (Incl. Bajas)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Selector de 3 Vistas */}
+                <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={clearAllFilters}
+                      className="px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1"
+                    >
+                      <X className="w-3.5 h-3.5" /> Limpiar filtros
+                    </button>
+                  )}
+                  <div className="inline-flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/70">
+                    <button
+                      type="button"
+                      onClick={() => setInventoryViewMode('tabla')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                        inventoryViewMode === 'tabla' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <List className="w-3.5 h-3.5" /> Tabla
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInventoryViewMode('areas')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                        inventoryViewMode === 'areas' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Building2 className="w-3.5 h-3.5" /> Por Salón
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInventoryViewMode('tarjetas')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                        inventoryViewMode === 'tarjetas' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" /> Tarjetas
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Barra de conteo, selección masiva y botones de acción rápida */}
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pt-2 border-t border-slate-200/80">
+                <div className="flex items-center justify-between w-full md:w-auto gap-3">
+                  <div className="text-xs font-bold text-slate-600">
+                    Mostrando <span className="text-slate-900 font-black">{filteredInventario.length}</span> registros ({totalPiezasFiltradas} piezas)
+                    {inventoryViewMode === 'areas' && (
+                      <span className="text-indigo-700 ml-1">· {inventarioAgrupadoPorArea.length} áreas</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleSelectAll}
+                    className="md:hidden text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200"
+                  >
+                    {filteredInventario.length > 0 && filteredInventario.every(item => selectedItems.includes(item.id))
+                      ? 'Deseleccionar'
+                      : 'Seleccionar todos'}
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                  {selectedItems.length > 0 && (
+                    <>
+                      <button onClick={() => openTraspasoModal()} className="flex items-center px-3 py-1.5 bg-amber-500 text-white rounded-xl text-xs font-bold hover:bg-amber-600 shadow-sm transition">
+                        <ArrowRightLeft className="w-3.5 h-3.5 mr-1" /> Traspasar ({selectedItems.length})
+                      </button>
+                      <button onClick={handlePrintEtiquetas} className="flex items-center px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 shadow-sm transition">
+                        <Printer className="w-3.5 h-3.5 mr-1" /> QR ({selectedItems.length})
+                      </button>
+                      <button onClick={() => openModal('resguardo')} className="flex items-center px-3 py-1.5 bg-indigo-100 text-indigo-800 rounded-xl text-xs font-bold hover:bg-indigo-200 border border-indigo-200 transition">
+                        <FileText className="w-3.5 h-3.5 mr-1" /> Resguardo
+                      </button>
+                      <button onClick={() => openModal('baja')} className="flex items-center px-3 py-1.5 bg-sky-100 text-sky-800 rounded-xl text-xs font-bold hover:bg-sky-200 border border-sky-200 transition">
+                        <FileText className="w-3.5 h-3.5 mr-1" /> Baja
+                      </button>
+                      <button onClick={() => handleBulkStatusChange('Nuevo')} className="flex items-center px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold hover:bg-emerald-200 border border-emerald-200 transition">
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Nuevo
+                      </button>
+                      <button onClick={handleBulkDelete} className="flex items-center px-3 py-1.5 bg-rose-100 text-rose-700 rounded-xl text-xs font-bold hover:bg-rose-200 border border-rose-200 transition">
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
+                      </button>
+                    </>
+                  )}
+                  <button onClick={handleExportCSV} className="flex items-center px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition">
+                    <Download className="w-3.5 h-3.5 mr-1.5 text-indigo-600" /> Exportar CSV
+                  </button>
+                  <button onClick={() => openModal('recepcion')} className="flex items-center px-3.5 py-1.5 bg-primary-600 text-white rounded-xl text-xs font-bold hover:bg-primary-700 shadow-sm transition">
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Añadir Artículo
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* VISTA ESCRITORIO (TABLA CON SCROLL HORIZONTAL SEGURO) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left w-12">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                        checked={filteredInventario.length > 0 && filteredInventario.every(item => selectedItems.includes(item.id))}
-                        onChange={toggleSelectAll}
-                      />
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Código</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículo</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Marca / Modelo</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">No. Serie</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Ubicación</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Cantidad</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {filteredInventario.length > 0 ? filteredInventario.map(item => (
-                    <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-indigo-50/50' : 'hover:bg-slate-50 transition-colors'}>
-                      <td className="px-6 py-4 text-left w-12">
-                        <input 
-                          type="checkbox" 
-                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          checked={selectedItems.includes(item.id)}
-                          onChange={() => toggleSelectItem(item.id)}
-                        />
-                      </td>
-                      <td className="px-6 py-4 text-sm font-mono text-slate-600">{item.codigo || 'N/A'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-800 font-medium">{item.articulo || item.descripcion || 'Sin nombre'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{item.marca || 'N/A'} {item.modelo ? `(${item.modelo})` : ''}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{item.serie || 'N/A'}</td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium border border-slate-200">
-                          {item.ubicacion || 'Sin ubicar'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-bold text-slate-800">{item.cantidad || 1}</td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${
-                          (item.estadoFisico === 'Baja' || item.estado === 'Baja') ? 'bg-slate-200 text-slate-600 line-through' :
-                          (item.estadoFisico === 'Nuevo' || item.estado === 'Nuevo') ? 'bg-emerald-100 text-emerald-700' :
-                          (item.estadoFisico === 'Malo' || item.estado === 'Malo') ? 'bg-red-100 text-red-700' :
-                          (item.estadoFisico === 'Regular' || item.estado === 'Regular') ? 'bg-amber-100 text-amber-700' :
-                          'bg-blue-100 text-blue-700'
-                        }`}>
-                          {item.estadoFisico || item.estado || 'Bueno'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-right whitespace-nowrap space-x-1.5">
-                        <button 
-                          onClick={() => openTraspasoModal([item.id])}
-                          className="text-amber-700 hover:text-amber-900 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-amber-50"
-                          title="Traspasar este bien a otra área o resguardo"
-                        >
-                          <ArrowRightLeft className="w-3.5 h-3.5 mr-1" /> Traspasar
-                        </button>
-                        <button 
-                          onClick={() => { setHistoryItem(item); setModalOpen('history'); }}
-                          className="text-slate-600 hover:text-indigo-700 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-slate-100"
-                          title="Ver historial de movimientos de este bien"
-                        >
-                          <History className="w-3.5 h-3.5 mr-1" /> Historial
-                        </button>
-                        <button 
-                          onClick={() => { setEditingItem(item); setModalOpen('editItem'); }}
-                          className="text-primary-600 hover:text-primary-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-primary-50"
-                          title="Editar artículo"
-                        >
-                          <Edit2 className="w-3.5 h-3.5 mr-1" /> Editar
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteClick(item.id)}
-                          className="text-rose-600 hover:text-rose-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-rose-50"
-                          title="Eliminar artículo permanentemente"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan="9" className="px-6 py-8 text-center text-slate-500 italic">No se encontraron artículos en el inventario que coincidan con la búsqueda.</td>
-                    </tr>
+            {/* VISTA 1: TABLA EJECUTIVA (Escritorio) + TARJETAS TÁCTILES (Móvil) */}
+            {inventoryViewMode === 'tabla' && (
+              <>
+                {/* Móvil */}
+                <div className="md:hidden divide-y divide-slate-200">
+                  {filteredInventario.length > 0 ? filteredInventario.map(item => {
+                    const est = item.estadoFisico || item.estado || 'Bueno';
+                    const modResolved = resolverModeloArticulo(item, inventario);
+                    return (
+                      <div key={item.id} className={`p-3.5 transition-colors ${selectedItems.includes(item.id) ? 'bg-indigo-50/70' : 'bg-white'}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <label className="flex items-start gap-2.5 cursor-pointer flex-1 min-w-0">
+                            <input
+                              type="checkbox"
+                              className="w-5 h-5 mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 shrink-0"
+                              checked={selectedItems.includes(item.id)}
+                              onChange={() => toggleSelectItem(item.id)}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="font-mono text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                                  {item.codigo || 'S/C'}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                                  est === 'Baja' ? 'bg-slate-200 text-slate-600 line-through' :
+                                  est === 'Nuevo' ? 'bg-emerald-100 text-emerald-700' :
+                                  est === 'Malo' ? 'bg-red-100 text-red-700' :
+                                  est === 'Regular' ? 'bg-amber-100 text-amber-700' :
+                                  'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {est}
+                                </span>
+                                <span className="text-xs font-bold text-slate-500">Cant: {item.cantidad || 1}</span>
+                              </div>
+                              <p className="text-sm font-bold text-slate-900 mt-1 break-words">
+                                {item.articulo || item.descripcion || 'Sin nombre'}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                Marca: <strong>{item.marca || 'S/M'}</strong> {modResolved ? `| Mod: ${modResolved}` : ''} {item.serie ? `| Serie: ${item.serie}` : ''}
+                              </p>
+                              <div className="mt-1.5">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold border border-slate-200">
+                                  <MapPin className="w-3 h-3 text-indigo-600" /> {item.ubicacion || 'Sin ubicar'}
+                                </span>
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
+                          <button
+                            onClick={() => handleEditClick(item)}
+                            className="py-1.5 px-2 bg-primary-50 text-primary-700 rounded-lg text-xs font-bold flex items-center justify-center border border-primary-200"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 mr-1" /> Editar
+                          </button>
+                          <button
+                            onClick={() => openTraspasoModal([item.id])}
+                            className="py-1.5 px-2 bg-amber-50 text-amber-800 rounded-lg text-xs font-bold flex items-center justify-center border border-amber-200"
+                          >
+                            <ArrowRightLeft className="w-3.5 h-3.5 mr-1" /> Mover
+                          </button>
+                          <button
+                            onClick={() => { setHistoryItem(item); setModalOpen('history'); }}
+                            className="py-1.5 px-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center border border-slate-200"
+                          >
+                            <History className="w-3.5 h-3.5 mr-1" /> Hist.
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(item.id)}
+                            className="py-1.5 px-2 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold flex items-center justify-center border border-rose-200"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" /> Borrar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }) : (
+                    <div className="p-8 text-center text-slate-500 italic text-sm">
+                      No se encontraron artículos en el inventario que coincidan con la búsqueda.
+                    </div>
                   )}
-                </tbody>
-              </table>
-            </div>
+                </div>
+
+                {/* Escritorio */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-100/80">
+                      <tr>
+                        <th className="px-4 py-3 text-left w-10">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            checked={filteredInventario.length > 0 && filteredInventario.every(item => selectedItems.includes(item.id))}
+                            onChange={toggleSelectAll}
+                          />
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Código</th>
+                        <th className="px-4 py-3 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Bien / Categoría</th>
+                        <th className="px-4 py-3 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Marca · Modelo · Serie</th>
+                        <th className="px-4 py-3 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Ubicación</th>
+                        <th className="px-3 py-3 text-center text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Cant.</th>
+                        <th className="px-4 py-3 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Estado</th>
+                        <th className="px-4 py-3 text-right text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredInventario.length > 0 ? filteredInventario.map(item => {
+                        const est = item.estadoFisico || item.estado || 'Bueno';
+                        const catNombre = getCategoryForArticulo(item.articulo || item.descripcion);
+                        const modResolved = resolverModeloArticulo(item, inventario);
+                        const isBodega = item.ubicacion === 'Bodega Contraloría';
+                        return (
+                          <tr key={item.id} className={selectedItems.includes(item.id) ? 'bg-indigo-50/70' : 'hover:bg-slate-50/90 transition-colors'}>
+                            <td className="px-4 py-3.5 text-left w-10">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                checked={selectedItems.includes(item.id)}
+                                onChange={() => toggleSelectItem(item.id)}
+                              />
+                            </td>
+                            <td className="px-4 py-3.5 whitespace-nowrap">
+                              <span className="font-mono text-xs font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200/80">
+                                {item.codigo || 'S/C'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0 [&>svg]:w-4 [&>svg]:h-4">
+                                  {getIconForArticulo(catNombre)}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-sm font-bold text-slate-900 leading-tight">
+                                    {item.articulo || item.descripcion || 'Sin nombre'}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                      {catNombre}
+                                    </span>
+                                    {item.observaciones && (
+                                      <span className="text-[11px] text-slate-400 truncate max-w-[200px]" title={item.observaciones}>
+                                        · {item.observaciones}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5 text-xs text-slate-600">
+                              <div className="font-semibold text-slate-800">
+                                {item.marca || 'S/M'} {modResolved ? `· ${modResolved}` : ''}
+                              </div>
+                              {item.serie && <div className="font-mono text-[11px] text-slate-400 mt-0.5">S/N: {item.serie}</div>}
+                            </td>
+                            <td className="px-4 py-3.5 text-xs whitespace-nowrap">
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold border ${
+                                est === 'Baja'
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                  : isBodega
+                                    ? 'bg-sky-50 text-sky-700 border-sky-200'
+                                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                              }`}>
+                                <MapPin className="w-3 h-3 shrink-0" />
+                                {item.ubicacion || 'Sin ubicar'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3.5 text-sm font-black text-slate-800 text-center">{item.cantidad || 1}</td>
+                            <td className="px-4 py-3.5 text-xs whitespace-nowrap">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold ${
+                                est === 'Baja' ? 'bg-slate-200 text-slate-600 line-through' :
+                                est === 'Nuevo' ? 'bg-emerald-100 text-emerald-800' :
+                                est === 'Malo' ? 'bg-red-100 text-red-800' :
+                                est === 'Regular' ? 'bg-amber-100 text-amber-800' :
+                                'bg-blue-100 text-blue-800'
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                  est === 'Baja' ? 'bg-slate-500' :
+                                  est === 'Nuevo' ? 'bg-emerald-600' :
+                                  est === 'Malo' ? 'bg-red-600' :
+                                  est === 'Regular' ? 'bg-amber-600' :
+                                  'bg-blue-600'
+                                }`} />
+                                {est}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 text-right whitespace-nowrap space-x-1">
+                              <button
+                                onClick={() => openTraspasoModal([item.id])}
+                                className="text-amber-700 hover:text-amber-900 font-bold text-xs inline-flex items-center px-2 py-1.5 rounded-lg hover:bg-amber-50"
+                                title="Traspasar este bien a otra área o resguardo"
+                              >
+                                <ArrowRightLeft className="w-3.5 h-3.5 mr-1" /> Mover
+                              </button>
+                              <button
+                                onClick={() => { setHistoryItem(item); setModalOpen('history'); }}
+                                className="text-slate-600 hover:text-indigo-700 font-bold text-xs inline-flex items-center px-2 py-1.5 rounded-lg hover:bg-slate-100"
+                                title="Ver historial"
+                              >
+                                <History className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleEditClick(item)}
+                                className="text-primary-600 hover:text-primary-800 font-bold text-xs inline-flex items-center px-2 py-1.5 rounded-lg hover:bg-primary-50"
+                                title="Editar bien"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(item.id)}
+                                className="text-rose-600 hover:text-rose-800 font-bold text-xs inline-flex items-center px-2 py-1.5 rounded-lg hover:bg-rose-50"
+                                title="Eliminar permanentemente"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      }) : (
+                        <tr>
+                          <td colSpan="8" className="px-6 py-10 text-center text-slate-500 italic">
+                            No se encontraron artículos en el inventario que coincidan con la búsqueda.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+
+            {/* VISTA 2: AGRUPADO POR SALÓN / ÁREA */}
+            {inventoryViewMode === 'areas' && (
+              <div className="p-4 bg-slate-50/50">
+                {inventarioAgrupadoPorArea.length > 0 ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {inventarioAgrupadoPorArea.map(grupo => {
+                      const isExpanded = expandedAreaCard === grupo.area;
+                      const res = grupo.resguardoRelacionado;
+                      return (
+                        <div key={grupo.area} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+                          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-white to-slate-50/70">
+                            <div className="flex items-start gap-3 min-w-0">
+                              <div className="w-11 h-11 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                                <Building2 className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="font-black text-slate-900 text-base truncate">{grupo.area}</h4>
+                                <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs">
+                                  <span className="font-bold text-indigo-700">{grupo.totalPiezas} piezas</span>
+                                  <span className="text-slate-400">·</span>
+                                  <span className="text-slate-600">{grupo.items.length} registros</span>
+                                  {grupo.regularMaloCount > 0 && (
+                                    <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[10px]">
+                                      {grupo.regularMaloCount} Reg./Malo
+                                    </span>
+                                  )}
+                                </div>
+                                {res && (
+                                  <p className="text-xs text-emerald-700 font-semibold mt-1 truncate">
+                                    Resguardante: <strong>{res.nombreResguardante || res.resguardante || 'Sin asignar'}</strong> (Folio {res.folio || 'S/F'})
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                              {res && (
+                                <button
+                                  type="button"
+                                  onClick={() => openPrintPreview('resguardo', res, false)}
+                                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm"
+                                >
+                                  <Eye className="w-3.5 h-3.5" /> Ver Resguardo
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setExpandedAreaCard(isExpanded ? null : grupo.area)}
+                                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1"
+                              >
+                                {isExpanded ? (
+                                  <><ChevronUp className="w-3.5 h-3.5" /> Ocultar</>
+                                ) : (
+                                  <><ChevronDown className="w-3.5 h-3.5" /> Ver Bienes</>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+
+                          {isExpanded && (
+                            <div className="border-t border-slate-200 divide-y divide-slate-100 max-h-80 overflow-y-auto bg-slate-50/40">
+                              {grupo.items.map(it => {
+                                const est = it.estadoFisico || it.estado || 'Bueno';
+                                return (
+                                  <div key={it.id} className="px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-white transition">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-mono text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                                          {it.codigo || 'S/C'}
+                                        </span>
+                                        <span className="text-xs font-bold text-slate-800 truncate">
+                                          {it.articulo || it.descripcion}
+                                        </span>
+                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                                          {est}
+                                        </span>
+                                      </div>
+                                      <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                                        {it.marca || 'S/M'} · Mod: {resolverModeloArticulo(it, inventario)} {it.serie ? `· S/N: ${it.serie}` : ''}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => openTraspasoModal([it.id])}
+                                        className="p-1.5 text-amber-700 hover:bg-amber-50 rounded-lg"
+                                        title="Traspasar a otra área"
+                                      >
+                                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleEditClick(it)}
+                                        className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-lg"
+                                        title="Editar bien"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-10 text-center text-slate-500 italic bg-white rounded-xl border border-slate-200">
+                    No hay áreas o bienes que coincidan con los filtros seleccionados.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* VISTA 3: CUADRÍCULA VISUAL (TARJETAS) */}
+            {inventoryViewMode === 'tarjetas' && (
+              <div className="p-4 bg-slate-50/50">
+                {filteredInventario.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+                    {filteredInventario.map(item => {
+                      const est = item.estadoFisico || item.estado || 'Bueno';
+                      const catNombre = getCategoryForArticulo(item.articulo || item.descripcion);
+                      const modResolved = resolverModeloArticulo(item, inventario);
+                      const selected = selectedItems.includes(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          className={`bg-white rounded-2xl border p-4 shadow-sm flex flex-col justify-between transition-all ${
+                            selected ? 'border-indigo-500 ring-2 ring-indigo-100 bg-indigo-50/20' : 'border-slate-200 hover:border-indigo-300 hover:shadow-md'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-2 mb-2.5">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={() => toggleSelectItem(item.id)}
+                                  className="w-4 h-4 rounded border-slate-300 text-indigo-600 cursor-pointer"
+                                />
+                                <span className="font-mono text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">
+                                  {item.codigo || 'S/C'}
+                                </span>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                est === 'Baja' ? 'bg-slate-200 text-slate-600 line-through' :
+                                est === 'Nuevo' ? 'bg-emerald-100 text-emerald-800' :
+                                est === 'Malo' ? 'bg-red-100 text-red-800' :
+                                est === 'Regular' ? 'bg-amber-100 text-amber-800' :
+                                'bg-blue-100 text-blue-800'
+                              }`}>
+                                {est}
+                              </span>
+                            </div>
+
+                            <div className="flex items-start gap-2.5 mb-2">
+                              <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 [&>svg]:w-4 [&>svg]:h-4">
+                                {getIconForArticulo(catNombre)}
+                              </div>
+                              <div className="min-w-0">
+                                <h5 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                                  {item.articulo || item.descripcion || 'Sin nombre'}
+                                </h5>
+                                <p className="text-[11px] font-semibold text-slate-400">{catNombre}</p>
+                              </div>
+                            </div>
+
+                            <div className="text-xs text-slate-600 space-y-1 bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+                              <div className="truncate">
+                                <span className="text-slate-400">Marca/Mod:</span>{' '}
+                                <strong className="text-slate-800">{item.marca || 'S/M'}</strong> {modResolved ? `(${modResolved})` : ''}
+                              </div>
+                              {item.serie && (
+                                <div className="truncate font-mono text-[11px]">
+                                  <span className="text-slate-400 font-sans">Serie:</span> {item.serie}
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between pt-1">
+                                <span className="inline-flex items-center gap-1 font-bold text-indigo-700 truncate">
+                                  <MapPin className="w-3 h-3 shrink-0" /> {item.ubicacion || 'Sin ubicar'}
+                                </span>
+                                <span className="font-black text-slate-700 shrink-0 ml-2">x{item.cantidad || 1}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-4 gap-1 mt-3 pt-2.5 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => openTraspasoModal([item.id])}
+                              className="py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-[11px] font-bold flex items-center justify-center"
+                              title="Mover a otra área"
+                            >
+                              <ArrowRightLeft className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setHistoryItem(item); setModalOpen('history'); }}
+                              className="py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold flex items-center justify-center"
+                              title="Historial"
+                            >
+                              <History className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEditClick(item)}
+                              className="py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-lg text-[11px] font-bold flex items-center justify-center"
+                              title="Editar"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClick(item.id)}
+                              className="py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold flex items-center justify-center"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-10 text-center text-slate-500 italic bg-white rounded-xl border border-slate-200">
+                    No se encontraron artículos en el inventario que coincidan con la búsqueda.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* BARRA FLOTANTE EN CELULAR CUANDO HAY BIENES SELECCIONADOS */}
@@ -3610,112 +4311,200 @@ Esta acción no se puede deshacer.`);
       )}
 
       {activeTab === 'resguardos' && (
-        <div className="space-y-6 animate-in fade-in-50 duration-200">
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row gap-4 items-end justify-between">
-            <div className="flex-grow w-full">
-              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Buscar por Resguardante, Área, Folio o Artículo</label>
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                <input 
-                  type="text" 
-                  className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" 
-                  placeholder="Ej. Profr. Juan Pérez, Aula 3, Folio 002 o código..." 
-                  value={resguardoSearch} 
-                  onChange={e => setResguardoSearch(e.target.value)} 
-                />
+        <div className="space-y-5 animate-in fade-in-50 duration-200">
+          {/* 1. Tarjetas Resumen de Resguardos */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div className="bg-white border border-indigo-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-600">Cartas de Resguardo</p>
+                <p className="text-2xl font-black text-slate-900 mt-0.5">{resguardos.length}</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">Actas registradas en sistema</p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <FileText className="w-5 h-5" />
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <button
-                onClick={() => setPrintMode('cedula_censal')}
-                className="flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 shadow-sm transition-colors whitespace-nowrap"
-                title="Generar Cédula Censal Oficial SEG con el concentrado de todas las cédulas de resguardo"
-              >
-                <FileText className="w-4 h-4 mr-2" /> Cédula Censal (Concentrado)
-              </button>
-              <button
-                onClick={() => handlePrintBlank('resguardo')}
-                className="flex items-center justify-center px-4 py-2 bg-white border border-indigo-300 text-indigo-700 rounded-lg text-sm font-bold hover:bg-indigo-50 shadow-sm transition-colors whitespace-nowrap"
-                title="Imprimir formato de resguardo en blanco para llenado a mano"
-              >
-                <Printer className="w-4 h-4 mr-2" /> Imprimir en Blanco
-              </button>
-              <button
-                onClick={handleAutoRellenarModelosResguardos}
-                className="flex items-center justify-center px-3.5 py-2 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-lg text-sm font-bold hover:bg-emerald-100 shadow-sm transition-colors whitespace-nowrap"
-                title="Auto-rellenar el campo Modelo en todas las actas de resguardo e inventario"
-              >
-                <CheckCircle className="w-4 h-4 mr-1.5" /> Auto-rellenar Modelos
-              </button>
-              <button
-                onClick={handleExportResguardosCSV}
-                className="flex items-center justify-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors whitespace-nowrap"
-              >
-                <Download className="w-4 h-4 mr-2 text-primary-600" /> Exportar Relación (CSV)
-              </button>
-              <button
-                onClick={() => openModal('resguardo')}
-                className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow-sm transition-colors whitespace-nowrap"
-              >
-                <Plus className="w-4 h-4 mr-1.5" /> Nuevo Resguardo
-              </button>
+            <div className="bg-white border border-emerald-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Bienes Resguardados</p>
+                <p className="text-2xl font-black text-emerald-700 mt-0.5">{resguardosTotalPiezas}</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">Piezas totales en actas</p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <PackageOpen className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Áreas / Salones con Acta</p>
+                <p className="text-2xl font-black text-slate-800 mt-0.5">{resguardosAreasUnicas.length}</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">Responsables y espacios</p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center">
+                <Building2 className="w-5 h-5" />
+              </div>
             </div>
           </div>
 
-          <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
+          {/* 2. Buscador, Filtro por Área y Herramientas de Resguardo */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-end justify-between">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
+                    Buscar por Resguardante, Área, Folio o Artículo
+                  </label>
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      className="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="Ej. Profr. Juan Pérez, Aula 3, Folio 002 o código..."
+                      value={resguardoSearch}
+                      onChange={e => setResguardoSearch(e.target.value)}
+                    />
+                    {resguardoSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setResguardoSearch('')}
+                        className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                        title="Limpiar búsqueda"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
+                    Filtrar por Área / Salón
+                  </label>
+                  <select
+                    value={resguardoAreaFilter}
+                    onChange={e => setResguardoAreaFilter(e.target.value)}
+                    className="w-full p-2 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="Todas">Todas las áreas ({resguardos.length})</option>
+                    {resguardosAreasUnicas.map(area => (
+                      <option key={area} value={area}>{area}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => openPrintPreview('cedula_censal', null)}
+                  className="flex items-center justify-center px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-sm transition whitespace-nowrap"
+                  title="Generar Cédula Censal Oficial SEG con el concentrado de todas las cédulas de resguardo"
+                >
+                  <FileText className="w-3.5 h-3.5 mr-1.5" /> Cédula Censal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePrintBlank('resguardo')}
+                  className="flex items-center justify-center px-3.5 py-2 bg-white border border-indigo-300 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-50 shadow-sm transition whitespace-nowrap"
+                  title="Imprimir formato de resguardo en blanco para llenado a mano"
+                >
+                  <Printer className="w-3.5 h-3.5 mr-1.5" /> En Blanco
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAutoRellenarModelosResguardos}
+                  className="flex items-center justify-center px-3.5 py-2 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-bold hover:bg-emerald-100 shadow-sm transition whitespace-nowrap"
+                  title="Auto-rellenar el campo Modelo en todas las actas de resguardo e inventario"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Auto-rellenar Modelos
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportResguardosCSV}
+                  className="flex items-center justify-center px-3.5 py-2 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm transition whitespace-nowrap"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1.5 text-primary-600" /> CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openModal('resguardo')}
+                  className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 shadow-sm transition whitespace-nowrap"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1.5" /> Nuevo Resguardo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white shadow-sm rounded-2xl border border-slate-200 overflow-hidden">
             {/* VISTA MÓVIL DE RESGUARDOS (TARJETAS PARA CELULAR) */}
             <div className="md:hidden divide-y divide-slate-200">
-              {resguardos.length > 0 ? resguardos.filter(r => 
-                !resguardoSearch ||
-                searchIncludes(r.resguardante || r.nombreResguardante, resguardoSearch) ||
-                searchIncludes(r.area || r.areaResguardante || r.cargo, resguardoSearch) ||
-                searchIncludes(r.folio, resguardoSearch) ||
-                (Array.isArray(r.articulos) && r.articulos.some(a => searchIncludes(a.descripcion || a.articulo, resguardoSearch) || searchIncludes(a.codigo, resguardoSearch)))
-              ).map(r => {
-                const totalPiezas = Array.isArray(r.articulos) ? r.articulos.reduce((s, a) => s + (Number(a.cantidad) || 1), 0) : 0;
+              {filteredResguardos.length > 0 ? filteredResguardos.map(r => {
+                const arts = Array.isArray(r.articulos) ? r.articulos : [];
+                const totalPiezas = arts.reduce((s, a) => s + (Number(a.cantidad) || 1), 0);
+                const printType = r.tipo === 'Alta' ? 'recepcion' : (r.tipo === 'Baja' ? 'baja' : 'resguardo');
                 return (
                   <div key={r.id} className="p-4 bg-white space-y-2.5">
                     <div className="flex justify-between items-start gap-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-black bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">
+                          <span className="font-mono text-xs font-black bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-lg border border-indigo-200">
                             Folio: {r.folio || 'S/F'}
                           </span>
-                          <span className="text-xs text-slate-500">
-                            {r.fecha ? (r.fecha.toDate ? r.fecha.toDate().toLocaleDateString('es-MX') : r.fecha) : 'N/A'}
+                          <span className="text-xs text-slate-500 font-medium">
+                            {formatFechaCorta(r.fecha)}
                           </span>
                         </div>
                         <p className="text-sm font-bold text-slate-900 mt-1">
                           {r.resguardante || r.nombreResguardante || 'Desconocido'}
                         </p>
-                        <p className="text-xs font-semibold text-indigo-700">
-                          📍 {r.area || r.areaResguardante || r.cargo || 'N/A'}
+                        <p className="text-xs font-semibold text-indigo-700 flex items-center gap-1 mt-0.5">
+                          <MapPin className="w-3 h-3" /> {r.area || r.areaResguardante || r.cargo || 'N/A'}
                         </p>
                       </div>
                       <span className="px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-bold border border-slate-200 shrink-0">
-                        {r.articulos ? r.articulos.length : 0} part. ({totalPiezas} pzas.)
+                        {arts.length} part. ({totalPiezas} pzas.)
                       </span>
                     </div>
+
+                    {arts.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {arts.slice(0, 3).map((art, i) => (
+                          <span key={i} className="text-[10px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
+                            {art.cantidad || 1}x {art.descripcion || art.articulo || art.concepto || 'Bien'}
+                          </span>
+                        ))}
+                        {arts.length > 3 && (
+                          <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md border border-indigo-200">
+                            +{arts.length - 3} más
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-2 border-t border-slate-100">
                       <button
+                        type="button"
+                        onClick={() => openPrintPreview(printType, r, false)}
+                        className="py-2 px-2 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center justify-center shadow-sm"
+                      >
+                        <Eye className="w-3.5 h-3.5 mr-1" /> Vista Previa / PDF
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleEditResguardoClick(r)}
                         className="py-2 px-2 bg-primary-50 text-primary-700 rounded-lg text-xs font-bold flex items-center justify-center border border-primary-200"
                       >
-                        <Edit2 className="w-3.5 h-3.5 mr-1" /> Ver / Editar
+                        <Edit2 className="w-3.5 h-3.5 mr-1" /> Editar
                       </button>
                       <button
-                        onClick={() => { setPrintData(r); setPrintMode(r.tipo === 'Alta' ? 'recepcion' : (r.tipo === 'Baja' ? 'baja' : 'resguardo')); setTimeout(() => window.print(), 500); }}
-                        className="py-2 px-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold flex items-center justify-center border border-indigo-200"
-                      >
-                        <Printer className="w-3.5 h-3.5 mr-1" /> Imprimir
-                      </button>
-                      <button
+                        type="button"
                         onClick={() => handleDuplicateResguardo(r)}
                         className="py-2 px-2 bg-amber-50 text-amber-800 rounded-lg text-xs font-bold flex items-center justify-center border border-amber-200"
                       >
                         <Copy className="w-3.5 h-3.5 mr-1" /> Duplicar
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDeleteResguardoClick(r)}
                         className="py-2 px-2 bg-rose-50 text-rose-700 rounded-lg text-xs font-bold flex items-center justify-center border border-rose-200"
                       >
@@ -3726,7 +4515,7 @@ Esta acción no se puede deshacer.`);
                 );
               }) : (
                 <div className="p-8 text-center text-slate-500 italic text-sm">
-                  No hay actas de resguardo registradas.
+                  No se encontraron actas de resguardo con ese filtro.
                 </div>
               )}
             </div>
@@ -3734,68 +4523,109 @@ Esta acción no se puede deshacer.`);
             {/* VISTA ESCRITORIO DE RESGUARDOS */}
             <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
+                <thead className="bg-slate-100/80">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Folio</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Fecha</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Resguardante</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Área / Cargo</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Artículos</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Acciones</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Folio</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Fecha</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Resguardante</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Área / Salón</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Bienes Incluidos</th>
+                    <th className="px-5 py-3 text-right text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {resguardos.length > 0 ? resguardos.filter(r => 
-                      !resguardoSearch ||
-                      searchIncludes(r.resguardante || r.nombreResguardante, resguardoSearch) ||
-                      searchIncludes(r.area || r.areaResguardante || r.cargo, resguardoSearch) ||
-                      searchIncludes(r.folio, resguardoSearch) ||
-                      (Array.isArray(r.articulos) && r.articulos.some(a => searchIncludes(a.descripcion || a.articulo, resguardoSearch) || searchIncludes(a.codigo, resguardoSearch)))
-                  ).map(r => {
-                    const totalPiezas = Array.isArray(r.articulos) ? r.articulos.reduce((s, a) => s + (Number(a.cantidad) || 1), 0) : 0;
+                <tbody className="divide-y divide-slate-100">
+                  {filteredResguardos.length > 0 ? filteredResguardos.map(r => {
+                    const arts = Array.isArray(r.articulos) ? r.articulos : [];
+                    const totalPiezas = arts.reduce((s, a) => s + (Number(a.cantidad) || 1), 0);
+                    const printType = r.tipo === 'Alta' ? 'recepcion' : (r.tipo === 'Baja' ? 'baja' : 'resguardo');
                     return (
-                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-mono font-bold text-slate-900">{r.folio || 'S/F'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{r.fecha ? (r.fecha.toDate ? r.fecha.toDate().toLocaleDateString('es-MX') : r.fecha) : 'N/A'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-800 font-bold">{r.resguardante || r.nombreResguardante || 'Desconocido'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{r.area || r.areaResguardante || r.cargo || 'N/A'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        <span className="font-semibold text-slate-800">{r.articulos ? r.articulos.length : 0} partidas</span>
-                        <span className="text-xs text-slate-400 ml-1">({totalPiezas} pzas.)</span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-right whitespace-nowrap space-x-2">
-                          <button 
-                            onClick={() => handleEditResguardoClick(r)}
-                            className="text-primary-600 hover:text-primary-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-primary-50"
+                      <tr key={r.id} className="hover:bg-slate-50/90 transition-colors">
+                        <td className="px-5 py-3.5 whitespace-nowrap">
+                          <span className="font-mono text-xs font-black bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg border border-indigo-200">
+                            {r.folio || 'S/F'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-xs font-medium text-slate-600 whitespace-nowrap">
+                          {formatFechaCorta(r.fecha)}
+                        </td>
+                        <td className="px-4 py-3.5 text-sm font-bold text-slate-900">
+                          {r.resguardante || r.nombreResguardante || 'Desconocido'}
+                        </td>
+                        <td className="px-4 py-3.5 text-xs whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg font-bold border border-slate-200">
+                            <MapPin className="w-3 h-3 text-indigo-600" />
+                            {r.area || r.areaResguardante || r.cargo || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-1.5 text-xs mb-1">
+                            <span className="font-bold text-slate-800">{arts.length} partidas</span>
+                            <span className="text-slate-400">({totalPiezas} pzas.)</span>
+                          </div>
+                          {arts.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {arts.slice(0, 3).map((art, i) => (
+                                <span key={i} className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 max-w-[160px] truncate">
+                                  {art.cantidad || 1}x {art.descripcion || art.articulo || art.concepto || 'Bien'}
+                                </span>
+                              ))}
+                              {arts.length > 3 && (
+                                <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200">
+                                  +{arts.length - 3} más
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5 text-right whitespace-nowrap space-x-1">
+                          <button
+                            type="button"
+                            onClick={() => openPrintPreview(printType, r, false)}
+                            className="inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm transition"
+                            title="Abrir Vista Previa Oficial para revisar e imprimir PDF"
                           >
-                            <Edit2 className="w-3.5 h-3.5 mr-1" /> Ver / Editar
-                          </button>
-                          <button 
-                            onClick={() => handleDuplicateResguardo(r)}
-                            className="text-amber-600 hover:text-amber-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-amber-50"
-                            title="Crear un nuevo resguardo usando esta lista como plantilla"
-                          >
-                            <Copy className="w-3.5 h-3.5 mr-1" /> Duplicar
+                            <Eye className="w-3.5 h-3.5 mr-1" /> Vista Previa / PDF
                           </button>
                           <button
-                            onClick={() => { setPrintData(r); setPrintMode(r.tipo === 'Alta' ? 'recepcion' : (r.tipo === 'Baja' ? 'baja' : 'resguardo')); setTimeout(() => window.print(), 500); }}
-                            className="text-indigo-600 hover:text-indigo-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-indigo-50"
+                            type="button"
+                            onClick={() => openPrintPreview(printType, r, true)}
+                            className="inline-flex items-center p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg border border-transparent hover:border-indigo-200 transition"
+                            title="Imprimir directamente"
                           >
-                            <Printer className="w-3.5 h-3.5 mr-1" /> Imprimir PDF
+                            <Printer className="w-4 h-4" />
                           </button>
-                          <button 
+                          <button
+                            type="button"
+                            onClick={() => handleEditResguardoClick(r)}
+                            className="inline-flex items-center px-2.5 py-1.5 text-primary-700 hover:bg-primary-50 rounded-lg text-xs font-bold transition"
+                            title="Ver o editar partidas del resguardo"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 mr-1" /> Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDuplicateResguardo(r)}
+                            className="inline-flex items-center px-2 py-1.5 text-amber-700 hover:bg-amber-50 rounded-lg text-xs font-bold transition"
+                            title="Crear nuevo resguardo usando esta lista como plantilla"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleDeleteResguardoClick(r)}
-                            className="text-rose-600 hover:text-rose-800 font-medium text-xs inline-flex items-center px-2 py-1 rounded hover:bg-rose-50"
+                            className="inline-flex items-center px-2 py-1.5 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition"
                             title="Eliminar acta de resguardo"
                           >
-                            <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
                     );
                   }) : (
                     <tr>
-                      <td colSpan="6" className="px-6 py-8 text-center text-slate-500 italic">No hay actas de resguardo registradas.</td>
+                      <td colSpan="6" className="px-6 py-10 text-center text-slate-500 italic">
+                        No se encontraron actas de resguardo que coincidan con el filtro.
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -4166,32 +4996,32 @@ Esta acción no se puede deshacer.`);
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">¿A dónde deseas transferir los bienes?</label>
                   <div className="grid grid-cols-1 gap-2">
-                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${traspasoData.modo === 'existente' ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-bold' : 'bg-white border-slate-200 text-slate-700'}`}>
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${traspasoData.tipoDestino === 'existente' ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-bold' : 'bg-white border-slate-200 text-slate-700'}`}>
                       <input
                         type="radio"
                         name="modoTraspaso"
-                        checked={traspasoData.modo === 'existente'}
-                        onChange={() => setTraspasoData({ ...traspasoData, modo: 'existente' })}
+                        checked={traspasoData.tipoDestino === 'existente'}
+                        onChange={() => setTraspasoData({ ...traspasoData, tipoDestino: 'existente' })}
                         className="w-4 h-4 text-indigo-600"
                       />
                       <span className="text-sm">Integrar a un Resguardo / Área existente</span>
                     </label>
-                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${traspasoData.modo === 'nuevo' ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-bold' : 'bg-white border-slate-200 text-slate-700'}`}>
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${traspasoData.tipoDestino === 'nuevo' ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-bold' : 'bg-white border-slate-200 text-slate-700'}`}>
                       <input
                         type="radio"
                         name="modoTraspaso"
-                        checked={traspasoData.modo === 'nuevo'}
-                        onChange={() => setTraspasoData({ ...traspasoData, modo: 'nuevo' })}
+                        checked={traspasoData.tipoDestino === 'nuevo'}
+                        onChange={() => setTraspasoData({ ...traspasoData, tipoDestino: 'nuevo' })}
                         className="w-4 h-4 text-indigo-600"
                       />
                       <span className="text-sm">Crear nueva Carta de Resguardo (Nueva Área o Maestro)</span>
                     </label>
-                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${traspasoData.modo === 'bodega' ? 'bg-amber-50 border-amber-400 text-amber-900 font-bold' : 'bg-white border-slate-200 text-slate-700'}`}>
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${traspasoData.tipoDestino === 'bodega' ? 'bg-amber-50 border-amber-400 text-amber-900 font-bold' : 'bg-white border-slate-200 text-slate-700'}`}>
                       <input
                         type="radio"
                         name="modoTraspaso"
-                        checked={traspasoData.modo === 'bodega'}
-                        onChange={() => setTraspasoData({ ...traspasoData, modo: 'bodega' })}
+                        checked={traspasoData.tipoDestino === 'bodega'}
+                        onChange={() => setTraspasoData({ ...traspasoData, tipoDestino: 'bodega' })}
                         className="w-4 h-4 text-amber-600"
                       />
                       <span className="text-sm">Devolver a Bodega Contraloría (Liberar de resguardo)</span>
@@ -4199,26 +5029,26 @@ Esta acción no se puede deshacer.`);
                   </div>
                 </div>
 
-                {traspasoData.modo === 'existente' && (
+                {traspasoData.tipoDestino === 'existente' && (
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Selecciona el Resguardo / Área Destino</label>
                     <select
-                      value={traspasoData.resguardoExistenteId}
-                      onChange={e => setTraspasoData({ ...traspasoData, resguardoExistenteId: e.target.value })}
+                      value={traspasoData.destinoResguardoId}
+                      onChange={e => setTraspasoData({ ...traspasoData, destinoResguardoId: e.target.value })}
                       className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-white"
                       required
                     >
                       <option value="">-- Elige un resguardo activo --</option>
                       {resguardos.map(r => (
                         <option key={r.id} value={r.id}>
-                          {r.areaResguardante} — {r.nombreResguardante} (Folio {r.folio || 'S/F'})
+                          {r.areaResguardante || r.area} — {r.nombreResguardante || r.resguardante} (Folio {r.folio || 'S/F'})
                         </option>
                       ))}
                     </select>
                   </div>
                 )}
 
-                {traspasoData.modo === 'nuevo' && (
+                {traspasoData.tipoDestino === 'nuevo' && (
                   <div className="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Área o Salón Destino *</label>
@@ -4226,8 +5056,8 @@ Esta acción no se puede deshacer.`);
                         type="text"
                         list="ubicaciones-list"
                         placeholder="Ej. Aula 2B, Laboratorio, Dirección..."
-                        value={traspasoData.areaResguardante}
-                        onChange={e => setTraspasoData({ ...traspasoData, areaResguardante: e.target.value })}
+                        value={traspasoData.nuevaArea}
+                        onChange={e => setTraspasoData({ ...traspasoData, nuevaArea: e.target.value })}
                         className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
                         required
                       />
@@ -4237,8 +5067,8 @@ Esta acción no se puede deshacer.`);
                       <input
                         type="text"
                         placeholder="Ej. Profr. Carlos Hernández"
-                        value={traspasoData.nombreResguardante}
-                        onChange={e => setTraspasoData({ ...traspasoData, nombreResguardante: e.target.value })}
+                        value={traspasoData.nuevoResguardante}
+                        onChange={e => setTraspasoData({ ...traspasoData, nuevoResguardante: e.target.value })}
                         className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
                         required
                       />
@@ -4248,8 +5078,8 @@ Esta acción no se puede deshacer.`);
                       <input
                         type="text"
                         placeholder="Ej. 024"
-                        value={traspasoData.folio}
-                        onChange={e => setTraspasoData({ ...traspasoData, folio: e.target.value })}
+                        value={traspasoData.nuevoFolio}
+                        onChange={e => setTraspasoData({ ...traspasoData, nuevoFolio: e.target.value })}
                         className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
                       />
                     </div>
@@ -5035,7 +5865,17 @@ Esta acción no se puede deshacer.`);
     )}
 
     {printMode === 'recepcion' && printData && <ActaRecepcionPrint data={printData} onBack={() => setPrintMode(null)} />}
-    {printMode === 'resguardo' && printData && <CartaResguardoPrint data={printData} inventario={inventario} onBack={() => setPrintMode(null)} />}
+    {printMode === 'resguardo' && printData && (
+      <CartaResguardoPrint
+        data={printData}
+        inventario={inventario}
+        onBack={() => setPrintMode(null)}
+        onEdit={(res) => {
+          setPrintMode(null);
+          handleEditResguardoClick(res);
+        }}
+      />
+    )}
     {printMode === 'baja' && printData && <ActaBajaPrint data={printData} onBack={() => setPrintMode(null)} />}
     {printMode === 'etiquetas' && printData && <EtiquetasPrint items={printData} onBack={() => setPrintMode(null)} />}
     {(printMode === 'cedula_censal' || printMode === 'cedula_censal_blank') && (
