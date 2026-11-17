@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, autoAcentuar } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva, autoAcentuar } from '../utils/format';
 
 const extraerFechaDeCurp = (curp) => {
   if (!curp || curp.length < 10) return null;
@@ -140,9 +140,9 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
   // Cálculo de calificaciones para la tabla
   let promedioGeneral = '-';
   const calificacionesData = materias.map(mat => {
-    const t1 = parseFloat(student.calificaciones?.['t1']?.[mat.id]);
-    const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
-    const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
+    const r1 = getCalificacionTrimestreEfectiva(student, mat.id, 't1');
+    const r2 = getCalificacionTrimestreEfectiva(student, mat.id, 't2');
+    const r3 = getCalificacionTrimestreEfectiva(student, mat.id, 't3');
     
     const califFinalObj = getCalificacionFinal(student, mat.id);
     let finalMat = '-';
@@ -157,9 +157,9 @@ export default function ConstanciaPrint({ student, type = 'simple', materiasPorG
     
     return {
       name: autoAcentuar(mat.name),
-      t1: roundToIntGrade(t1),
-      t2: roundToIntGrade(t2),
-      t3: roundToIntGrade(t3),
+      t1: r1.efectiva !== null ? `${r1.efectiva}${r1.fueRecuperado ? 'R' : ''}` : '-',
+      t2: r2.efectiva !== null ? `${r2.efectiva}${r2.fueRecuperado ? 'R' : ''}` : '-',
+      t3: r3.efectiva !== null ? `${r3.efectiva}${r3.fueRecuperado ? 'R' : ''}` : '-',
       final: isRegularizacion ? `${finalMat}*` : finalMat,
       numFinal: numFinal,
       isRegularizacion

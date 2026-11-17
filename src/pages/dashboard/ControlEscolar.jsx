@@ -40,7 +40,7 @@ import AcuseRecepcionModal from '../../components/AcuseRecepcionModal';
 import AcuseRecepcionPrint from '../../components/AcuseRecepcionPrint';
 import ExpedienteModal from '../../components/ExpedienteModal';
 import { FolderOpen } from 'lucide-react';
-import { autoAcentuar } from '../../utils/format';
+import { autoAcentuar, getCalificacionFinal, roundToIntNumber } from '../../utils/format';
 import { searchIncludes } from '../../utils/search';
 import { sortStudents } from '../../utils/sortUtils';
 import { registrarMovimiento } from '../../utils/bitacora';
@@ -316,22 +316,9 @@ export default function ControlEscolar() {
     if (!materiasPorGradoObj[student.grado]) return false;
     const materias = materiasPorGradoObj[student.grado];
     for (let mat of materias) {
-      const t1 = parseFloat(student.calificaciones?.['t1']?.[mat.id]);
-      const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
-      const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
-      
-      const extraScore = student.regularizacion?.[mat.id]?.calificacion;
-      if (extraScore !== undefined && parseFloat(extraScore) >= 6) {
-          continue; 
-      }
-
-      let sum = 0; let count = 0;
-      if (!isNaN(t1)) { sum += Math.round(t1); count++; }
-      if (!isNaN(t2)) { sum += Math.round(t2); count++; }
-      if (!isNaN(t3)) { sum += Math.round(t3); count++; }
-      if (count > 0) {
-        const finalMat = Math.round(sum / count);
-        if (finalMat < 6) return true;
+      const finalObj = getCalificacionFinal(student, mat.id);
+      if (finalObj && finalObj.isReprobada) {
+        return true;
       }
     }
     return false;
@@ -415,17 +402,33 @@ export default function ControlEscolar() {
   const handleCaptureExtra = (student, subjects) => {
     setExtraStudent(student);
     setExtraSubjects(subjects);
-    setExtraData({}); // clear previous inputs
+    const preloaded = {};
+    (subjects || []).forEach(mat => {
+      const existing = student?.regularizacion?.[mat.id];
+      if (existing) {
+        preloaded[mat.id] = {
+          periodo: existing.periodo || '',
+          calificacion: existing.calificacion ?? '',
+          fecha: existing.fecha || '',
+          eer1: existing.eer1 ?? '',
+          eer2: existing.eer2 ?? '',
+          eer3: existing.eer3 ?? ''
+        };
+      }
+    });
+    setExtraData(preloaded);
     setModalType('extraordinario');
   };
 
   const saveExtraordinario = async () => {
     let hasData = false;
     for (const matId in extraData) {
-      if (extraData[matId].calificacion && extraData[matId].fecha && extraData[matId].periodo) hasData = true;
+      const d = extraData[matId] || {};
+      const hasOpp = d.eer1 || d.eer2 || d.eer3;
+      if ((d.calificacion || hasOpp) && d.fecha && (d.periodo || hasOpp)) hasData = true;
     }
     if (!hasData) {
-      toast.error('Captura al menos una calificación y fecha para guardar.');
+      toast.error('Captura al menos una calificación, periodo/oportunidad y fecha para guardar.');
       return;
     }
 
@@ -434,13 +437,42 @@ export default function ControlEscolar() {
       const currentReg = extraStudent.regularizacion || {};
       const newReg = { ...currentReg };
       for (const matId in extraData) {
-        if (extraData[matId].calificacion && extraData[matId].fecha && extraData[matId].periodo) {
-           newReg[matId] = { calificacion: parseFloat(extraData[matId].calificacion), fecha: extraData[matId].fecha, periodo: extraData[matId].periodo };
+        const d = extraData[matId] || {};
+        const prevMat = currentReg[matId] || {};
+        const hasOpp = d.eer1 || d.eer2 || d.eer3;
+        if ((d.calificacion || hasOpp) && d.fecha && (d.periodo || hasOpp)) {
+          const periodoStr = String(d.periodo || prevMat.periodo || '1a Oportunidad (Agosto)');
+          const pLower = periodoStr.toLowerCase();
+          const calNum = d.calificacion ? parseFloat(d.calificacion) : null;
+
+          let eer1 = d.eer1 ? parseFloat(d.eer1) : (prevMat.eer1 ?? null);
+          let eer2 = d.eer2 ? parseFloat(d.eer2) : (prevMat.eer2 ?? null);
+          let eer3 = d.eer3 ? parseFloat(d.eer3) : (prevMat.eer3 ?? null);
+
+          // Asignar automáticamente a la oportunidad elegida sin borrar oportunidades previas
+          if (calNum !== null) {
+            if (pLower.includes('agosto') || pLower.includes('1')) eer1 = calNum;
+            else if (pLower.includes('sept') || pLower.includes('2')) eer2 = calNum;
+            else if (pLower.includes('nov') || pLower.includes('enero') || pLower.includes('3')) eer3 = calNum;
+            else if (eer1 === null) eer1 = calNum;
+          }
+
+          const finalCalif = [eer3, eer2, eer1, calNum].find(v => v !== null && v !== undefined && !isNaN(v)) ?? calNum;
+
+          newReg[matId] = {
+            ...prevMat,
+            calificacion: finalCalif,
+            eer1,
+            eer2,
+            eer3,
+            fecha: d.fecha,
+            periodo: periodoStr
+          };
         }
       }
       
       await updateDoc(studentRef, { regularizacion: newReg, lastModifiedBy: auth.currentUser?.email || 'Desconocido', lastModifiedAt: new Date().toISOString() });
-      toast.success('Historial de regularización guardado exitosamente.');
+      toast.success('Historial de regularización (E.E.R.) guardado exitosamente.');
       closeModal();
     } catch (error) {
       console.error("Error al guardar extraordinario:", error);
@@ -452,17 +484,8 @@ export default function ControlEscolar() {
     if (!selectedStudent || !materiasPorGrado[selectedStudent.grado]) return false;
     const materias = materiasPorGrado[selectedStudent.grado];
     for (let mat of materias) {
-      const t1 = parseFloat(selectedStudent.calificaciones?.['t1']?.[mat.id]);
-      const t2 = parseFloat(selectedStudent.calificaciones?.['t2']?.[mat.id]);
-      const t3 = parseFloat(selectedStudent.calificaciones?.['t3']?.[mat.id]);
-      let sum = 0; let count = 0;
-      if (!isNaN(t1)) { sum += Math.round(t1); count++; }
-      if (!isNaN(t2)) { sum += Math.round(t2); count++; }
-      if (!isNaN(t3)) { sum += Math.round(t3); count++; }
-      if (count > 0) {
-        const finalMat = Math.round(sum / count);
-        if (finalMat < 6) return true;
-      }
+      const finalObj = getCalificacionFinal(selectedStudent, mat.id);
+      if (finalObj && finalObj.isReprobada) return true;
     }
     return false;
   }, [selectedStudent, materiasPorGrado]);
@@ -2439,44 +2462,56 @@ export default function ControlEscolar() {
 
             <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
               {extraSubjects.map(mat => (
-                <div key={mat.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                  <h3 className="font-bold text-slate-700 mb-3">{mat.name}</h3>
-                  <div className="grid grid-cols-3 gap-4">
+                <div key={mat.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-slate-700">{mat.name}</h3>
+                    {(extraData[mat.id]?.eer1 || extraData[mat.id]?.eer2 || extraData[mat.id]?.eer3) && (
+                      <span className="text-[11px] font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">
+                        Histórico: {[
+                          extraData[mat.id]?.eer1 ? `1°: ${extraData[mat.id].eer1}` : null,
+                          extraData[mat.id]?.eer2 ? `2°: ${extraData[mat.id].eer2}` : null,
+                          extraData[mat.id]?.eer3 ? `3°: ${extraData[mat.id].eer3}` : null
+                        ].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      
-     <label className="block text-xs font-semibold text-slate-600 mb-1">Periodo</label>
-     <select 
-       value={extraData[mat.id]?.periodo || ''}
-       onChange={(e) => setExtraData(prev => ({ 
-         ...prev, 
-         [mat.id]: { ...prev[mat.id], periodo: e.target.value } 
-       }))}
-       className="w-full border border-slate-300 rounded-md p-2 text-sm focus:border-orange-500 focus:ring-orange-500"
-     >
-       <option value="">Seleccione...</option>
-       <option value="Agosto">Agosto</option>
-       <option value="Septiembre">Septiembre</option>
-       <option value="Noviembre">Noviembre</option>
-     </select>
-   </div>
-   <div>
-     <label className="block text-xs font-semibold text-slate-600 mb-1">Calificación Final (Aprobatoria)</label>
-     
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Oportunidad / Periodo</label>
+                      <select 
+                        value={extraData[mat.id]?.periodo || ''}
+                        onChange={(e) => setExtraData(prev => ({ 
+                          ...prev, 
+                          [mat.id]: { ...prev[mat.id], periodo: e.target.value } 
+                        }))}
+                        className="w-full border border-slate-300 rounded-md p-2 text-sm focus:border-orange-500 focus:ring-orange-500 bg-white"
+                      >
+                        <option value="">Seleccione...</option>
+                        <option value="1a Oportunidad (Agosto)">1° Oportunidad (Agosto)</option>
+                        <option value="2a Oportunidad (Septiembre)">2° Oportunidad (Septiembre)</option>
+                        <option value="3a Oportunidad (Noviembre)">3° Oportunidad (Noviembre)</option>
+                        <option value="Agosto">Agosto (Tradicional)</option>
+                        <option value="Septiembre">Septiembre (Tradicional)</option>
+                        <option value="Noviembre">Noviembre (Tradicional)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Calificación Obtenida</label>
                       <input 
                         type="number" 
-                        step="0.1" 
-                        min="6" max="10"
+                        step="1" 
+                        min="5" max="10"
                         value={extraData[mat.id]?.calificacion || ''}
                         onChange={(e) => setExtraData(prev => ({ 
                           ...prev, 
                           [mat.id]: { ...prev[mat.id], calificacion: e.target.value } 
                         }))}
-                        placeholder="Ej. 7.5"
-                        className="w-full border border-slate-300 rounded-md p-2 text-sm focus:border-orange-500 focus:ring-orange-500"
+                        placeholder="Ej. 8"
+                        className="w-full border border-slate-300 rounded-md p-2 text-sm focus:border-orange-500 focus:ring-orange-500 font-bold"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">Fecha de Acreditación</label>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Fecha de Aplicación</label>
                       <input 
                         type="date" 
                         value={extraData[mat.id]?.fecha || ''}

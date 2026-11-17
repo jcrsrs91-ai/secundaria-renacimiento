@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { AlertCircle, Printer, X } from 'lucide-react';
-import { truncateTo1Dec } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal, getCalificacionTrimestreEfectiva } from '../utils/format';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function EficienciaTerminalPrint({ activos = [], bajas = [], materiasPorGrado = {}, onClose }) {
@@ -16,29 +16,23 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
   };
 
   
-  // Calculadora de materias reprobadas por alumno
+  // Calculadora de materias reprobadas por alumno (unificada con Recuperación Trimestral y E.E.R.)
   const getMateriasReprobadas = (student, materias, missingGradesArr, menor5Arr) => {
     let reprobadas = 0;
     let missing = false;
     let hasMenor5 = false;
-    const c = student.calificaciones || {};
     materias.forEach(mat => {
-      let sum = 0;
-      let count = 0;
-      ['t1', 't2', 't3'].forEach(t => {
-        const val = parseFloat(c[t]?.[mat.id]);
-        if (!isNaN(val)) { 
-          sum += val; 
-          count++;
-          if (val < 5.0) {
-            hasMenor5 = true;
-          }
-        }
+      const r1 = getCalificacionTrimestreEfectiva(student, mat.id, 't1').efectiva;
+      const r2 = getCalificacionTrimestreEfectiva(student, mat.id, 't2').efectiva;
+      const r3 = getCalificacionTrimestreEfectiva(student, mat.id, 't3').efectiva;
+      const count = [r1, r2, r3].filter(v => v !== null).length;
+      [r1, r2, r3].forEach(v => {
+        if (v !== null && v < 5) hasMenor5 = true;
       });
-        const avg = count > 0 ? parseFloat(truncateTo1Dec(sum / count)) : 0;
-        if (count === 0 || avg < 6.0) {
-          reprobadas++;
-        }
+      const finalObj = getCalificacionFinal(student, mat.id);
+      if (!finalObj || finalObj.valor < 6) {
+        reprobadas++;
+      }
       if (count === 0) {
         missing = true;
       }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getPromedioTrimestrePASEG, autoAcentuar } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva, getPromedioTrimestrePASEG, autoAcentuar } from '../utils/format';
 
 export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
   const { config } = useGlobalConfig();
@@ -59,13 +59,15 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
         let sumGral = 0;
         let countGral = 0;
         let hasRegularizacion = false;
+        let hasRecuperacionTrim = false;
         let countT3 = 0;
 
         const califs = materias.map(mat => {
-          const t1 = parseFloat(student.calificaciones?.['t1']?.[mat.id]);
-          const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
-          const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
-          if (!isNaN(t3)) countT3++;
+          const r1 = getCalificacionTrimestreEfectiva(student, mat.id, 't1');
+          const r2 = getCalificacionTrimestreEfectiva(student, mat.id, 't2');
+          const r3 = getCalificacionTrimestreEfectiva(student, mat.id, 't3');
+          if (r3.efectiva !== null) countT3++;
+          if (r1.fueRecuperado || r2.fueRecuperado || r3.fueRecuperado) hasRecuperacionTrim = true;
           
           const califFinalObj = getCalificacionFinal(student, mat.id);
           let final = null;
@@ -83,9 +85,9 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
           
           return {
             name: mat.name,
-            t1: roundToIntGrade(t1, ''),
-            t2: roundToIntGrade(t2, ''),
-            t3: roundToIntGrade(t3, ''),
+            t1: r1.efectiva !== null ? `${r1.efectiva}${r1.fueRecuperado ? 'R' : ''}` : '',
+            t2: r2.efectiva !== null ? `${r2.efectiva}${r2.fueRecuperado ? 'R' : ''}` : '',
+            t3: r3.efectiva !== null ? `${r3.efectiva}${r3.fueRecuperado ? 'R' : ''}` : '',
             final: finalStr
           };
         });
@@ -163,9 +165,10 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                 </table>
               </div>
 
-              {hasRegularizacion && (
+              {(hasRegularizacion || hasRecuperacionTrim) && (
                 <p className="text-[8px] text-slate-500 italic mb-4 mt-1">
-                  * Calificación obtenida en periodo de regularización.
+                  {hasRecuperacionTrim && <span className="mr-3"><strong>R</strong> Calificación acreditada en Periodo de Recuperación Trimestral.</span>}
+                  {hasRegularizacion && <span><strong>*</strong> Calificación obtenida en examen extraordinario de regularización (E.E.R.).</span>}
                 </p>
               )}
 

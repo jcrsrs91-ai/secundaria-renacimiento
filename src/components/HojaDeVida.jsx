@@ -9,7 +9,7 @@ import { registrarMovimiento, detectarCambiosExpediente } from '../utils/bitacor
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
 import BajaTrasladoPrint from './BajaTrasladoPrint';
-import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva } from '../utils/format';
 
 export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, onSave, readOnly = false }) {
   const { currentUser, userPermissions, userRole } = useAuth();
@@ -1117,21 +1117,27 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                     let sumFinalTrunc = 0, countFinalTrunc = 0;
                     let hasReprobada = false;
 
-                    // First pass to check reprobadas
+                    // First pass to check reprobadas (considerando Recuperación Trimestral y EER)
                     materias.forEach(mat => {
-                      const t1 = califs['t1']?.[mat.id] ?? califs['T1']?.[mat.id];
-                      const t2 = califs['t2']?.[mat.id] ?? califs['T2']?.[mat.id];
-                      const t3 = califs['t3']?.[mat.id] ?? califs['T3']?.[mat.id];
-                      if (t1 !== undefined && t1 !== '' && Number(t1) < 6) hasReprobada = true;
-                      if (t2 !== undefined && t2 !== '' && Number(t2) < 6) hasReprobada = true;
-                      if (t3 !== undefined && t3 !== '' && Number(t3) < 6) hasReprobada = true;
+                      const r1 = getCalificacionTrimestreEfectiva(student, mat.id, 't1');
+                      const r2 = getCalificacionTrimestreEfectiva(student, mat.id, 't2');
+                      const r3 = getCalificacionTrimestreEfectiva(student, mat.id, 't3');
+                      const fObj = getCalificacionFinal(student, mat.id);
+                      if (r1.efectiva !== null && r1.efectiva < 6) hasReprobada = true;
+                      if (r2.efectiva !== null && r2.efectiva < 6) hasReprobada = true;
+                      if (r3.efectiva !== null && r3.efectiva < 6) hasReprobada = true;
+                      if (fObj && fObj.isReprobada) hasReprobada = true;
                     });
 
-                    const renderCell = (val) => {
+                    const renderCell = (val, fueRec = false) => {
                       if (val === undefined || val === null || val === '') return '-';
                       const num = Number(val);
                       if (isNaN(num)) return '-';
-                      return <span className={Math.round(num) < 6 ? 'text-red-600 font-bold bg-red-50 px-2 py-1 rounded' : ''}>{roundToIntGrade(num)}</span>;
+                      return (
+                        <span className={Math.round(num) < 6 ? 'text-red-600 font-bold bg-red-50 px-2 py-1 rounded' : (fueRec ? 'text-indigo-700 font-bold bg-indigo-50 px-2 py-1 rounded' : '')}>
+                          {roundToIntGrade(num)}{fueRec ? ' (R)' : ''}
+                        </span>
+                      );
                     };
 
                     const renderPromedioGralCell = (val) => {
@@ -1161,9 +1167,12 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                             </thead>
                             <tbody>
                               {materias.map(mat => {
-                                const t1 = califs['t1']?.[mat.id] ?? califs['T1']?.[mat.id];
-                                const t2 = califs['t2']?.[mat.id] ?? califs['T2']?.[mat.id];
-                                const t3 = califs['t3']?.[mat.id] ?? califs['T3']?.[mat.id];
+                                const r1 = getCalificacionTrimestreEfectiva(student, mat.id, 't1');
+                                const r2 = getCalificacionTrimestreEfectiva(student, mat.id, 't2');
+                                const r3 = getCalificacionTrimestreEfectiva(student, mat.id, 't3');
+                                const t1 = r1.efectiva ?? (califs['T1']?.[mat.id]);
+                                const t2 = r2.efectiva ?? (califs['T2']?.[mat.id]);
+                                const t3 = r3.efectiva ?? (califs['T3']?.[mat.id]);
                                 
                                 if (t1 !== undefined && t1 !== '' && !isNaN(Number(t1))) { sumT1 += Math.round(Number(t1)); countT1++; }
                                 if (t2 !== undefined && t2 !== '' && !isNaN(Number(t2))) { sumT2 += Math.round(Number(t2)); countT2++; }
@@ -1180,10 +1189,10 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                                 return (
                                   <tr key={mat.id} className="hover:bg-slate-50 transition-colors">
                                     <td className="border p-3 text-slate-700 font-medium">{mat.name}</td>
-                                    <td className="border p-3 text-center">{renderCell(t1)}</td>
-                                    <td className="border p-3 text-center">{renderCell(t2)}</td>
-                                    <td className="border p-3 text-center">{renderCell(t3)}</td>
-                                    <td className="border p-3 text-center bg-slate-50">{renderCell(promedioFinal !== '-' ? promedioFinal : undefined)}</td>
+                                    <td className="border p-3 text-center">{renderCell(t1, r1.fueRecuperado)}</td>
+                                    <td className="border p-3 text-center">{renderCell(t2, r2.fueRecuperado)}</td>
+                                    <td className="border p-3 text-center">{renderCell(t3, r3.fueRecuperado)}</td>
+                                    <td className="border p-3 text-center bg-slate-50">{renderCell(promedioFinal !== '-' ? promedioFinal : undefined)}{finalObj?.isRegularizacion ? '*' : ''}</td>
                                   </tr>
                                 );
                               })}
@@ -1272,10 +1281,34 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                   );
                 })}
 
-                  {/* 7. Exámenes Extraordinarios (Solo Lectura) */}
-                  {extraordinarios.length > 0 && (
+                  {/* 7. Exámenes Extraordinarios (Unificado: Regularización + Manuales) */}
+                  {(() => {
+                    const regEntries = Object.entries(student.regularizacion || {}).map(([matId, reg]) => {
+                      let matName = matId;
+                      Object.values(materiasPorGrado || {}).forEach(list => {
+                        const found = (list || []).find(m => m.id === matId);
+                        if (found) matName = found.name;
+                      });
+                      const histAd = (student.adeudosAnteriores || []).find(a => a.id === matId);
+                      if (histAd?.name) matName = histAd.name;
+                      return {
+                        id: `reg_${matId}`,
+                        materia: matName,
+                        calificacion: reg.calificacion,
+                        fecha: reg.fecha,
+                        periodo: reg.periodo || '',
+                        isFromRegularizacion: true
+                      };
+                    });
+                    const manualFiltered = extraordinarios.filter(
+                      e => !regEntries.some(r => r.materia.toLowerCase() === (e.materia || '').toLowerCase())
+                    );
+                    const allExtras = [...regEntries, ...manualFiltered];
+                    if (allExtras.length === 0) return null;
+
+                    return (
                     <div className="mb-8">
-                      <h5 className="font-bold text-lg text-slate-700 mb-4 bg-slate-50 border p-2 rounded">Exámenes Extraordinarios</h5>
+                      <h5 className="font-bold text-lg text-slate-700 mb-4 bg-slate-50 border p-2 rounded">Exámenes Extraordinarios y Regularización (E.E.R.)</h5>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left border-collapse">
                           <thead>
@@ -1288,7 +1321,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                             </tr>
                           </thead>
                           <tbody>
-                            {extraordinarios.map(extra => (
+                            {allExtras.map(extra => (
                               <tr key={extra.id} className="hover:bg-slate-50">
                                 <td className="border p-2 text-slate-700 font-bold">{extra.materia}</td>
                                 <td className="border p-2 text-center text-emerald-600 font-bold">{extra.calificacion}</td>
@@ -1313,7 +1346,8 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                         </table>
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
 
               </div>

@@ -1,6 +1,11 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { autoAcentuar, roundToIntNumber } from './format';
+import {
+  autoAcentuar,
+  roundToIntNumber,
+  truncateTo1Dec,
+  getCalificacionTrimestreEfectiva
+} from './format';
 import { TALLER_POR_GRUPO, getStudentGender, sortAttendanceListStudents } from '../components/ListaAsistenciaPrint';
 
 // Convierte índice de columna base-1 (1 -> A, 26 -> Z, 27 -> AA)
@@ -861,4 +866,802 @@ export const importarListaAsistenciaEditableExcel = async (file, alumnosGrupo = 
     contenidosFecha,
     importedEval
   };
+};
+
+// Genera styles.xml específico para Cuadros de Concentración por Asignatura (19 estilos indexados 0..18)
+const buildCuadroMateriaStylesXml = () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <numFmts count="1">
+    <numFmt numFmtId="164" formatCode="0.0"/>
+  </numFmts>
+  <fonts count="8">
+    <font><sz val="9.5"/><color rgb="FF0F172A"/><name val="Calibri"/></font>
+    <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+    <font><b/><sz val="9.5"/><color rgb="FF0F172A"/><name val="Calibri"/></font>
+    <font><b/><sz val="8.5"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+    <font><b/><sz val="9"/><color rgb="FF312E81"/><name val="Calibri"/></font>
+    <font><b/><sz val="9"/><color rgb="FF78350F"/><name val="Calibri"/></font>
+    <font><b/><sz val="9"/><color rgb="FFB91C1C"/><name val="Calibri"/></font>
+    <font><sz val="8"/><color rgb="FF475569"/><name val="Calibri"/></font>
+  </fonts>
+  <fills count="8">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF0F172A"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF1E293B"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFE2E8F0"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFEEF2FF"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFFFBEB"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFEF2F2"/></patternFill></fill>
+  </fills>
+  <borders count="3">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+    <border>
+      <left style="thin"><color rgb="FF94A3B8"/></left>
+      <right style="thin"><color rgb="FF94A3B8"/></right>
+      <top style="thin"><color rgb="FF94A3B8"/></top>
+      <bottom style="thin"><color rgb="FF94A3B8"/></bottom>
+      <diagonal/>
+    </border>
+    <border>
+      <left/><right/>
+      <top style="thin"><color rgb="FF0F172A"/></top>
+      <bottom/><diagonal/>
+    </border>
+  </borders>
+  <cellStyleXfs count="1">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
+  </cellStyleXfs>
+  <cellXfs count="19">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="3" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="4" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="5" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>
+    <xf numFmtId="0" fontId="4" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+    <xf numFmtId="0" fontId="5" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+    <xf numFmtId="0" fontId="6" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+    <xf numFmtId="0" fontId="6" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="6" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="7" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="0" borderId="2" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>
+  </cellXfs>
+  <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+
+const sanitizeExcelSheetName = (rawName, usedNamesSet) => {
+  let clean = String(rawName || 'Asignatura')
+    .replace(/[\\/?*[\]:]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!clean) clean = 'Asignatura';
+  let candidate = clean.slice(0, 31);
+  let suffix = 2;
+  while (usedNamesSet.has(candidate.toLowerCase())) {
+    const suffixStr = ` (${suffix})`;
+    candidate = `${clean.slice(0, 31 - suffixStr.length)}${suffixStr}`;
+    suffix++;
+  }
+  usedNamesSet.add(candidate.toLowerCase());
+  return candidate;
+};
+
+/**
+ * Exporta a archivo Excel (.xlsx) nativo con JSZip uno o múltiples Cuadros de Concentración por Asignatura
+ * (1 hoja por disciplina), incluyendo Ordinario T1-T3, Recuperación Trimestral, Faltas, Cierre Anual, E.E.R. 1°-3° y Estadística.
+ */
+export const descargarCuadroMateriaExcel = async ({
+  students = [],
+  grado = '1er Grado',
+  grupo = 'A',
+  materiasList = [],
+  trimestre = 't1',
+  cicloEscolar = '2026 - 2027',
+  coordinadorNombre = '',
+  directorNombre = 'Prof. Juan Carlos Taboada Barajas',
+  evalData = null,
+  onlyRecovery = false
+}) => {
+  if (!students || students.length === 0 || !materiasList || materiasList.length === 0) return;
+
+  const cleanGrupo = String(grupo).replace(/["']/g, '').trim().toUpperCase();
+  const baseSorted = sortAttendanceListStudents(students, grado, grupo);
+  const firstActive = baseSorted.find(s => (s.status || '').toLowerCase() !== 'baja') || baseSorted[0] || {};
+  const turno = ['G', 'H', 'I', 'J', 'K', 'L'].includes(cleanGrupo)
+    ? 'Vespertino'
+    : (firstActive.turno || 'Matutino');
+  const taller = TALLER_POR_GRUPO[cleanGrupo] || firstActive.taller || 'Tecnología';
+  const coordFinal =
+    coordinadorNombre ||
+    (turno === 'Matutino' ? 'Profra. Lucila Rodríguez Martínez' : 'Profr. José Barrera Vázquez');
+
+  const trimLabels = { t1: 'I (Primero)', t2: 'II (Segundo)', t3: 'III (Tercero)' };
+  const TOTAL_COLS = 19; // A..S
+
+  const buildCell = (colIdx, rowIdx, { value = '', type = 's', style = 0, formula = null }) => {
+    const ref = `${colIndexToLetter(colIdx)}${rowIdx}`;
+    if (formula !== null) {
+      const cachedVal = value !== '' && value !== null && value !== undefined ? `<v>${escapeXml(value)}</v>` : '';
+      return `<c r="${ref}" s="${style}"><f>${escapeXml(formula)}</f>${cachedVal}</c>`;
+    }
+    if (value === '' || value === null || value === undefined) {
+      return `<c r="${ref}" s="${style}"/>`;
+    }
+    if (type === 'n' && !isNaN(Number(value))) {
+      return `<c r="${ref}" s="${style}" t="n"><v>${Number(value)}</v></c>`;
+    }
+    return `<c r="${ref}" s="${style}" t="inlineStr"><is><t>${escapeXml(value)}</t></is></c>`;
+  };
+
+  const getTrimDataForExcel = (student, mId, tKey, localEvalMap) => {
+    if (student.isEmpty) {
+      return { ordNum: null, recNum: null, faltNum: null, efectiva: null, fueRecuperado: false };
+    }
+    const useLocal = tKey === trimestre && localEvalMap && localEvalMap[student.id];
+    const det = student.evaluacionDetalle?.[tKey]?.[mId] || {};
+
+    const ordRaw = useLocal ? localEvalMap[student.id].calificacion : student.calificaciones?.[tKey]?.[mId];
+    const recRaw = useLocal && localEvalMap[student.id].recuperacion !== undefined
+      ? localEvalMap[student.id].recuperacion
+      : (student.recuperacion?.[tKey]?.[mId] ?? det.recuperacion);
+    const faltRaw = useLocal ? localEvalMap[student.id].faltas : det.faltas;
+
+    const ordNum = roundToIntNumber(ordRaw);
+    const recNum = roundToIntNumber(recRaw);
+    const faltParsed = parseInt(faltRaw, 10);
+    const faltNum = !isNaN(faltParsed) && faltParsed >= 0 ? faltParsed : null;
+
+    let efectiva = ordNum;
+    let fueRecuperado = false;
+    if (recNum !== null && (ordNum === null || recNum > ordNum)) {
+      efectiva = recNum;
+      fueRecuperado = true;
+    } else if (!useLocal) {
+      const fromHelper = getCalificacionTrimestreEfectiva(student, mId, tKey);
+      efectiva = fromHelper.efectiva;
+      fueRecuperado = fromHelper.fueRecuperado;
+    }
+
+    return { ordNum, recNum, faltNum, efectiva, fueRecuperado };
+  };
+
+  const getEERDataForExcel = (student, mId) => {
+    if (student.isEmpty || !student.regularizacion?.[mId]) {
+      return { n1: null, n2: null, n3: null, eerFinal: null, hasAny: false };
+    }
+    const reg = student.regularizacion[mId];
+    const periodoLower = String(reg.periodo || '').toLowerCase();
+    const mainVal = roundToIntNumber(reg.calificacion);
+
+    const n1 = roundToIntNumber(reg.eer1) ??
+      (periodoLower.includes('agosto') || periodoLower.includes('1') || (!reg.eer2 && !reg.eer3 && !periodoLower.includes('sept') && !periodoLower.includes('nov'))
+        ? mainVal
+        : null);
+    const n2 = roundToIntNumber(reg.eer2) ??
+      (periodoLower.includes('sept') || periodoLower.includes('2') ? mainVal : null);
+    const n3 = roundToIntNumber(reg.eer3) ??
+      (periodoLower.includes('nov') || periodoLower.includes('3') ? mainVal : null);
+    const eerFinal = [n3, n2, n1, mainVal].find(v => v !== null && v !== undefined) ?? null;
+
+    return { n1, n2, n3, eerFinal, hasAny: n1 !== null || n2 !== null || n3 !== null || mainVal !== null };
+  };
+
+  const usedSheetNames = new Set();
+  const sheetsData = [];
+
+  materiasList.forEach((mItem, sheetIdx) => {
+    const mId = mItem.id;
+    const asigTitle = mId?.startsWith('tecnologia') && !String(mItem.name || '').includes(taller)
+      ? `${mItem.name} (${taller})`
+      : (mItem.name || mId || 'Asignatura');
+    const localEval = mItem.evalData || (!Array.isArray(materiasList) || materiasList.length === 1 ? evalData : null) || {};
+
+    let docenteFinal = mItem.docente || '';
+    if (!docenteFinal) {
+      for (const st of baseSorted) {
+        const dName =
+          st.evaluacionDetalle?.[trimestre]?.[mId]?.docente ||
+          st.evaluacionDetalle?.t1?.[mId]?.docente ||
+          st.evaluacionDetalle?.t2?.[mId]?.docente ||
+          st.evaluacionDetalle?.t3?.[mId]?.docente;
+        if (dName) {
+          docenteFinal = dName;
+          break;
+        }
+      }
+    }
+
+    // Asignar número oficial de lista antes de filtrar
+    const indexedStudents = baseSorted.map((s, idx) => ({ ...s, numeroLista: idx + 1 }));
+
+    // Estadística del grupo completo en esta materia
+    let existenciaH = 0;
+    let existenciaM = 0;
+    let regH = 0;
+    let regM = 0;
+    let irregH = 0;
+    let irregM = 0;
+    let recuperadosTrimCount = 0;
+    let acreditadosEERCount = 0;
+    let evaluadosCount = 0;
+    let sumEvaluados = 0;
+
+    indexedStudents.forEach(s => {
+      if ((s.status || '').toLowerCase() === 'baja') return;
+      const gen = getStudentGender(s);
+      if (gen === 'M') existenciaM++;
+      else existenciaH++;
+
+      const td1 = getTrimDataForExcel(s, mId, 't1', localEval);
+      const td2 = getTrimDataForExcel(s, mId, 't2', localEval);
+      const td3 = getTrimDataForExcel(s, mId, 't3', localEval);
+      const eer = getEERDataForExcel(s, mId);
+
+      if (td1.fueRecuperado || td2.fueRecuperado || td3.fueRecuperado) recuperadosTrimCount++;
+      if (eer.eerFinal !== null && eer.eerFinal >= 6) acreditadosEERCount++;
+
+      const valsTrim = [td1.efectiva, td2.efectiva, td3.efectiva].filter(v => v !== null);
+      const promNum = valsTrim.length > 0 ? Math.round(valsTrim.reduce((a, b) => a + b, 0) / valsTrim.length) : null;
+      const califEst = eer.eerFinal !== null ? eer.eerFinal : promNum;
+
+      if (califEst !== null) {
+        evaluadosCount++;
+        sumEvaluados += califEst;
+        if (califEst >= 6) {
+          if (gen === 'M') regM++;
+          else regH++;
+        } else {
+          if (gen === 'M') irregM++;
+          else irregH++;
+        }
+      }
+    });
+
+    const existenciaT = existenciaH + existenciaM;
+    const regT = regH + regM;
+    const irregT = irregH + irregM;
+    const promAprov = evaluadosCount > 0 ? truncateTo1Dec(sumEvaluados / evaluadosCount, '') : '';
+    const pctAprob = evaluadosCount > 0 ? `${truncateTo1Dec((regT / evaluadosCount) * 100, '')} %` : '';
+
+    // Filtrado si onlyRecovery === true
+    let rowsToRender = indexedStudents;
+    if (onlyRecovery) {
+      rowsToRender = indexedStudents.filter(s => {
+        if ((s.status || '').toLowerCase() === 'baja') return false;
+        const td1 = getTrimDataForExcel(s, mId, 't1', localEval);
+        const td2 = getTrimDataForExcel(s, mId, 't2', localEval);
+        const td3 = getTrimDataForExcel(s, mId, 't3', localEval);
+        const eer = getEERDataForExcel(s, mId);
+        const vals = [td1.efectiva, td2.efectiva, td3.efectiva].filter(v => v !== null);
+        const promNum = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+        const califDef = eer.eerFinal !== null ? eer.eerFinal : promNum;
+
+        return (
+          (td1.ordNum !== null && td1.ordNum < 6) ||
+          (td2.ordNum !== null && td2.ordNum < 6) ||
+          (td3.ordNum !== null && td3.ordNum < 6) ||
+          td1.recNum !== null ||
+          td2.recNum !== null ||
+          td3.recNum !== null ||
+          eer.hasAny ||
+          (califDef !== null && califDef < 6)
+        );
+      });
+    } else if (rowsToRender.length < 27) {
+      const padded = [...rowsToRender];
+      for (let i = padded.length; i < 27; i++) {
+        padded.push({ id: `empty_${i}`, isEmpty: true, numeroLista: i + 1 });
+      }
+      rowsToRender = padded;
+    }
+
+    const sheetRowsXml = [];
+    const mergeCells = [];
+
+    // Fila 1: Institucional
+    {
+      const c1 = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        let val = '';
+        let st = 1;
+        if (c === 1) val = 'ESCUELA SECUNDARIA TÉCNICA N° 68 "RENACIMIENTO" — C.C.T. 12DST0077B';
+        if (c === 7) val = 'CUADRO DE CONCENTRACIÓN Y RECUPERACIÓN POR DISCIPLINA';
+        if (c >= 15) {
+          st = 2;
+          if (c === 15) val = `CICLO: ${cicloEscolar} | CORTE: ${trimLabels[trimestre] || trimestre.toUpperCase()}`;
+        }
+        c1.push(buildCell(c, 1, { value: val, style: st }));
+      }
+      mergeCells.push('A1:F1', 'G1:N1', 'O1:S1');
+      sheetRowsXml.push(`<row r="1" ht="22" customHeight="1">${c1.join('')}</row>`);
+    }
+
+    // Fila 2: Docente, Asignatura, Grado/Grupo/Taller
+    {
+      const c2 = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        let val = '';
+        if (c === 1) val = `DOCENTE: ${docenteFinal ? docenteFinal.toUpperCase() : '(SIN ASIGNAR)'}`;
+        if (c === 8) val = `DISCIPLINA: ${asigTitle.toUpperCase()}`;
+        if (c === 15) val = `GRADO: ${grado.toUpperCase()}  |  GRUPO: "${cleanGrupo}"  |  TALLER: ${taller.toUpperCase()}`;
+        c2.push(buildCell(c, 2, { value: val, style: 3 }));
+      }
+      mergeCells.push('A2:G2', 'H2:N2', 'O2:S2');
+      sheetRowsXml.push(`<row r="2" ht="19" customHeight="1">${c2.join('')}</row>`);
+    }
+
+    // Fila 3: Turno y modalidad (Todos vs Solo Recuperación)
+    {
+      const c3 = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        let val = '';
+        let st = 3;
+        if (c === 1) val = `TURNO: ${turno.toUpperCase()}  |  ESCALA OFICIAL SEP (5 A 10)`;
+        if (c >= 11) {
+          st = onlyRecovery ? 6 : 5;
+          if (c === 11) {
+            val = onlyRecovery
+              ? 'FILTRO ACTIVO: SOLO ALUMNOS EN RECUPERACIÓN TRIMESTRAL O E.E.R.'
+              : 'INCLUYE ORDINARIO (Ord.), RECUPERACIÓN POR PERIODO (Rec.) Y EXTRAORDINARIOS (E.E.R.)';
+          }
+        }
+        c3.push(buildCell(c, 3, { value: val, style: st }));
+      }
+      mergeCells.push('A3:J3', 'K3:S3');
+      sheetRowsXml.push(`<row r="3" ht="17" customHeight="1">${c3.join('')}</row>`);
+    }
+
+    // Fila 4: Encabezado agrupado de tabla
+    {
+      const c4 = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        let val = '';
+        let st = 4;
+        if (c === 1) val = 'N°';
+        if (c === 2) val = 'NOMBRE DEL ALUMNO(A)';
+        if (c === 3) val = 'S';
+        if (c === 4) val = 'TRIMESTRE I';
+        if (c === 7) val = 'TRIMESTRE II';
+        if (c === 10) val = 'TRIMESTRE III';
+        if (c === 13) val = 'CIERRE ANUAL';
+        if (c >= 15 && c <= 17) {
+          st = 6;
+          if (c === 15) val = 'EXTRAORD. (E.E.R.)';
+        }
+        if (c === 18) val = 'CALIF. DEF.';
+        if (c === 19) val = 'SITUACIÓN / OBSERVACIONES';
+        c4.push(buildCell(c, 4, { value: val, style: st }));
+      }
+      mergeCells.push(
+        'A4:A5',
+        'B4:B5',
+        'C4:C5',
+        'D4:F4',
+        'G4:I4',
+        'J4:L4',
+        'M4:N4',
+        'O4:Q4',
+        'R4:R5',
+        'S4:S5'
+      );
+      sheetRowsXml.push(`<row r="4" ht="19" customHeight="1">${c4.join('')}</row>`);
+    }
+
+    // Fila 5: Subencabezados de tabla
+    {
+      const subHeaders = {
+        4: { v: 'Ord.', s: 4 }, 5: { v: 'Rec.', s: 5 }, 6: { v: 'Falt.', s: 4 },
+        7: { v: 'Ord.', s: 4 }, 8: { v: 'Rec.', s: 5 }, 9: { v: 'Falt.', s: 4 },
+        10: { v: 'Ord.', s: 4 }, 11: { v: 'Rec.', s: 5 }, 12: { v: 'Falt.', s: 4 },
+        13: { v: 'T.F.', s: 4 }, 14: { v: 'Prom.', s: 4 },
+        15: { v: '1° Op.', s: 6 }, 16: { v: '2° Op.', s: 6 }, 17: { v: '3° Op.', s: 6 }
+      };
+      const c5 = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        const sub = subHeaders[c];
+        c5.push(buildCell(c, 5, { value: sub ? sub.v : '', style: sub ? sub.s : 4 }));
+      }
+      sheetRowsXml.push(`<row r="5" ht="17" customHeight="1">${c5.join('')}</row>`);
+    }
+
+    // Filas de alumnos a partir de la fila 6
+    let curRow = 6;
+    if (rowsToRender.length === 0) {
+      const ce = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        ce.push(
+          buildCell(c, curRow, {
+            value: c === 1 ? 'SIN ALUMNOS REPROBADOS, EN RECUPERACIÓN NI EN E.E.R. EN ESTA ASIGNATURA.' : '',
+            style: 16
+          })
+        );
+      }
+      mergeCells.push(`A${curRow}:S${curRow}`);
+      sheetRowsXml.push(`<row r="${curRow}" ht="22" customHeight="1">${ce.join('')}</row>`);
+      curRow++;
+    } else {
+      rowsToRender.forEach((student) => {
+        const r = curRow;
+        const isEmpty = Boolean(student.isEmpty);
+        const isBaja = !isEmpty && (student.status || '').toLowerCase() === 'baja';
+        const isAlta = !isEmpty && !isBaja && student.tipoIngreso === 'Alta';
+        const rawName = isEmpty
+          ? ''
+          : `${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.replace(/\s+/g, ' ').trim();
+        const fullName = rawName ? autoAcentuar(rawName).toUpperCase() : '';
+        const gen = isEmpty ? '' : getStudentGender(student);
+
+        const rowCells = [];
+        rowCells.push(buildCell(1, r, { value: student.numeroLista, type: 'n', style: 7 }));
+        rowCells.push(buildCell(2, r, { value: fullName, style: isBaja ? 13 : 8 }));
+        rowCells.push(buildCell(3, r, { value: gen, style: isBaja ? 13 : 7 }));
+
+        if (isBaja) {
+          for (let c = 4; c <= 18; c++) {
+            rowCells.push(
+              buildCell(c, r, {
+                value: c === 4 ? `— B A J A ${student.fechaBaja ? `(${student.fechaBaja})` : ''} —` : '',
+                style: 13
+              })
+            );
+          }
+          mergeCells.push(`D${r}:R${r}`);
+          rowCells.push(buildCell(19, r, { value: `BAJA ${student.fechaBaja || ''}`.trim(), style: 15 }));
+        } else if (isEmpty) {
+          for (let c = 4; c <= 19; c++) {
+            const stEmpty = [5, 8, 11].includes(c) ? 9 : [15, 16, 17].includes(c) ? 10 : c === 18 || c === 14 ? 11 : 7;
+            rowCells.push(buildCell(c, r, { value: '', style: stEmpty }));
+          }
+        } else {
+          const t1 = getTrimDataForExcel(student, mId, 't1', localEval);
+          const t2 = getTrimDataForExcel(student, mId, 't2', localEval);
+          const t3 = getTrimDataForExcel(student, mId, 't3', localEval);
+          const eer = getEERDataForExcel(student, mId);
+
+          const faltVals = [t1.faltNum, t2.faltNum, t3.faltNum].filter(v => v !== null);
+          const totalFaltas = faltVals.length > 0 ? faltVals.reduce((a, b) => a + b, 0) : '';
+
+          const valsEfectivos = [t1.efectiva, t2.efectiva, t3.efectiva].filter(v => v !== null);
+          const promAnualNum =
+            valsEfectivos.length > 0
+              ? Math.round(valsEfectivos.reduce((a, b) => a + b, 0) / valsEfectivos.length)
+              : '';
+
+          const califDefNum = eer.eerFinal !== null ? eer.eerFinal : promAnualNum;
+
+          // T1
+          rowCells.push(buildCell(4, r, { value: t1.ordNum ?? '', type: 'n', style: t1.ordNum !== null && t1.ordNum < 6 ? 12 : 7 }));
+          rowCells.push(buildCell(5, r, { value: t1.recNum ?? '', type: 'n', style: 9 }));
+          rowCells.push(buildCell(6, r, { value: t1.faltNum ?? '', type: 'n', style: 7 }));
+          // T2
+          rowCells.push(buildCell(7, r, { value: t2.ordNum ?? '', type: 'n', style: t2.ordNum !== null && t2.ordNum < 6 ? 12 : 7 }));
+          rowCells.push(buildCell(8, r, { value: t2.recNum ?? '', type: 'n', style: 9 }));
+          rowCells.push(buildCell(9, r, { value: t2.faltNum ?? '', type: 'n', style: 7 }));
+          // T3
+          rowCells.push(buildCell(10, r, { value: t3.ordNum ?? '', type: 'n', style: t3.ordNum !== null && t3.ordNum < 6 ? 12 : 7 }));
+          rowCells.push(buildCell(11, r, { value: t3.recNum ?? '', type: 'n', style: 9 }));
+          rowCells.push(buildCell(12, r, { value: t3.faltNum ?? '', type: 'n', style: 7 }));
+
+          // M: T.F.
+          rowCells.push(
+            buildCell(13, r, {
+              value: totalFaltas,
+              formula: `IF(COUNT(F${r},I${r},L${r})>0,SUM(F${r},I${r},L${r}),"")`,
+              style: 7
+            })
+          );
+          // N: Prom. Anual PASEG (MAX(Ord, Rec) por trimestre -> redondeado)
+          const sumRecOrdExpr = `(IF(COUNT(D${r},E${r})>0,MAX(D${r},E${r}),0)+IF(COUNT(G${r},H${r})>0,MAX(G${r},H${r}),0)+IF(COUNT(J${r},K${r})>0,MAX(J${r},K${r}),0))`;
+          const cntRecOrdExpr = `(IF(COUNT(D${r},E${r})>0,1,0)+IF(COUNT(G${r},H${r})>0,1,0)+IF(COUNT(J${r},K${r})>0,1,0))`;
+          rowCells.push(
+            buildCell(14, r, {
+              value: promAnualNum,
+              formula: `IF(${cntRecOrdExpr}>0,ROUND(${sumRecOrdExpr}/${cntRecOrdExpr},0),"")`,
+              style: promAnualNum !== '' && promAnualNum < 6 ? 12 : 11
+            })
+          );
+
+          // O, P, Q: E.E.R. 1°, 2°, 3°
+          rowCells.push(buildCell(15, r, { value: eer.n1 ?? '', type: 'n', style: eer.n1 !== null && eer.n1 < 6 ? 12 : 10 }));
+          rowCells.push(buildCell(16, r, { value: eer.n2 ?? '', type: 'n', style: eer.n2 !== null && eer.n2 < 6 ? 12 : 10 }));
+          rowCells.push(buildCell(17, r, { value: eer.n3 ?? '', type: 'n', style: eer.n3 !== null && eer.n3 < 6 ? 12 : 10 }));
+
+          // R: Calificación Definitiva
+          rowCells.push(
+            buildCell(18, r, {
+              value: califDefNum,
+              formula: `IF(ISNUMBER(Q${r}),Q${r},IF(ISNUMBER(P${r}),P${r},IF(ISNUMBER(O${r}),O${r},N${r})))`,
+              style: califDefNum !== '' && califDefNum < 6 ? 12 : 11
+            })
+          );
+
+          // S: Situación / Observaciones
+          const stEval = localEval[student.id] || {};
+          const obsDocente = (stEval.observaciones || student.evaluacionDetalle?.[trimestre]?.[mId]?.observaciones || '').trim();
+          const tuvoRecTrim = t1.fueRecuperado || t2.fueRecuperado || t3.fueRecuperado;
+          let sitBadge = '';
+          let sitRed = false;
+          if (eer.eerFinal !== null) {
+            if (eer.eerFinal >= 6) sitBadge = 'ACRED. E.E.R.';
+            else {
+              sitBadge = 'NO ACRED. EER';
+              sitRed = true;
+            }
+          } else if (califDefNum !== '') {
+            if (califDefNum >= 6) sitBadge = tuvoRecTrim ? 'RECUPERADO' : 'REGULAR';
+            else {
+              sitBadge = valsEfectivos.length === 3 ? 'A E.E.R.' : 'IRREGULAR';
+              sitRed = true;
+            }
+          }
+          const obsTexto = [sitBadge, isAlta ? `ALTA ${student.fechaAlta || ''}`.trim() : '', obsDocente]
+            .filter(Boolean)
+            .join(' · ');
+          rowCells.push(buildCell(19, r, { value: obsTexto, style: sitRed ? 15 : 14 }));
+        }
+
+        sheetRowsXml.push(`<row r="${r}" ht="17.5" customHeight="1">${rowCells.join('')}</row>`);
+        curRow++;
+      });
+    }
+
+    // Espacio + Tabla de Estadística del Grupo
+    sheetRowsXml.push(`<row r="${curRow}" ht="8" customHeight="1"/>`);
+    curRow++;
+
+    const statHdr1 = curRow;
+    const statHdr2 = curRow + 1;
+    const statValRow = curRow + 2;
+    const noteRow = curRow + 3;
+    const spacerSignRow = curRow + 4;
+    const signRow = curRow + 5;
+
+    // Stat Header 1
+    {
+      const sh1 = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        let val = '';
+        let st = 4;
+        if (c === 1) val = 'EXISTENCIA (ACTIVOS)';
+        if (c === 4) val = 'REGULARES (>= 6)';
+        if (c === 7) val = 'IRREGULARES (< 6)';
+        if (c === 10 || c === 11) {
+          st = 5;
+          if (c === 10) val = 'REC. TRIM.';
+        }
+        if (c === 12 || c === 13) {
+          st = 6;
+          if (c === 12) val = 'ACRED. EER';
+        }
+        if (c === 14) val = 'PROMEDIO DE APROVECHAMIENTO';
+        if (c === 17) val = '% DE APROBACIÓN';
+        sh1.push(buildCell(c, statHdr1, { value: val, style: st }));
+      }
+      mergeCells.push(
+        `A${statHdr1}:C${statHdr1}`,
+        `D${statHdr1}:F${statHdr1}`,
+        `G${statHdr1}:I${statHdr1}`,
+        `J${statHdr1}:K${statHdr1}`,
+        `L${statHdr1}:M${statHdr1}`,
+        `N${statHdr1}:P${statHdr2}`,
+        `Q${statHdr1}:S${statHdr2}`
+      );
+      sheetRowsXml.push(`<row r="${statHdr1}" ht="17" customHeight="1">${sh1.join('')}</row>`);
+    }
+
+    // Stat Header 2
+    {
+      const labels2 = {
+        1: 'H', 2: 'M', 3: 'Total',
+        4: 'H', 5: 'M', 6: 'Total',
+        7: 'H', 8: 'M', 9: 'Total',
+        10: 'Alumnos', 12: 'Alumnos'
+      };
+      const sh2 = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        const st = c === 10 || c === 11 ? 5 : c === 12 || c === 13 ? 6 : 16;
+        sh2.push(buildCell(c, statHdr2, { value: labels2[c] || '', style: st }));
+      }
+      mergeCells.push(`J${statHdr2}:K${statHdr2}`, `L${statHdr2}:M${statHdr2}`);
+      sheetRowsXml.push(`<row r="${statHdr2}" ht="15" customHeight="1">${sh2.join('')}</row>`);
+    }
+
+    // Stat Values
+    {
+      const vals = {
+        1: existenciaH,
+        2: existenciaM,
+        3: existenciaT,
+        4: evaluadosCount > 0 ? regH : '',
+        5: evaluadosCount > 0 ? regM : '',
+        6: evaluadosCount > 0 ? regT : '',
+        7: evaluadosCount > 0 ? irregH : '',
+        8: evaluadosCount > 0 ? irregM : '',
+        9: evaluadosCount > 0 ? irregT : '',
+        10: evaluadosCount > 0 ? recuperadosTrimCount : '',
+        12: evaluadosCount > 0 ? acreditadosEERCount : '',
+        14: promAprov,
+        17: pctAprob
+      };
+      const sv = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        const v = vals[c] !== undefined ? vals[c] : '';
+        const isNum = typeof v === 'number';
+        sv.push(buildCell(c, statValRow, { value: v, type: isNum ? 'n' : 's', style: 16 }));
+      }
+      mergeCells.push(
+        `J${statValRow}:K${statValRow}`,
+        `L${statValRow}:M${statValRow}`,
+        `N${statValRow}:P${statValRow}`,
+        `Q${statValRow}:S${statValRow}`
+      );
+      sheetRowsXml.push(`<row r="${statValRow}" ht="18" customHeight="1">${sv.join('')}</row>`);
+    }
+
+    // Simbología al pie
+    {
+      const cn = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        cn.push(
+          buildCell(c, noteRow, {
+            value:
+              c === 1
+                ? 'Simbología: Ord. = Ordinario | Rec. = Recuperación Trimestral | Falt. / T.F. = Faltas | E.E.R. = Exámenes Extraordinarios de Regularización | Calif. Def. = Definitiva SEP'
+                : '',
+            style: 17
+          })
+        );
+      }
+      mergeCells.push(`A${noteRow}:S${noteRow}`);
+      sheetRowsXml.push(`<row r="${noteRow}" ht="14" customHeight="1">${cn.join('')}</row>`);
+    }
+
+    // Espacio para firmas y Fila de Firmas
+    sheetRowsXml.push(`<row r="${spacerSignRow}" ht="22" customHeight="1"/>`);
+    {
+      const cs = [];
+      for (let c = 1; c <= TOTAL_COLS; c++) {
+        let val = '';
+        let st = 0;
+        if (c >= 2 && c <= 7) {
+          st = 18;
+          if (c === 2) val = `DOCENTE: ${docenteFinal ? docenteFinal.toUpperCase() : '_______________________'}`;
+        } else if (c >= 9 && c <= 14) {
+          st = 18;
+          if (c === 9) val = `VO. BO. COORD. ACAD.: ${coordFinal.toUpperCase()}`;
+        } else if (c >= 16 && c <= 19) {
+          st = 18;
+          if (c === 16) val = `DIRECTOR: ${directorNombre.toUpperCase()}`;
+        }
+        cs.push(buildCell(c, signRow, { value: val, style: st }));
+      }
+      mergeCells.push(`B${signRow}:G${signRow}`, `I${signRow}:N${signRow}`, `P${signRow}:S${signRow}`);
+      sheetRowsXml.push(`<row r="${signRow}" ht="18" customHeight="1">${cs.join('')}</row>`);
+    }
+
+    const colsXml = [
+      `<col min="1" max="1" width="4.2" customWidth="1"/>`,
+      `<col min="2" max="2" width="33.0" customWidth="1"/>`,
+      `<col min="3" max="3" width="3.5" customWidth="1"/>`,
+      `<col min="4" max="12" width="5.4" customWidth="1"/>`,
+      `<col min="13" max="13" width="5.4" customWidth="1"/>`,
+      `<col min="14" max="14" width="6.5" customWidth="1"/>`,
+      `<col min="15" max="17" width="5.8" customWidth="1"/>`,
+      `<col min="18" max="18" width="7.5" customWidth="1"/>`,
+      `<col min="19" max="19" width="26.0" customWidth="1"/>`
+    ].join('');
+
+    const mergeCellsXml = `<mergeCells count="${mergeCells.length}">${mergeCells.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>`;
+
+    const worksheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheetPr>
+    <pageSetUpPr fitToPage="1"/>
+  </sheetPr>
+  <dimension ref="A1:S${signRow}"/>
+  <sheetViews>
+    <sheetView ${sheetIdx === 0 ? 'tabSelected="1" ' : ''}workbookViewId="0">
+      <pane xSplit="2" ySplit="5" topLeftCell="C6" activePane="bottomRight" state="frozen"/>
+    </sheetView>
+  </sheetViews>
+  <sheetFormatPr defaultRowHeight="17.5"/>
+  <cols>${colsXml}</cols>
+  <sheetData>${sheetRowsXml.join('')}</sheetData>
+  ${mergeCellsXml}
+  <printOptions horizontalCentered="1" verticalCentered="0"/>
+  <pageMargins left="0.2" right="0.2" top="0.25" bottom="0.25" header="0.1" footer="0.1"/>
+  <pageSetup paperSize="1" orientation="landscape" fitToWidth="1" fitToHeight="1"/>
+</worksheet>`;
+
+    const sheetName = sanitizeExcelSheetName(mItem.name || asigTitle, usedSheetNames);
+    sheetsData.push({ idx: sheetIdx + 1, name: sheetName, xml: worksheetXml });
+  });
+
+  const zip = new JSZip();
+
+  const sheetOverrides = sheetsData
+    .map(
+      sh =>
+        `<Override PartName="/xl/worksheets/sheet${sh.idx}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`
+    )
+    .join('\n  ');
+
+  zip.file(
+    '[Content_Types].xml',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  ${sheetOverrides}
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>`
+  );
+
+  zip.file(
+    '_rels/.rels',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`
+  );
+
+  const sheetRels = sheetsData
+    .map(
+      sh =>
+        `<Relationship Id="rId${sh.idx}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${sh.idx}.xml"/>`
+    )
+    .join('\n  ');
+
+  zip.file(
+    'xl/_rels/workbook.xml.rels',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  ${sheetRels}
+  <Relationship Id="rId${sheetsData.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`
+  );
+
+  const workbookSheetsXml = sheetsData
+    .map(sh => `<sheet name="${escapeXml(sh.name)}" sheetId="${sh.idx}" r:id="rId${sh.idx}"/>`)
+    .join('\n    ');
+
+  zip.file(
+    'xl/workbook.xml',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    ${workbookSheetsXml}
+  </sheets>
+  <calcPr calcId="171027" fullCalcOnLoad="1"/>
+</workbook>`
+  );
+
+  zip.file('xl/styles.xml', buildCuadroMateriaStylesXml());
+
+  sheetsData.forEach(sh => {
+    zip.file(`xl/worksheets/sheet${sh.idx}.xml`, sh.xml);
+  });
+
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+
+  const cleanGrado = String(grado).replace(/[^a-zA-Z0-9]/g, '');
+  const cleanMat =
+    materiasList.length === 1
+      ? `_${String(materiasList[0].name || 'Materia').replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ]/g, '_').slice(0, 24)}`
+      : `_TodasMaterias`;
+  const recTag = onlyRecovery ? '_SoloRecuperacion' : '';
+  const filename = `Cuadro_Concentracion_${cleanGrado}_${cleanGrupo}${cleanMat}${recTag}.xlsx`;
+
+  saveAs(blob, filename);
 };

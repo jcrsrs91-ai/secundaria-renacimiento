@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { AlertCircle, Printer, X } from 'lucide-react';
-import { truncateTo1Dec } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) {
@@ -14,19 +14,12 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
     return null;
   };
 
-  // Calculadora de materias reprobadas por alumno
+  // Calculadora de materias reprobadas por alumno (unificada: Ordinario + Recuperación Trimestral + E.E.R.)
   const getMateriasReprobadas = (student, materias) => {
     let reprobadas = 0;
-    const c = student.calificaciones || {};
     materias.forEach(mat => {
-      let sum = 0;
-      let count = 0;
-      ['t1', 't2', 't3'].forEach(t => {
-        const val = parseFloat(c[t]?.[mat.id]);
-        if (!isNaN(val)) { sum += val; count++; }
-      });
-      const avg = count > 0 ? parseFloat(truncateTo1Dec(sum / count)) : 0;
-      if (count === 0 || avg < 6.0) {
+      const finalObj = getCalificacionFinal(student, mat.id);
+      if (!finalObj || finalObj.valor < 6) {
         reprobadas++;
       }
     });
@@ -36,7 +29,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
   // Lógica de procesamiento de datos
   const procesarEstadisticas = () => {
     const grados = ['1er Grado', '2do Grado', '3er Grado'];
-    const grupos = ['A','B','C','D','E','F','G','H'];
+    const grupos = ['A','B','C','D','E','F','G','H','I','J','K','L'];
     const stats = {};
     const sinGenero = [];
     
@@ -206,7 +199,9 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
               </tr>
             </thead>
             <tbody>
-              {['A','B','C','D','E','F','G','H'].map((g) => renderRow(g, data.grupos[g]))}
+              {['A','B','C','D','E','F','G','H','I','J','K','L']
+                .filter(g => g <= 'H' || (data.grupos[g]?.extT || 0) > 0)
+                .map((g) => renderRow(g, data.grupos[g]))}
               {renderRow('TOTAL', data.total, true)}
             </tbody>
           </table>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { getCalificacionFinal } from '../utils/format';
+import { getCalificacionFinal, getCalificacionTrimestreEfectiva } from '../utils/format';
 import { FileText, Calendar, PlusCircle, X, Save, History } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
@@ -117,17 +117,17 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
             }
           }
           
-          // If not in historial, check active calificaciones (only if student is in this grade, or if the grade exists)
-          if (!hasGrade && student.calificaciones) {
-            const t1 = parseFloat(student.calificaciones?.['t1']?.[mat.id]);
-            const t2 = parseFloat(student.calificaciones?.['t2']?.[mat.id]);
-            const t3 = parseFloat(student.calificaciones?.['t3']?.[mat.id]);
-            if (!isNaN(t1) || !isNaN(t2) || !isNaN(t3)) {
+          // If not in historial, check active calificaciones (considering Trimestre Recuperación)
+          if (!hasGrade && (student.calificaciones || student.recuperacion)) {
+            const t1 = getCalificacionTrimestreEfectiva(student, mat.id, 't1').efectiva;
+            const t2 = getCalificacionTrimestreEfectiva(student, mat.id, 't2').efectiva;
+            const t3 = getCalificacionTrimestreEfectiva(student, mat.id, 't3').efectiva;
+            if (t1 !== null || t2 !== null || t3 !== null) {
               let sum = 0, c = 0;
-              if (!isNaN(t1)) { sum += t1; c++; }
-              if (!isNaN(t2)) { sum += t2; c++; }
-              if (!isNaN(t3)) { sum += t3; c++; }
-              finalMat = Math.floor((sum / c + 0.00001) * 10) / 10;
+              if (t1 !== null) { sum += t1; c++; }
+              if (t2 !== null) { sum += t2; c++; }
+              if (t3 !== null) { sum += t3; c++; }
+              finalMat = Math.round(sum / c);
               hasGrade = true;
             }
           }

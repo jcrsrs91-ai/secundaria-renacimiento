@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { Award, Printer, X } from 'lucide-react';
-import { truncateTo1Dec } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function DesempenoAlcanzadoPrint({ activos = [], materiasPorGrado, onClose }) {
@@ -37,23 +37,14 @@ export default function DesempenoAlcanzadoPrint({ activos = [], materiasPorGrado
       const materias = materiasPorGrado[g] || [];
       if (materias.length === 0) return;
 
-      // Calcular promedio general del alumno
+      // Calcular promedio general del alumno (considerando Recuperación Trimestral y E.E.R.)
       let sumaFinalMaterias = 0;
       let countMateriasValidas = 0;
       
-      const c = student.calificaciones || {};
-      
       materias.forEach(mat => {
-        let sumTrim = 0;
-        let countTrim = 0;
-        ['t1', 't2', 't3'].forEach(trim => {
-          const val = parseFloat(c[trim]?.[mat.id]);
-          if (!isNaN(val)) { sumTrim += val; countTrim++; }
-        });
-        
-        if (countTrim > 0) {
-          const avgMateria = parseFloat(truncateTo1Dec(sumTrim / countTrim));
-          sumaFinalMaterias += avgMateria;
+        const finalObj = getCalificacionFinal(student, mat.id);
+        if (finalObj && finalObj.valor !== null) {
+          sumaFinalMaterias += finalObj.valor;
           countMateriasValidas++;
         }
       });

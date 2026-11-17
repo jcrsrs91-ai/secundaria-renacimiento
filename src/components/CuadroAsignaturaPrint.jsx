@@ -8,6 +8,7 @@ import {
   getCalificacionTrimestreEfectiva
 } from '../utils/format';
 import { TALLER_POR_GRUPO, getStudentGender, sortAttendanceListStudents } from './ListaAsistenciaPrint';
+import { descargarCuadroMateriaExcel } from '../utils/exportListaExcel';
 
 /**
  * Formato Oficial Integrado de Cuadro de Concentración por Materia (Individual o Lote de Grupo).
@@ -35,6 +36,8 @@ export default function CuadroAsignaturaPrint({
 }) {
   const { config } = useGlobalConfig();
   const [selectedPaperSize, setSelectedPaperSize] = useState(paperSize);
+  const [onlyRecoveryFilter, setOnlyRecoveryFilter] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
 
   useEffect(() => {
     setSelectedPaperSize(paperSize);
@@ -137,6 +140,35 @@ export default function CuadroAsignaturaPrint({
     };
   };
 
+  const handleExportExcel = async () => {
+    setIsExportingExcel(true);
+    try {
+      const coordinadorNombre =
+        turno === 'Matutino'
+          ? (config?.coordinadorMatutino || 'Profra. Lucila Rodríguez Martínez')
+          : (config?.coordinadorVespertino || 'Profr. José Barrera Vázquez');
+      await descargarCuadroMateriaExcel({
+        students: baseSortedStudents,
+        grado,
+        grupo,
+        materiasList: itemsToRender.map(it => ({
+          id: it.materiaId,
+          name: it.asignatura,
+          docente: it.docente || '',
+          evalData: it.evalDataOverride || null
+        })),
+        trimestre,
+        cicloEscolar: config?.cicloEscolarActual || '2026 - 2027',
+        coordinadorNombre,
+        directorNombre: config?.directorName || 'Prof. Juan Carlos Taboada Barajas',
+        evalData: !materiasBatch ? evalData : null,
+        onlyRecovery: onlyRecoveryFilter
+      });
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
   return (
     <div className={`print-cuadro-asignatura-only ${onClose ? 'is-modal-preview' : ''}`}>
       <style>{`
@@ -224,7 +256,28 @@ export default function CuadroAsignaturaPrint({
               Formato integral SEP/PASEG: incluye <strong>Ordinario</strong>, <strong>Recuperación por Periodo</strong> y <strong>Extraordinarios (E.E.R.)</strong> en tamaño {selectedPaperSize === 'legal' ? 'Oficio Horizontal' : 'Carta Horizontal'}.
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setOnlyRecoveryFilter(prev => !prev)}
+              className={`px-3 py-2 font-bold rounded-lg text-xs border transition ${
+                onlyRecoveryFilter
+                  ? 'bg-amber-500 border-amber-400 text-slate-950 shadow'
+                  : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'
+              }`}
+              title="Alternar entre todos los alumnos o filtrar únicamente alumnos en recuperación trimestral o E.E.R."
+            >
+              {onlyRecoveryFilter ? '🔍 Solo Recuperación / E.E.R.' : '👥 Todos los Alumnos'}
+            </button>
+            <button
+              type="button"
+              disabled={isExportingExcel}
+              onClick={handleExportExcel}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-bold rounded-lg text-xs uppercase tracking-wider shadow transition"
+              title="Descargar archivo Excel (.xlsx) editable con fórmulas y estadística"
+            >
+              {isExportingExcel ? '⏳ Generando...' : '📊 Exportar Excel (.xlsx)'}
+            </button>
             <select
               value={selectedPaperSize}
               onChange={(e) => setSelectedPaperSize(e.target.value)}
@@ -270,23 +323,56 @@ export default function CuadroAsignaturaPrint({
           }
         }
 
-        // Clonar y rellenar filas hasta 27 mínimos para estética institucional
-        const sortedStudents = [...baseSortedStudents];
-        const targetRows = 27;
-        if (sortedStudents.length < targetRows) {
-          const padCount = targetRows - sortedStudents.length;
-          for (let i = 0; i < padCount; i++) {
-            sortedStudents.push({
-              id: `empty_${pageIdx}_${i}`,
-              isEmpty: true,
-              apellidoPaterno: '',
-              apellidoMaterno: '',
-              nombres: ''
-            });
+        // Preservar número de lista oficial antes de aplicar filtro de Recuperación / E.E.R.
+        const indexedBaseStudents = baseSortedStudents.map((s, idx) => ({
+          ...s,
+          numeroLista: idx + 1
+        }));
+
+        // Clonar y rellenar filas hasta 27 mínimos (solo en vista completa), o filtrar solo recuperación/E.E.R.
+        let sortedStudents;
+        if (onlyRecoveryFilter) {
+          sortedStudents = indexedBaseStudents.filter(s => {
+            if ((s.status || '').toLowerCase() === 'baja') return false;
+            const td1 = getTrimData(s, mId, 't1', localEval);
+            const td2 = getTrimData(s, mId, 't2', localEval);
+            const td3 = getTrimData(s, mId, 't3', localEval);
+            const eer = getEERData(s, mId);
+            const valsTrim = [td1.efectiva, td2.efectiva, td3.efectiva].filter(v => v !== null);
+            const promAnualNum =
+              valsTrim.length > 0 ? Math.round(valsTrim.reduce((a, b) => a + b, 0) / valsTrim.length) : null;
+            const califEst = eer.eerFinal !== null ? eer.eerFinal : promAnualNum;
+
+            return (
+              (td1.ordNum !== null && td1.ordNum < 6) ||
+              (td2.ordNum !== null && td2.ordNum < 6) ||
+              (td3.ordNum !== null && td3.ordNum < 6) ||
+              td1.recNum !== null ||
+              td2.recNum !== null ||
+              td3.recNum !== null ||
+              eer.hasAny ||
+              (califEst !== null && califEst < 6)
+            );
+          });
+        } else {
+          sortedStudents = [...indexedBaseStudents];
+          const targetRows = 27;
+          if (sortedStudents.length < targetRows) {
+            const padCount = targetRows - sortedStudents.length;
+            for (let i = 0; i < padCount; i++) {
+              sortedStudents.push({
+                id: `empty_${pageIdx}_${i}`,
+                isEmpty: true,
+                numeroLista: sortedStudents.length + 1,
+                apellidoPaterno: '',
+                apellidoMaterno: '',
+                nombres: ''
+              });
+            }
           }
         }
 
-        // Calcular estadística automática de esta materia
+        // Calcular estadística automática del grupo completo en esta materia
         let existenciaH = 0;
         let existenciaM = 0;
         let regH = 0;
@@ -298,7 +384,7 @@ export default function CuadroAsignaturaPrint({
         let evaluadosCount = 0;
         let sumEvaluados = 0;
 
-        sortedStudents.forEach(s => {
+        indexedBaseStudents.forEach(s => {
           if (s.isEmpty || (s.status || '').toLowerCase() === 'baja') return;
           const gen = getStudentGender(s);
           if (gen === 'M') existenciaM++;
@@ -359,7 +445,9 @@ export default function CuadroAsignaturaPrint({
               </div>
               <div className="text-center">
                 <h2 className="font-black text-[12px] uppercase tracking-wider bg-slate-200 px-3 py-0.5 border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                  Cuadro de Concentración y Recuperación por Disciplina
+                  {onlyRecoveryFilter
+                    ? 'Relación de Alumnos en Recuperación / E.E.R. por Disciplina'
+                    : 'Cuadro de Concentración y Recuperación por Disciplina'}
                 </h2>
               </div>
               <div className="text-right leading-tight">
@@ -487,7 +575,14 @@ export default function CuadroAsignaturaPrint({
                 </tr>
               </thead>
               <tbody>
-                {sortedStudents.map((student, index) => {
+                {onlyRecoveryFilter && sortedStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={19} className="text-center font-bold py-5 text-slate-600 uppercase text-[9.5px] bg-slate-50">
+                      Sin alumnos reprobados, en recuperación trimestral ni en E.E.R. registrados en esta asignatura.
+                    </td>
+                  </tr>
+                ) : (
+                  sortedStudents.map((student, index) => {
                   const isBaja = !student.isEmpty && (student.status || '').toLowerCase() === 'baja';
                   const isAlta = !student.isEmpty && !isBaja && student.tipoIngreso === 'Alta';
                   const rawName = student.isEmpty
@@ -565,7 +660,9 @@ export default function CuadroAsignaturaPrint({
                       style={{ height: rowHeightStyle }}
                       className={isBaja ? 'bg-slate-200/70 text-slate-500' : 'even:bg-slate-50/40'}
                     >
-                      <td className="text-center font-bold text-slate-800 text-[8.8px] leading-none">{index + 1}</td>
+                      <td className="text-center font-bold text-slate-800 text-[8.8px] leading-none">
+                        {student.numeroLista || index + 1}
+                      </td>
                       <td
                         className="px-1.5 font-bold uppercase text-[8.8px] tracking-tight leading-none whitespace-nowrap overflow-hidden max-w-0"
                         title={fullName}
@@ -661,7 +758,8 @@ export default function CuadroAsignaturaPrint({
                       )}
                     </tr>
                   );
-                })}
+                })
+                )}
               </tbody>
             </table>
 

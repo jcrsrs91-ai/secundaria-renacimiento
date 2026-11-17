@@ -290,9 +290,31 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     });
   }, [materias, alumnosActivosGrupo, localGrades, trimestre]);
 
-  // Controles de Candado Docente y Visibilidad a Padres
+  // Controles de Candado Docente (Ordinario + Recuperación Trimestral) y Visibilidad a Padres
   const isDocenteLocked = Boolean(config?.trimestresBloqueadosDocentes?.[trimestre]);
+  const isRecuperacionOpenForTeachers = Boolean(config?.trimestresRecuperacionAbiertaDocentes?.[trimestre]);
   const isPublishedToParents = config?.trimestresPublicadosPadres?.[trimestre] !== false;
+
+  const handleToggleRecuperacionDocente = async () => {
+    const nextMap = {
+      ...(config?.trimestresRecuperacionAbiertaDocentes || { t1: false, t2: false, t3: false }),
+      [trimestre]: !isRecuperacionOpenForTeachers
+    };
+    const ok = await updateConfig({ trimestresRecuperacionAbiertaDocentes: nextMap });
+    if (ok) {
+      await registrarMovimiento(
+        currentUser?.email,
+        'Control Escolar (Calificaciones)',
+        nextMap[trimestre] ? 'Apertura Recuperación Docente' : 'Cierre Recuperación Docente',
+        `${nextMap[trimestre] ? 'Abrió' : 'Cerró'} el periodo de captura de Recuperación Trimestral para Docentes (${TRIMESTRE_NAMES[trimestre]})`
+      );
+      toast.success(
+        nextMap[trimestre]
+          ? `🟣 Periodo de Recuperación ABIERTO para Docentes en ${TRIMESTRE_NAMES[trimestre]} (sus ordinarias siguen protegidas si está cerrado el candado).`
+          : `🔒 Periodo de Recuperación CERRADO para Docentes en ${TRIMESTRE_NAMES[trimestre]}.`
+      );
+    }
+  };
 
   const handleToggleDocenteLock = async () => {
     const nextMap = {
@@ -640,6 +662,30 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
               <>
                 <Unlock className="w-4 h-4" />
                 Docentes: Captura Abierta ({trimestre.toUpperCase()})
+              </>
+            )}
+          </button>
+
+          {/* Interruptor independiente de Periodo de Recuperación para Docentes */}
+          <button
+            type="button"
+            onClick={handleToggleRecuperacionDocente}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition shadow-sm ${
+              isRecuperacionOpenForTeachers
+                ? 'bg-violet-600 text-white border-violet-400 hover:bg-violet-500'
+                : 'bg-slate-800 text-violet-300 border-violet-500/40 hover:bg-slate-700'
+            }`}
+            title="Habilita o cierra la columna Rec. Trim. para los docentes incluso cuando la captura ordinaria ya esté bloqueada."
+          >
+            {isRecuperacionOpenForTeachers ? (
+              <>
+                <Unlock className="w-4 h-4" />
+                Recup. Docentes: Abierta ({trimestre.toUpperCase()})
+              </>
+            ) : (
+              <>
+                <Lock className="w-4 h-4" />
+                Recup. Docentes: Cerrada ({trimestre.toUpperCase()})
               </>
             )}
           </button>

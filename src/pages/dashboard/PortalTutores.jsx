@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs, orderBy, limit, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getPromedioTrimestrePASEG, getPromedioGeneralPASEG, autoAcentuar } from '../../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva, getPromedioTrimestrePASEG, getPromedioGeneralPASEG, autoAcentuar } from '../../utils/format';
 import BoletaPrint from '../../components/BoletaPrint';
 import { inferirTurnoChat, HORARIOS_TURNO } from '../../components/FloatingBuzonWidget';
 
@@ -218,12 +218,24 @@ export default function PortalTutores() {
   const studentForParents = useMemo(() => {
     if (!liveStudent) return null;
     const rawCalif = liveStudent.calificaciones || {};
+    const rawRecup = liveStudent.recuperacion || {};
+    const rawDet = liveStudent.evaluacionDetalle || {};
     return {
       ...liveStudent,
       calificaciones: {
         t1: pubT1 ? (rawCalif.t1 || {}) : {},
         t2: pubT2 ? (rawCalif.t2 || {}) : {},
         t3: pubT3 ? (rawCalif.t3 || {}) : {}
+      },
+      recuperacion: {
+        t1: pubT1 ? (rawRecup.t1 || {}) : {},
+        t2: pubT2 ? (rawRecup.t2 || {}) : {},
+        t3: pubT3 ? (rawRecup.t3 || {}) : {}
+      },
+      evaluacionDetalle: {
+        t1: pubT1 ? (rawDet.t1 || {}) : {},
+        t2: pubT2 ? (rawDet.t2 || {}) : {},
+        t3: pubT3 ? (rawDet.t3 || {}) : {}
       }
     };
   }, [liveStudent, pubT1, pubT2, pubT3]);
@@ -391,10 +403,9 @@ export default function PortalTutores() {
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-white">
                     {materiasAlumno.map((materia) => {
-                      const calif = studentForParents.calificaciones || {};
-                      const t1 = calif.t1?.[materia.id];
-                      const t2 = calif.t2?.[materia.id];
-                      const t3 = calif.t3?.[materia.id];
+                      const r1 = getCalificacionTrimestreEfectiva(studentForParents, materia.id, 't1');
+                      const r2 = getCalificacionTrimestreEfectiva(studentForParents, materia.id, 't2');
+                      const r3 = getCalificacionTrimestreEfectiva(studentForParents, materia.id, 't3');
                       
                       const finalObj = getCalificacionFinal(studentForParents, materia.id);
                       const promedioStr = finalObj ? roundToIntGrade(finalObj.valor) : '-';
@@ -403,14 +414,14 @@ export default function PortalTutores() {
                       return (
                         <tr key={materia.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm text-slate-800 font-semibold">{materia.name}</td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT1 ? 'text-slate-400 italic text-[11px]' : t1 && Math.round(Number(t1)) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {!pubT1 ? 'En captura' : (t1 !== undefined && t1 !== '' ? roundToIntGrade(t1) : '-')}
+                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT1 ? 'text-slate-400 italic text-[11px]' : r1.efectiva !== null && r1.efectiva < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                            {!pubT1 ? 'En captura' : (r1.efectiva !== null ? <>{r1.efectiva}{r1.fueRecuperado && <span className="ml-0.5 text-[10px] font-black text-indigo-600" title="Acreditado en Recuperación Trimestral">(R)</span>}</> : '-')}
                           </td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT2 ? 'text-slate-400 italic text-[11px]' : t2 && Math.round(Number(t2)) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {!pubT2 ? 'En captura' : (t2 !== undefined && t2 !== '' ? roundToIntGrade(t2) : '-')}
+                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT2 ? 'text-slate-400 italic text-[11px]' : r2.efectiva !== null && r2.efectiva < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                            {!pubT2 ? 'En captura' : (r2.efectiva !== null ? <>{r2.efectiva}{r2.fueRecuperado && <span className="ml-0.5 text-[10px] font-black text-indigo-600" title="Acreditado en Recuperación Trimestral">(R)</span>}</> : '-')}
                           </td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT3 ? 'text-slate-400 italic text-[11px]' : t3 && Math.round(Number(t3)) < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {!pubT3 ? 'En captura' : (t3 !== undefined && t3 !== '' ? roundToIntGrade(t3) : '-')}
+                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT3 ? 'text-slate-400 italic text-[11px]' : r3.efectiva !== null && r3.efectiva < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                            {!pubT3 ? 'En captura' : (r3.efectiva !== null ? <>{r3.efectiva}{r3.fueRecuperado && <span className="ml-0.5 text-[10px] font-black text-indigo-600" title="Acreditado en Recuperación Trimestral">(R)</span>}</> : '-')}
                           </td>
                           <td className={`px-3 sm:px-6 py-3 text-xs sm:text-sm text-center font-black bg-slate-50/80 ${promedioStr === '-' ? 'text-slate-400' : isReprobada ? 'text-red-600' : 'text-emerald-700'}`}>
                             {promedioStr}{finalObj?.isRegularizacion ? '*' : ''}

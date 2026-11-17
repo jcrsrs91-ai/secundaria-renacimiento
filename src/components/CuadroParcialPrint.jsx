@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva } from '../utils/format';
 import { getStudentGender } from './ListaAsistenciaPrint';
 
 export default function CuadroParcialPrint({ alumnos = [], materias = [], grado = '', grupo = '' }) {
@@ -140,9 +140,12 @@ export default function CuadroParcialPrint({ alumnos = [], materias = [], grado 
                   ) : (
                     <>
                       {materias.map(mat => {
-                        const t1 = roundToIntGrade(al.calificaciones?.['t1']?.[mat.id], '-');
-                        const t2 = roundToIntGrade(al.calificaciones?.['t2']?.[mat.id], '-');
-                        const t3 = roundToIntGrade(al.calificaciones?.['t3']?.[mat.id], '-');
+                        const r1 = getCalificacionTrimestreEfectiva(al, mat.id, 't1');
+                        const r2 = getCalificacionTrimestreEfectiva(al, mat.id, 't2');
+                        const r3 = getCalificacionTrimestreEfectiva(al, mat.id, 't3');
+                        const t1 = r1.efectiva !== null ? `${r1.efectiva}${r1.fueRecuperado ? 'R' : ''}` : '-';
+                        const t2 = r2.efectiva !== null ? `${r2.efectiva}${r2.fueRecuperado ? 'R' : ''}` : '-';
+                        const t3 = r3.efectiva !== null ? `${r3.efectiva}${r3.fueRecuperado ? 'R' : ''}` : '-';
                         
                         const finalObj = getPromedioFinalObj(al, mat.id);
                         let val = null;

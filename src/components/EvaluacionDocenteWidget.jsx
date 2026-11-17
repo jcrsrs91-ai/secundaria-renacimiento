@@ -44,8 +44,11 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
   const [contenidosFecha, setContenidosFecha] = useState({});
 
   const isLockedForTeachers = Boolean(config?.trimestresBloqueadosDocentes?.[trimestre]);
+  const isRecuperacionOpenForTeachers = Boolean(config?.trimestresRecuperacionAbiertaDocentes?.[trimestre]);
   // Los secretarios y superadmin SIEMPRE pueden editar aunque el trimestre esté cerrado para docentes
   const isReadOnlyForCurrentUser = userRole === 'docente' && isLockedForTeachers;
+  const canEditRecuperacion = userRole !== 'docente' || !isLockedForTeachers || isRecuperacionOpenForTeachers;
+  const canSaveAnything = !isReadOnlyForCurrentUser || canEditRecuperacion;
 
   const materias = useMemo(() => materiasPorGrado[grado] || [], [grado]);
 
@@ -143,7 +146,11 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
   }, [alumnosGrupo, grado, grupo, materiaId, trimestre, hasUnsavedChanges]);
 
   const handleFieldChange = (studentId, field, value) => {
-    if (isReadOnlyForCurrentUser) return;
+    if (field === 'recuperacion') {
+      if (!canEditRecuperacion) return;
+    } else if (isReadOnlyForCurrentUser && !(field === 'observaciones' && canEditRecuperacion)) {
+      return;
+    }
     setEvalData(prev => ({
       ...prev,
       [studentId]: {
@@ -410,8 +417,8 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
   // Guardar calificaciones, celdas diarias y encabezados de fecha/contenido en Firestore en un solo lote atómico (writeBatch)
   const handleSaveGrades = async (silent = false) => {
     if (isSaving) return false;
-    if (isReadOnlyForCurrentUser) {
-      toast.error('La captura para este trimestre ha sido bloqueada por Control Escolar.');
+    if (!canSaveAnything) {
+      toast.error('La captura (ordinaria y recuperación) para este trimestre ha sido bloqueada por Control Escolar.');
       return false;
     }
     if (alumnosGrupo.length === 0) return false;
@@ -420,20 +427,24 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     for (const al of alumnosGrupo) {
       const isBaja = (al.status || '').toLowerCase() === 'baja';
       if (isBaja) continue;
-      const rawCalif = (evalData[al.id]?.calificacion ?? '').toString().trim();
-      if (rawCalif !== '') {
-        const num = parseFloat(rawCalif);
-        if (isNaN(num) || num < 5 || num > 10) {
-          toast.error(`La calificación trimestral final de ${al.apellidoPaterno || ''} ${al.nombres || ''} (${rawCalif}) debe estar entre 5 y 10.`);
-          return false;
+      if (!isReadOnlyForCurrentUser) {
+        const rawCalif = (evalData[al.id]?.calificacion ?? '').toString().trim();
+        if (rawCalif !== '') {
+          const num = parseFloat(rawCalif);
+          if (isNaN(num) || num < 5 || num > 10) {
+            toast.error(`La calificación trimestral final de ${al.apellidoPaterno || ''} ${al.nombres || ''} (${rawCalif}) debe estar entre 5 y 10.`);
+            return false;
+          }
         }
       }
-      const rawRec = (evalData[al.id]?.recuperacion ?? '').toString().trim();
-      if (rawRec !== '') {
-        const numRec = parseFloat(rawRec);
-        if (isNaN(numRec) || numRec < 5 || numRec > 10) {
-          toast.error(`La calificación de Recuperación de ${al.apellidoPaterno || ''} ${al.nombres || ''} (${rawRec}) debe estar entre 5 y 10.`);
-          return false;
+      if (canEditRecuperacion) {
+        const rawRec = (evalData[al.id]?.recuperacion ?? '').toString().trim();
+        if (rawRec !== '') {
+          const numRec = parseFloat(rawRec);
+          if (isNaN(numRec) || numRec < 5 || numRec > 10) {
+            toast.error(`La calificación de Recuperación de ${al.apellidoPaterno || ''} ${al.nombres || ''} (${rawRec}) debe estar entre 5 y 10.`);
+            return false;
+          }
         }
       }
     }
@@ -505,14 +516,24 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         if (hasStudentChanged) {
           changedCount++;
           const docRef = doc(db, 'students', al.id);
-          batch.update(docRef, {
-            [`calificaciones.${trimestre}.${materiaId}`]: califEnteraOficial,
-            [`recuperacion.${trimestre}.${materiaId}`]: recEnteraOficial,
-            [`evaluacionDetalle.${trimestre}.${materiaId}`]: {
-              ...newPayload,
-              updatedAt: nowIso
-            }
-          });
+          // Si para el docente solo está abierto el Periodo de Recuperación (ordinaria bloqueada), actualizar únicamente Rec. y Observaciones sin tocar Calif. Ordinaria
+          if (isReadOnlyForCurrentUser && canEditRecuperacion) {
+            batch.update(docRef, {
+              [`recuperacion.${trimestre}.${materiaId}`]: recEnteraOficial,
+              [`evaluacionDetalle.${trimestre}.${materiaId}.recuperacion`]: newPayload.recuperacion,
+              [`evaluacionDetalle.${trimestre}.${materiaId}.observaciones`]: newPayload.observaciones,
+              [`evaluacionDetalle.${trimestre}.${materiaId}.updatedAt`]: nowIso
+            });
+          } else {
+            batch.update(docRef, {
+              [`calificaciones.${trimestre}.${materiaId}`]: califEnteraOficial,
+              [`recuperacion.${trimestre}.${materiaId}`]: recEnteraOficial,
+              [`evaluacionDetalle.${trimestre}.${materiaId}`]: {
+                ...newPayload,
+                updatedAt: nowIso
+              }
+            });
+          }
         }
       });
 
@@ -676,9 +697,15 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           <div className="flex items-center gap-2.5 text-xs sm:text-sm font-bold">
             <Lock className="w-5 h-5 shrink-0" />
             {isReadOnlyForCurrentUser ? (
-              <span>
-                El periodo de captura para el <strong>Trimestre {TRIMESTRE_LABELS[trimestre]}</strong> ha sido cerrado por Control Escolar. Puedes consultar e imprimir tus listas y cuadros, pero si requieres una corrección acude con el Secretario de tu grado.
-              </span>
+              canEditRecuperacion ? (
+                <span>
+                  La captura ordinaria del <strong>Trimestre {TRIMESTRE_LABELS[trimestre]}</strong> está cerrada, pero el <strong>Periodo de Recuperación (`Rec. Trim.`) está ABIERTO</strong> para capturar recuperación de alumnos reprobados.
+                </span>
+              ) : (
+                <span>
+                  El periodo de captura para el <strong>Trimestre {TRIMESTRE_LABELS[trimestre]}</strong> ha sido cerrado por Control Escolar. Puedes consultar e imprimir tus listas y cuadros, pero si requieres una corrección acude con el Secretario de tu grado.
+                </span>
+              )
             ) : (
               <span>
                 El <strong>Trimestre {TRIMESTRE_LABELS[trimestre]}</strong> está bloqueado para Docentes, pero como personal de <strong>Control Escolar</strong> tienes acceso total para capturar o corregir aquí.
@@ -979,7 +1006,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           <button
             type="button"
             onClick={() => handleSaveGrades(false)}
-            disabled={isSaving || isReadOnlyForCurrentUser}
+            disabled={isSaving || !canSaveAnything}
             title="Atajo rápido: Ctrl + S"
             className={`flex items-center px-5 py-2.5 text-white rounded-lg font-bold text-sm transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
               hasUnsavedChanges
@@ -987,14 +1014,18 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                 : 'bg-emerald-600 hover:bg-emerald-500'
             }`}
           >
-            {isReadOnlyForCurrentUser ? (
+            {!canSaveAnything ? (
               <Lock className="w-4 h-4 mr-2" />
             ) : isSaving ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}
-            {isReadOnlyForCurrentUser ? 'Captura Cerrada' : isSaving ? 'Trabajando... Guardando...' : 'Guardar Calificaciones en Sistema'}
+            {!canSaveAnything
+              ? 'Captura Cerrada'
+              : isReadOnlyForCurrentUser && canEditRecuperacion
+                ? (isSaving ? 'Guardando Recuperación...' : 'Guardar Recuperación Trimestral')
+                : (isSaving ? 'Trabajando... Guardando...' : 'Guardar Calificaciones en Sistema')}
           </button>
           {hasUnsavedChanges ? (
             <span className="text-xs text-amber-300 font-semibold flex items-center gap-1">
@@ -1363,7 +1394,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                             step="1"
                             min="5"
                             max="10"
-                            disabled={isReadOnlyForCurrentUser}
+                            disabled={!canEditRecuperacion}
                             data-docente-cell={`${idx}-recuperacion`}
                             value={row.recuperacion ?? ''}
                             onKeyDown={e => handleGridKeyDown(e, idx, 'recuperacion')}
@@ -1439,7 +1470,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           <button
             type="button"
             onClick={() => handleSaveGrades(false)}
-            disabled={isSaving || isReadOnlyForCurrentUser}
+            disabled={isSaving || !canSaveAnything}
             title="Atajo rápido: Ctrl + S"
             className={`flex items-center px-6 py-2.5 text-white rounded-lg font-bold text-sm transition shadow-md disabled:opacity-50 ${
               hasUnsavedChanges
