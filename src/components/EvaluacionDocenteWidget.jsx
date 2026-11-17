@@ -115,6 +115,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     alumnosGrupo.forEach(al => {
       const savedCalif = al.calificaciones?.[trimestre]?.[materiaId] ?? '';
       const det = al.evaluacionDetalle?.[trimestre]?.[materiaId] || {};
+      const savedRec = al.recuperacion?.[trimestre]?.[materiaId] ?? det.recuperacion ?? '';
       const savedDias = det.dias || {};
       const diasObj = {};
       DAYS_COLS.forEach(col => {
@@ -134,6 +135,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         participacion: det.participacion ?? '',
         extraEval: det.extraEval ?? '',
         calificacion: savedCalif !== '' ? savedCalif : (det.calificacion ?? ''),
+        recuperacion: savedRec !== '' ? savedRec : '',
         observaciones: det.observaciones ?? ''
       };
     });
@@ -358,9 +360,11 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
       if (gen === 'M') existenciaM++;
       else existenciaH++;
 
-      const rawCalif = evalData[al.id]?.calificacion;
-      const numCalif = parseFloat(rawCalif);
-      if (!isNaN(numCalif) && numCalif > 0) {
+      const rawOrd = evalData[al.id]?.calificacion;
+      const numOrd = roundToIntNumber(rawOrd);
+      const numRec = roundToIntNumber(evalData[al.id]?.recuperacion);
+      const numCalif = numRec !== null && (numOrd === null || numRec > numOrd) ? numRec : numOrd;
+      if (numCalif !== null && numCalif > 0) {
         totalEvaluados++;
         sumaCalif += numCalif;
         if (numCalif >= 6.0) {
@@ -412,7 +416,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     }
     if (alumnosGrupo.length === 0) return false;
 
-    // Validar rango oficial SEP/PASEG (5.0 a 10.0) en la columna Calif. Trim. antes de guardar
+    // Validar rango oficial SEP/PASEG (5.0 a 10.0) en Calif. Trim. y Rec. Trim. antes de guardar
     for (const al of alumnosGrupo) {
       const isBaja = (al.status || '').toLowerCase() === 'baja';
       if (isBaja) continue;
@@ -421,6 +425,14 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         const num = parseFloat(rawCalif);
         if (isNaN(num) || num < 5 || num > 10) {
           toast.error(`La calificación trimestral final de ${al.apellidoPaterno || ''} ${al.nombres || ''} (${rawCalif}) debe estar entre 5 y 10.`);
+          return false;
+        }
+      }
+      const rawRec = (evalData[al.id]?.recuperacion ?? '').toString().trim();
+      if (rawRec !== '') {
+        const numRec = parseFloat(rawRec);
+        if (isNaN(numRec) || numRec < 5 || numRec > 10) {
+          toast.error(`La calificación de Recuperación de ${al.apellidoPaterno || ''} ${al.nombres || ''} (${rawRec}) debe estar entre 5 y 10.`);
           return false;
         }
       }
@@ -445,6 +457,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
 
         const row = evalData[al.id] || {};
         const califEnteraOficial = roundToIntGrade(row.calificacion, '');
+        const recEnteraOficial = roundToIntGrade(row.recuperacion, '');
         const newPayload = {
           dias: row.dias || {},
           faltas: row.faltas ?? '',
@@ -458,12 +471,14 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           participacion: row.participacion ?? '',
           extraEval: row.extraEval ?? '',
           calificacion: califEnteraOficial !== '' ? califEnteraOficial : (row.calificacion ?? ''),
+          recuperacion: recEnteraOficial !== '' ? recEnteraOficial : (row.recuperacion ?? ''),
           observaciones: row.observaciones ?? '',
           docente: docenteNombre.trim()
         };
 
         const oldCalif = (al.calificaciones?.[trimestre]?.[materiaId] ?? '').toString();
         const oldDet = al.evaluacionDetalle?.[trimestre]?.[materiaId] || {};
+        const oldRec = (al.recuperacion?.[trimestre]?.[materiaId] ?? oldDet.recuperacion ?? '').toString();
         const oldComparable = {
           dias: oldDet.dias || {},
           faltas: oldDet.faltas ?? '',
@@ -477,12 +492,14 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           participacion: oldDet.participacion ?? '',
           extraEval: oldDet.extraEval ?? '',
           calificacion: oldDet.calificacion ?? '',
+          recuperacion: oldDet.recuperacion ?? '',
           observaciones: oldDet.observaciones ?? '',
           docente: oldDet.docente ?? ''
         };
 
         const hasStudentChanged =
           oldCalif !== String(califEnteraOficial) ||
+          oldRec !== String(recEnteraOficial) ||
           JSON.stringify(newPayload) !== JSON.stringify(oldComparable);
 
         if (hasStudentChanged) {
@@ -490,6 +507,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           const docRef = doc(db, 'students', al.id);
           batch.update(docRef, {
             [`calificaciones.${trimestre}.${materiaId}`]: califEnteraOficial,
+            [`recuperacion.${trimestre}.${materiaId}`]: recEnteraOficial,
             [`evaluacionDetalle.${trimestre}.${materiaId}`]: {
               ...newPayload,
               updatedAt: nowIso
@@ -1136,7 +1154,10 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                   </>
                 )}
                 <th className="px-3 py-3 text-center text-xs font-black uppercase w-28 bg-indigo-950 text-indigo-200 border-r border-slate-700">
-                  Calif. Trim.
+                  Calif. Trim. (Ord.)
+                </th>
+                <th className="px-3 py-3 text-center text-xs font-black uppercase w-24 bg-violet-950 text-violet-200 border-r border-slate-700" title="Periodo de Recuperación del Trimestre (escala 6 a 10). Si se captura aquí, se imprime aparte sin borrar la ordinaria.">
+                  Rec. Trim.
                 </th>
                 <th className="px-3 py-3 text-center text-xs font-bold uppercase w-24 border-r border-slate-700">Situación</th>
                 <th className="px-3 py-3 text-left text-xs font-bold uppercase min-w-[160px]">Observaciones</th>
@@ -1149,10 +1170,14 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                 const gen = getStudentGender(al);
                 const row = evalData[al.id] || {};
                 const califStr = (row.calificacion ?? '').toString().trim();
-                const isEmptyGrade = !isBaja && califStr === '';
+                const recStr = (row.recuperacion ?? '').toString().trim();
+                const isEmptyGrade = !isBaja && califStr === '' && recStr === '';
                 const califNum = parseFloat(califStr);
-                const isReprobado = !isNaN(califNum) && califNum < 6;
-                const isAprobado = !isNaN(califNum) && califNum >= 6;
+                const recNum = parseFloat(recStr);
+                const effectiveNum = !isNaN(recNum) && (isNaN(califNum) || recNum > califNum) ? recNum : califNum;
+                const fueRecuperado = !isNaN(recNum) && !isNaN(califNum) && recNum >= 6 && califNum < 6;
+                const isReprobado = !isNaN(effectiveNum) && effectiveNum < 6;
+                const isAprobado = !isNaN(effectiveNum) && effectiveNum >= 6;
                 const calcDias = modoCaptura === 'lista_oficial' ? getCalculoDiasAlumno(al.id) : null;
 
                 return (
@@ -1194,10 +1219,10 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                       <td
                         colSpan={
                           modoCaptura === 'lista_oficial'
-                            ? 35
+                            ? 36
                             : modoCaptura === 'detallado'
-                              ? 13
-                              : 4
+                              ? 14
+                              : 5
                         }
                         className="px-4 py-2.5 text-center font-bold text-xs tracking-widest text-slate-400 uppercase bg-slate-100"
                       >
@@ -1306,7 +1331,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                           </>
                         )}
 
-                        {/* Calificación del Trimestre */}
+                        {/* Calificación del Trimestre (Ordinaria) */}
                         <td className="px-2 py-2 text-center bg-indigo-50/40 border-r border-slate-200">
                           <input
                             type="number"
@@ -1322,28 +1347,54 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
                             className={`w-20 p-1.5 text-center border-2 rounded-lg font-black text-base focus:outline-none focus:ring-2 disabled:bg-slate-100 ${
                               highlightEmpty && isEmptyGrade
                                 ? 'border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-400'
-                                : isReprobado
+                                : !isNaN(califNum) && califNum < 6
                                   ? 'border-red-400 bg-red-50 text-red-700 focus:ring-red-500'
-                                  : isAprobado
+                                  : !isNaN(califNum) && califNum >= 6
                                     ? 'border-indigo-300 bg-white text-slate-900 focus:ring-indigo-500'
                                     : 'border-slate-300 bg-white text-slate-700 focus:ring-primary-500'
                             }`}
                           />
                         </td>
 
+                        {/* Periodo de Recuperación del Trimestre */}
+                        <td className="px-2 py-2 text-center bg-violet-50/40 border-r border-slate-200">
+                          <input
+                            type="number"
+                            step="1"
+                            min="5"
+                            max="10"
+                            disabled={isReadOnlyForCurrentUser}
+                            data-docente-cell={`${idx}-recuperacion`}
+                            value={row.recuperacion ?? ''}
+                            onKeyDown={e => handleGridKeyDown(e, idx, 'recuperacion')}
+                            onChange={e => handleFieldChange(al.id, 'recuperacion', e.target.value)}
+                            placeholder="Rec."
+                            title="Calificación en Periodo de Recuperación del Trimestre (conserva la ordinaria intacta)"
+                            className={`w-16 p-1.5 text-center border-2 rounded-lg font-black text-sm focus:outline-none focus:ring-2 disabled:bg-slate-100 ${
+                              recStr !== ''
+                                ? (!isNaN(recNum) && recNum >= 6
+                                    ? 'border-violet-400 bg-violet-100/70 text-violet-900 focus:ring-violet-500'
+                                    : 'border-red-300 bg-red-50 text-red-700 focus:ring-red-500')
+                                : 'border-slate-200 bg-white text-slate-600 focus:ring-violet-400'
+                            }`}
+                          />
+                        </td>
+
                         {/* Situación en la Materia */}
                         <td className="px-2 py-2 text-center border-r border-slate-200">
-                          {isAprobado && (
+                          {fueRecuperado ? (
+                            <span className="px-2 py-1 rounded-full text-[10px] font-extrabold bg-violet-100 text-violet-900 border border-violet-300">
+                              RECUPERADO
+                            </span>
+                          ) : isAprobado ? (
                             <span className="px-2 py-1 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
                               REGULAR
                             </span>
-                          )}
-                          {isReprobado && (
+                          ) : isReprobado ? (
                             <span className="px-2 py-1 rounded-full text-[11px] font-extrabold bg-red-100 text-red-800 border border-red-300">
                               IRREGULAR
                             </span>
-                          )}
-                          {!isAprobado && !isReprobado && (
+                          ) : (
                             <span className={`text-xs ${highlightEmpty ? 'font-bold text-amber-800' : 'text-slate-400'}`}>
                               Sin capturar
                             </span>

@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 import toast from 'react-hot-toast';
 import { db } from '../firebase';
 import { doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { truncateTo1Dec, roundToIntGrade, roundToIntNumber, getCalificacionFinal, autoAcentuar } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, roundToIntNumber, getCalificacionFinal, getCalificacionTrimestreEfectiva, autoAcentuar } from '../utils/format';
 import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
 import { registrarMovimiento } from '../utils/bitacora';
 import { useAuth } from '../context/AuthContext';
@@ -19,10 +19,11 @@ const TRIMESTRE_NAMES = {
   t3: 'Trimestre 3'
 };
 
-export default function Calificaciones({ activos, materiasPorGrado, onPrintBoleta, onPrintConcentradoFinal, onPrintConcentradoParcial }) {
+export default function Calificaciones({ activos, materiasPorGrado, onPrintBoleta, onPrintConcentradoFinal, onPrintConcentradoParcial, onPrintCuadroMateria }) {
   const { currentUser } = useAuth();
   const { config, updateConfig } = useGlobalConfig();
   const [subMode, setSubMode] = useState('sabana'); // 'sabana' | 'asignatura'
+  const [sabanaCaptureMode, setSabanaCaptureMode] = useState('ordinario'); // 'ordinario' | 'recuperacion'
   const [grado, setGrado] = useState('1er Grado');
   const [grupo, setGrupo] = useState('A');
   const [trimestre, setTrimestre] = useState('t1');
@@ -57,10 +58,10 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
   // Estado local para editar calificaciones antes de guardar
   const [localGrades, setLocalGrades] = useState({});
 
-  // Al cambiar de grado, grupo o trimestre se limpian las marcas de edición pendiente
+  // Al cambiar de grado, grupo, trimestre o modalidad (ordinario/recuperación) se limpian las marcas de edición pendiente
   useEffect(() => {
     setDirtyStudents({});
-  }, [grado, grupo, trimestre]);
+  }, [grado, grupo, trimestre, sabanaCaptureMode]);
 
   useEffect(() => {
     setLocalGrades(prev => {
@@ -73,14 +74,17 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         }
         grades[al.id] = {};
         materias.forEach(mat => {
-          const raw = al.calificaciones?.[trimestre]?.[mat.id] ?? '';
+          const raw =
+            sabanaCaptureMode === 'recuperacion'
+              ? (al.recuperacion?.[trimestre]?.[mat.id] ?? al.evaluacionDetalle?.[trimestre]?.[mat.id]?.recuperacion ?? '')
+              : (al.calificaciones?.[trimestre]?.[mat.id] ?? '');
           const intVal = roundToIntNumber(raw);
           grades[al.id][mat.id] = intVal !== null ? String(intVal) : '';
         });
       });
       return grades;
     });
-  }, [alumnos, materias, trimestre, dirtyStudents]);
+  }, [alumnos, materias, trimestre, dirtyStudents, sabanaCaptureMode]);
 
   const handleGradeChange = (studentId, materiaId, value) => {
     setDirtyStudents(prev => (prev[studentId] ? prev : { ...prev, [studentId]: true }));
@@ -98,7 +102,10 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     const list = [];
     alumnosActivosGrupo.forEach(al => {
       const rawGrades = localGrades[al.id] || {};
-      const currentSaved = al.calificaciones?.[trimestre] || {};
+      const currentSaved =
+        sabanaCaptureMode === 'recuperacion'
+          ? (al.recuperacion?.[trimestre] || {})
+          : (al.calificaciones?.[trimestre] || {});
       const roundedGrades = {};
       let hasDiff = false;
 
@@ -107,7 +114,11 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         const newVal = r === '' ? '' : (roundToIntNumber(r) !== null ? String(roundToIntNumber(r)) : '');
         roundedGrades[mat.id] = newVal;
 
-        const oldRaw = (currentSaved[mat.id] ?? '').toString().trim();
+        const oldRaw = (
+          sabanaCaptureMode === 'recuperacion'
+            ? (currentSaved[mat.id] ?? al.evaluacionDetalle?.[trimestre]?.[mat.id]?.recuperacion ?? '')
+            : (currentSaved[mat.id] ?? '')
+        ).toString().trim();
         const oldVal = oldRaw === '' ? '' : (roundToIntNumber(oldRaw) !== null ? String(roundToIntNumber(oldRaw)) : '');
         if (newVal !== oldVal) {
           hasDiff = true;
@@ -122,7 +133,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       }
     });
     return list;
-  }, [alumnosActivosGrupo, localGrades, materias, trimestre]);
+  }, [alumnosActivosGrupo, localGrades, materias, trimestre, sabanaCaptureMode]);
 
   // Navegación rápida tipo Excel con Enter y Flechas en la Sábana General de Secretarios (salta automáticamente filas de Baja)
   const handleCellKeyDown = (e, rowIdx, colIdx) => {
@@ -149,14 +160,24 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     }
   };
 
-  // Promedio General del Trimestre seleccionado (1 décima sin truncar a entero, a partir de calificaciones enteras por materia)
+  // Promedio General del Trimestre seleccionado (considerando Recuperación si mejora la ordinaria)
   const calcularPromedioTrimestre = (studentId) => {
     const grades = localGrades[studentId];
+    const studentObj = alumnos.find(s => s.id === studentId);
     if (!grades) return '-';
     let sum = 0;
     let count = 0;
     materias.forEach(mat => {
-      const val = roundToIntNumber(grades[mat.id]);
+      let val = null;
+      if (sabanaCaptureMode === 'recuperacion') {
+        const ord = roundToIntNumber(studentObj?.calificaciones?.[trimestre]?.[mat.id]);
+        const rec = roundToIntNumber(grades[mat.id]);
+        val = rec !== null && (ord === null || rec > ord) ? rec : ord;
+      } else {
+        const ord = roundToIntNumber(grades[mat.id]);
+        const rec = roundToIntNumber(studentObj?.recuperacion?.[trimestre]?.[mat.id] ?? studentObj?.evaluacionDetalle?.[trimestre]?.[mat.id]?.recuperacion);
+        val = rec !== null && (ord === null || rec > ord) ? rec : ord;
+      }
       if (val !== null) {
         sum += val;
         count++;
@@ -165,7 +186,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     return count === 0 ? '-' : truncateTo1Dec(sum / count);
   };
 
-  // Promedio General Acumulado del Alumno (1 décima, promediando las calificaciones finales enteras de cada materia)
+  // Promedio General Acumulado del Alumno (1 décima, considerando recuperaciones trimestrales y E.E.R.)
   const calcularPromedioGeneralPASEGEnVivo = (al) => {
     let sum = 0;
     let count = 0;
@@ -178,9 +199,22 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
           return;
         }
       }
-      const t1 = roundToIntNumber(trimestre === 't1' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t1']?.[mat.id]);
-      const t2 = roundToIntNumber(trimestre === 't2' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t2']?.[mat.id]);
-      const t3 = roundToIntNumber(trimestre === 't3' ? localGrades[al.id]?.[mat.id] : al.calificaciones?.['t3']?.[mat.id]);
+      const getTrimEf = (tKey) => {
+        if (tKey === trimestre) {
+          if (sabanaCaptureMode === 'recuperacion') {
+            const ord = roundToIntNumber(al.calificaciones?.[tKey]?.[mat.id]);
+            const rec = roundToIntNumber(localGrades[al.id]?.[mat.id]);
+            return rec !== null && (ord === null || rec > ord) ? rec : ord;
+          }
+          const ord = roundToIntNumber(localGrades[al.id]?.[mat.id]);
+          const rec = roundToIntNumber(al.recuperacion?.[tKey]?.[mat.id] ?? al.evaluacionDetalle?.[tKey]?.[mat.id]?.recuperacion);
+          return rec !== null && (ord === null || rec > ord) ? rec : ord;
+        }
+        return getCalificacionTrimestreEfectiva(al, mat.id, tKey).efectiva;
+      };
+      const t1 = getTrimEf('t1');
+      const t2 = getTrimEf('t2');
+      const t3 = getTrimEf('t3');
       let sMat = 0, cMat = 0;
       if (t1 !== null) { sMat += t1; cMat++; }
       if (t2 !== null) { sMat += t2; cMat++; }
@@ -334,11 +368,12 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     try {
       if (totalModificados > 0) {
         // Guardar en un solo lote atómico (writeBatch) únicamente los alumnos que tuvieron cambios reales
+        const fieldRoot = sabanaCaptureMode === 'recuperacion' ? 'recuperacion' : 'calificaciones';
         const batch = writeBatch(db);
         alumnosConCambios.forEach(({ student, newTrimestreData }) => {
           const docRef = doc(db, 'students', student.id);
           batch.update(docRef, {
-            [`calificaciones.${trimestre}`]: newTrimestreData
+            [`${fieldRoot}.${trimestre}`]: newTrimestreData
           });
         });
         await batch.commit();
@@ -347,8 +382,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         registrarMovimiento(
           currentUser?.email,
           'Control Escolar (Calificaciones)',
-          'Captura Sábana General',
-          `Guardó calificaciones en sábana general de ${grado} "${grupo}" (${trimestre.toUpperCase()}) — ${totalModificados} alumno(s) actualizados.`
+          sabanaCaptureMode === 'recuperacion' ? 'Captura Recuperación Trimestral' : 'Captura Sábana General',
+          `Guardó calificaciones (${sabanaCaptureMode === 'recuperacion' ? 'RECUPERACIÓN' : 'ORDINARIO'}) en sábana general de ${grado} "${grupo}" (${trimestre.toUpperCase()}) — ${totalModificados} alumno(s) actualizados.`
         ).catch(console.error);
       }
 
@@ -671,12 +706,35 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
               </select>
             </div>
             <div className="w-full md:w-1/4">
-              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Trimestre</label>
-              <select value={trimestre} onChange={e => setTrimestre(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-primary-700 bg-primary-50">
-                <option value="t1">Trimestre 1 {config?.trimestresBloqueadosDocentes?.t1 ? '🔒' : ''}</option>
-                <option value="t2">Trimestre 2 {config?.trimestresBloqueadosDocentes?.t2 ? '🔒' : ''}</option>
-                <option value="t3">Trimestre 3 {config?.trimestresBloqueadosDocentes?.t3 ? '🔒' : ''}</option>
-              </select>
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Trimestre y Tipo</label>
+              <div className="space-y-1.5">
+                <select value={trimestre} onChange={e => setTrimestre(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-primary-700 bg-primary-50">
+                  <option value="t1">Trimestre 1 {config?.trimestresBloqueadosDocentes?.t1 ? '🔒' : ''}</option>
+                  <option value="t2">Trimestre 2 {config?.trimestresBloqueadosDocentes?.t2 ? '🔒' : ''}</option>
+                  <option value="t3">Trimestre 3 {config?.trimestresBloqueadosDocentes?.t3 ? '🔒' : ''}</option>
+                </select>
+                <div className="grid grid-cols-2 gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setSabanaCaptureMode('ordinario')}
+                    className={`py-1 px-2 rounded-md transition ${
+                      sabanaCaptureMode === 'ordinario' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    Ordinario
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSabanaCaptureMode('recuperacion')}
+                    className={`py-1 px-2 rounded-md transition ${
+                      sabanaCaptureMode === 'recuperacion' ? 'bg-violet-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                    title="Capturar calificaciones del Periodo de Recuperación de este trimestre sin borrar la ordinaria"
+                  >
+                    Recuperación
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="flex-1 flex flex-wrap justify-end items-center gap-2">
               <button onClick={handleDownloadTemplate} className="flex items-center px-3.5 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium text-sm">
@@ -779,7 +837,19 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                           : 'bg-slate-50 border-slate-200 text-slate-500'
                     }`}
                   >
-                    <div className="font-bold truncate" title={sm.name}>{sm.name}</div>
+                    <div className="flex items-start justify-between gap-1">
+                      <div className="font-bold truncate flex-1" title={sm.name}>{sm.name}</div>
+                      {onPrintCuadroMateria && (
+                        <button
+                          type="button"
+                          onClick={() => onPrintCuadroMateria(alumnos, grado, grupo, trimestre, [sm])}
+                          className="shrink-0 px-1.5 py-0.5 bg-white hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 rounded text-[10px] font-extrabold transition shadow-2xs"
+                          title={`Imprimir Cuadro de Concentración por Materia de ${sm.name}`}
+                        >
+                          🖨️ Cuadro
+                        </button>
+                      )}
+                    </div>
                     <div className="flex items-center justify-between mt-1 text-[11px]">
                       <span className="font-extrabold">
                         {sm.capturados}/{sm.total} {sm.completo ? '✅' : sm.parcial ? '⏳' : ''}
@@ -876,6 +946,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                             <>
                               {materias.map((mat, colIdx) => {
                                 const val = localGrades[al.id]?.[mat.id] ?? '';
+                                const recSaved = roundToIntNumber(al.recuperacion?.[trimestre]?.[mat.id] ?? al.evaluacionDetalle?.[trimestre]?.[mat.id]?.recuperacion);
                                 const isEmpty = val.toString().trim() === '';
                                 const numVal = parseFloat(val);
                                 const isOutOfRange = !isEmpty && (isNaN(numVal) || numVal < 5 || numVal > 10);
@@ -898,17 +969,24 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                                           }
                                         }
                                       }}
-                                      placeholder={highlightEmptyCells && isEmpty ? '!' : ''}
+                                      placeholder={sabanaCaptureMode === 'recuperacion' ? 'Rec' : (highlightEmptyCells && isEmpty ? '!' : '')}
                                       className={`w-14 text-center p-1.5 border rounded font-bold text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-colors
                                         ${isOutOfRange
                                           ? 'bg-red-100 border-red-500 text-red-900 ring-2 ring-red-400'
-                                          : highlightEmptyCells && isEmpty
-                                            ? 'bg-amber-100 border-amber-500 text-amber-950 ring-2 ring-amber-300'
-                                            : isFailing
-                                              ? 'bg-red-50 border-red-300 text-red-700'
-                                              : 'bg-white border-slate-300 text-slate-700'}
+                                          : sabanaCaptureMode === 'recuperacion'
+                                            ? (!isEmpty ? 'bg-violet-50 border-violet-400 text-violet-900' : 'bg-slate-50 border-slate-200 text-slate-500')
+                                            : highlightEmptyCells && isEmpty
+                                              ? 'bg-amber-100 border-amber-500 text-amber-950 ring-2 ring-amber-300'
+                                              : isFailing
+                                                ? 'bg-red-50 border-red-300 text-red-700'
+                                                : 'bg-white border-slate-300 text-slate-700'}
                                       `}
                                     />
+                                    {sabanaCaptureMode === 'ordinario' && recSaved !== null && (
+                                      <div className="text-[9px] font-black text-violet-700 leading-none mt-0.5" title={`Periodo de Recuperación: ${recSaved}`}>
+                                        R:{recSaved}
+                                      </div>
+                                    )}
                                   </td>
                                 );
                               })}
@@ -953,11 +1031,46 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                     </button>
                     
                     {showConcentradoMenu && (
-                      <div className="absolute bottom-full mb-2 left-0 w-72 bg-white rounded-xl shadow-xl border border-slate-200 p-2 z-50 overflow-hidden">
-                        <div className="px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">Tipo de Cuadro General</div>
+                      <div className="absolute bottom-full mb-2 left-0 w-80 bg-white rounded-xl shadow-xl border border-slate-200 p-2 z-50 overflow-hidden max-h-[75vh] overflow-y-auto">
+                        <div className="px-3 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">Cuadros de Concentración</div>
+
+                        {onPrintCuadroMateria && (
+                          <div className="mb-2 pb-2 border-b border-slate-100 bg-indigo-50/50 rounded-lg p-1.5">
+                            <div className="px-2 py-1 text-xs font-extrabold text-indigo-800 uppercase">
+                              Por Materia (Ord. + Recuperación + E.E.R.)
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onPrintCuadroMateria(alumnos, grado, grupo, trimestre, materias);
+                                setShowConcentradoMenu(false);
+                              }}
+                              className="w-full text-left px-2.5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-md flex items-center shadow-xs mb-1.5"
+                            >
+                              <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                              Imprimir TODAS las Materias ({materias.length})
+                            </button>
+                            <div className="px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase">O elige una materia individual:</div>
+                            <div className="max-h-36 overflow-y-auto space-y-0.5 mt-0.5">
+                              {materias.map(m => (
+                                <button
+                                  key={`menu-mat-${m.id}`}
+                                  type="button"
+                                  onClick={() => {
+                                    onPrintCuadroMateria(alumnos, grado, grupo, trimestre, [m]);
+                                    setShowConcentradoMenu(false);
+                                  }}
+                                  className="w-full text-left px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-indigo-100 hover:text-indigo-900 rounded truncate"
+                                >
+                                  📄 {m.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         
                         <div className="mb-2">
-                          <div className="px-3 py-1 text-xs font-bold text-indigo-600">Con Promedios Finales</div>
+                          <div className="px-3 py-1 text-xs font-bold text-indigo-600">General: Con Promedios Finales</div>
                           <button onClick={() => { onPrintConcentradoFinal && onPrintConcentradoFinal(alumnos, grado, grupo); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
                             <svg className="w-4 h-4 mr-2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> Imprimir PDF
                           </button>
@@ -967,7 +1080,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                         </div>
 
                         <div>
-                          <div className="px-3 py-1 text-xs font-bold text-indigo-600">Con Calificaciones Parciales</div>
+                          <div className="px-3 py-1 text-xs font-bold text-indigo-600">General: Con Calificaciones Parciales</div>
                           <button onClick={() => { onPrintConcentradoParcial && onPrintConcentradoParcial(alumnos, grado, grupo); setShowConcentradoMenu(false); }} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded flex items-center">
                             <svg className="w-4 h-4 mr-2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> Imprimir PDF
                           </button>

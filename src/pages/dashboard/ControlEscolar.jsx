@@ -14,6 +14,7 @@ import DirectorioEmergenciaPrint from '../../components/DirectorioEmergenciaPrin
 import Calificaciones from '../../components/Calificaciones';
 import ListaAsistenciaPrint, { sortAttendanceListStudents } from '../../components/ListaAsistenciaPrint';
 import CuadroFinalPrint from '../../components/CuadroFinalPrint';
+import CuadroAsignaturaPrint from '../../components/CuadroAsignaturaPrint';
 import ConstanciaEERPrint from '../../components/ConstanciaEERPrint';
 import BatchConstanciaEERPrint from '../../components/BatchConstanciaEERPrint';
 import CuadroParcialPrint from '../../components/CuadroParcialPrint';
@@ -553,6 +554,17 @@ export default function ControlEscolar() {
     setTimeout(() => {
       window.print();
     }, 500);
+  };
+
+  const handlePrintCuadroMateria = (alumnos, grado, grupo, trimestre, materiasList) => {
+    toast.success(
+      materiasList?.length > 1
+        ? `Abriendo Cuadros por Materia de ${grado} "${grupo}" (${materiasList.length} asignaturas)...`
+        : `Abriendo Cuadro de Concentración de ${materiasList?.[0]?.name || 'Materia'}...`,
+      { icon: '📊' }
+    );
+    setPrintData({ alumnos, grado, grupo, trimestre: trimestre || 't1', materiasList });
+    setPrintMode('cuadro-materia');
   };
 
   const handlePrintAprovechamiento = () => {
@@ -1392,7 +1404,7 @@ export default function ControlEscolar() {
 
       {/* Tabla Calificaciones */}
       {!loading && activeTab === 'calificaciones' && (
-        <Calificaciones activos={directorio} materiasPorGrado={materiasPorGrado} onPrintBoleta={handlePrintBoleta} onPrintConcentradoFinal={handlePrintConcentradoFinal} onPrintConcentradoParcial={handlePrintConcentradoParcial} />
+        <Calificaciones activos={directorio} materiasPorGrado={materiasPorGrado} onPrintBoleta={handlePrintBoleta} onPrintConcentradoFinal={handlePrintConcentradoFinal} onPrintConcentradoParcial={handlePrintConcentradoParcial} onPrintCuadroMateria={handlePrintCuadroMateria} />
       )}
 
       {/* Bitacora */}
@@ -2567,6 +2579,17 @@ export default function ControlEscolar() {
       {printMode === 'listaClausura' && <ListaClausuraPrint students={printData.students} grupo={printData.grupo} asesor={printData.asesor} />}
       {printMode === 'concentrado-final' && <CuadroFinalPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
       {printMode === 'concentrado-parcial' && <CuadroParcialPrint alumnos={printData.alumnos} materias={materiasPorGrado[printData.grado]} grado={printData.grado} grupo={printData.grupo} />}
+      {printMode === 'cuadro-materia' && printData && (
+        <CuadroAsignaturaPrint
+          students={printData.alumnos}
+          grado={printData.grado}
+          grupo={printData.grupo}
+          trimestre={printData.trimestre}
+          trimestreLabel={printData.trimestre === 't2' ? 'II (Segundo)' : printData.trimestre === 't3' ? 'III (Tercero)' : 'I (Primero)'}
+          materiasBatch={printData.materiasList}
+          onClose={() => setPrintMode(null)}
+        />
+      )}
 
       {/* MODAL HOJA DE VIDA (Fuera de print:hidden para permitir imprimir Ficha y Constancias de EER) */}
       {modalType === 'hoja' && selectedStudent && (

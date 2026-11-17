@@ -35,18 +35,55 @@ export const roundToIntGrade = (val, fallback = '-') => {
   return String(num);
 };
 
+export const getCalificacionTrimestreEfectiva = (student, materiaId, trimestreKey) => {
+  const ord = roundToIntNumber(student?.calificaciones?.[trimestreKey]?.[materiaId]);
+  const rec = roundToIntNumber(
+    student?.recuperacion?.[trimestreKey]?.[materiaId] ??
+    student?.evaluacionDetalle?.[trimestreKey]?.[materiaId]?.recuperacion
+  );
+  if (rec !== null && (ord === null || rec > ord)) {
+    return { ord, rec, efectiva: rec, fueRecuperado: true };
+  }
+  return { ord, rec, efectiva: ord, fueRecuperado: false };
+};
+
 export const getCalificacionFinal = (student, materiaId) => {
   if (!student) return null;
-  if (student.regularizacion && student.regularizacion[materiaId]) {
-    const t1 = roundToIntNumber(student.calificaciones?.['t1']?.[materiaId]);
-    const t2 = roundToIntNumber(student.calificaciones?.['t2']?.[materiaId]);
-    const t3 = roundToIntNumber(student.calificaciones?.['t3']?.[materiaId]);
-    const regVal = roundToIntNumber(student.regularizacion[materiaId].calificacion);
+
+  const r1 = getCalificacionTrimestreEfectiva(student, materiaId, 't1');
+  const r2 = getCalificacionTrimestreEfectiva(student, materiaId, 't2');
+  const r3 = getCalificacionTrimestreEfectiva(student, materiaId, 't3');
+
+  const t1 = r1.efectiva;
+  const t2 = r2.efectiva;
+  const t3 = r3.efectiva;
+  const fueRecuperadoEnTrimestre = r1.fueRecuperado || r2.fueRecuperado || r3.fueRecuperado;
+
+  let sum = 0, c = 0;
+  if (t1 !== null) { sum += t1; c++; }
+  if (t2 !== null) { sum += t2; c++; }
+  if (t3 !== null) { sum += t3; c++; }
+  const promedioOrdinario = c > 0 ? Math.round(sum / c) : null;
+
+  const reg = student.regularizacion?.[materiaId];
+  if (reg) {
+    const periodoLower = String(reg.periodo || '').toLowerCase();
+    const regMainVal = roundToIntNumber(reg.calificacion);
+    const eer1 = roundToIntNumber(reg.eer1) ?? (periodoLower.includes('agosto') || periodoLower.includes('1') || (!reg.eer2 && !reg.eer3 && !periodoLower.includes('sept') && !periodoLower.includes('nov')) ? regMainVal : null);
+    const eer2 = roundToIntNumber(reg.eer2) ?? (periodoLower.includes('sept') || periodoLower.includes('2') ? regMainVal : null);
+    const eer3 = roundToIntNumber(reg.eer3) ?? (periodoLower.includes('nov') || periodoLower.includes('3') ? regMainVal : null);
+    const regVal = [eer3, eer2, eer1, regMainVal].find(v => v !== null && v !== undefined) ?? null;
+
     if (regVal !== null) {
       return {
         valor: regVal,
         isRegularizacion: true,
-        fecha: student.regularizacion[materiaId].fecha,
+        fueRecuperadoEnTrimestre,
+        promedioOrdinario,
+        eer1,
+        eer2,
+        eer3,
+        fecha: reg.fecha,
         isReprobada: regVal < 6,
         t1: t1 === null ? '-' : t1,
         t2: t2 === null ? '-' : t2,
@@ -55,22 +92,17 @@ export const getCalificacionFinal = (student, materiaId) => {
     }
   }
 
-  const t1 = roundToIntNumber(student.calificaciones?.['t1']?.[materiaId]);
-  const t2 = roundToIntNumber(student.calificaciones?.['t2']?.[materiaId]);
-  const t3 = roundToIntNumber(student.calificaciones?.['t3']?.[materiaId]);
-  let sum = 0, c = 0;
-  if (t1 !== null) { sum += t1; c++; }
-  if (t2 !== null) { sum += t2; c++; }
-  if (t3 !== null) { sum += t3; c++; }
-
-  if (c > 0) {
-    // La calificación final de cada materia es SIEMPRE un número entero redondeado
-    const finalMat = Math.round(sum / c);
+  if (promedioOrdinario !== null) {
     return {
-      valor: finalMat,
+      valor: promedioOrdinario,
       isRegularizacion: false,
+      fueRecuperadoEnTrimestre,
+      promedioOrdinario,
+      eer1: null,
+      eer2: null,
+      eer3: null,
       fecha: null,
-      isReprobada: finalMat < 6,
+      isReprobada: promedioOrdinario < 6,
       t1: t1 === null ? '-' : t1,
       t2: t2 === null ? '-' : t2,
       t3: t3 === null ? '-' : t3
@@ -81,7 +113,7 @@ export const getCalificacionFinal = (student, materiaId) => {
 
 /**
  * Calcula el Promedio General del Alumno en un trimestre específico (t1, t2 o t3):
- * Suma las calificaciones enteras de sus asignaturas en ese trimestre y conserva 1 décima.
+ * Suma las calificaciones enteras efectivas (ordinaria o recuperación) y conserva 1 décima.
  */
 export const getPromedioTrimestrePASEG = (student, materias = [], trimestreKey = 't1') => {
   if (!student || !Array.isArray(materias)) return null;
@@ -89,9 +121,9 @@ export const getPromedioTrimestrePASEG = (student, materias = [], trimestreKey =
   let count = 0;
   materias.forEach(mat => {
     const matId = typeof mat === 'string' ? mat : mat.id;
-    const rawInt = roundToIntNumber(student.calificaciones?.[trimestreKey]?.[matId]);
-    if (rawInt !== null) {
-      sum += rawInt;
+    const { efectiva } = getCalificacionTrimestreEfectiva(student, matId, trimestreKey);
+    if (efectiva !== null) {
+      sum += efectiva;
       count++;
     }
   });
