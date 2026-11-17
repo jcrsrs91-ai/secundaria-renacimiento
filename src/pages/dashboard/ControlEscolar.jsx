@@ -2333,7 +2333,10 @@ export default function ControlEscolar() {
 
               <button
                 onClick={() => {
-                  const fechaBajaReal = obtenerFechaBajaTexto(selectedStudent) || selectedStudent?.fechaBaja || formatearFechaCorta(new Date());
+                  const estaDeBaja = (selectedStudent?.status || '').toLowerCase() === 'baja';
+                  const fechaBajaReal = estaDeBaja
+                    ? (obtenerFechaBajaTexto(selectedStudent) || selectedStudent?.fechaBaja || formatearFechaCorta(new Date()))
+                    : formatearFechaCorta(new Date());
                   if (isBeforeSept30(fechaBajaReal)) {
                     alert(`⚠️ AVISO NORMATIVO SEP: Recuerda que solo se toman como Bajas Oficiales las ocurridas DESPUÉS del 30 de septiembre (a partir del 1 de octubre).\n\nLa fecha de este movimiento (${fechaBajaReal}) corresponde al 30 de septiembre o anterior ("No Inscrito").`);
                     return;
@@ -2555,7 +2558,7 @@ export default function ControlEscolar() {
       {printMode === 'acuse' && printData && <AcuseDocumentosPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} extraordinarioSelected={extraordinarioToPrint} tramite={printData?.tramite} />}
-      {printMode === 'baja_traslado' && printData && <BajaTrasladoPrint student={printData} materiasPorGrado={materiasPorGrado} motivoPersonalizado={printData?.motivoBaja} fechaExpedicion={printData?.fechaBaja || obtenerFechaBajaTexto(printData)} onClose={() => setPrintMode(null)} />}
+      {printMode === 'baja_traslado' && printData && <BajaTrasladoPrint student={printData} materiasPorGrado={materiasPorGrado} motivoPersonalizado={printData?.motivoBaja} fechaExpedicion={printData?.fechaBaja || ((printData?.status || '').toLowerCase() === 'baja' ? obtenerFechaBajaTexto(printData) : formatearFechaCorta(new Date()))} onClose={() => setPrintMode(null)} />}
       {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'constancia_eer' && eerToPrint && <ConstanciaEERPrint student={printData} regularizadas={eerToPrint.regularizadas} adeudos={eerToPrint.adeudos} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
       {printMode === 'constancia_eer_batch' && eerToPrint && <BatchConstanciaEERPrint data={printData} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}

@@ -29,8 +29,19 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
       : 'Cambio de domicilio'
   );
   const [fechaBajaInput, setFechaBajaInput] = useState(
-    obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date())
+    (student.status || '').toLowerCase() === 'baja'
+      ? (obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date()))
+      : formatearFechaCorta(new Date())
   );
+
+  useEffect(() => {
+    if ((student.status || '').toLowerCase() === 'baja' && student.fechaBaja) {
+      setFechaBajaInput(obtenerFechaBajaTexto(student) || student.fechaBaja);
+    }
+    if ((student.status || '').toLowerCase() === 'baja' && student.motivoBaja && student.motivoBaja !== 'Baja Oficial' && student.motivoBaja !== 'No Inscrito') {
+      setMotivoBajaInput(student.motivoBaja);
+    }
+  }, [student.id, student.status, student.fechaBaja, student.motivoBaja]);
   
   const [grupo, setGrupo] = useState(student.grupo || '');
   const [taller, setTaller] = useState(student.taller || '');
@@ -221,7 +232,12 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
     data.nombreBeca = tieneBeca === 'SÍ' ? (nombreBeca || '').trim().toUpperCase() : '';
 
     // --- NUEVA LÓGICA DE BAJAS Y FECHAS (REGLA 30 DE SEPTIEMBRE) ---
-    const fechaBajaEvaluada = (fechaBajaInput || obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date())).trim();
+    const yaEstabaDeBaja = (student.status || '').toLowerCase() === 'baja';
+    const fechaBajaEvaluada = (
+      fechaBajaInput ||
+      (yaEstabaDeBaja ? obtenerFechaBajaTexto(student) : '') ||
+      formatearFechaCorta(new Date())
+    ).trim();
     const esAntesOIgual30Sept = isBeforeSept30(fechaBajaEvaluada);
     if (data.status === 'Baja') {
         if (esAntesOIgual30Sept) {
@@ -275,11 +291,14 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
   };
 
   if (showPrintMode) {
+    const esBajaActual = (statusActual || '').toLowerCase() === 'baja';
     const printStudentData = {
       ...student,
       status: statusActual,
       motivoBaja: motivoBajaInput || student.motivoBaja || 'Cambio de domicilio',
-      fechaBaja: fechaBajaInput || obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date()),
+      fechaBaja: esBajaActual
+        ? (fechaBajaInput || obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date()))
+        : formatearFechaCorta(new Date()),
       grupo: grupo || student.grupo,
       taller: taller || student.taller,
       fotoUrl: fotoPreview || student.fotoUrl,
@@ -452,7 +471,13 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                       <select
                         name="status"
                         value={statusActual}
-                        onChange={(e) => setStatusActual(e.target.value)}
+                        onChange={(e) => {
+                          const nuevoEstatus = e.target.value;
+                          setStatusActual(nuevoEstatus);
+                          if (nuevoEstatus === 'Baja' && (student.status || '').toLowerCase() !== 'baja') {
+                            setFechaBajaInput(formatearFechaCorta(new Date()));
+                          }
+                        }}
                         className="mt-1 w-full p-2 border rounded font-bold"
                         required
                       >
@@ -500,9 +525,19 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                           </div>
                         </div>
                         <div>
-                          <label className="block text-xs font-extrabold text-rose-900 uppercase">
-                            Fecha de la Baja (Fecha de Expedición)
-                          </label>
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="block text-xs font-extrabold text-rose-900 uppercase">
+                              Fecha de la Baja (Expedición)
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setFechaBajaInput(formatearFechaCorta(new Date()))}
+                              className="text-[11px] font-bold px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-700 text-white transition shrink-0"
+                              title="Fijar la fecha actual del sistema"
+                            >
+                              📅 Poner Hoy ({formatearFechaCorta(new Date())})
+                            </button>
+                          </div>
                           <input
                             type="text"
                             name="fechaBaja"

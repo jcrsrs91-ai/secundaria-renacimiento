@@ -51,6 +51,14 @@ const formatearFechaExpedicionConstancia = (fechaTexto, studentFallback = null) 
   return `${textoDia} DEL MES DE ${mes} DEL AÑO ${anio}`;
 };
 
+const limpiarMotivoRaw = (val) => {
+  const s = String(val || '').trim();
+  if (!s || s.toLowerCase() === 'baja oficial' || s.toLowerCase() === 'no inscrito') {
+    return 'Cambio de domicilio';
+  }
+  return s;
+};
+
 export default function BajaTrasladoPrint({
   student,
   materiasPorGrado = {},
@@ -59,25 +67,54 @@ export default function BajaTrasladoPrint({
   onClose = null
 }) {
   const { config } = useGlobalConfig();
-  const fechaInicialBaja = fechaExpedicion || obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date());
-  const [fechaBajaActiva, setFechaBajaActiva] = useState(fechaInicialBaja);
+  const hoyTexto = formatearFechaCorta(new Date());
+  const obtenerFechaInicial = (st, fExp) => {
+    if (fExp) return fExp;
+    if ((st?.status || '').toLowerCase() === 'baja') {
+      return obtenerFechaBajaTexto(st) || formatearFechaCorta(new Date());
+    }
+    return formatearFechaCorta(new Date());
+  };
+
+  const [fechaBajaActiva, setFechaBajaActiva] = useState(obtenerFechaInicial(student, fechaExpedicion));
+  const [motivoBajaActivo, setMotivoBajaActivo] = useState(
+    limpiarMotivoRaw(motivoPersonalizado || student?.motivoBaja)
+  );
 
   useEffect(() => {
-    setFechaBajaActiva(fechaExpedicion || obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date()));
-  }, [student, fechaExpedicion]);
+    setFechaBajaActiva(obtenerFechaInicial(student, fechaExpedicion));
+    setMotivoBajaActivo(limpiarMotivoRaw(motivoPersonalizado || student?.motivoBaja));
+  }, [student, fechaExpedicion, motivoPersonalizado]);
 
   if (!student) return null;
 
   const guardarFechaBajaEnExpediente = async (nuevaFecha) => {
-    setFechaBajaActiva(nuevaFecha);
-    if (student?.id && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(nuevaFecha.trim())) {
+    const clean = String(nuevaFecha || '').trim();
+    setFechaBajaActiva(clean);
+    if (student?.id && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(clean)) {
       try {
         await updateDoc(doc(db, 'students', student.id), {
-          fechaBaja: nuevaFecha.trim()
+          fechaBaja: clean
         });
-        toast.success(`Fecha de baja/expedición actualizada (${nuevaFecha.trim()})`);
+        toast.success(`Fecha de baja/expedición actualizada (${clean})`);
       } catch (e) {
         console.error('Error al actualizar fechaBaja:', e);
+        toast.error('No se pudo actualizar la fecha en el expediente');
+      }
+    }
+  };
+
+  const guardarMotivoBajaEnExpediente = async (nuevoMotivo) => {
+    const clean = limpiarMotivoRaw(nuevoMotivo);
+    setMotivoBajaActivo(clean);
+    if (student?.id && clean) {
+      try {
+        await updateDoc(doc(db, 'students', student.id), {
+          motivoBaja: clean
+        });
+        toast.success('Motivo de baja actualizado en el expediente');
+      } catch (e) {
+        console.error('Error al actualizar motivoBaja:', e);
       }
     }
   };
@@ -100,11 +137,7 @@ export default function BajaTrasladoPrint({
   const cct = config?.cct || '12DST0077B';
   const celularEscuela = config?.telefonoEscuela || '744 441 5678';
 
-  const rawMotivo = (motivoPersonalizado || student.motivoBaja || '').trim();
-  const motivoLimpio =
-    !rawMotivo || rawMotivo.toLowerCase() === 'baja oficial' || rawMotivo.toLowerCase() === 'no inscrito'
-      ? 'CAMBIO DE DOMICILIO'
-      : rawMotivo.toUpperCase();
+  const motivoLimpio = (motivoBajaActivo || 'Cambio de domicilio').trim().toUpperCase();
 
   const nombreCompleto = `${autoAcentuar(student.apellidoPaterno || '')} ${autoAcentuar(student.apellidoMaterno || '')} ${autoAcentuar(student.nombres || '')}`
     .replace(/\s+/g, ' ')
@@ -198,7 +231,7 @@ export default function BajaTrasladoPrint({
       `}</style>
 
       {/* Barra de controles en pantalla (no se imprime) */}
-      <div className="no-print w-full max-w-[21.59cm] mb-3 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg flex flex-col gap-2">
+      <div className="no-print w-full max-w-[21.59cm] mb-3 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg flex flex-col gap-2.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h4 className="text-sm font-black uppercase tracking-wider text-rose-300">
@@ -209,18 +242,6 @@ export default function BajaTrasladoPrint({
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
-            <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
-              <span className="text-[11px] font-bold text-rose-200 uppercase">Fecha de Baja / Expedición:</span>
-              <input
-                type="text"
-                value={fechaBajaActiva}
-                onChange={(e) => setFechaBajaActiva(e.target.value)}
-                onBlur={(e) => guardarFechaBajaEnExpediente(e.target.value)}
-                placeholder="DD/MM/AAAA"
-                className="w-24 bg-slate-900 text-white border border-slate-600 rounded px-2 py-0.5 text-xs font-extrabold text-center"
-                title="Fecha en que se dio de baja al alumno (se usa como fecha de expedición)"
-              />
-            </div>
             <button
               type="button"
               onClick={() => window.print()}
@@ -239,7 +260,47 @@ export default function BajaTrasladoPrint({
             )}
           </div>
         </div>
-        {isBeforeSept30(fechaBajaActiva) && (
+
+        {/* Controles rápidos de edición de Fecha y Motivo (se guardan automáticamente en el expediente) */}
+        <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-slate-800">
+          <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
+            <span className="text-[11px] font-bold text-rose-200 uppercase">Fecha de Baja / Expedición:</span>
+            <input
+              type="text"
+              value={fechaBajaActiva}
+              onChange={(e) => setFechaBajaActiva(e.target.value)}
+              onBlur={(e) => guardarFechaBajaEnExpediente(e.target.value)}
+              placeholder="DD/MM/AAAA"
+              className="w-24 bg-slate-900 text-white border border-slate-600 rounded px-2 py-0.5 text-xs font-extrabold text-center"
+              title="Fecha en que se dio de baja al alumno (se usa como fecha de expedición)"
+            />
+            {fechaBajaActiva !== hoyTexto && (
+              <button
+                type="button"
+                onClick={() => guardarFechaBajaEnExpediente(hoyTexto)}
+                className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[11px] font-bold transition shadow-xs"
+                title="Corregir y guardar la fecha de baja con el día de hoy"
+              >
+                📅 Usar Fecha de Hoy ({hoyTexto})
+              </button>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-[230px] flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
+            <span className="text-[11px] font-bold text-rose-200 uppercase whitespace-nowrap">Motivo:</span>
+            <input
+              type="text"
+              value={motivoBajaActivo}
+              onChange={(e) => setMotivoBajaActivo(e.target.value)}
+              onBlur={(e) => guardarMotivoBajaEnExpediente(e.target.value)}
+              placeholder="Cambio de domicilio"
+              className="flex-1 bg-slate-900 text-white border border-slate-600 rounded px-2 py-0.5 text-xs font-semibold"
+              title="Motivo de la baja por traslado (se guarda al salir del campo)"
+            />
+          </div>
+        </div>
+
+        {parseFechaFlexible(fechaBajaActiva) && isBeforeSept30(fechaBajaActiva) && (
           <div className="bg-amber-500/20 border border-amber-400 text-amber-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
             ⚠️ Nota Normativa SEP: Recuerda que solo se toman como Bajas Oficiales las ocurridas <strong>después del 30 de septiembre</strong> (a partir del 1 de octubre). Antes o el 30 de septiembre se clasifican como &ldquo;No Inscrito&rdquo;.
           </div>

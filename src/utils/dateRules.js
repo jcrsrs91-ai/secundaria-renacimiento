@@ -78,9 +78,26 @@ export const esPeriodoDeAlta = (fechaInput = new Date()) => {
     return month >= 9 || month <= 5;
 };
 
-// Obtiene el objeto Date real en que el alumno fue dado de baja (priorizando fechaBaja y luego lastModifiedAt)
+// Convierte DD/MM/AAAA -> YYYY-MM-DD (para inputs type="date" si se requiere)
+export const fechaCortaAInputDate = (ddmmaaaa) => {
+    const d = parseFechaFlexible(ddmmaaaa);
+    if (!d) return '';
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+};
+
+// Convierte YYYY-MM-DD -> DD/MM/AAAA
+export const inputDateAFechaCorta = (yyyymmdd) => {
+    const d = parseFechaFlexible(yyyymmdd);
+    return d ? formatearFechaCorta(d) : '';
+};
+
+// Obtiene el objeto Date real en que el alumno fue dado de baja (solo aplica si status === 'Baja')
 export const obtenerFechaBajaDate = (student) => {
     if (!student) return null;
+    if ((student.status || '').toLowerCase() !== 'baja') return null;
     const fromFechaBaja = parseFechaFlexible(student.fechaBaja);
     if (fromFechaBaja) return fromFechaBaja;
     const fromLastModified = parseFechaFlexible(student.lastModifiedAt);
@@ -88,9 +105,10 @@ export const obtenerFechaBajaDate = (student) => {
     return null;
 };
 
-// Devuelve la fecha de baja en formato DD/MM/AAAA
+// Devuelve la fecha de baja en formato DD/MM/AAAA (vacío si el alumno no está en estatus Baja)
 export const obtenerFechaBajaTexto = (student) => {
     if (!student) return '';
+    if ((student.status || '').toLowerCase() !== 'baja') return '';
     const d = obtenerFechaBajaDate(student);
     if (d) return formatearFechaCorta(d);
     if (typeof student.fechaBaja === 'string' && student.fechaBaja.trim()) {
