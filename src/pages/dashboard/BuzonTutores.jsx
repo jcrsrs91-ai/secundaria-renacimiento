@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { db } from '../../firebase';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, setDoc, getDocs, serverTimestamp } from 'firebase/firestore';
-import { MessageSquare, Send, User, Search, Check, CheckCheck, CheckCircle2, Sparkles, UserPlus, X, BellRing, Sun, Moon, Megaphone, Clock } from 'lucide-react';
+import { MessageSquare, Send, User, Search, Check, CheckCheck, CheckCircle2, Sparkles, UserPlus, X, BellRing, Sun, Moon, Megaphone, Clock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { inferirTurnoChat, HORARIOS_TURNO } from '../../components/FloatingBuzonWidget';
 import toast from 'react-hot-toast';
@@ -332,9 +332,9 @@ export default function BuzonTutores() {
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row" style={{ height: 'calc(100vh - 9.5rem)' }}>
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row h-[calc(100dvh-10rem)] md:h-[calc(100dvh-8.5rem)]">
       {/* Sidebar: Lista de Chats con prioridad a No Leídos y Filtro por Turno */}
-      <div className="w-full md:w-[36%] border-r border-slate-200 flex flex-col bg-slate-50">
+      <div className={`${activeChat ? 'hidden md:flex' : 'flex'} w-full md:w-[36%] h-full border-r border-slate-200 flex-col bg-slate-50`}>
         <div className="p-3.5 border-b border-slate-200 bg-white space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-base font-extrabold text-slate-800 flex items-center">
@@ -568,12 +568,20 @@ export default function BuzonTutores() {
       </div>
 
       {/* Main Content: Área de Conversación */}
-      <div className="w-full md:w-[64%] flex flex-col bg-slate-50/50">
+      <div className={`${activeChat ? 'flex' : 'hidden md:flex'} w-full md:w-[64%] h-full flex-col bg-slate-50/50`}>
         {activeChat ? (
           <>
             {/* Header del Chat Activo con Turno y Horario Oficial */}
-            <div className="p-4 border-b border-slate-200 bg-white flex flex-wrap justify-between items-center gap-3 shadow-2xs z-10">
-              <div className="flex items-center">
+            <div className="p-3 sm:p-4 border-b border-slate-200 bg-white flex flex-wrap justify-between items-center gap-3 shadow-2xs z-10">
+              <div className="flex items-center min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveChat(null)}
+                  className="md:hidden mr-2 p-2 -ml-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 shrink-0"
+                  aria-label="Volver a la lista de chats"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 font-bold ${
                   activeChat.turnoResuelto === 'Vespertino'
                     ? 'bg-indigo-100 text-indigo-700'

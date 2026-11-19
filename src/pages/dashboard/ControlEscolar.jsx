@@ -1147,10 +1147,10 @@ export default function ControlEscolar() {
       <div className={printMode ? "hidden" : "space-y-6 relative print:hidden"}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Control Escolar</h2>
-          <p className="text-slate-500 text-sm">Gestión de expedientes, inscripciones y calificaciones.</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800">Control Escolar</h2>
+          <p className="text-slate-500 text-xs sm:text-sm">Gestión de expedientes, inscripciones y calificaciones.</p>
         </div>
-        <div className="flex gap-2 flex-wrap justify-end items-center">
+        <div className="flex gap-2 flex-wrap justify-start sm:justify-end items-center w-full sm:w-auto">
             <div className="flex items-center bg-white rounded-lg border border-slate-300 p-1 mr-2 shadow-sm">
               <span className="text-xs font-medium text-slate-500 px-2">Turno:</span>
               <select className="bg-transparent border-none text-sm font-bold text-slate-700 outline-none cursor-pointer" value={globalShiftFilter} onChange={e => setGlobalShiftFilter(e.target.value)}>
@@ -1179,10 +1179,69 @@ export default function ControlEscolar() {
         </div>
       </div>
 
-      {/* Módulos de Navegación (Tabs envueltos) */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Módulos de Control Escolar</h3>
-        <div className="flex flex-wrap gap-2">
+      {/* Módulos de Navegación (Select + Píldoras en Móvil / Grid completo en PC y Tableta) */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 shadow-sm">
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 sm:mb-3">Módulos de Control Escolar</h3>
+
+        {/* Selector Compacto + Accesos Frecuentes en Celular */}
+        <div className="md:hidden space-y-2.5">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value)}
+            aria-label="Seleccionar módulo de Control Escolar"
+            className="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-sm font-bold text-slate-800 shadow-2xs focus:ring-2 focus:ring-primary-500 outline-none"
+          >
+            <optgroup label="Expedientes y Trámites">
+              <option value="activos">Directorio / Expedientes ({activos.length})</option>
+              <option value="pendientes">Solicitudes Pendientes ({pendientes.length})</option>
+              <option value="pagados">Trámites Pagados ({tramitesPagados.filter(t => t.estado === 'Pendiente').length})</option>
+              <option value="becas">Control de Becas</option>
+              <option value="generaciones">Generaciones Egresadas</option>
+              <option value="bitacora">Bitácora de Movimientos</option>
+              <option value="no_inscritos">No Inscritos (Interno)</option>
+            </optgroup>
+            <optgroup label="Académico y Asistencia">
+              <option value="calificaciones">Calificaciones</option>
+              <option value="regularizacion">Extraordinarios de Regularización</option>
+              <option value="asistencia">Listas de Asistencia</option>
+            </optgroup>
+            <optgroup label="Estadística SEP / 911">
+              <option value="estadistica911">Estadística 911</option>
+              <option value="matricula">Estadística Matrícula</option>
+              <option value="matriculaGrupos">Matrícula por Grupos</option>
+              <option value="aprovechamiento">Aprovechamiento</option>
+              <option value="aprobacion">Aprobación (E2)</option>
+              <option value="eficiencia">Eficiencia Terminal (E4)</option>
+              <option value="desempeno">Desempeño Alcanzado (E5)</option>
+              <option value="desertores">Desertores (E6)</option>
+            </optgroup>
+          </select>
+
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {[
+              { id: 'activos', label: `Directorio (${activos.length})` },
+              { id: 'calificaciones', label: 'Calificaciones' },
+              { id: 'pendientes', label: `Pendientes (${pendientes.length})` },
+              { id: 'pagados', label: `Pagados (${tramitesPagados.filter(t => t.estado === 'Pendiente').length})` },
+              { id: 'asistencia', label: 'Asistencia' }
+            ].map(quick => (
+              <button
+                key={quick.id}
+                type="button"
+                onClick={() => setActiveTab(quick.id)}
+                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                  activeTab === quick.id
+                    ? 'bg-primary-600 text-white border-primary-600 shadow-2xs'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                {quick.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="hidden md:flex md:flex-wrap gap-2">
           
           {/* Trámites Pagados */}
           <button onClick={() => setActiveTab('pagados')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'pagados' ? 'bg-emerald-600 text-white shadow-emerald-200 ring-2 ring-emerald-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
@@ -1729,7 +1788,153 @@ export default function ControlEscolar() {
             </div>
           </div>
 
-          <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-x-auto">
+          {/* VISTA MÓVIL (TARJETAS TÁCTILES DE ALUMNOS) */}
+          <div className="md:hidden space-y-3">
+            {filteredDirectorio.length > 0 && (
+              <div className="bg-white px-3.5 py-2.5 rounded-xl border border-slate-200 flex items-center justify-between">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedStudents.length === filteredDirectorio.length && filteredDirectorio.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-slate-300 text-primary-600"
+                  />
+                  Seleccionar todos ({filteredDirectorio.length})
+                </label>
+                {selectedStudents.length > 0 && (
+                  <span className="text-xs font-black text-primary-700">{selectedStudents.length} sel.</span>
+                )}
+              </div>
+            )}
+
+            {filteredDirectorio.length === 0 ? (
+              <div className="bg-white p-8 rounded-xl border border-slate-200 text-center text-slate-500 text-sm">
+                No hay alumnos que coincidan con la búsqueda.
+              </div>
+            ) : (
+              filteredDirectorio.map(a => {
+                const isSelected = selectedStudents.includes(a.id);
+                const isBaja = esBajaOficial(a);
+                const faltanDocs = !a.documentos?.acta || !a.documentos?.curp || !a.documentos?.certificado || !a.documentos?.ine || !a.documentos?.domicilio;
+                return (
+                  <div
+                    key={a.id}
+                    className={`bg-white rounded-xl border p-3.5 shadow-2xs space-y-2.5 transition-colors ${
+                      isSelected ? 'border-primary-500 ring-2 ring-primary-100 bg-primary-50/20' : 'border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelectStudent(a.id)}
+                        className="w-5 h-5 mt-0.5 rounded border-slate-300 text-primary-600 shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-mono text-xs font-black text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-200">
+                            {a.matricula}
+                          </span>
+                          <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+                            {a.grado} "{a.grupo || '-'}" · {a.turno || '-'}
+                          </span>
+                          {isBaja && (
+                            <span className="px-2 py-0.5 bg-rose-100 text-rose-800 border border-rose-300 rounded text-[10px] font-extrabold uppercase">
+                              BAJA {obtenerFechaBajaTexto(a) ? `• ${obtenerFechaBajaTexto(a)}` : ''}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-bold text-slate-900 uppercase mt-1 leading-snug">
+                          {a.apellidoPaterno} {a.apellidoMaterno} {a.nombres}
+                        </p>
+                        {a.taller && (
+                          <p className="text-xs text-slate-500 truncate mt-0.5">Taller: {a.taller}</p>
+                        )}
+                        {faltanDocs && (
+                          <span className="mt-1 inline-flex items-center text-[10px] text-red-600 font-bold">
+                            <AlertTriangle className="w-3 h-3 mr-1" /> Faltan Documentos Digitales
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-2 border-t border-slate-100">
+                      <button
+                        onClick={() => openModal('hoja', a)}
+                        className="py-1.5 px-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold flex items-center justify-center"
+                      >
+                        <User className="w-3.5 h-3.5 mr-1" /> Expediente
+                      </button>
+                      <button
+                        onClick={() => setSelectedExpediente(a)}
+                        className="py-1.5 px-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold flex items-center justify-center"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5 mr-1" /> Docs
+                      </button>
+                      <button
+                        onClick={() => openModal('grade', a)}
+                        className="py-1.5 px-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold flex items-center justify-center"
+                      >
+                        <Star className="w-3.5 h-3.5 mr-1" /> Calificar
+                      </button>
+                      <button
+                        onClick={() => handlePrintConstancia(a)}
+                        className="py-1.5 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold flex items-center justify-center"
+                      >
+                        <FileText className="w-3.5 h-3.5 mr-1" /> Constancia
+                      </button>
+                      <button
+                        onClick={() => openModal('acuseRec', a)}
+                        className="py-1.5 px-2 bg-sky-50 text-sky-700 border border-sky-200 rounded-lg text-xs font-bold flex items-center justify-center"
+                      >
+                        <FileText className="w-3.5 h-3.5 mr-1" /> Acuse Rec.
+                      </button>
+                      <button
+                        onClick={() => openModal('acuse', a)}
+                        className="py-1.5 px-2 bg-sky-50 text-sky-700 border border-sky-200 rounded-lg text-xs font-bold flex items-center justify-center"
+                      >
+                        <FileText className="w-3.5 h-3.5 mr-1" /> Acuse Dev.
+                      </button>
+                      <button
+                        onClick={() => handlePrintSingle(a)}
+                        title={!a.pagoInscripcion ? 'Bloqueada por falta de pago' : ''}
+                        className={`py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center border ${
+                          a.pagoInscripcion
+                            ? 'bg-slate-100 text-slate-700 border-slate-200'
+                            : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                        }`}
+                      >
+                        <QrCode className="w-3.5 h-3.5 mr-1" /> Credencial
+                      </button>
+                      {isBaja && (
+                        <button
+                          onClick={() => {
+                            setPrintData({
+                              ...a,
+                              motivoBaja: a.motivoBaja || 'Cambio de domicilio',
+                              fechaBaja: obtenerFechaBajaTexto(a) || a.fechaBaja
+                            });
+                            setPrintMode('baja_traslado');
+                          }}
+                          className="py-1.5 px-2 bg-rose-600 text-white rounded-lg text-xs font-bold flex items-center justify-center"
+                        >
+                          <Printer className="w-3.5 h-3.5 mr-1" /> Reimp. Baja
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteStudent(a)}
+                        className="py-1.5 px-2 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center justify-center"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="hidden md:block bg-white shadow-sm rounded-xl border border-slate-200 overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>

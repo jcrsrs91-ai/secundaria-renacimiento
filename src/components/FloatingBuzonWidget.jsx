@@ -266,7 +266,7 @@ export default function FloatingBuzonWidget({ onUnreadCountChange }) {
   const activeShiftQuickReplies = selectedChat ? getQuickRepliesByShift(selectedChat.turnoResuelto) : [];
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 no-print flex flex-col items-end">
+    <div className="fixed bottom-[4.75rem] right-3 md:bottom-5 md:right-5 z-40 no-print flex flex-col items-end">
       {/* Tarjeta flotante de aviso inmediato cuando hay mensajes sin leer y la ventana está cerrada */}
       {!isOpen && unreadChats.length > 0 && (
         <div
@@ -275,7 +275,7 @@ export default function FloatingBuzonWidget({ onUnreadCountChange }) {
             setSelectedChat(unreadChats[0]);
             setRecentAlertChat(null);
           }}
-          className="mb-3 bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl border-2 border-sky-400 max-w-xs cursor-pointer hover:scale-[1.02] transition-all animate-bounce"
+          className="mb-3 bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl border-2 border-sky-400 max-w-[calc(100vw-1.5rem)] sm:max-w-xs cursor-pointer hover:scale-[1.02] transition-all animate-bounce"
         >
           <div className="flex items-center justify-between gap-2 mb-1">
             <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-red-500 text-white rounded-full flex items-center gap-1">
@@ -306,7 +306,7 @@ export default function FloatingBuzonWidget({ onUnreadCountChange }) {
 
       {/* Ventana de Mini-Buzón Rápido Desplegable */}
       {isOpen && (
-        <div className="mb-3 w-[360px] sm:w-[420px] h-[540px] bg-white rounded-2xl shadow-2xl border border-slate-300 flex flex-col overflow-hidden">
+        <div className="mb-3 w-[calc(100vw-1.5rem)] max-w-[420px] h-[min(68dvh,540px)] bg-white rounded-2xl shadow-2xl border border-slate-300 flex flex-col overflow-hidden">
           {/* Header de la ventana flotante */}
           <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">

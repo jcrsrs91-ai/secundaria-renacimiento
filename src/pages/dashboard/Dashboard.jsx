@@ -1,9 +1,40 @@
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-import { Users, Clock, GraduationCap, Megaphone, Activity } from 'lucide-react';
+import { Navigate, Link } from 'react-router-dom';
+import {
+  Users,
+  Clock,
+  GraduationCap,
+  Megaphone,
+  Activity,
+  FileSpreadsheet,
+  Calculator,
+  Package,
+  HeartHandshake,
+  ClipboardCheck,
+  Library,
+  Printer,
+  MessageSquare,
+  Key,
+  ChevronRight
+} from 'lucide-react';
 import { db } from '../../firebase';
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
+
+const QUICK_ACCESS_CARDS = [
+  { id: 'control-escolar', name: 'Control Escolar', desc: 'Expedientes y calificaciones', path: '/panel/control-escolar', icon: Users, color: 'bg-sky-100 text-sky-700' },
+  { id: 'portal-docente', name: 'Portal Docente', desc: 'Captura por asignatura', path: '/panel/portal-docente', icon: FileSpreadsheet, color: 'bg-indigo-100 text-indigo-700' },
+  { id: 'asistencia', name: 'Prefectura / Asistencia', desc: 'Escáner QR y reportes', path: '/panel/asistencia', icon: ClipboardCheck, color: 'bg-emerald-100 text-emerald-700' },
+  { id: 'inventario', name: 'Inventario y Resguardos', desc: 'Bienes y cartas de resguardo', path: '/panel/inventario', icon: Package, color: 'bg-amber-100 text-amber-700' },
+  { id: 'contraloria', name: 'Contraloría', desc: 'Pagos y corte de caja', path: '/panel/contraloria', icon: Calculator, color: 'bg-teal-100 text-teal-700' },
+  { id: 'buzon', name: 'Buzón de Tutores', desc: 'Mensajes en tiempo real', path: '/panel/buzon', icon: MessageSquare, color: 'bg-rose-100 text-rose-700' },
+  { id: 'trabajo-social', name: 'Trabajo Social', desc: 'Justificantes y seguimiento', path: '/panel/trabajo-social', icon: HeartHandshake, color: 'bg-pink-100 text-pink-700' },
+  { id: 'coordinacion', name: 'Coordinación', desc: 'Supervisión académica', path: '/panel/coordinacion', icon: GraduationCap, color: 'bg-violet-100 text-violet-700' },
+  { id: 'biblioteca', name: 'Biblioteca', desc: 'Acervo y préstamos', path: '/panel/biblioteca', icon: Library, color: 'bg-orange-100 text-orange-700' },
+  { id: 'impresion-documentos', name: 'Impresión Documentos', desc: 'Boletas y constancias', path: '/panel/impresion-documentos', icon: Printer, color: 'bg-slate-100 text-slate-700' },
+  { id: 'avisos', name: 'Avisos Escolares', desc: 'Muro informativo', path: '/panel/avisos', icon: Megaphone, color: 'bg-cyan-100 text-cyan-700' },
+  { id: 'accesos', name: 'Accesos (Admin)', desc: 'Usuarios y permisos', path: '/panel/accesos', icon: Key, color: 'bg-purple-100 text-purple-700' }
+];
 
 export default function Dashboard() {
   const { userRole, userPermissions } = useAuth();
@@ -81,23 +112,30 @@ export default function Dashboard() {
     return <Navigate to="/panel/portal-docente" replace />;
   }
 
+  const quickLinks = QUICK_ACCESS_CARDS.filter((card) => {
+    if (userPermissions?.includes('all')) return true;
+    if (card.id === 'inventario' && userPermissions?.includes('contraloria')) return true;
+    if (card.id === 'buzon' && userPermissions?.includes('control-escolar')) return true;
+    return userPermissions?.includes(card.id);
+  });
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
         {stats.map((item) => (
           <div key={item.name} className="bg-white overflow-hidden shadow-sm rounded-xl border border-slate-200 hover:shadow-md transition-shadow">
-            <div className="p-5">
-              <div className="flex items-center">
+            <div className="p-3.5 sm:p-5">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <div className="flex-shrink-0">
-                  <div className={`p-3 rounded-lg ${item.color}`}>
-                    <item.icon className="h-6 w-6 text-white" aria-hidden="true" />
+                  <div className={`p-2.5 sm:p-3 rounded-xl ${item.color}`}>
+                    <item.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" aria-hidden="true" />
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="min-w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-slate-500 truncate">{item.name}</dt>
+                    <dt className="text-xs sm:text-sm font-medium text-slate-500 truncate">{item.name}</dt>
                     <dd>
-                      <div className="text-2xl font-bold text-slate-900">{item.value}</div>
+                      <div className="text-xl sm:text-2xl font-black text-slate-900">{item.value}</div>
                     </dd>
                   </dl>
                 </div>
@@ -106,6 +144,39 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Accesos Rápidos Táctiles */}
+      {quickLinks.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-500 px-0.5">
+            Accesos Rápidos
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {quickLinks.map((card) => (
+              <Link
+                key={card.id}
+                to={card.path}
+                className="group bg-white border border-slate-200 hover:border-primary-400 rounded-xl p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all flex items-center justify-between gap-2.5 active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${card.color}`}>
+                    <card.icon className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-primary-700 truncate">
+                      {card.name}
+                    </p>
+                    <p className="text-[11px] text-slate-500 truncate hidden sm:block">
+                      {card.desc}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary-600 shrink-0 hidden sm:block" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-200">

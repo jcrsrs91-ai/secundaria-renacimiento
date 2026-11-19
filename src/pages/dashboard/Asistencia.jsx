@@ -176,59 +176,59 @@ export default function Asistencia() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto min-h-[85vh] flex flex-col items-center">
+    <div className="p-2 sm:p-6 max-w-6xl mx-auto min-h-[80dvh] flex flex-col items-center">
       
-      <div className="w-full flex justify-center mb-8 print:hidden">
-        <div className="bg-slate-200 p-1.5 rounded-2xl flex gap-2 w-full max-w-lg">
+      <div className="w-full flex justify-center mb-5 sm:mb-8 print:hidden">
+        <div className="bg-slate-200 p-1 sm:p-1.5 rounded-2xl flex gap-1 sm:gap-2 w-full max-w-lg">
           <button 
             onClick={() => setActiveTab('ESCANER')}
-            className={`flex-1 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${activeTab === 'ESCANER' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex-1 py-2.5 px-2 sm:px-4 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-base font-bold transition-all min-h-[44px] ${activeTab === 'ESCANER' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <QrCode className="w-5 h-5" /> Escáner
+            <QrCode className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" /> Escáner
           </button>
           <button 
             onClick={() => setActiveTab('REPORTES')}
-            className={`flex-1 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${activeTab === 'REPORTES' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex-1 py-2.5 px-2 sm:px-4 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-base font-bold transition-all min-h-[44px] ${activeTab === 'REPORTES' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <BarChart3 className="w-5 h-5" /> Reportes
+            <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" /> Reportes
           </button>
           <button 
             onClick={() => setActiveTab('DIRECTORIO')}
-            className={`flex-1 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${activeTab === 'DIRECTORIO' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex-1 py-2.5 px-2 sm:px-4 rounded-xl flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-base font-bold transition-all min-h-[44px] ${activeTab === 'DIRECTORIO' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <Users className="w-5 h-5" /> Directorio
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" /> Directorio
           </button>
         </div>
       </div>
 
       {activeTab === 'ESCANER' && (
         <div className="w-full flex flex-col items-center">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-black text-slate-800 flex items-center justify-center gap-3">
-              <ScanFace className="h-10 w-10 text-emerald-600" />
+          <div className="text-center mb-5 sm:mb-8 px-2">
+            <h1 className="text-2xl sm:text-4xl font-black text-slate-800 flex items-center justify-center gap-2 sm:gap-3">
+              <ScanFace className="h-7 w-7 sm:h-10 sm:w-10 text-emerald-600 shrink-0" />
               Terminal de Control de Acceso
             </h1>
-            <p className="text-slate-500 mt-2 font-medium">Escanea el Código QR de la credencial del alumno para registrar su {modo.toLowerCase()}.</p>
+            <p className="text-xs sm:text-base text-slate-500 mt-1.5 sm:mt-2 font-medium">Escanea el Código QR de la credencial del alumno para registrar su {modo.toLowerCase()}.</p>
           </div>
 
       {/* Selectores de Modo */}
-      <div className="flex bg-slate-200 p-1.5 rounded-2xl mb-8 shadow-inner w-full max-w-md">
+      <div className="flex bg-slate-200 p-1.5 rounded-2xl mb-6 sm:mb-8 shadow-inner w-full max-w-md">
         <button 
           onClick={() => setModo('ENTRADA')}
-          className={`flex-1 py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-bold text-lg transition-all ${modo === 'ENTRADA' ? 'bg-white text-emerald-600 shadow-md transform scale-[1.02]' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex-1 py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl flex items-center justify-center gap-2 font-bold text-base sm:text-lg transition-all min-h-[48px] ${modo === 'ENTRADA' ? 'bg-white text-emerald-600 shadow-md transform scale-[1.02]' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          <LogIn className="h-6 w-6" /> ENTRADA
+          <LogIn className="h-5 w-5 sm:h-6 sm:w-6" /> ENTRADA
         </button>
         <button 
           onClick={() => setModo('SALIDA')}
-          className={`flex-1 py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-bold text-lg transition-all ${modo === 'SALIDA' ? 'bg-white text-sky-600 shadow-md transform scale-[1.02]' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex-1 py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl flex items-center justify-center gap-2 font-bold text-base sm:text-lg transition-all min-h-[48px] ${modo === 'SALIDA' ? 'bg-white text-sky-600 shadow-md transform scale-[1.02]' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          <LogOut className="h-6 w-6" /> SALIDA
+          <LogOut className="h-5 w-5 sm:h-6 sm:w-6" /> SALIDA
         </button>
       </div>
 
       {/* Input Oculto / Foco del Escáner */}
-      <div className="relative w-full max-w-md mb-12">
+      <div className="relative w-full max-w-md mb-8 sm:mb-12">
         <div className={`absolute inset-0 bg-${modo === 'ENTRADA' ? 'emerald' : 'sky'}-500 blur-2xl opacity-20 rounded-full animate-pulse`}></div>
         <input 
           ref={inputRef}
@@ -238,7 +238,7 @@ export default function Asistencia() {
           onKeyDown={handleKeyDown}
           autoFocus
           placeholder="Esperando escáner..."
-          className={`relative w-full text-center bg-white border-4 ${modo === 'ENTRADA' ? 'border-emerald-400 focus:border-emerald-500 text-emerald-700' : 'border-sky-400 focus:border-sky-500 text-sky-700'} rounded-3xl py-6 text-2xl font-bold shadow-xl outline-none placeholder:text-slate-300 transition-all`}
+          className={`relative w-full text-center bg-white border-4 ${modo === 'ENTRADA' ? 'border-emerald-400 focus:border-emerald-500 text-emerald-700' : 'border-sky-400 focus:border-sky-500 text-sky-700'} rounded-3xl py-4 sm:py-6 text-lg sm:text-2xl font-bold shadow-xl outline-none placeholder:text-slate-300 transition-all`}
           disabled={procesando}
         />
         {procesando && (
@@ -262,31 +262,31 @@ export default function Asistencia() {
           </div>
         ) : (
           <div className="divide-y divide-slate-50">
-            {ultimosRegistros.map((registro, idx) => (
-              <div key={registro.id} className="p-4 px-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className={`h-12 w-12 rounded-full flex items-center justify-center shadow-sm ${registro.tipo === 'ENTRADA' ? 'bg-emerald-100 text-emerald-600' : 'bg-sky-100 text-sky-600'}`}>
-                    {registro.tipo === 'ENTRADA' ? <LogIn className="h-6 w-6" /> : <LogOut className="h-6 w-6" />}
+            {ultimosRegistros.map((registro) => (
+              <div key={registro.id} className="p-3.5 sm:p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center shadow-sm shrink-0 ${registro.tipo === 'ENTRADA' ? 'bg-emerald-100 text-emerald-600' : 'bg-sky-100 text-sky-600'}`}>
+                    {registro.tipo === 'ENTRADA' ? <LogIn className="h-5 w-5 sm:h-6 sm:w-6" /> : <LogOut className="h-5 w-5 sm:h-6 sm:w-6" />}
                   </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-lg">{registro.nombre}</h3>
-                    <div className="flex gap-3 text-sm text-slate-500 font-medium">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-slate-800 text-sm sm:text-lg truncate">{registro.nombre}</h3>
+                    <div className="flex flex-wrap gap-x-2 sm:gap-x-3 text-xs sm:text-sm text-slate-500 font-medium">
                       <span>MAT: {registro.matricula}</span>
-                      <span>-</span>
+                      <span>•</span>
                       <span>{registro.grado?.substring(0,1)}° "{registro.grupo}"</span>
-                      <span>-</span>
+                      <span>•</span>
                       <span className="uppercase">{registro.turno?.substring(0,4)}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-end gap-3 shrink-0">
                   {registro.telegramChatId ? (
-                    <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold flex items-center gap-1 border border-blue-100">
+                    <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold flex items-center gap-1 border border-blue-100">
                       Telegram ✔
                     </span>
                   ) : null}
                   <div className="text-right">
-                    <p className={`font-black text-xl ${registro.tipo === 'ENTRADA' ? 'text-emerald-500' : 'text-sky-500'}`}>
+                    <p className={`font-black text-base sm:text-xl ${registro.tipo === 'ENTRADA' ? 'text-emerald-500' : 'text-sky-500'}`}>
                       {registro.hora}
                     </p>
                   </div>
