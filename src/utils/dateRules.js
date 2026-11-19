@@ -23,7 +23,8 @@ export const parseFechaFlexible = (valor) => {
             const mm = Number(mMx[2]) - 1;
             const yyyy = Number(mMx[3]);
             const d = new Date(yyyy, mm, dd, 12, 0, 0);
-            return isNaN(d.getTime()) ? null : d;
+            if (isNaN(d.getTime()) || d.getFullYear() !== yyyy || d.getMonth() !== mm || d.getDate() !== dd) return null;
+            return d;
         }
 
         // Formato YYYY-MM-DD
@@ -33,7 +34,8 @@ export const parseFechaFlexible = (valor) => {
             const mm = Number(mIsoDate[2]) - 1;
             const dd = Number(mIsoDate[3]);
             const d = new Date(yyyy, mm, dd, 12, 0, 0);
-            return isNaN(d.getTime()) ? null : d;
+            if (isNaN(d.getTime()) || d.getFullYear() !== yyyy || d.getMonth() !== mm || d.getDate() !== dd) return null;
+            return d;
         }
 
         const parsed = new Date(clean);

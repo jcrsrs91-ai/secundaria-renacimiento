@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { roundToIntGrade, autoAcentuar } from '../utils/format';
 import { TALLER_POR_GRUPO } from './ListaAsistenciaPrint';
-import { parseFechaFlexible, obtenerFechaBajaTexto, formatearFechaCorta, isBeforeSept30 } from '../utils/dateRules';
-import { db } from '../firebase';
+import { parseFechaFlexible, obtenerFechaBajaTexto, formatearFechaCorta, isBeforeSept30, fechaCortaAInputDate, inputDateAFechaCorta } from '../utils/dateRules';
+import { db, auth } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import { registrarMovimiento } from '../utils/bitacora';
 
 const extraerFechaDeCurp = (curp) => {
   if (!curp || curp.length < 10) return null;
@@ -64,16 +65,17 @@ export default function BajaTrasladoPrint({
   materiasPorGrado = {},
   motivoPersonalizado = '',
   fechaExpedicion = '',
+  onFechaUpdated = null,
+  onMotivoUpdated = null,
   onClose = null
 }) {
   const { config } = useGlobalConfig();
   const hoyTexto = formatearFechaCorta(new Date());
   const obtenerFechaInicial = (st, fExp) => {
-    if (fExp) return fExp;
     if ((st?.status || '').toLowerCase() === 'baja') {
-      return obtenerFechaBajaTexto(st) || formatearFechaCorta(new Date());
+      return obtenerFechaBajaTexto(st) || fExp || formatearFechaCorta(new Date());
     }
-    return formatearFechaCorta(new Date());
+    return fExp || formatearFechaCorta(new Date());
   };
 
   const [fechaBajaActiva, setFechaBajaActiva] = useState(obtenerFechaInicial(student, fechaExpedicion));
@@ -89,32 +91,75 @@ export default function BajaTrasladoPrint({
   if (!student) return null;
 
   const guardarFechaBajaEnExpediente = async (nuevaFecha) => {
-    const clean = String(nuevaFecha || '').trim();
+    const parsed = parseFechaFlexible(nuevaFecha);
+    if (!parsed) {
+      toast.error('Fecha inválida');
+      return;
+    }
+    const clean = formatearFechaCorta(parsed);
+    const fechaAnterior = fechaBajaActiva;
     setFechaBajaActiva(clean);
-    if (student?.id && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(clean)) {
+    onFechaUpdated?.(clean);
+
+    if (student?.id && (student?.status || '').toLowerCase() === 'baja') {
       try {
+        const esNoInscrito = isBeforeSept30(clean);
         await updateDoc(doc(db, 'students', student.id), {
-          fechaBaja: clean
+          fechaBaja: clean,
+          tipoBaja: esNoInscrito ? 'No Inscrito' : 'Baja Oficial',
+          ...(esNoInscrito ? { motivoBaja: 'No Inscrito' } : {})
         });
+        if (esNoInscrito) setMotivoBajaActivo('No Inscrito');
+        const nombreAlumno = `${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.trim().toUpperCase();
+        await registrarMovimiento(
+          auth.currentUser?.email,
+          'Control Escolar (Baja por Traslado)',
+          'Corrección de Fecha de Baja',
+          `Alumno: ${nombreAlumno} (${student.matricula || student.id}) — Fecha de baja: [${fechaAnterior || '(vacío)'} ➔ ${clean}]`,
+          {
+            alumnoId: student.id,
+            alumnoNombre: nombreAlumno,
+            cambios: [{ campo: 'Fecha de Baja', antes: fechaAnterior || '(vacío)', despues: clean }]
+          }
+        );
         toast.success(`Fecha de baja/expedición actualizada (${clean})`);
       } catch (e) {
         console.error('Error al actualizar fechaBaja:', e);
         toast.error('No se pudo actualizar la fecha en el expediente');
       }
+    } else {
+      toast('Vista previa actualizada. Cambia el estatus a Baja en su Expediente para guardar la fecha.', { icon: 'ℹ️' });
     }
   };
 
   const guardarMotivoBajaEnExpediente = async (nuevoMotivo) => {
     const clean = limpiarMotivoRaw(nuevoMotivo);
+    const motivoAnterior = motivoBajaActivo;
     setMotivoBajaActivo(clean);
-    if (student?.id && clean) {
+    onMotivoUpdated?.(clean);
+    if (student?.id && (student?.status || '').toLowerCase() === 'baja' && clean) {
       try {
         await updateDoc(doc(db, 'students', student.id), {
           motivoBaja: clean
         });
+        if (clean !== motivoAnterior) {
+          const nombreAlumno = `${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.trim().toUpperCase();
+          await registrarMovimiento(
+            auth.currentUser?.email,
+            'Control Escolar (Baja por Traslado)',
+            'Actualización de Motivo de Baja',
+            `Alumno: ${nombreAlumno} (${student.matricula || student.id}) — Motivo: [${motivoAnterior || '(vacío)'} ➔ ${clean}]`,
+            {
+              alumnoId: student.id,
+              alumnoNombre: nombreAlumno,
+              cambios: [{ campo: 'Motivo de Baja', antes: motivoAnterior || '(vacío)', despues: clean }]
+            }
+          );
+        }
         toast.success('Motivo de baja actualizado en el expediente');
       } catch (e) {
         console.error('Error al actualizar motivoBaja:', e);
+        toast.error('No se pudo actualizar el motivo en el expediente');
       }
     }
   };
@@ -263,17 +308,21 @@ export default function BajaTrasladoPrint({
 
         {/* Controles rápidos de edición de Fecha y Motivo (se guardan automáticamente en el expediente) */}
         <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-slate-800">
-          <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
+          <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg flex-wrap">
             <span className="text-[11px] font-bold text-rose-200 uppercase">Fecha de Baja / Expedición:</span>
             <input
-              type="text"
-              value={fechaBajaActiva}
-              onChange={(e) => setFechaBajaActiva(e.target.value)}
-              onBlur={(e) => guardarFechaBajaEnExpediente(e.target.value)}
-              placeholder="DD/MM/AAAA"
-              className="w-24 bg-slate-900 text-white border border-slate-600 rounded px-2 py-0.5 text-xs font-extrabold text-center"
-              title="Fecha en que se dio de baja al alumno (se usa como fecha de expedición)"
+              type="date"
+              value={fechaCortaAInputDate(fechaBajaActiva)}
+              onChange={(e) => {
+                const c = inputDateAFechaCorta(e.target.value);
+                if (c) guardarFechaBajaEnExpediente(c);
+              }}
+              className="bg-slate-900 text-white border border-slate-600 rounded px-2 py-0.5 text-xs font-extrabold scheme-dark"
+              title="Selecciona la fecha real en que se dio de baja al alumno (se guarda automáticamente)"
             />
+            <span className="text-[11px] font-mono font-bold text-slate-300 bg-slate-900/70 px-1.5 py-0.5 rounded border border-slate-700">
+              {fechaBajaActiva}
+            </span>
             {fechaBajaActiva !== hoyTexto && (
               <button
                 type="button"

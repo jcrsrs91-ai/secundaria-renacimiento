@@ -4,7 +4,7 @@ import { X, Save, Edit, User, Heart, Users, Camera, Upload, StopCircle, Printer,
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
-import { isBeforeSept30, formatearFechaCorta, fechaRegistroDeAlumno, obtenerFechaBajaTexto } from '../utils/dateRules';
+import { isBeforeSept30, formatearFechaCorta, fechaRegistroDeAlumno, obtenerFechaBajaTexto, parseFechaFlexible, fechaCortaAInputDate, inputDateAFechaCorta } from '../utils/dateRules';
 import { registrarMovimiento, detectarCambiosExpediente } from '../utils/bitacora';
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
@@ -35,11 +35,17 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
   );
 
   useEffect(() => {
-    if ((student.status || '').toLowerCase() === 'baja' && student.fechaBaja) {
-      setFechaBajaInput(obtenerFechaBajaTexto(student) || student.fechaBaja);
+    const esBaja = (student.status || '').toLowerCase() === 'baja';
+    setStatusActual(student.status || 'Activo');
+    if (esBaja) {
+      setFechaBajaInput(obtenerFechaBajaTexto(student) || formatearFechaCorta(new Date()));
+    } else {
+      setFechaBajaInput(formatearFechaCorta(new Date()));
     }
-    if ((student.status || '').toLowerCase() === 'baja' && student.motivoBaja && student.motivoBaja !== 'Baja Oficial' && student.motivoBaja !== 'No Inscrito') {
+    if (esBaja && student.motivoBaja && student.motivoBaja !== 'Baja Oficial' && student.motivoBaja !== 'No Inscrito') {
       setMotivoBajaInput(student.motivoBaja);
+    } else {
+      setMotivoBajaInput('Cambio de domicilio');
     }
   }, [student.id, student.status, student.fechaBaja, student.motivoBaja]);
   
@@ -233,13 +239,17 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
 
     // --- NUEVA LÓGICA DE BAJAS Y FECHAS (REGLA 30 DE SEPTIEMBRE) ---
     const yaEstabaDeBaja = (student.status || '').toLowerCase() === 'baja';
-    const fechaBajaEvaluada = (
-      fechaBajaInput ||
-      (yaEstabaDeBaja ? obtenerFechaBajaTexto(student) : '') ||
-      formatearFechaCorta(new Date())
-    ).trim();
-    const esAntesOIgual30Sept = isBeforeSept30(fechaBajaEvaluada);
+    let esAntesOIgual30Sept = false;
+    let fechaBajaEvaluada = '';
     if (data.status === 'Baja') {
+        const rawFecha = (
+          fechaBajaInput ||
+          (yaEstabaDeBaja ? obtenerFechaBajaTexto(student) : '') ||
+          formatearFechaCorta(new Date())
+        ).trim();
+        const parsedBaja = parseFechaFlexible(rawFecha);
+        fechaBajaEvaluada = formatearFechaCorta(parsedBaja || new Date());
+        esAntesOIgual30Sept = isBeforeSept30(fechaBajaEvaluada);
         if (esAntesOIgual30Sept) {
             data.motivoBaja = 'No Inscrito';
             data.tipoBaja = 'No Inscrito';
@@ -250,6 +260,10 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
             data.tipoBaja = 'Baja Oficial';
             data.fechaBaja = fechaBajaEvaluada;
         }
+    } else {
+        data.fechaBaja = '';
+        data.tipoBaja = '';
+        data.motivoBaja = '';
     }
 
     // Si se marca como ALTA y aun no tiene fecha de alta, se usa la fecha en que se registro (o hoy)
@@ -348,6 +362,14 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
               materiasPorGrado={materiasPorGrado}
               motivoPersonalizado={printStudentData.motivoBaja}
               fechaExpedicion={printStudentData.fechaBaja}
+              onFechaUpdated={(nuevaFecha) => {
+                setFechaBajaInput(nuevaFecha);
+                onSave?.({ ...student, status: statusActual, fechaBaja: nuevaFecha });
+              }}
+              onMotivoUpdated={(nuevoMotivo) => {
+                setMotivoBajaInput(nuevoMotivo);
+                onSave?.({ ...student, status: statusActual, motivoBaja: nuevoMotivo });
+              }}
             />
           ) : (
             <HojaInscripcionPrint data={printStudentData} />
@@ -369,11 +391,15 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
               <h2 className="font-extrabold text-2xl text-slate-800">Hoja de Vida del Alumno</h2>
               <span className="bg-primary-100 text-primary-800 text-xs font-bold px-3 py-1 rounded-full">{student.matricula}</span>
               <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                student.status === 'Activo' ? 'bg-emerald-100 text-emerald-800' :
-                student.status === 'Baja' ? 'bg-sky-100 text-sky-800' :
-                student.status === 'Egresado' ? 'bg-blue-100 text-blue-800' :
+                statusActual === 'Activo' ? 'bg-emerald-100 text-emerald-800' :
+                statusActual === 'Baja' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                statusActual === 'Egresado' ? 'bg-blue-100 text-blue-800' :
                 'bg-indigo-100 text-indigo-800'
-              }`}>{student.status || 'Activo'}</span>
+              }`}>
+                {statusActual === 'Baja'
+                  ? `Baja${(fechaBajaInput || obtenerFechaBajaTexto(student)) ? ` • ${fechaBajaInput || obtenerFechaBajaTexto(student)}` : ''}`
+                  : (statusActual || 'Activo')}
+              </span>
             </div>
             {student.lastModifiedBy && (
               <div className="text-[11px] text-slate-400 mt-1 font-medium flex items-center">
@@ -473,10 +499,10 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                         value={statusActual}
                         onChange={(e) => {
                           const nuevoEstatus = e.target.value;
-                          setStatusActual(nuevoEstatus);
-                          if (nuevoEstatus === 'Baja' && (student.status || '').toLowerCase() !== 'baja') {
+                          if (nuevoEstatus === 'Baja' && statusActual !== 'Baja') {
                             setFechaBajaInput(formatearFechaCorta(new Date()));
                           }
+                          setStatusActual(nuevoEstatus);
                         }}
                         className="mt-1 w-full p-2 border rounded font-bold"
                         required
@@ -527,7 +553,7 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                         <div>
                           <div className="flex items-center justify-between gap-2">
                             <label className="block text-xs font-extrabold text-rose-900 uppercase">
-                              Fecha de la Baja (Expedición)
+                              Fecha de la Baja ({fechaBajaInput})
                             </label>
                             <button
                               type="button"
@@ -538,14 +564,19 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                               📅 Poner Hoy ({formatearFechaCorta(new Date())})
                             </button>
                           </div>
+                          <input type="hidden" name="fechaBaja" value={fechaBajaInput} />
                           <input
-                            type="text"
-                            name="fechaBaja"
-                            value={fechaBajaInput}
-                            onChange={(e) => setFechaBajaInput(e.target.value)}
-                            placeholder="DD/MM/AAAA"
+                            type="date"
+                            value={fechaCortaAInputDate(fechaBajaInput)}
+                            onChange={(e) => {
+                              const c = inputDateAFechaCorta(e.target.value);
+                              if (c) setFechaBajaInput(c);
+                            }}
                             className="mt-1 w-full p-2 border border-rose-300 rounded font-semibold text-slate-800 bg-white"
                           />
+                          <p className="text-[11px] text-rose-800 font-mono font-bold mt-1">
+                            Formato oficial: {fechaBajaInput}
+                          </p>
                           {isBeforeSept30(fechaBajaInput) ? (
                             <p className="text-[11px] text-amber-800 bg-amber-100 border border-amber-300 rounded px-2 py-1 mt-1 font-bold">
                               ⚠️ Recuerda: Solo se toman como Bajas Oficiales después del 30 de septiembre (a partir del 01/10). Con esta fecha se registrará como &ldquo;No Inscrito&rdquo;.

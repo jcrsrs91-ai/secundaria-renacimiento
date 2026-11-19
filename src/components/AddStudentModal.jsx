@@ -3,7 +3,7 @@ import { X, Save, User, GraduationCap, HeartPulse, Users } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { isBeforeSept30, esPeriodoDeAlta, formatearFechaCorta } from '../utils/dateRules';
+import { isBeforeSept30, esPeriodoDeAlta, formatearFechaCorta, parseFechaFlexible, fechaCortaAInputDate, inputDateAFechaCorta } from '../utils/dateRules';
 import { registrarMovimiento } from '../utils/bitacora';
 
 export default function AddStudentModal({ onClose }) {
@@ -25,6 +25,8 @@ export default function AddStudentModal({ onClose }) {
     escuelaProcedencia: '',
     promedioEscuela: '',
     status: 'Activo',
+    motivoBaja: 'Cambio de domicilio',
+    fechaBaja: formatearFechaCorta(new Date()),
     // Despues del 30 de septiembre el alumno nuevo es ALTA automaticamente (se puede cambiar a mano)
     tipoIngreso: esPeriodoDeAlta() ? 'Alta' : 'Nuevo Ingreso',
     tieneBeca: 'NO',
@@ -94,9 +96,18 @@ export default function AddStudentModal({ onClose }) {
 
     try {
       const taller = getTallerPorGrupo(formData.grupo);
-      
+      const esBaja = formData.status === 'Baja';
+      const parsedBaja = esBaja ? parseFechaFlexible(formData.fechaBaja) : null;
+      const fechaBajaFinal = esBaja ? formatearFechaCorta(parsedBaja || new Date()) : '';
+      const esNoInscrito = esBaja ? isBeforeSept30(fechaBajaFinal) : false;
+
       await addDoc(collection(db, "students"), {
         ...formData,
+        fechaBaja: fechaBajaFinal,
+        tipoBaja: esBaja ? (esNoInscrito ? 'No Inscrito' : 'Baja Oficial') : '',
+        motivoBaja: esBaja
+          ? (esNoInscrito ? 'No Inscrito' : ((formData.motivoBaja || '').trim() || 'Cambio de domicilio'))
+          : '',
         fechaAlta: formData.tipoIngreso === 'Alta' ? formatearFechaCorta() : '',
         taller: taller,
         lastModifiedBy: auth.currentUser?.email || 'Desconocido',
@@ -196,10 +207,24 @@ export default function AddStudentModal({ onClose }) {
                   </select>
                 </div>
                 {formData.status === 'Baja' && (
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-semibold text-red-600 mb-1">Motivo de Baja</label>
-                    <input type="text" name="motivoBaja" value={formData.motivoBaja || ''} onChange={handleChange} placeholder="Ej. Cambio de domicilio" className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
-                  </div>
+                  <>
+                    <div className="md:col-span-1">
+                      <label className="block text-sm font-semibold text-red-600 mb-1">Motivo de Baja</label>
+                      <input type="text" name="motivoBaja" value={formData.motivoBaja || ''} onChange={handleChange} placeholder="Ej. Cambio de domicilio" className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
+                    </div>
+                    <div className="md:col-span-1">
+                      <label className="block text-sm font-semibold text-red-600 mb-1">Fecha de Baja ({formData.fechaBaja})</label>
+                      <input
+                        type="date"
+                        value={fechaCortaAInputDate(formData.fechaBaja)}
+                        onChange={(e) => {
+                          const c = inputDateAFechaCorta(e.target.value);
+                          if (c) setFormData(prev => ({ ...prev, fechaBaja: c }));
+                        }}
+                        className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none bg-white"
+                      />
+                    </div>
+                  </>
                 )}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Tipo de Ingreso *</label>

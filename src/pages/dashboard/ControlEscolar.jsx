@@ -2810,7 +2810,21 @@ export default function ControlEscolar() {
       {printMode === 'acuse' && printData && <AcuseDocumentosPrint data={printData} onClose={() => setPrintMode(null)} />}
       {printMode === 'credencial' && <CredencialPrint students={printData} />}
       {printMode === 'constancia' && <ConstanciaPrint student={printData} type={constanciaType} materiasPorGrado={materiasPorGrado} extraordinarioSelected={extraordinarioToPrint} tramite={printData?.tramite} />}
-      {printMode === 'baja_traslado' && printData && <BajaTrasladoPrint student={printData} materiasPorGrado={materiasPorGrado} motivoPersonalizado={printData?.motivoBaja} fechaExpedicion={printData?.fechaBaja || ((printData?.status || '').toLowerCase() === 'baja' ? obtenerFechaBajaTexto(printData) : formatearFechaCorta(new Date()))} onClose={() => setPrintMode(null)} />}
+      {printMode === 'baja_traslado' && printData && (
+        <BajaTrasladoPrint
+          student={printData}
+          materiasPorGrado={materiasPorGrado}
+          motivoPersonalizado={printData?.motivoBaja}
+          fechaExpedicion={
+            (printData?.status || '').toLowerCase() === 'baja'
+              ? (obtenerFechaBajaTexto(printData) || printData?.fechaBaja || formatearFechaCorta(new Date()))
+              : formatearFechaCorta(new Date())
+          }
+          onFechaUpdated={(nuevaFecha) => setPrintData(prev => prev ? { ...prev, fechaBaja: nuevaFecha } : prev)}
+          onMotivoUpdated={(nuevoMotivo) => setPrintData(prev => prev ? { ...prev, motivoBaja: nuevoMotivo } : prev)}
+          onClose={() => setPrintMode(null)}
+        />
+      )}
       {printMode === 'kardex' && <KardexPrint student={printData} materiasPorGrado={materiasPorGrado} onClose={() => setPrintMode(null)} />}
       {printMode === 'constancia_eer' && eerToPrint && <ConstanciaEERPrint student={printData} regularizadas={eerToPrint.regularizadas} adeudos={eerToPrint.adeudos} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
       {printMode === 'constancia_eer_batch' && eerToPrint && <BatchConstanciaEERPrint data={printData} fechaExpedicion={eerToPrint.fechaExpedicion} fechaExamenBatch={eerToPrint.fechaExamenBatch} />}
@@ -2838,7 +2852,7 @@ export default function ControlEscolar() {
           materiasPorGrado={materiasPorGrado}
           onClose={closeModal} 
           onSave={(updatedStudent) => {
-            // Actualizar localmente si es necesario, o dejar que el onSnapshot lo haga
+            if (updatedStudent) setSelectedStudent(updatedStudent);
           }} 
         />
       )}
