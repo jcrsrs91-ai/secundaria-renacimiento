@@ -337,23 +337,44 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     }
   };
 
-  const handleToggleParentVisibility = async () => {
+  const handleToggleParentVisibilityFor = async (trimKey) => {
+    const currentPublished = config?.trimestresPublicadosPadres?.[trimKey] !== false;
     const nextMap = {
       ...(config?.trimestresPublicadosPadres || { t1: true, t2: true, t3: true }),
-      [trimestre]: !isPublishedToParents
+      [trimKey]: !currentPublished
     };
     const ok = await updateConfig({ trimestresPublicadosPadres: nextMap });
     if (ok) {
       await registrarMovimiento(
         currentUser?.email,
         'Control Escolar (Calificaciones)',
-        nextMap[trimestre] ? 'Publicar Boleta a Padres' : 'Ocultar Trimestre a Padres',
-        `${nextMap[trimestre] ? 'Publicó' : 'Puso en modo captura (oculto)'} las calificaciones de ${TRIMESTRE_NAMES[trimestre]} en el Portal Familiar`
+        nextMap[trimKey] ? 'Publicar Boleta a Padres' : 'Ocultar Trimestre a Padres',
+        `${nextMap[trimKey] ? 'Publicó' : 'Puso en modo captura (oculto)'} las calificaciones de ${TRIMESTRE_NAMES[trimKey]} en el Portal Familiar`
       );
       toast.success(
-        nextMap[trimestre]
-          ? `👁️ Calificaciones del ${TRIMESTRE_NAMES[trimestre]} ahora visibles para los Padres en el Portal Familiar.`
-          : `🙈 ${TRIMESTRE_NAMES[trimestre]} oculto temporalmente a los Padres (aparecerá "En captura").`
+        nextMap[trimKey]
+          ? `👁️ Calificaciones del ${TRIMESTRE_NAMES[trimKey]} ahora visibles para los Padres en el Portal Familiar.`
+          : `🙈 ${TRIMESTRE_NAMES[trimKey]} oculto temporalmente a los Padres (aparecerá "En captura").`
+      );
+    }
+  };
+
+  const handleToggleParentVisibility = () => handleToggleParentVisibilityFor(trimestre);
+
+  const handleSetAllParentsVisibility = async (publicar) => {
+    const nextMap = { t1: publicar, t2: publicar, t3: publicar };
+    const ok = await updateConfig({ trimestresPublicadosPadres: nextMap });
+    if (ok) {
+      await registrarMovimiento(
+        currentUser?.email,
+        'Control Escolar (Calificaciones)',
+        publicar ? 'Publicar Boleta Completa a Padres' : 'Ocultar Toda la Boleta a Padres',
+        `${publicar ? 'Publicó T1, T2 y T3' : 'Ocultó T1, T2 y T3 (En captura)'} en el Portal Familiar`
+      );
+      toast.success(
+        publicar
+          ? '👁️ Trimestres T1, T2 y T3 ahora visibles para los Padres.'
+          : '🙈 Trimestres T1, T2 y T3 ocultos para los Padres (boleta bloqueada).'
       );
     }
   };
@@ -626,93 +647,141 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       </div>
 
       {/* Barra de Blindaje y Control del Trimestre (Para Secretarios / Control Escolar) */}
-      <div className="bg-slate-900 text-white p-4 rounded-xl shadow-md border border-slate-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 no-print">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300">
-            <Sparkles className="w-5 h-5" />
+      <div className="bg-slate-900 text-white p-4 rounded-xl shadow-md border border-slate-800 flex flex-col gap-3 no-print">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white">
+                Panel de Control de Calificaciones — {TRIMESTRE_NAMES[trimestre]}
+              </h4>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                Como Secretario(a) siempre puedes capturar aquí. Usa estos interruptores para bloquear a docentes o publicar boletas a los padres:
+              </p>
+            </div>
           </div>
-          <div>
-            <h4 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white">
-              Panel de Control de Calificaciones — {TRIMESTRE_NAMES[trimestre]}
-            </h4>
-            <p className="text-[11px] text-slate-300 mt-0.5">
-              Como Secretario(a) siempre puedes capturar aquí. Usa estos interruptores para bloquear a docentes o publicar boletas a los padres:
-            </p>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Candado de Captura Docente */}
+            <button
+              type="button"
+              onClick={handleToggleDocenteLock}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition shadow-sm ${
+                isDocenteLocked
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 hover:bg-amber-400'
+                  : 'bg-slate-800 text-emerald-300 border-emerald-500/40 hover:bg-slate-700'
+              }`}
+              title="Al cerrar el candado, los docentes ya no pueden modificar este trimestre, pero Control Escolar sí puede seguir editando."
+            >
+              {isDocenteLocked ? (
+                <>
+                  <Lock className="w-4 h-4" />
+                  Docentes: Bloqueado ({trimestre.toUpperCase()})
+                </>
+              ) : (
+                <>
+                  <Unlock className="w-4 h-4" />
+                  Docentes: Captura Abierta ({trimestre.toUpperCase()})
+                </>
+              )}
+            </button>
+
+            {/* Interruptor independiente de Periodo de Recuperación para Docentes */}
+            <button
+              type="button"
+              onClick={handleToggleRecuperacionDocente}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition shadow-sm ${
+                isRecuperacionOpenForTeachers
+                  ? 'bg-violet-600 text-white border-violet-400 hover:bg-violet-500'
+                  : 'bg-slate-800 text-violet-300 border-violet-500/40 hover:bg-slate-700'
+              }`}
+              title="Habilita o cierra la columna Rec. Trim. para los docentes incluso cuando la captura ordinaria ya esté bloqueada."
+            >
+              {isRecuperacionOpenForTeachers ? (
+                <>
+                  <Unlock className="w-4 h-4" />
+                  Recup. Docentes: Abierta ({trimestre.toUpperCase()})
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  Recup. Docentes: Cerrada ({trimestre.toUpperCase()})
+                </>
+              )}
+            </button>
+
+            {/* Visibilidad en Portal de Padres */}
+            <button
+              type="button"
+              onClick={handleToggleParentVisibility}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition shadow-sm ${
+                isPublishedToParents
+                  ? 'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500'
+                  : 'bg-slate-800 text-amber-300 border-amber-500/40 hover:bg-slate-700'
+              }`}
+              title="Controla si los padres de familia ya pueden ver las calificaciones de este trimestre en su celular."
+            >
+              {isPublishedToParents ? (
+                <>
+                  <Eye className="w-4 h-4" />
+                  Portal Padres: Publicado ({trimestre.toUpperCase()})
+                </>
+              ) : (
+                <>
+                  <EyeOff className="w-4 h-4" />
+                  Portal Padres: Oculto / En Captura ({trimestre.toUpperCase()})
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Candado de Captura Docente */}
-          <button
-            type="button"
-            onClick={handleToggleDocenteLock}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition shadow-sm ${
-              isDocenteLocked
-                ? 'bg-amber-500 text-slate-950 border-amber-400 hover:bg-amber-400'
-                : 'bg-slate-800 text-emerald-300 border-emerald-500/40 hover:bg-slate-700'
-            }`}
-            title="Al cerrar el candado, los docentes ya no pueden modificar este trimestre, pero Control Escolar sí puede seguir editando."
-          >
-            {isDocenteLocked ? (
-              <>
-                <Lock className="w-4 h-4" />
-                Docentes: Bloqueado ({trimestre.toUpperCase()})
-              </>
-            ) : (
-              <>
-                <Unlock className="w-4 h-4" />
-                Docentes: Captura Abierta ({trimestre.toUpperCase()})
-              </>
-            )}
-          </button>
-
-          {/* Interruptor independiente de Periodo de Recuperación para Docentes */}
-          <button
-            type="button"
-            onClick={handleToggleRecuperacionDocente}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition shadow-sm ${
-              isRecuperacionOpenForTeachers
-                ? 'bg-violet-600 text-white border-violet-400 hover:bg-violet-500'
-                : 'bg-slate-800 text-violet-300 border-violet-500/40 hover:bg-slate-700'
-            }`}
-            title="Habilita o cierra la columna Rec. Trim. para los docentes incluso cuando la captura ordinaria ya esté bloqueada."
-          >
-            {isRecuperacionOpenForTeachers ? (
-              <>
-                <Unlock className="w-4 h-4" />
-                Recup. Docentes: Abierta ({trimestre.toUpperCase()})
-              </>
-            ) : (
-              <>
-                <Lock className="w-4 h-4" />
-                Recup. Docentes: Cerrada ({trimestre.toUpperCase()})
-              </>
-            )}
-          </button>
-
-          {/* Visibilidad en Portal de Padres */}
-          <button
-            type="button"
-            onClick={handleToggleParentVisibility}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 border transition shadow-sm ${
-              isPublishedToParents
-                ? 'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500'
-                : 'bg-slate-800 text-amber-300 border-amber-500/40 hover:bg-slate-700'
-            }`}
-            title="Controla si los padres de familia ya pueden ver las calificaciones de este trimestre en su celular."
-          >
-            {isPublishedToParents ? (
-              <>
-                <Eye className="w-4 h-4" />
-                Portal Padres: Publicado ({trimestre.toUpperCase()})
-              </>
-            ) : (
-              <>
-                <EyeOff className="w-4 h-4" />
-                Portal Padres: Oculto / En Captura ({trimestre.toUpperCase()})
-              </>
-            )}
-          </button>
+        {/* Estado por Trimestre para el Portal de Padres */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-800">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+              Portal de Padres (T1 / T2 / T3):
+            </span>
+            {['t1', 't2', 't3'].map((tKey) => {
+              const pub = config?.trimestresPublicadosPadres?.[tKey] !== false;
+              return (
+                <button
+                  key={tKey}
+                  type="button"
+                  onClick={() => handleToggleParentVisibilityFor(tKey)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 border transition ${
+                    pub
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                      : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+                  }`}
+                  title={`Haz clic para ${pub ? 'ocultar' : 'publicar'} ${TRIMESTRE_NAMES[tKey]} en el Portal de Padres`}
+                >
+                  {pub ? '👁️' : '🙈'} {tKey.toUpperCase()}: {pub ? 'Publicado' : 'Oculto'}
+                </button>
+              );
+            })}
+          </div>
+          {(['t1', 't2', 't3'].some((tKey) => config?.trimestresPublicadosPadres?.[tKey] !== false)) ? (
+            <button
+              type="button"
+              onClick={() => handleSetAllParentsVisibility(false)}
+              className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-600/80 hover:bg-rose-600 text-white border border-rose-500/50 transition"
+              title="Ocultar los 3 trimestres (T1, T2 y T3) para que ningún padre vea calificaciones"
+            >
+              🙈 Ocultar Todos a Padres
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleSetAllParentsVisibility(true)}
+              className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-600/80 hover:bg-emerald-600 text-white border border-emerald-500/50 transition"
+              title="Publicar T1, T2 y T3 en el Portal de Padres"
+            >
+              👁️ Publicar Todos a Padres
+            </button>
+          )}
         </div>
       </div>
 
@@ -755,9 +824,9 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
               <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Trimestre y Tipo</label>
               <div className="space-y-1.5">
                 <select value={trimestre} onChange={e => setTrimestre(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg font-bold text-primary-700 bg-primary-50">
-                  <option value="t1">Trimestre 1 {config?.trimestresBloqueadosDocentes?.t1 ? '🔒' : ''}</option>
-                  <option value="t2">Trimestre 2 {config?.trimestresBloqueadosDocentes?.t2 ? '🔒' : ''}</option>
-                  <option value="t3">Trimestre 3 {config?.trimestresBloqueadosDocentes?.t3 ? '🔒' : ''}</option>
+                  <option value="t1">Trimestre 1 {config?.trimestresBloqueadosDocentes?.t1 ? '🔒' : ''}{config?.trimestresPublicadosPadres?.t1 === false ? ' 🙈' : ''}</option>
+                  <option value="t2">Trimestre 2 {config?.trimestresBloqueadosDocentes?.t2 ? '🔒' : ''}{config?.trimestresPublicadosPadres?.t2 === false ? ' 🙈' : ''}</option>
+                  <option value="t3">Trimestre 3 {config?.trimestresBloqueadosDocentes?.t3 ? '🔒' : ''}{config?.trimestresPublicadosPadres?.t3 === false ? ' 🙈' : ''}</option>
                 </select>
                 <div className="grid grid-cols-2 gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
                   <button

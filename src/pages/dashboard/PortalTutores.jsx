@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Newspaper, User, BellRing, FileText, CheckCircle2, Clock, LogOut, MessageSquare, Send, Check, CheckCheck, Printer, Award, Sparkles, Sun, Moon } from 'lucide-react';
+import { Newspaper, User, BellRing, FileText, CheckCircle2, Clock, LogOut, MessageSquare, Send, Check, CheckCheck, Printer, Award, Sparkles, Sun, Moon, Lock, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import { db } from '../../firebase';
@@ -46,7 +46,7 @@ const materiasPorGrado = {
 export default function PortalTutores() {
   const [activeTab, setActiveTab] = useState('expediente');
   const { studentSession, loginAsStudent, logout } = useAuth();
-  const { config } = useGlobalConfig();
+  const { config, loading: loadingConfig, error: configError } = useGlobalConfig();
   const [liveStudent, setLiveStudent] = useState(studentSession);
   const [noticias, setNoticias] = useState([]);
   const [loadingAvisos, setLoadingAvisos] = useState(true);
@@ -210,9 +210,11 @@ export default function PortalTutores() {
     fetchAvisos();
   }, []);
 
-  const pubT1 = config?.trimestresPublicadosPadres?.t1 !== false;
-  const pubT2 = config?.trimestresPublicadosPadres?.t2 !== false;
-  const pubT3 = config?.trimestresPublicadosPadres?.t3 !== false;
+  const configLista = !loadingConfig && !configError;
+  const pubT1 = configLista && config?.trimestresPublicadosPadres?.t1 !== false;
+  const pubT2 = configLista && config?.trimestresPublicadosPadres?.t2 !== false;
+  const pubT3 = configLista && config?.trimestresPublicadosPadres?.t3 !== false;
+  const hayAlgunTrimestrePublicado = pubT1 || pubT2 || pubT3;
 
   // Filtrar solo los trimestres que Control Escolar haya marcado como publicados para padres
   const studentForParents = useMemo(() => {
@@ -236,7 +238,8 @@ export default function PortalTutores() {
         t1: pubT1 ? (rawDet.t1 || {}) : {},
         t2: pubT2 ? (rawDet.t2 || {}) : {},
         t3: pubT3 ? (rawDet.t3 || {}) : {}
-      }
+      },
+      regularizacion: pubT3 ? (liveStudent.regularizacion || {}) : {}
     };
   }, [liveStudent, pubT1, pubT2, pubT3]);
 
@@ -246,7 +249,9 @@ export default function PortalTutores() {
   const promT1 = pubT1 ? truncateTo1Dec(getPromedioTrimestrePASEG(studentForParents, materiasAlumno, 't1')) : '-';
   const promT2 = pubT2 ? truncateTo1Dec(getPromedioTrimestrePASEG(studentForParents, materiasAlumno, 't2')) : '-';
   const promT3 = pubT3 ? truncateTo1Dec(getPromedioTrimestrePASEG(studentForParents, materiasAlumno, 't3')) : '-';
-  const promGral = truncateTo1Dec(getPromedioGeneralPASEG(studentForParents, materiasAlumno));
+  const promGral = hayAlgunTrimestrePublicado
+    ? truncateTo1Dec(getPromedioGeneralPASEG(studentForParents, materiasAlumno))
+    : '-';
 
   const docsMap = liveStudent.documentos || {};
   const docsList = [
@@ -376,82 +381,131 @@ export default function PortalTutores() {
                     Promedios calculados con truncado oficial a una décima sin redondear, idéntico a PASEG.
                   </p>
                 </div>
-                <button
-                  onClick={() => window.print()}
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-colors"
-                >
-                  <Printer className="w-4 h-4 mr-2" /> Imprimir / Guardar Boleta PDF
-                </button>
+                {hayAlgunTrimestrePublicado ? (
+                  <button
+                    onClick={() => window.print()}
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-colors"
+                  >
+                    <Printer className="w-4 h-4 mr-2" /> Imprimir / Guardar Boleta PDF
+                  </button>
+                ) : !loadingConfig && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shrink-0">
+                    <Lock className="w-3.5 h-3.5" /> Consulta temporalmente bloqueada
+                  </span>
+                )}
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-800 text-white">
-                    <tr>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Campo Formativo / Disciplina</th>
-                      <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">
-                        Trimestre 1 {!pubT1 && <span className="block text-[9px] font-normal text-amber-300">(En captura)</span>}
-                      </th>
-                      <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">
-                        Trimestre 2 {!pubT2 && <span className="block text-[9px] font-normal text-amber-300">(En captura)</span>}
-                      </th>
-                      <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">
-                        Trimestre 3 {!pubT3 && <span className="block text-[9px] font-normal text-amber-300">(En captura)</span>}
-                      </th>
-                      <th className="px-3 sm:px-6 py-3 text-center text-xs font-black uppercase tracking-wider bg-slate-900">Promedio Final</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 bg-white">
-                    {materiasAlumno.map((materia) => {
-                      const r1 = getCalificacionTrimestreEfectiva(studentForParents, materia.id, 't1');
-                      const r2 = getCalificacionTrimestreEfectiva(studentForParents, materia.id, 't2');
-                      const r3 = getCalificacionTrimestreEfectiva(studentForParents, materia.id, 't3');
-                      
-                      const finalObj = getCalificacionFinal(studentForParents, materia.id);
-                      const promedioStr = finalObj ? roundToIntGrade(finalObj.valor) : '-';
-                      const isReprobada = finalObj ? finalObj.isReprobada : false;
-                      
-                      return (
-                        <tr key={materia.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm text-slate-800 font-semibold">{materia.name}</td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT1 ? 'text-slate-400 italic text-[11px]' : r1.efectiva !== null && r1.efectiva < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {!pubT1 ? 'En captura' : (r1.efectiva !== null ? <>{r1.efectiva}{r1.fueRecuperado && <span className="ml-0.5 text-[10px] font-black text-indigo-600" title="Acreditado en Recuperación Trimestral">(R)</span>}</> : '-')}
-                          </td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT2 ? 'text-slate-400 italic text-[11px]' : r2.efectiva !== null && r2.efectiva < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {!pubT2 ? 'En captura' : (r2.efectiva !== null ? <>{r2.efectiva}{r2.fueRecuperado && <span className="ml-0.5 text-[10px] font-black text-indigo-600" title="Acreditado en Recuperación Trimestral">(R)</span>}</> : '-')}
-                          </td>
-                          <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT3 ? 'text-slate-400 italic text-[11px]' : r3.efectiva !== null && r3.efectiva < 6 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {!pubT3 ? 'En captura' : (r3.efectiva !== null ? <>{r3.efectiva}{r3.fueRecuperado && <span className="ml-0.5 text-[10px] font-black text-indigo-600" title="Acreditado en Recuperación Trimestral">(R)</span>}</> : '-')}
-                          </td>
-                          <td className={`px-3 sm:px-6 py-3 text-xs sm:text-sm text-center font-black bg-slate-50/80 ${promedioStr === '-' ? 'text-slate-400' : isReprobada ? 'text-red-600' : 'text-emerald-700'}`}>
-                            {promedioStr}{finalObj?.isRegularizacion ? '*' : ''}
-                          </td>
+              {loadingConfig ? (
+                <div className="p-10 text-center">
+                  <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-sm font-semibold text-slate-600">Verificando disponibilidad de calificaciones...</p>
+                </div>
+              ) : configError ? (
+                <div className="p-8 text-center bg-rose-50/70">
+                  <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3 border border-rose-200">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-base font-extrabold text-rose-900">No se pudo verificar el estado de publicación</h4>
+                  <p className="text-xs sm:text-sm text-rose-700 mt-1 max-w-md mx-auto">
+                    Por seguridad, las calificaciones permanecen ocultas hasta confirmar el permiso de publicación con Control Escolar. Por favor recarga la página en unos segundos.
+                  </p>
+                </div>
+              ) : !hayAlgunTrimestrePublicado ? (
+                <div className="p-8 sm:p-10 text-center bg-amber-50/50">
+                  <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-3 border border-amber-200">
+                    <EyeOff className="w-7 h-7" />
+                  </div>
+                  <h4 className="text-base sm:text-lg font-extrabold text-slate-800">Boleta en proceso de captura y revisión</h4>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-1.5 max-w-lg mx-auto leading-relaxed">
+                    Control Escolar mantiene ocultas las calificaciones temporalmente. En cuanto se publiquen aparecerán aquí automáticamente.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {(!pubT1 || !pubT2 || !pubT3) && (
+                    <div className="px-4 sm:px-6 py-2.5 bg-amber-50 border-b border-amber-200 text-amber-900 text-xs font-semibold flex items-center gap-2">
+                      <EyeOff className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>
+                        Aviso: Los trimestres marcados como &ldquo;En captura&rdquo; (
+                        {[
+                          !pubT1 ? 'Trimestre 1' : null,
+                          !pubT2 ? 'Trimestre 2' : null,
+                          !pubT3 ? 'Trimestre 3' : null
+                        ].filter(Boolean).join(', ')}
+                        ) aún no han sido liberados por Control Escolar.
+                      </span>
+                    </div>
+                  )}
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-slate-200">
+                      <thead className="bg-slate-800 text-white">
+                        <tr>
+                          <th className="px-4 sm:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Campo Formativo / Disciplina</th>
+                          <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">
+                            Trimestre 1 {!pubT1 && <span className="block text-[9px] font-normal text-amber-300">(En captura)</span>}
+                          </th>
+                          <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">
+                            Trimestre 2 {!pubT2 && <span className="block text-[9px] font-normal text-amber-300">(En captura)</span>}
+                          </th>
+                          <th className="px-3 sm:px-5 py-3 text-center text-xs font-bold uppercase tracking-wider">
+                            Trimestre 3 {!pubT3 && <span className="block text-[9px] font-normal text-amber-300">(En captura)</span>}
+                          </th>
+                          <th className="px-3 sm:px-6 py-3 text-center text-xs font-black uppercase tracking-wider bg-slate-900">Promedio Final</th>
                         </tr>
-                      );
-                    })}
-                    {materiasAlumno.length > 0 && (
-                      <tr className="bg-slate-100 border-t-2 border-slate-300 font-black">
-                        <td className="px-4 sm:px-6 py-3.5 text-xs sm:text-sm text-slate-900 uppercase text-right">
-                          Promedio General (PASEG)
-                        </td>
-                        <td className="px-3 sm:px-5 py-3.5 text-xs sm:text-sm text-center text-slate-800">{promT1}</td>
-                        <td className="px-3 sm:px-5 py-3.5 text-xs sm:text-sm text-center text-slate-800">{promT2}</td>
-                        <td className="px-3 sm:px-5 py-3.5 text-xs sm:text-sm text-center text-slate-800">{promT3}</td>
-                        <td className="px-3 sm:px-6 py-3.5 text-sm sm:text-base text-center bg-primary-50 text-primary-900 border-l border-slate-200">
-                          {promGral}
-                        </td>
-                      </tr>
-                    )}
-                    {materiasAlumno.length === 0 && (
-                      <tr>
-                        <td colSpan="5" className="px-6 py-6 text-center text-slate-500 text-sm">
-                          No hay materias registradas para este grado.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white">
+                        {materiasAlumno.map((materia) => {
+                          const r1 = getCalificacionTrimestreEfectiva(studentForParents, materia.id, 't1');
+                          const r2 = getCalificacionTrimestreEfectiva(studentForParents, materia.id, 't2');
+                          const r3 = getCalificacionTrimestreEfectiva(studentForParents, materia.id, 't3');
+                          
+                          const finalObj = getCalificacionFinal(studentForParents, materia.id);
+                          const promedioStr = finalObj ? roundToIntGrade(finalObj.valor) : '-';
+                          const isReprobada = finalObj ? finalObj.isReprobada : false;
+                          
+                          return (
+                            <tr key={materia.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm text-slate-800 font-semibold">{materia.name}</td>
+                              <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT1 ? 'text-slate-400 italic text-[11px]' : r1.efectiva !== null && r1.efectiva < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                                {!pubT1 ? 'En captura' : (r1.efectiva !== null ? <>{r1.efectiva}{r1.fueRecuperado && <span className="ml-0.5 text-[10px] font-black text-indigo-600" title="Acreditado en Recuperación Trimestral">(R)</span>}</> : '-')}
+                              </td>
+                              <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT2 ? 'text-slate-400 italic text-[11px]' : r2.efectiva !== null && r2.efectiva < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                                {!pubT2 ? 'En captura' : (r2.efectiva !== null ? <>{r2.efectiva}{r2.fueRecuperado && <span className="ml-0.5 text-[10px] font-black text-indigo-600" title="Acreditado en Recuperación Trimestral">(R)</span>}</> : '-')}
+                              </td>
+                              <td className={`px-3 sm:px-5 py-3 text-xs sm:text-sm text-center font-bold ${!pubT3 ? 'text-slate-400 italic text-[11px]' : r3.efectiva !== null && r3.efectiva < 6 ? 'text-red-600' : 'text-slate-900'}`}>
+                                {!pubT3 ? 'En captura' : (r3.efectiva !== null ? <>{r3.efectiva}{r3.fueRecuperado && <span className="ml-0.5 text-[10px] font-black text-indigo-600" title="Acreditado en Recuperación Trimestral">(R)</span>}</> : '-')}
+                              </td>
+                              <td className={`px-3 sm:px-6 py-3 text-xs sm:text-sm text-center font-black bg-slate-50/80 ${promedioStr === '-' ? 'text-slate-400' : isReprobada ? 'text-red-600' : 'text-emerald-700'}`}>
+                                {promedioStr}{finalObj?.isRegularizacion ? '*' : ''}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {materiasAlumno.length > 0 && (
+                          <tr className="bg-slate-100 border-t-2 border-slate-300 font-black">
+                            <td className="px-4 sm:px-6 py-3.5 text-xs sm:text-sm text-slate-900 uppercase text-right">
+                              Promedio General (PASEG)
+                            </td>
+                            <td className="px-3 sm:px-5 py-3.5 text-xs sm:text-sm text-center text-slate-800">{promT1}</td>
+                            <td className="px-3 sm:px-5 py-3.5 text-xs sm:text-sm text-center text-slate-800">{promT2}</td>
+                            <td className="px-3 sm:px-5 py-3.5 text-xs sm:text-sm text-center text-slate-800">{promT3}</td>
+                            <td className="px-3 sm:px-6 py-3.5 text-sm sm:text-base text-center bg-primary-50 text-primary-900 border-l border-slate-200">
+                              {promGral}
+                            </td>
+                          </tr>
+                        )}
+                        {materiasAlumno.length === 0 && (
+                          <tr>
+                            <td colSpan="5" className="px-6 py-6 text-center text-slate-500 text-sm">
+                              No hay materias registradas para este grado.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
               <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
                 <p className="text-xs text-slate-500 italic">
                   Las calificaciones se actualizan en tiempo real conforme los docentes y Control Escolar liberan cada periodo trimestral.
@@ -726,7 +780,9 @@ export default function PortalTutores() {
       </div>
 
       {/* Componente de Impresión de Boleta Oficial */}
-      <BoletaPrint students={[studentForParents]} materiasPorGrado={materiasPorGrado} />
+      {hayAlgunTrimestrePublicado && (
+        <BoletaPrint students={[studentForParents]} materiasPorGrado={materiasPorGrado} />
+      )}
     </>
   );
 }
