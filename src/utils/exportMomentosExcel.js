@@ -152,15 +152,22 @@ const wrapWorksheetXml = ({ lastCol, lastRow, colsXml, rowsXml, mergeCells, isSe
   <pageSetup paperSize="1" orientation="landscape" fitToWidth="1" fitToHeight="1"/>
 </worksheet>`;
 
-const buildInstitucionalHeaderRows = (totalCols, momentoCfg, meta, mergeCells) => {
+const buildInstitucionalHeaderRows = (
+  totalCols,
+  momentoCfg,
+  meta,
+  mergeCells,
+  turnoVista = 'Todos'
+) => {
   const rows = [];
   const lastColLetter = colIndexToLetter(totalCols);
+  const esUnSoloTurno = TURNOS_SEG.includes(turnoVista);
   const titulos = [
     'SECRETARÍA DE EDUCACIÓN',
     'SUBSECRETARÍA DE EDUCACIÓN BÁSICA',
     'DIRECCIÓN GENERAL DE EDUCACIÓN SECUNDARIA',
     `DEPARTAMENTO DE SECUNDARIAS: ${meta.departamento || 'TÉCNICAS'}`,
-    `${momentoCfg.titulo}. CICLO ESCOLAR ${meta.cicloEscolar}`
+    `${momentoCfg.titulo}${esUnSoloTurno ? ` — TURNO ${turnoVista.toUpperCase()}` : ''}. CICLO ESCOLAR ${meta.cicloEscolar}`
   ];
 
   titulos.forEach((texto, idx) => {
@@ -214,10 +221,13 @@ const buildInstitucionalHeaderRows = (totalCols, momentoCfg, meta, mergeCells) =
 
   // Fila 8: Director | Total de docentes
   {
+    const docLabel = esUnSoloTurno
+      ? `TOTAL DE DOCENTES (${turnoVista.toUpperCase()}): ${meta.totalDocentes}`
+      : `TOTAL DE DOCENTES: ${meta.totalDocentes}`;
     const cells = Array.from({ length: totalCols }, (_, i) => {
       const c = i + 1;
       if (c === 1) return buildCell(c, 8, { value: `NOMBRE DEL DIRECTOR (A): ${meta.director}`, style: 3 });
-      if (c === cRight + 1) return buildCell(c, 8, { value: `TOTAL DE DOCENTES: ${meta.totalDocentes}`, style: 3 });
+      if (c === cRight + 1) return buildCell(c, 8, { value: docLabel, style: 3 });
       return buildCell(c, 8, { value: '', style: 3 });
     });
     mergeCells.push(
@@ -230,10 +240,12 @@ const buildInstitucionalHeaderRows = (totalCols, momentoCfg, meta, mergeCells) =
   return rows;
 };
 
-const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula }) => {
+const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula, turnoVista = 'Todos' }) => {
   const TOTAL_COLS = 16;
   const mergeCells = [];
-  const rows = buildInstitucionalHeaderRows(TOTAL_COLS, momentoCfg, meta, mergeCells);
+  const turnosAExportar = TURNOS_SEG.includes(turnoVista) ? [turnoVista] : TURNOS_SEG;
+  const esUnSoloTurno = turnosAExportar.length === 1;
+  const rows = buildInstitucionalHeaderRows(TOTAL_COLS, momentoCfg, meta, mergeCells, turnoVista);
   const corteTexto = formatearFechaLargaSEG(meta.fechaCorte) || meta.fechaCorte;
 
   // Fila 9: MATRÍCULA GENERAL
@@ -328,9 +340,8 @@ const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula }) => {
     rows.push(makeRow(r, isGlobal ? 26 : 23, cells));
   };
 
-  // Filas 12-14 Matutino, 15-17 Vespertino
   let rowCursor = 12;
-  TURNOS_SEG.forEach((turno) => {
+  turnosAExportar.forEach((turno) => {
     GRADOS_SEG.forEach((grado) => {
       const d = matricula.filas[`${grado}-${turno}`];
       pushMatriculaRow(rowCursor, GRADO_LABELS[grado], turno.toUpperCase(), d, 'data');
@@ -338,26 +349,33 @@ const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula }) => {
     });
   });
 
-  // Filas 18-20 Totales por Grado
-  pushMatriculaRow(18, 'TOTALES POR GRADO', 'PRIMERO', matricula.totalesGrado['1er Grado'], 'grado', { rows: [12, 15] });
-  pushMatriculaRow(19, '', 'SEGUNDO', matricula.totalesGrado['2do Grado'], 'grado', { rows: [13, 16] });
-  pushMatriculaRow(20, '', 'TERCERO', matricula.totalesGrado['3er Grado'], 'grado', { rows: [14, 17] });
-  mergeCells.push('A18:A20');
+  if (!esUnSoloTurno) {
+    pushMatriculaRow(18, 'TOTALES POR GRADO', 'PRIMERO', matricula.totalesGrado['1er Grado'], 'grado', { rows: [12, 15] });
+    pushMatriculaRow(19, '', 'SEGUNDO', matricula.totalesGrado['2do Grado'], 'grado', { rows: [13, 16] });
+    pushMatriculaRow(20, '', 'TERCERO', matricula.totalesGrado['3er Grado'], 'grado', { rows: [14, 17] });
+    mergeCells.push('A18:A20');
+    rowCursor = 21;
+  }
 
-  // Fila 21 Total Escuela
-  pushMatriculaRow(21, 'TOTAL DE LA ESCUELA', '', matricula.totalEscuela, 'global', { range: [18, 20] });
-  mergeCells.push('A21:B21');
+  const totalRowNum = rowCursor;
+  const totalLabel = esUnSoloTurno
+    ? `TOTAL TURNO ${turnoVista.toUpperCase()}`
+    : 'TOTAL DE LA ESCUELA';
+  const totalFormulaSrc = esUnSoloTurno ? { range: [12, 14] } : { range: [18, 20] };
+  pushMatriculaRow(totalRowNum, totalLabel, '', matricula.totalEscuela, 'global', totalFormulaSrc);
+  mergeCells.push(`A${totalRowNum}:B${totalRowNum}`);
 
-  // Fila 22 y 23 Firma y fecha
-  rows.push(makeRow(22, 18, []));
+  const spacerRow = totalRowNum + 1;
+  const sigRow = totalRowNum + 2;
+  rows.push(makeRow(spacerRow, 18, []));
   const fCells = Array.from({ length: TOTAL_COLS }, (_, i) => {
     const c = i + 1;
-    if (c === 1) return buildCell(c, 23, { value: `FECHA: ${formatearFechaLargaSEG(meta.fechaEmision) || ''}`, style: 3 });
-    if (c >= 11 && c <= 15) return buildCell(c, 23, { value: c === 11 ? 'FIRMA Y SELLO' : '', style: 22 });
-    return buildCell(c, 23, { value: '', style: 0 });
+    if (c === 1) return buildCell(c, sigRow, { value: `FECHA: ${formatearFechaLargaSEG(meta.fechaEmision) || ''}`, style: 3 });
+    if (c >= 11 && c <= 15) return buildCell(c, sigRow, { value: c === 11 ? 'FIRMA Y SELLO' : '', style: 22 });
+    return buildCell(c, sigRow, { value: '', style: 0 });
   });
-  mergeCells.push('A23:F23', 'K23:O23');
-  rows.push(makeRow(23, 28, fCells));
+  mergeCells.push(`A${sigRow}:F${sigRow}`, `K${sigRow}:O${sigRow}`);
+  rows.push(makeRow(sigRow, 28, fCells));
 
   const colsXml = [
     '<col min="1" max="1" width="18" customWidth="1"/>',
@@ -369,7 +387,7 @@ const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula }) => {
 
   return wrapWorksheetXml({
     lastCol: 'P',
-    lastRow: 23,
+    lastRow: sigRow,
     colsXml,
     rowsXml: rows,
     mergeCells,
@@ -377,10 +395,12 @@ const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula }) => {
   });
 };
 
-const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => {
+const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento, turnoVista = 'Todos' }) => {
   const TOTAL_COLS = 33; // A..AG
   const mergeCells = [];
-  const rows = buildInstitucionalHeaderRows(TOTAL_COLS, momentoCfg, meta, mergeCells);
+  const turnosAExportar = TURNOS_SEG.includes(turnoVista) ? [turnoVista] : TURNOS_SEG;
+  const esUnSoloTurno = turnosAExportar.length === 1;
+  const rows = buildInstitucionalHeaderRows(TOTAL_COLS, momentoCfg, meta, mergeCells, turnoVista);
 
   // Fila 9 & 10
   rows.push(makeRow(9, 24, Array.from({ length: TOTAL_COLS }, (_, i) => buildCell(i + 1, 9, { value: i === 0 ? 'APROVECHAMIENTO (PROMEDIOS)' : '', style: 1 }))));
@@ -400,7 +420,7 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
       if (c === 22) return buildCell(c, 11, { value: 'PROM. GRAL. DE 2°', style: 5 });
       if (c === 23) return buildCell(c, 11, { value: 'TERCER GRADO', style: 5 });
       if (c === 32) return buildCell(c, 11, { value: 'PROM. GRAL. DE 3°', style: 5 });
-      if (c === 33) return buildCell(c, 11, { value: 'PROM. GRAL DE LA ESCUELA', style: 5 });
+      if (c === 33) return buildCell(c, 11, { value: esUnSoloTurno ? 'PROM. GRAL DEL TURNO' : 'PROM. GRAL DE LA ESCUELA', style: 5 });
       return buildCell(c, 11, { value: '', style: 5 });
     });
     mergeCells.push('A11:A13', 'B11:K11', 'L11:L13', 'M11:U11', 'V11:V13', 'W11:AE11', 'AF11:AF13', 'AG11:AG13');
@@ -433,12 +453,11 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
     rows.push(makeRow(13, 82, c13));
   }
 
-  // Filas 14 (MATUTINO) y 15 (VESPERTINO)
   const materiaList1 = CAMPOS_FORMATIVOS_SEG['1er Grado'].flatMap((c) => c.materias);
   const materiaList2 = CAMPOS_FORMATIVOS_SEG['2do Grado'].flatMap((c) => c.materias);
   const materiaList3 = CAMPOS_FORMATIVOS_SEG['3er Grado'].flatMap((c) => c.materias);
 
-  TURNOS_SEG.forEach((turno, idx) => {
+  turnosAExportar.forEach((turno, idx) => {
     const r = 14 + idx;
     const tData = aprovechamiento.turnos[turno];
     const cs = [buildCell(1, r, { value: turno.toUpperCase(), style: 7 })];
@@ -470,10 +489,16 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
     rows.push(makeRow(r, 28, cs));
   });
 
-  // Fila 16: PROM. GRAL DE ESCUELA (=IFERROR(AVERAGE(col14:col15),"") en B..AG)
+  const lastShiftRow = 14 + turnosAExportar.length - 1;
+  const totalRowNum = lastShiftRow + 1;
+
+  // Fila de promedio general (Escuela o Turno)
   {
     const eData = aprovechamiento.escuela;
-    const cs = [buildCell(1, 16, { value: 'PROM. GRAL DE ESCUELA', style: 20 })];
+    const totalLabel = esUnSoloTurno
+      ? `PROM. GRAL TURNO ${turnoVista.toUpperCase()}`
+      : 'PROM. GRAL DE ESCUELA';
+    const cs = [buildCell(1, totalRowNum, { value: totalLabel, style: 20 })];
     const cachedByCol = {};
     materiaList1.forEach((m, i) => { cachedByCol[2 + i] = eData.materias[m.id]; });
     cachedByCol[12] = eData.promGrado['1er Grado'];
@@ -487,39 +512,43 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
       const colL = colIndexToLetter(c);
       const val = cachedByCol[c];
       cs.push(
-        buildCell(c, 16, {
+        buildCell(c, totalRowNum, {
           value: val !== null && val !== undefined ? val : '',
           type: 'n',
-          formula: `IFERROR(AVERAGE(${colL}14:${colL}15),"")`,
+          formula: `IFERROR(AVERAGE(${colL}14:${colL}${lastShiftRow}),"")`,
           style: 13
         })
       );
     }
-    rows.push(makeRow(16, 30, cs));
+    rows.push(makeRow(totalRowNum, 30, cs));
   }
 
   // Nota y pie de firma
-  rows.push(makeRow(17, 16, []));
+  const sp1 = totalRowNum + 1;
+  const noteRow = totalRowNum + 2;
+  const sp2 = totalRowNum + 3;
+  const sigRow = totalRowNum + 4;
+  rows.push(makeRow(sp1, 16, []));
   rows.push(
     makeRow(
-      18,
+      noteRow,
       22,
       Array.from({ length: TOTAL_COLS }, (_, i) =>
-        buildCell(i + 1, 18, { value: i === 0 ? momentoCfg.notaAprovechamiento : '', style: 21 })
+        buildCell(i + 1, noteRow, { value: i === 0 ? momentoCfg.notaAprovechamiento : '', style: 21 })
       )
     )
   );
-  mergeCells.push('A18:AG18');
-  rows.push(makeRow(19, 18, []));
+  mergeCells.push(`A${noteRow}:AG${noteRow}`);
+  rows.push(makeRow(sp2, 18, []));
 
   const fCells = Array.from({ length: TOTAL_COLS }, (_, i) => {
     const c = i + 1;
-    if (c === 1) return buildCell(c, 20, { value: `FECHA: ${formatearFechaLargaSEG(meta.fechaEmision) || ''}`, style: 3 });
-    if (c >= 13 && c <= 22) return buildCell(c, 20, { value: c === 13 ? 'FIRMA Y SELLO' : '', style: 22 });
-    return buildCell(c, 20, { value: '', style: 0 });
+    if (c === 1) return buildCell(c, sigRow, { value: `FECHA: ${formatearFechaLargaSEG(meta.fechaEmision) || ''}`, style: 3 });
+    if (c >= 13 && c <= 22) return buildCell(c, sigRow, { value: c === 13 ? 'FIRMA Y SELLO' : '', style: 22 });
+    return buildCell(c, sigRow, { value: '', style: 0 });
   });
-  mergeCells.push('A20:J20', 'M20:V20');
-  rows.push(makeRow(20, 28, fCells));
+  mergeCells.push(`A${sigRow}:J${sigRow}`, `M${sigRow}:V${sigRow}`);
+  rows.push(makeRow(sigRow, 28, fCells));
 
   const colsXml = [
     '<col min="1" max="1" width="22" customWidth="1"/>',
@@ -533,7 +562,7 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
 
   return wrapWorksheetXml({
     lastCol: 'AG',
-    lastRow: 20,
+    lastRow: sigRow,
     colsXml,
     rowsXml: rows,
     mergeCells
@@ -548,11 +577,14 @@ const buildIndicatorMatrixSheetXml = ({
   columnasHeaders,
   totalLabel,
   dataSource,
-  extractCounts
+  extractCounts,
+  turnoVista = 'Todos'
 }) => {
   const TOTAL_COLS = 13; // A..M
   const mergeCells = [];
-  const rows = buildInstitucionalHeaderRows(TOTAL_COLS, momentoCfg, meta, mergeCells);
+  const turnosAExportar = TURNOS_SEG.includes(turnoVista) ? [turnoVista] : TURNOS_SEG;
+  const esUnSoloTurno = turnosAExportar.length === 1;
+  const rows = buildInstitucionalHeaderRows(TOTAL_COLS, momentoCfg, meta, mergeCells, turnoVista);
 
   // Fila 9
   rows.push(
@@ -633,30 +665,40 @@ const buildIndicatorMatrixSheetXml = ({
   };
 
   let rowCursor = 12;
-  TURNOS_SEG.forEach((turno) => {
+  turnosAExportar.forEach((turno) => {
     GRADOS_SEG.forEach((grado) => {
       pushMatrixRow(rowCursor, GRADO_LABELS[grado], turno.toUpperCase(), dataSource.filas[`${grado}-${turno}`], 'data');
       rowCursor++;
     });
   });
 
-  pushMatrixRow(18, 'TOTALES POR GRADO', 'PRIMERO', dataSource.totalesGrado['1er Grado'], 'grado', { rows: [12, 15] });
-  pushMatrixRow(19, '', 'SEGUNDO', dataSource.totalesGrado['2do Grado'], 'grado', { rows: [13, 16] });
-  pushMatrixRow(20, '', 'TERCERO', dataSource.totalesGrado['3er Grado'], 'grado', { rows: [14, 17] });
-  mergeCells.push('A18:A20');
+  if (!esUnSoloTurno) {
+    pushMatrixRow(18, 'TOTALES POR GRADO', 'PRIMERO', dataSource.totalesGrado['1er Grado'], 'grado', { rows: [12, 15] });
+    pushMatrixRow(19, '', 'SEGUNDO', dataSource.totalesGrado['2do Grado'], 'grado', { rows: [13, 16] });
+    pushMatrixRow(20, '', 'TERCERO', dataSource.totalesGrado['3er Grado'], 'grado', { rows: [14, 17] });
+    mergeCells.push('A18:A20');
+    rowCursor = 21;
+  }
 
-  pushMatrixRow(21, 'TOTAL DE LA ESCUELA', '', dataSource.totalEscuela, 'global', { range: [18, 20] });
-  mergeCells.push('A21:B21');
+  const totalRowNum = rowCursor;
+  const totalTitle = esUnSoloTurno
+    ? `TOTAL TURNO ${turnoVista.toUpperCase()}`
+    : 'TOTAL DE LA ESCUELA';
+  const totalSrc = esUnSoloTurno ? { range: [12, 14] } : { range: [18, 20] };
+  pushMatrixRow(totalRowNum, totalTitle, '', dataSource.totalEscuela, 'global', totalSrc);
+  mergeCells.push(`A${totalRowNum}:B${totalRowNum}`);
 
-  rows.push(makeRow(22, 18, []));
+  const spacerRow = totalRowNum + 1;
+  const sigRow = totalRowNum + 2;
+  rows.push(makeRow(spacerRow, 18, []));
   const fCells = Array.from({ length: TOTAL_COLS }, (_, i) => {
     const c = i + 1;
-    if (c === 1) return buildCell(c, 23, { value: `FECHA: ${formatearFechaLargaSEG(meta.fechaEmision) || ''}`, style: 3 });
-    if (c >= 8 && c <= 12) return buildCell(c, 23, { value: c === 8 ? 'FIRMA Y SELLO' : '', style: 22 });
-    return buildCell(c, 23, { value: '', style: 0 });
+    if (c === 1) return buildCell(c, sigRow, { value: `FECHA: ${formatearFechaLargaSEG(meta.fechaEmision) || ''}`, style: 3 });
+    if (c >= 8 && c <= 12) return buildCell(c, sigRow, { value: c === 8 ? 'FIRMA Y SELLO' : '', style: 22 });
+    return buildCell(c, sigRow, { value: '', style: 0 });
   });
-  mergeCells.push('A23:E23', 'H23:L23');
-  rows.push(makeRow(23, 28, fCells));
+  mergeCells.push(`A${sigRow}:E${sigRow}`, `H${sigRow}:L${sigRow}`);
+  rows.push(makeRow(sigRow, 28, fCells));
 
   const colsXml = [
     '<col min="1" max="1" width="19" customWidth="1"/>',
@@ -667,7 +709,7 @@ const buildIndicatorMatrixSheetXml = ({
 
   return wrapWorksheetXml({
     lastCol: 'M',
-    lastRow: 23,
+    lastRow: sigRow,
     colsXml,
     rowsXml: rows,
     mergeCells
@@ -680,19 +722,20 @@ export const generarWorkbookMomentosBuffer = async ({
   matricula,
   aprovechamiento,
   desempeno,
-  asistencia
+  asistencia,
+  turnoVista = 'Todos'
 }) => {
   const momentoCfg = MOMENTOS_SEG[momentoId] || MOMENTOS_SEG[1];
   const sheets = [
     {
       idx: 1,
       name: 'MATRICULA GENERAL',
-      xml: buildMatriculaSheetXml({ momentoCfg, meta, matricula })
+      xml: buildMatriculaSheetXml({ momentoCfg, meta, matricula, turnoVista })
     },
     {
       idx: 2,
       name: 'APROVECHAMIENTO',
-      xml: buildAprovechamientoSheetXml({ momentoCfg, meta, aprovechamiento })
+      xml: buildAprovechamientoSheetXml({ momentoCfg, meta, aprovechamiento, turnoVista })
     },
     {
       idx: 3,
@@ -717,7 +760,8 @@ export const generarWorkbookMomentosBuffer = async ({
           c3: o.r7 || 0,
           c4: o.r8 || 0,
           tot: o.comprobacion || 0
-        })
+        }),
+        turnoVista
       })
     },
     {
@@ -743,7 +787,8 @@ export const generarWorkbookMomentosBuffer = async ({
           c3: o.fMas10 || 0,
           c4: o.sinFaltas || 0,
           tot: o.total || 0
-        })
+        }),
+        turnoVista
       })
     }
   ];
@@ -820,7 +865,8 @@ export const exportarMomentosValoracionExcel = async (params) => {
   const bytes = await generarWorkbookMomentosBuffer(params);
   const momentoCfg = MOMENTOS_SEG[params.momentoId] || MOMENTOS_SEG[1];
   const cicloClean = String(params.meta?.cicloEscolar || '2026-2027').replace(/[^0-9-]/g, '');
-  const filename = `${momentoCfg.corto.replace(/\s+/g, '_')}_Valoracion_EST68_${cicloClean}.xlsx`;
+  const turnoSuf = TURNOS_SEG.includes(params.turnoVista) ? `_${params.turnoVista}` : '';
+  const filename = `${momentoCfg.corto.replace(/\s+/g, '_')}_Valoracion_EST68${turnoSuf}_${cicloClean}.xlsx`;
   const blob = new Blob([bytes], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });

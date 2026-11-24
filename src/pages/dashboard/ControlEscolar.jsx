@@ -2811,7 +2811,11 @@ export default function ControlEscolar() {
           <Formato911 rawActivos={_rawDirectorio} globalShiftFilter={globalShiftFilter} materiasPorGrado={materiasPorGrado} />
         )}
         {!loading && activeTab === 'momentosValoracion' && !printMode && (
-          <MomentosValoracion alumnos={_rawDirectorio} onClose={() => setActiveTab('activos')} />
+          <MomentosValoracion
+            alumnos={_rawDirectorio}
+            globalShiftFilter={globalShiftFilter}
+            onClose={() => setActiveTab('activos')}
+          />
         )}
 
         {/* IMPRESIÓN MODALES INDIVIDUALES */}

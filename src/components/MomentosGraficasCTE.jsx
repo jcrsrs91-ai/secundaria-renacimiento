@@ -98,7 +98,8 @@ function EmptyChartNotice({ message = 'Sin datos capturados aún para graficar e
   );
 }
 
-function CTEHeaderBadge({ title, momentoTitulo, cicloEscolar }) {
+function CTEHeaderBadge({ title, momentoTitulo, cicloEscolar, turnoVista = 'Todos' }) {
+  const esUnSoloTurno = turnoVista === 'Matutino' || turnoVista === 'Vespertino';
   return (
     <div className="flex flex-col sm:flex-row print:flex-row sm:items-center print:items-center justify-between gap-2 mb-4 print:mb-3 bg-gradient-to-r from-slate-900 to-indigo-950 text-white px-4 py-3 print:py-2.5 print:px-4 rounded-xl shadow-xs">
       <div className="flex items-center gap-2.5">
@@ -115,7 +116,8 @@ function CTEHeaderBadge({ title, momentoTitulo, cicloEscolar }) {
         </div>
       </div>
       <span className="self-start sm:self-center print:self-center text-[11px] print:text-xs font-bold bg-white/10 border border-white/20 px-2.5 py-1 rounded-full text-sky-200 uppercase">
-        {momentoTitulo} · Ciclo {cicloEscolar}
+        {momentoTitulo}
+        {esUnSoloTurno ? ` · Turno ${turnoVista}` : ''} · Ciclo {cicloEscolar}
       </span>
     </div>
   );
@@ -124,7 +126,7 @@ function CTEHeaderBadge({ title, momentoTitulo, cicloEscolar }) {
 /* =========================================================================
    1. TABLERO DE MATRÍCULA GENERAL
    ========================================================================= */
-function MatriculaCTE({ matricula, momentoTitulo, cicloEscolar, printMode = false }) {
+function MatriculaCTE({ matricula, momentoTitulo, cicloEscolar, printMode = false, turnoVista = 'Todos' }) {
   const esc = matricula?.totalEscuela;
   const hayDatos = (esc?.existencia?.t || 0) > 0 || (esc?.inicial?.t || 0) > 0;
 
@@ -154,6 +156,7 @@ function MatriculaCTE({ matricula, momentoTitulo, cicloEscolar, printMode = fals
         title="Análisis Gráfico de Matrícula y Retención"
         momentoTitulo={momentoTitulo}
         cicloEscolar={cicloEscolar}
+        turnoVista={turnoVista}
       />
 
       {!hayDatos ? (
@@ -201,7 +204,7 @@ function MatriculaCTE({ matricula, momentoTitulo, cicloEscolar, printMode = fals
                 Existencia por Grado y Sexo
               </h6>
               <div className="h-64 print:h-auto w-full">
-                <ChartBox printMode={printMode} screenHeight={250} printWidth={600} printHeight={410} minWidth={240}>
+                <ChartBox printMode={printMode} screenHeight={250} printWidth={560} printHeight={375} minWidth={240}>
                   <BarChart data={barGradosData} margin={{ top: 22, right: 16, left: -10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="grado" tick={{ fontSize: printMode ? 13 : 11, fontWeight: 700, fill: '#334155' }} />
@@ -223,10 +226,10 @@ function MatriculaCTE({ matricula, momentoTitulo, cicloEscolar, printMode = fals
 
             <div className="bg-white border border-slate-200 rounded-xl p-4 print:p-3.5 shadow-2xs flex flex-col justify-between">
               <h6 className="text-xs print:text-sm font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                Composición Escolar por Sexo
+                Composición por Sexo
               </h6>
               <div className="h-52 print:h-auto relative flex items-center justify-center my-auto">
-                <ChartBox printMode={printMode} screenHeight={205} printWidth={285} printHeight={320} minWidth={200}>
+                <ChartBox printMode={printMode} screenHeight={205} printWidth={265} printHeight={290} minWidth={200}>
                   <PieChart>
                     <Pie
                       data={pieSexoData}
@@ -234,8 +237,8 @@ function MatriculaCTE({ matricula, momentoTitulo, cicloEscolar, printMode = fals
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={printMode ? 68 : 54}
-                      outerRadius={printMode ? 108 : 80}
+                      innerRadius={printMode ? 62 : 54}
+                      outerRadius={printMode ? 98 : 80}
                       paddingAngle={3}
                       isAnimationActive={false}
                     >
@@ -281,13 +284,15 @@ function MatriculaCTE({ matricula, momentoTitulo, cicloEscolar, printMode = fals
 /* =========================================================================
    2. TABLERO DE APROVECHAMIENTO (PROMEDIOS)
    ========================================================================= */
-function AprovechamientoCTE({ aprovechamiento, momentoTitulo, cicloEscolar, printMode = false }) {
+function AprovechamientoCTE({ aprovechamiento, momentoTitulo, cicloEscolar, printMode = false, turnoVista = 'Todos' }) {
   const esc = aprovechamiento?.escuela;
   const promEscuela = esc?.promTurno ?? null;
-  const tieneVespertino = useMemo(() => {
+  const esUnSoloTurno = turnoVista === 'Matutino' || turnoVista === 'Vespertino';
+  const mostrarComparativaTurnos = useMemo(() => {
+    if (esUnSoloTurno) return false;
     const v = aprovechamiento?.turnos?.Vespertino?.promGrado || {};
     return GRADOS_SEG.some((g) => v[g] !== null && v[g] !== undefined);
-  }, [aprovechamiento]);
+  }, [aprovechamiento, esUnSoloTurno]);
 
   const rankingDisciplinas = useMemo(() => {
     const matMap = esc?.materias || {};
@@ -358,6 +363,7 @@ function AprovechamientoCTE({ aprovechamiento, momentoTitulo, cicloEscolar, prin
         title="Análisis Pedagógico de Aprovechamiento y Campos Formativos"
         momentoTitulo={momentoTitulo}
         cicloEscolar={cicloEscolar}
+        turnoVista={turnoVista}
       />
 
       {!hayDatos ? (
@@ -367,7 +373,7 @@ function AprovechamientoCTE({ aprovechamiento, momentoTitulo, cicloEscolar, prin
           <div className="grid grid-cols-2 lg:grid-cols-4 print:grid-cols-4 gap-3 print:gap-2.5">
             <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3.5 print:p-2.5">
               <p className="text-[11px] font-bold text-indigo-700 uppercase flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" /> Promedio Escolar
+                <Sparkles className="w-3.5 h-3.5" /> {esUnSoloTurno ? `Prom. ${turnoVista}` : 'Promedio Escolar'}
               </p>
               <p className="text-2xl print:text-2xl font-black text-indigo-950 mt-1">{fmt1(promEscuela)}</p>
               <p className="text-[11px] text-indigo-700 mt-0.5">Corte {momentoTitulo}</p>
@@ -411,7 +417,7 @@ function AprovechamientoCTE({ aprovechamiento, momentoTitulo, cicloEscolar, prin
                 Comparativa por Campos Formativos NEM (1°, 2° y 3°)
               </h6>
               <div className="h-72 print:h-auto w-full">
-                <ChartBox printMode={printMode} screenHeight={280} printWidth={450} printHeight={255} minWidth={240}>
+                <ChartBox printMode={printMode} screenHeight={280} printWidth={430} printHeight={235} minWidth={240}>
                   <RadarChart data={radarData} outerRadius={printMode ? '75%' : '72%'}>
                     <PolarGrid stroke="#cbd5e1" />
                     <PolarAngleAxis dataKey="campo" tick={{ fontSize: printMode ? 12 : 11, fontWeight: 700, fill: '#1e293b' }} />
@@ -428,10 +434,10 @@ function AprovechamientoCTE({ aprovechamiento, momentoTitulo, cicloEscolar, prin
 
             <div className="bg-white border border-slate-200 rounded-xl p-4 print:p-3 shadow-2xs">
               <h6 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
-                Ranking de Disciplinas — Promedio Escolar
+                {esUnSoloTurno ? `Ranking de Disciplinas — Turno ${turnoVista}` : 'Ranking de Disciplinas — Promedio Escolar'}
               </h6>
               <div className="h-72 print:h-auto w-full">
-                <ChartBox printMode={printMode} screenHeight={280} printWidth={450} printHeight={255} minWidth={240}>
+                <ChartBox printMode={printMode} screenHeight={280} printWidth={430} printHeight={235} minWidth={240}>
                   <BarChart data={rankingDisciplinas} layout="vertical" margin={{ top: 14, right: 36, left: 10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
                     <XAxis type="number" domain={[5, 10]} tick={{ fontSize: 10, fill: '#64748b' }} />
@@ -471,14 +477,14 @@ function AprovechamientoCTE({ aprovechamiento, momentoTitulo, cicloEscolar, prin
               Promedio General por Grado
             </h6>
             <div className="h-56 print:h-auto w-full">
-              <ChartBox printMode={printMode} screenHeight={215} printWidth={920} printHeight={170} minWidth={240}>
+              <ChartBox printMode={printMode} screenHeight={215} printWidth={880} printHeight={155} minWidth={240}>
                 <BarChart data={gradosBarData} margin={{ top: 20, right: 20, left: -12, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="grado" tick={{ fontSize: printMode ? 12 : 11, fontWeight: 700, fill: '#334155' }} />
                   <YAxis domain={[5, 10]} tick={{ fontSize: 11, fill: '#64748b' }} />
                   <Tooltip contentStyle={{ borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '12px' }} />
                   <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 700 }} />
-                  {tieneVespertino && (
+                  {mostrarComparativaTurnos && (
                     <>
                       <Bar dataKey="Matutino" fill="#0ea5e9" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                         <LabelList dataKey="Matutino" position="top" formatter={(v) => (v > 0 ? v.toFixed(1) : '')} style={{ fontSize: printMode ? 11 : 10, fontWeight: 800, fill: '#0369a1' }} />
@@ -488,7 +494,14 @@ function AprovechamientoCTE({ aprovechamiento, momentoTitulo, cicloEscolar, prin
                       </Bar>
                     </>
                   )}
-                  <Bar dataKey="Escuela" name="Promedio Escolar" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={46} isAnimationActive={false}>
+                  <Bar
+                    dataKey="Escuela"
+                    name={esUnSoloTurno ? `Promedio Turno ${turnoVista}` : 'Promedio Escolar'}
+                    fill="#4f46e5"
+                    radius={[6, 6, 0, 0]}
+                    barSize={46}
+                    isAnimationActive={false}
+                  >
                     <LabelList dataKey="Escuela" position="top" formatter={(v) => (v > 0 ? v.toFixed(1) : '')} style={{ fontSize: printMode ? 12 : 11, fontWeight: 900, fill: '#312e81' }} />
                   </Bar>
                 </BarChart>
@@ -504,7 +517,7 @@ function AprovechamientoCTE({ aprovechamiento, momentoTitulo, cicloEscolar, prin
 /* =========================================================================
    3. TABLERO DE DESEMPEÑO ALCANZADO
    ========================================================================= */
-function DesempenoCTE({ desempeno, momentoTitulo, cicloEscolar, printMode = false }) {
+function DesempenoCTE({ desempeno, momentoTitulo, cicloEscolar, printMode = false, turnoVista = 'Todos' }) {
   const esc = desempeno?.totalEscuela;
   const evaluados = esc?.comprobacion || 0;
 
@@ -539,6 +552,7 @@ function DesempenoCTE({ desempeno, momentoTitulo, cicloEscolar, printMode = fals
         title="Semáforo de Indicadores de Logro y Desempeño"
         momentoTitulo={momentoTitulo}
         cicloEscolar={cicloEscolar}
+        turnoVista={turnoVista}
       />
 
       {evaluados === 0 ? (
@@ -576,7 +590,7 @@ function DesempenoCTE({ desempeno, momentoTitulo, cicloEscolar, printMode = fals
                 Distribución de Logro Académico por Grado
               </h6>
               <div className="h-64 print:h-auto w-full">
-                <ChartBox printMode={printMode} screenHeight={250} printWidth={600} printHeight={410} minWidth={240}>
+                <ChartBox printMode={printMode} screenHeight={250} printWidth={560} printHeight={375} minWidth={240}>
                   <BarChart data={barData} margin={{ top: 18, right: 16, left: -10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="grado" tick={{ fontSize: printMode ? 13 : 11, fontWeight: 700, fill: '#334155' }} />
@@ -605,7 +619,7 @@ function DesempenoCTE({ desempeno, momentoTitulo, cicloEscolar, printMode = fals
                 Panorama Global de Desempeño
               </h6>
               <div className="h-52 print:h-auto relative flex items-center justify-center my-auto">
-                <ChartBox printMode={printMode} screenHeight={205} printWidth={285} printHeight={310} minWidth={200}>
+                <ChartBox printMode={printMode} screenHeight={205} printWidth={265} printHeight={290} minWidth={200}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -613,8 +627,8 @@ function DesempenoCTE({ desempeno, momentoTitulo, cicloEscolar, printMode = fals
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={printMode ? 68 : 54}
-                      outerRadius={printMode ? 108 : 80}
+                      innerRadius={printMode ? 62 : 54}
+                      outerRadius={printMode ? 98 : 80}
                       paddingAngle={2}
                       isAnimationActive={false}
                     >
@@ -655,7 +669,7 @@ function DesempenoCTE({ desempeno, momentoTitulo, cicloEscolar, printMode = fals
 /* =========================================================================
    4. TABLERO DE ASISTENCIA
    ========================================================================= */
-function AsistenciaCTE({ asistencia, momentoTitulo, cicloEscolar, printMode = false }) {
+function AsistenciaCTE({ asistencia, momentoTitulo, cicloEscolar, printMode = false, turnoVista = 'Todos' }) {
   const esc = asistencia?.totalEscuela;
   const total = esc?.total || 0;
 
@@ -690,6 +704,7 @@ function AsistenciaCTE({ asistencia, momentoTitulo, cicloEscolar, printMode = fa
         title="Análisis de Asistencia y Alertas de Ausentismo"
         momentoTitulo={momentoTitulo}
         cicloEscolar={cicloEscolar}
+        turnoVista={turnoVista}
       />
 
       {total === 0 ? (
@@ -729,7 +744,7 @@ function AsistenciaCTE({ asistencia, momentoTitulo, cicloEscolar, printMode = fa
                 Distribución de Inasistencias por Grado
               </h6>
               <div className="h-64 print:h-auto w-full">
-                <ChartBox printMode={printMode} screenHeight={250} printWidth={600} printHeight={410} minWidth={240}>
+                <ChartBox printMode={printMode} screenHeight={250} printWidth={560} printHeight={375} minWidth={240}>
                   <BarChart data={barData} margin={{ top: 18, right: 16, left: -10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="grado" tick={{ fontSize: printMode ? 13 : 11, fontWeight: 700, fill: '#334155' }} />
@@ -758,7 +773,7 @@ function AsistenciaCTE({ asistencia, momentoTitulo, cicloEscolar, printMode = fa
                 Tasa Global de Asistencia
               </h6>
               <div className="h-52 print:h-auto relative flex items-center justify-center my-auto">
-                <ChartBox printMode={printMode} screenHeight={205} printWidth={285} printHeight={310} minWidth={200}>
+                <ChartBox printMode={printMode} screenHeight={205} printWidth={265} printHeight={290} minWidth={200}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -766,8 +781,8 @@ function AsistenciaCTE({ asistencia, momentoTitulo, cicloEscolar, printMode = fa
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={printMode ? 68 : 54}
-                      outerRadius={printMode ? 108 : 80}
+                      innerRadius={printMode ? 62 : 54}
+                      outerRadius={printMode ? 98 : 80}
                       paddingAngle={2}
                       isAnimationActive={false}
                     >
@@ -813,7 +828,8 @@ export default function MomentosGraficasCTE({
   asistencia,
   momentoTitulo,
   cicloEscolar,
-  printMode = false
+  printMode = false,
+  turnoVista = 'Todos'
 }) {
   if (sheet === 'matricula') {
     return (
@@ -822,6 +838,7 @@ export default function MomentosGraficasCTE({
         momentoTitulo={momentoTitulo}
         cicloEscolar={cicloEscolar}
         printMode={printMode}
+        turnoVista={turnoVista}
       />
     );
   }
@@ -832,6 +849,7 @@ export default function MomentosGraficasCTE({
         momentoTitulo={momentoTitulo}
         cicloEscolar={cicloEscolar}
         printMode={printMode}
+        turnoVista={turnoVista}
       />
     );
   }
@@ -842,6 +860,7 @@ export default function MomentosGraficasCTE({
         momentoTitulo={momentoTitulo}
         cicloEscolar={cicloEscolar}
         printMode={printMode}
+        turnoVista={turnoVista}
       />
     );
   }
@@ -852,6 +871,7 @@ export default function MomentosGraficasCTE({
         momentoTitulo={momentoTitulo}
         cicloEscolar={cicloEscolar}
         printMode={printMode}
+        turnoVista={turnoVista}
       />
     );
   }

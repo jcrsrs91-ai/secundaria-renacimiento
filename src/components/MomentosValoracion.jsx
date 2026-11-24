@@ -46,10 +46,14 @@ import {
   construirTablaAsistencia,
   extraerSnapshotTurno,
   normalizarCongeladoTurnos,
-  combinarMomentoConCongeladosPorTurno
+  combinarMomentoConCongeladosPorTurno,
+  filtrarMomentoPorTurno
 } from '../utils/momentosValoracionCalc';
 import { exportarMomentosValoracionExcel } from '../utils/exportMomentosExcel';
 import MomentosGraficasCTE from './MomentosGraficasCTE';
+
+const normalizarTurnoVista = (val) =>
+  val === 'Matutino' || val === 'Vespertino' ? val : 'Todos';
 
 const buildDefaultMeta = (mId, config) => {
   const ciclo = config?.cicloEscolarActual || '2026-2027';
@@ -65,6 +69,8 @@ const buildDefaultMeta = (mId, config) => {
     region: 'ACAPULCO - COYUCA',
     director: config?.directorName || 'PROFR. JUAN CARLOS TABOADA BARAJAS',
     totalDocentes: 30,
+    docentesMatutino: 30,
+    docentesVespertino: 0,
     fechaInicio: defFechas.fechaInicio,
     fechaCorte: defFechas.fechaCorte,
     fechaEmision: new Date().toISOString().split('T')[0]
@@ -116,11 +122,21 @@ const mergeAsistenciaPorTurno = (localManual = {}, cloudManual = {}, congeladoTu
 const fmtPct = (v) => `${(Number(v) || 0).toFixed(1)}%`;
 const fmtDec = (v) => (v === null || v === undefined || isNaN(v) ? '-' : truncateTo1Dec(v, '-'));
 
-export default function MomentosValoracion({ alumnos = [], onClose }) {
+export default function MomentosValoracion({ alumnos = [], globalShiftFilter = 'Todos', onClose }) {
   const { config } = useGlobalConfig();
   const { currentUser } = useAuth();
 
   const [momentoId, setMomentoId] = useState(1);
+  const [turnoSel, setTurnoSel] = useState(() => ({
+    forProp: globalShiftFilter,
+    selected: normalizarTurnoVista(globalShiftFilter)
+  }));
+  const turnoVista =
+    turnoSel.forProp === globalShiftFilter
+      ? turnoSel.selected
+      : normalizarTurnoVista(globalShiftFilter);
+  const setTurnoVista = (val) =>
+    setTurnoSel({ forProp: globalShiftFilter, selected: normalizarTurnoVista(val) });
   const [activeSheet, setActiveSheet] = useState('matricula'); // 'matricula' | 'aprovechamiento' | 'desempeno' | 'asistencia'
   const [store, setStore] = useState(() => buildDefaultStore(config));
   const [loadingCloud, setLoadingCloud] = useState(true);
@@ -162,8 +178,15 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           const data = snap.data() || {};
           ['m1', 'm2', 'm3'].forEach((k, idx) => {
             if (data[k]) {
+              const savedMeta = data[k].meta || {};
+              const mergedMeta = { ...buildDefaultMeta(idx + 1, cfgValues), ...savedMeta };
+              const legacyTotal = Number(savedMeta.totalDocentes);
+              if (savedMeta.docentesMatutino === undefined && !isNaN(legacyTotal)) {
+                mergedMeta.docentesMatutino = legacyTotal;
+                mergedMeta.docentesVespertino = 0;
+              }
               base[k] = {
-                meta: { ...buildDefaultMeta(idx + 1, cfgValues), ...(data[k].meta || {}) },
+                meta: mergedMeta,
                 asistenciaManual: data[k].asistenciaManual || {},
                 autoSinFaltas: data[k].autoSinFaltas !== false,
                 qrResumen: data[k].qrResumen || null,
@@ -210,6 +233,16 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
   const isAllFrozen = isMatutinoFrozen && isVespertinoFrozen;
   const isTurnoFrozen = (turno) => (turno === 'Matutino' ? isMatutinoFrozen : isVespertinoFrozen);
 
+  const esUnSoloTurno = turnoVista !== 'Todos';
+  const docMat = Number(meta.docentesMatutino ?? meta.totalDocentes ?? 0) || 0;
+  const docVesp = Number(meta.docentesVespertino ?? 0) || 0;
+  const docentesVisibles =
+    turnoVista === 'Matutino'
+      ? docMat
+      : turnoVista === 'Vespertino'
+        ? docVesp
+        : docMat + docVesp || Number(meta.totalDocentes) || 0;
+
   // Cálculos en vivo a partir de alumnos reales + fecha de corte
   const liveMatricula = useMemo(
     () => calcularMatriculaMomento(alumnos, meta.fechaCorte),
@@ -231,13 +264,8 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
     [liveMatricula, currentMoment.asistenciaManual, currentMoment.autoSinFaltas]
   );
 
-  // Datos activos en pantalla / exportación / gráficas combinando por turno (congelado vs en vivo)
-  const {
-    matricula: matriculaData,
-    aprovechamiento: aprovechamientoData,
-    desempeno: desempenoData,
-    asistencia: asistenciaData
-  } = useMemo(
+  // Combinar por turno (congelado vs en vivo) y luego aplicar vista por turno seleccionado
+  const combinedMomento = useMemo(
     () =>
       combinarMomentoConCongeladosPorTurno({
         liveMatricula,
@@ -248,6 +276,19 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
       }),
     [liveMatricula, liveAprovechamiento, liveDesempeno, liveAsistencia, congeladoTurnos]
   );
+
+  const {
+    matricula: matriculaData,
+    aprovechamiento: aprovechamientoData,
+    desempeno: desempenoData,
+    asistencia: asistenciaData,
+    turnosVisibles
+  } = useMemo(
+    () => filtrarMomentoPorTurno(combinedMomento, turnoVista),
+    [combinedMomento, turnoVista]
+  );
+
+  const isVistaFrozen = esUnSoloTurno ? isTurnoFrozen(turnoVista) : isAllFrozen;
 
   const updateMomentField = (updater) => {
     setStore((prev) => ({
@@ -261,6 +302,24 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
       ...cur,
       meta: { ...cur.meta, [field]: value }
     }));
+  };
+
+  const updateDocentesTurno = (turno, rawVal) => {
+    const val = Math.max(0, parseInt(rawVal || '0', 10) || 0);
+    updateMomentField((cur) => {
+      const m = cur.meta || {};
+      const nextMat = turno === 'Matutino' ? val : (Number(m.docentesMatutino ?? m.totalDocentes ?? 0) || 0);
+      const nextVesp = turno === 'Vespertino' ? val : (Number(m.docentesVespertino ?? 0) || 0);
+      return {
+        ...cur,
+        meta: {
+          ...m,
+          docentesMatutino: nextMat,
+          docentesVespertino: nextVesp,
+          totalDocentes: nextMat + nextVesp
+        }
+      };
+    });
   };
 
   const persistMomentPayload = async (momentKeyToSave, momentState, accionBitacora, detalleBitacora, successMsg) => {
@@ -412,10 +471,15 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
         Vespertino: cloudTurnos.Vespertino || congeladoTurnos.Vespertino || null
       };
 
+      const forceKeepOther = esUnSoloTurno
+        ? { [turnoVista === 'Matutino' ? 'Vespertino' : 'Matutino']: true }
+        : {};
+
       const nextAsistenciaManual = mergeAsistenciaPorTurno(
         currentMoment.asistenciaManual,
         cloudMoment?.asistenciaManual,
-        mergedCongeladoTurnos
+        mergedCongeladoTurnos,
+        forceKeepOther
       );
 
       const nextMomentState = {
@@ -456,8 +520,13 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
   };
 
   const handleCalcularAsistenciaQR = async () => {
-    if (isAllFrozen) {
-      toast.error('Ambos turnos están congelados. Descongela al menos un turno para recalcular desde QR.');
+    const editableVisibleTurnos = turnosVisibles.filter((t) => !isTurnoFrozen(t));
+    if (editableVisibleTurnos.length === 0) {
+      toast.error(
+        esUnSoloTurno
+          ? `El Turno ${turnoVista} está congelado. Descongélalo primero para recalcular desde QR.`
+          : 'Ambos turnos están congelados. Descongela al menos un turno para recalcular desde QR.'
+      );
       return;
     }
     const fInicioObj = parseFechaFlexible(meta.fechaInicio);
@@ -487,8 +556,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
 
       updateMomentField((cur) => {
         const nextManual = { ...(cur.asistenciaManual || {}) };
-        TURNOS_SEG.forEach((t) => {
-          if (isTurnoFrozen(t)) return;
+        editableVisibleTurnos.forEach((t) => {
           GRADOS_SEG.forEach((g) => {
             const key = `${g}-${t}`;
             if (resQR.rawByKey[key]) {
@@ -503,8 +571,12 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           asistenciaManual: nextManual,
           qrResumen: {
             diasEscaneados: {
-              Matutino: isMatutinoFrozen ? (prevDias.Matutino || 0) : resQR.diasEscaneados.Matutino,
-              Vespertino: isVespertinoFrozen ? (prevDias.Vespertino || 0) : resQR.diasEscaneados.Vespertino
+              Matutino: editableVisibleTurnos.includes('Matutino')
+                ? resQR.diasEscaneados.Matutino
+                : (prevDias.Matutino || 0),
+              Vespertino: editableVisibleTurnos.includes('Vespertino')
+                ? resQR.diasEscaneados.Vespertino
+                : (prevDias.Vespertino || 0)
             },
             totalEntradas: resQR.totalEntradas,
             calculatedAt: new Date().toISOString()
@@ -514,12 +586,9 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
 
       if (resQR.totalEntradas === 0) {
         toast('No se encontraron escaneos QR en ese rango de fechas; puedes capturar las cifras manualmente.', { icon: 'ℹ️' });
-      } else if (isMatutinoFrozen || isVespertinoFrozen) {
-        const turnoVivo = isMatutinoFrozen ? 'Vespertino' : 'Matutino';
-        const turnoLock = isMatutinoFrozen ? 'Matutino' : 'Vespertino';
-        toast.success(
-          `QR aplicado únicamente al Turno ${turnoVivo} (${resQR.diasEscaneados[turnoVivo]} días). Turno ${turnoLock} se conservó congelado.`
-        );
+      } else if (editableVisibleTurnos.length === 1) {
+        const t = editableVisibleTurnos[0];
+        toast.success(`QR aplicado al Turno ${t} (${resQR.diasEscaneados[t]} días escaneados).`);
       } else {
         toast.success(
           `QR aplicado (${resQR.totalEntradas} entradas): Matutino ${resQR.diasEscaneados.Matutino} días · Vespertino ${resQR.diasEscaneados.Vespertino} días.`
@@ -534,11 +603,11 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
   };
 
   const handleClearAsistencia = () => {
-    if (isAllFrozen) return;
+    const editableVisibleTurnos = turnosVisibles.filter((t) => !isTurnoFrozen(t));
+    if (editableVisibleTurnos.length === 0) return;
     updateMomentField((cur) => {
       const nextManual = { ...(cur.asistenciaManual || {}) };
-      TURNOS_SEG.forEach((t) => {
-        if (isTurnoFrozen(t)) return;
+      editableVisibleTurnos.forEach((t) => {
         GRADOS_SEG.forEach((g) => {
           delete nextManual[`${g}-${t}`];
         });
@@ -546,12 +615,11 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
       return {
         ...cur,
         asistenciaManual: nextManual,
-        qrResumen: !isMatutinoFrozen && !isVespertinoFrozen ? null : cur.qrResumen
+        qrResumen: !isMatutinoFrozen && !isVespertinoFrozen && !esUnSoloTurno ? null : cur.qrResumen
       };
     });
-    if (isMatutinoFrozen || isVespertinoFrozen) {
-      const turnoVivo = isMatutinoFrozen ? 'Vespertino' : 'Matutino';
-      toast(`Conteos del Turno ${turnoVivo} reiniciados a 0 (el turno congelado permaneció intacto).`);
+    if (editableVisibleTurnos.length === 1) {
+      toast(`Conteos del Turno ${editableVisibleTurnos[0]} reiniciados a 0.`);
     } else {
       toast('Conteos de inasistencia reiniciados a 0.');
     }
@@ -562,11 +630,12 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
     try {
       const filename = await exportarMomentosValoracionExcel({
         momentoId,
-        meta,
+        meta: { ...meta, totalDocentes: docentesVisibles },
         matricula: matriculaData,
         aprovechamiento: aprovechamientoData,
         desempeno: desempenoData,
-        asistencia: asistenciaData
+        asistencia: asistenciaData,
+        turnoVista
       });
       toast.success(`Excel generado: ${filename}`);
     } catch (err) {
@@ -596,13 +665,14 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             DEPARTAMENTO DE SECUNDARIAS: <span className="font-bold text-slate-900">{meta.departamento || 'TÉCNICAS'}</span>
           </p>
           <h3 className="text-xs sm:text-sm print:text-[15px] font-black uppercase mt-1 tracking-wide text-slate-900">
-            {momentoCfg.titulo}. CICLO ESCOLAR {meta.cicloEscolar}
+            {momentoCfg.titulo}
+            {esUnSoloTurno ? ` — TURNO ${turnoVista.toUpperCase()}` : ''}. CICLO ESCOLAR {meta.cicloEscolar}
           </h3>
         </div>
         <img src="/logo-escuela.png" alt="Escuela" className="h-12 w-auto object-contain print:h-14" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 print:grid-cols-3 gap-x-4 gap-y-1 text-[10px] print:text-[11px] bg-slate-50 print:bg-white border border-slate-300 rounded-md px-3 py-1.5 print:px-3.5 print:py-2 uppercase">
+      <div className="grid grid-cols-1 sm:grid-cols-3 print:grid-cols-3 gap-x-4 gap-y-1 text-[10px] print:text-[11px] bg-slate-50 print:bg-white border border-slate-400 rounded-md px-3 py-1.5 print:px-3.5 print:py-2 uppercase">
         <div>
           <span className="font-bold">ESCUELA SECUNDARIA:</span> {meta.escuelaNombre}
         </div>
@@ -625,7 +695,10 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           <span className="font-bold">NOMBRE DEL DIRECTOR (A):</span> {meta.director}
         </div>
         <div>
-          <span className="font-bold">TOTAL DE DOCENTES:</span> {meta.totalDocentes}
+          <span className="font-bold">
+            TOTAL DE DOCENTES{esUnSoloTurno ? ` (${turnoVista.toUpperCase()})` : ''}:
+          </span>{' '}
+          {docentesVisibles}
         </div>
       </div>
 
@@ -636,9 +709,9 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
   );
 
   const renderOfficialFooter = (notaExtra = null) => (
-    <div className="mt-4 print:mt-2 text-slate-800">
+    <div className="mt-4 print:mt-2 text-slate-900">
       {notaExtra && (
-        <p className="text-[10px] print:text-[11px] italic text-slate-600 mb-4 print:mb-3">{notaExtra}</p>
+        <p className="text-[10px] print:text-[11px] italic text-slate-700 mb-4 print:mb-3">{notaExtra}</p>
       )}
       <div className="flex flex-col sm:flex-row print:flex-row justify-between items-start sm:items-end print:items-end gap-6 pt-4 print:pt-4 text-[11px] print:text-[12px] font-bold uppercase">
         <div>
@@ -669,6 +742,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           momentoTitulo={momentoCfg.corto}
           cicloEscolar={meta.cicloEscolar}
           printMode={Boolean(printScope)}
+          turnoVista={turnoVista}
         />
       </div>
     );
@@ -687,14 +761,13 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
   return (
     <div className="space-y-4 print:space-y-0">
       <style>{`
-        @page { size: letter landscape; margin: 0.45cm; }
+        @page { size: letter landscape; margin: 0.5cm; }
         @media print {
-          @page { size: letter landscape; margin: 0.45cm; }
-          html, body, #root, #root > div, #root main {
+          @page { size: letter landscape; margin: 0.5cm; }
+          html, body {
             display: block !important;
             height: auto !important;
             min-height: 0 !important;
-            max-width: none !important;
             width: 100% !important;
             overflow: visible !important;
             padding: 0 !important;
@@ -703,27 +776,41 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
+          #root, #root > div:not(.no-print), #root main {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-width: none !important;
+            width: 100% !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .no-print, #root > div.no-print, [data-rht-toaster] {
+            display: none !important;
+            visibility: hidden !important;
+          }
           .momento-sheet-page {
             width: 100% !important;
-            height: 19.5cm !important;
-            max-height: 19.5cm !important;
+            height: 19.0cm !important;
+            max-height: 19.0cm !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
             box-sizing: border-box !important;
-            padding: 0.1cm 0.05cm !important;
+            padding: 0.05cm !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
           .momento-cte-print-page {
             width: 100% !important;
-            height: 19.5cm !important;
-            max-height: 19.5cm !important;
+            height: 19.0cm !important;
+            max-height: 19.0cm !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
             box-sizing: border-box !important;
-            padding: 0.1cm 0.05cm !important;
+            padding: 0.05cm !important;
             margin: 0 !important;
             border-top: 0 !important;
             overflow: hidden !important;
@@ -742,12 +829,19 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             font-size: 12.5px !important;
             line-height: 1.25 !important;
           }
+          .momento-table-std th,
+          .momento-table-std td,
+          .momento-table-aprov th,
+          .momento-table-aprov td {
+            border-color: #334155 !important;
+            color: #0f172a !important;
+          }
           .momento-table-std thead th {
             padding: 6px 4px !important;
             font-size: 11px !important;
           }
           .momento-table-std tbody td {
-            padding: 8.5px 4px !important;
+            padding: 9px 4px !important;
             font-size: 12.5px !important;
           }
           .momento-table-aprov {
@@ -767,7 +861,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             word-break: break-word !important;
           }
           .momento-table-aprov .aprov-vert-th {
-            height: 138px !important;
+            height: 136px !important;
             vertical-align: bottom !important;
             padding: 4px 1px !important;
           }
@@ -780,7 +874,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             font-size: 9.5px !important;
             font-weight: 800 !important;
             line-height: 1.05 !important;
-            max-height: 130px !important;
+            max-height: 128px !important;
           }
           .momento-table-aprov tbody td {
             font-size: 11.5px !important;
@@ -820,7 +914,11 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1">
-              Ciclo {meta.cicloEscolar} · Corte al <strong className="text-white">{corteLabel}</strong>
+              Ciclo {meta.cicloEscolar} · Corte al <strong className="text-white">{corteLabel}</strong> · Vista:{' '}
+              <strong className="text-sky-300">
+                {esUnSoloTurno ? `Solo Turno ${turnoVista}` : 'Ambos Turnos (Global)'}
+              </strong>{' '}
+              · Docentes: <strong className="text-white">{docentesVisibles}</strong>
             </p>
           </div>
 
@@ -863,7 +961,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
               className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition disabled:opacity-50"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              {exportingExcel ? 'Generando...' : 'Descargar Excel (.xlsx — 4 Hojas)'}
+              {exportingExcel ? 'Generando...' : `Descargar Excel${esUnSoloTurno ? ` (${turnoVista})` : ' (4 Hojas)'}`}
             </button>
             <button
               type="button"
@@ -946,81 +1044,109 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           })}
         </div>
 
-        {/* Barra de Guardado y Congelado Independiente por Turno */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2 border-t border-slate-800">
-          {TURNOS_SEG.map((turno) => {
-            const snap = congeladoTurnos[turno];
-            const locked = Boolean(snap);
-            const isMat = turno === 'Matutino';
-            return (
-              <div
-                key={turno}
-                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl border ${
-                  locked
-                    ? 'bg-amber-500/10 border-amber-400/35'
-                    : isMat
-                      ? 'bg-slate-800/90 border-slate-700'
-                      : 'bg-indigo-950/50 border-indigo-800/60'
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    {isMat ? (
-                      <Sun className="w-4 h-4 text-amber-300 shrink-0" />
-                    ) : (
-                      <Moon className="w-4 h-4 text-indigo-300 shrink-0" />
-                    )}
-                    <span className="text-xs font-black uppercase tracking-wide text-white">
-                      Turno {turno}
-                    </span>
-                    <span
-                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                        locked
-                          ? 'bg-amber-400/20 text-amber-200 border border-amber-300/30'
-                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+        {/* Selector de Vista por Turno + Guardado/Congelado Independiente */}
+        <div className="pt-2 border-t border-slate-800 space-y-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-800/70 border border-slate-700/80 rounded-xl p-2.5">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-300 px-1">
+              Ver / Imprimir / Exportar por Turno:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { id: 'Todos', label: '🏫 Ambos Turnos (Global)' },
+                { id: 'Matutino', label: '☀️ Solo Matutino' },
+                { id: 'Vespertino', label: '🌙 Solo Vespertino' }
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setTurnoVista(opt.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${
+                    turnoVista === opt.id
+                      ? 'bg-sky-500 text-slate-950 shadow-sm'
+                      : 'bg-slate-900/70 text-slate-300 hover:bg-slate-900 hover:text-white border border-slate-700'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={`grid grid-cols-1 ${esUnSoloTurno ? '' : 'md:grid-cols-2'} gap-2.5`}>
+            {turnosVisibles.map((turno) => {
+              const snap = congeladoTurnos[turno];
+              const locked = Boolean(snap);
+              const isMat = turno === 'Matutino';
+              return (
+                <div
+                  key={turno}
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl border ${
+                    locked
+                      ? 'bg-amber-500/10 border-amber-400/35'
+                      : isMat
+                        ? 'bg-slate-800/90 border-slate-700'
+                        : 'bg-indigo-950/50 border-indigo-800/60'
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      {isMat ? (
+                        <Sun className="w-4 h-4 text-amber-300 shrink-0" />
+                      ) : (
+                        <Moon className="w-4 h-4 text-indigo-300 shrink-0" />
+                      )}
+                      <span className="text-xs font-black uppercase tracking-wide text-white">
+                        Turno {turno}
+                      </span>
+                      <span
+                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                          locked
+                            ? 'bg-amber-400/20 text-amber-200 border border-amber-300/30'
+                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                        }`}
+                      >
+                        {locked ? '🔒 Congelado' : '⚡ En vivo'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 mt-0.5 truncate">
+                      {locked && snap?.frozenAt
+                        ? `Guardado el ${new Date(snap.frozenAt).toLocaleDateString('es-MX')} · ${snap.frozenBy || ''}`
+                        : 'Datos en vivo · Asistencia editable por el turno'}
+                    </p>
+                  </div>
+
+                  {locked ? (
+                    <button
+                      type="button"
+                      onClick={() => handleUnfreezeTurno(turno)}
+                      disabled={savingCloud}
+                      className="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold flex items-center justify-center gap-1.5 transition shrink-0 disabled:opacity-50"
+                    >
+                      <Unlock className="w-3.5 h-3.5" /> Descongelar {turno}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSaveFreezeTurno(turno)}
+                      disabled={savingCloud || loadingCloud}
+                      className={`px-3 py-2 rounded-lg text-white text-xs font-extrabold flex items-center justify-center gap-1.5 transition shrink-0 disabled:opacity-50 ${
+                        isMat
+                          ? 'bg-rose-600 hover:bg-rose-500'
+                          : 'bg-indigo-600 hover:bg-indigo-500'
                       }`}
                     >
-                      {locked ? '🔒 Congelado' : '⚡ En vivo'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-300 mt-0.5 truncate">
-                    {locked && snap?.frozenAt
-                      ? `Guardado el ${new Date(snap.frozenAt).toLocaleDateString('es-MX')} · ${snap.frozenBy || ''}`
-                      : 'Datos en vivo · Asistencia editable por el turno'}
-                  </p>
+                      <Lock className="w-3.5 h-3.5" /> Guardar y Congelar {turno}
+                    </button>
+                  )}
                 </div>
-
-                {locked ? (
-                  <button
-                    type="button"
-                    onClick={() => handleUnfreezeTurno(turno)}
-                    disabled={savingCloud}
-                    className="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold flex items-center justify-center gap-1.5 transition shrink-0 disabled:opacity-50"
-                  >
-                    <Unlock className="w-3.5 h-3.5" /> Descongelar {turno}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleSaveFreezeTurno(turno)}
-                    disabled={savingCloud || loadingCloud}
-                    className={`px-3 py-2 rounded-lg text-white text-xs font-extrabold flex items-center justify-center gap-1.5 transition shrink-0 disabled:opacity-50 ${
-                      isMat
-                        ? 'bg-rose-600 hover:bg-rose-500'
-                        : 'bg-indigo-600 hover:bg-indigo-500'
-                    }`}
-                  >
-                    <Lock className="w-3.5 h-3.5" /> Guardar y Congelar {turno}
-                  </button>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {/* Panel Editable de Encabezado y Fechas */}
         {showMetaPanel && (
-          <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+          <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 text-xs">
             <div>
               <label className="block text-[10px] font-bold text-slate-300 uppercase mb-1">Departamento Sec.</label>
               <input
@@ -1032,13 +1158,24 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-slate-300 uppercase mb-1">Total Docentes</label>
+              <label className="block text-[10px] font-bold text-slate-300 uppercase mb-1">Docentes Matutino</label>
               <input
                 type="number"
-                min="1"
-                disabled={isAllFrozen}
-                value={meta.totalDocentes}
-                onChange={(e) => updateMetaField('totalDocentes', parseInt(e.target.value || '0', 10) || 0)}
+                min="0"
+                disabled={isMatutinoFrozen}
+                value={docMat}
+                onChange={(e) => updateDocentesTurno('Matutino', e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-600 text-white font-semibold disabled:opacity-60"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-300 uppercase mb-1">Docentes Vespertino</label>
+              <input
+                type="number"
+                min="0"
+                disabled={isVespertinoFrozen}
+                value={docVesp}
+                onChange={(e) => updateDocentesTurno('Vespertino', e.target.value)}
                 className="w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-600 text-white font-semibold disabled:opacity-60"
               />
             </div>
@@ -1144,7 +1281,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
                 </tr>
               </thead>
               <tbody>
-                {TURNOS_SEG.map((turno) =>
+                {turnosVisibles.map((turno) =>
                   GRADOS_SEG.map((grado) => {
                     const d = matriculaData.filas[`${grado}-${turno}`];
                     return (
@@ -1176,35 +1313,38 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
                     );
                   })
                 )}
-                {GRADOS_SEG.map((grado, idx) => {
-                  const d = matriculaData.totalesGrado[grado];
-                  return (
-                    <tr key={`tot-${grado}`} className="bg-blue-50/70 font-bold text-center">
-                      {idx === 0 && (
-                        <td rowSpan="3" className="border border-slate-400 px-2 py-1.5 text-left font-black bg-blue-100/70">
-                          TOTALES POR GRADO
-                        </td>
-                      )}
-                      <td className="border border-slate-400 px-2 py-1.5 text-left">{GRADO_LABELS[grado]}</td>
-                      <td className="border border-slate-400 px-2 py-1.5">{d.grupos}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.inicial.h}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.inicial.m}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.inicial.t}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.altas.h}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.altas.m}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.altas.t}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.bajas.h}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.bajas.m}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.bajas.t}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.existencia.h}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.existencia.m}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{d.existencia.t}</td>
-                      <td className="border border-slate-400 px-2 py-1.5">{fmtPct(d.pctBajas)}</td>
-                    </tr>
-                  );
-                })}
+                {!esUnSoloTurno &&
+                  GRADOS_SEG.map((grado, idx) => {
+                    const d = matriculaData.totalesGrado[grado];
+                    return (
+                      <tr key={`tot-${grado}`} className="bg-blue-50/70 font-bold text-center">
+                        {idx === 0 && (
+                          <td rowSpan="3" className="border border-slate-400 px-2 py-1.5 text-left font-black bg-blue-100/70">
+                            TOTALES POR GRADO
+                          </td>
+                        )}
+                        <td className="border border-slate-400 px-2 py-1.5 text-left">{GRADO_LABELS[grado]}</td>
+                        <td className="border border-slate-400 px-2 py-1.5">{d.grupos}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.inicial.h}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.inicial.m}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.inicial.t}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.altas.h}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.altas.m}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.altas.t}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.bajas.h}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.bajas.m}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.bajas.t}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.existencia.h}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.existencia.m}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{d.existencia.t}</td>
+                        <td className="border border-slate-400 px-2 py-1.5">{fmtPct(d.pctBajas)}</td>
+                      </tr>
+                    );
+                  })}
                 <tr className="bg-slate-200 font-black text-slate-900 text-center border-t-2 border-slate-800">
-                  <td colSpan="2" className="border border-slate-500 px-2 py-2 text-left">TOTAL DE LA ESCUELA</td>
+                  <td colSpan="2" className="border border-slate-500 px-2 py-2 text-left">
+                    {esUnSoloTurno ? `TOTAL TURNO ${turnoVista.toUpperCase()}` : 'TOTAL DE LA ESCUELA'}
+                  </td>
                   <td className="border border-slate-500 px-2 py-2">{matriculaData.totalEscuela.grupos}</td>
                   <td className="border border-slate-500 px-1.5 py-2">{matriculaData.totalEscuela.inicial.h}</td>
                   <td className="border border-slate-500 px-1.5 py-2">{matriculaData.totalEscuela.inicial.m}</td>
@@ -1236,7 +1376,8 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           <div className="mb-3 bg-amber-50 border border-amber-300 text-amber-900 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 no-print print:hidden">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              Atención: Hay <strong>{aprovechamientoData.alumnosSinCalificacion}</strong> alumno(s) en existencia sin ninguna calificación capturada en los trimestres de este Momento.
+              Atención: Hay <strong>{aprovechamientoData.alumnosSinCalificacion}</strong> alumno(s) en existencia{' '}
+              {esUnSoloTurno ? `del Turno ${turnoVista} ` : ''}sin ninguna calificación capturada en los trimestres de este Momento.
             </span>
           </div>
         )}
@@ -1267,7 +1408,9 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
                   <th rowSpan="3" className="border border-slate-400 px-1 py-1 bg-indigo-100 print:text-[9.5px]">PROM.<br />2°</th>
                   <th colSpan="9" className="border border-slate-400 px-1 py-1">TERCER GRADO</th>
                   <th rowSpan="3" className="border border-slate-400 px-1 py-1 bg-indigo-100 print:text-[9.5px]">PROM.<br />3°</th>
-                  <th rowSpan="3" className="border border-slate-400 px-1.5 py-1 bg-slate-800 text-white print:bg-slate-300 print:text-black print:text-[9px]">PROM. GRAL<br />ESCUELA</th>
+                  <th rowSpan="3" className="border border-slate-400 px-1.5 py-1 bg-slate-800 text-white print:bg-slate-300 print:text-black print:text-[9px]">
+                    {esUnSoloTurno ? (<>PROM. GRAL<br />TURNO</>) : (<>PROM. GRAL<br />ESCUELA</>)}
+                  </th>
                 </tr>
                 <tr className="bg-slate-100 text-slate-800 font-bold text-center text-[9px]">
                   {GRADOS_SEG.map((g) =>
@@ -1291,7 +1434,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
                 </tr>
               </thead>
               <tbody>
-                {TURNOS_SEG.map((turno) => {
+                {turnosVisibles.map((turno) => {
                   const tData = aprovechamientoData.turnos[turno];
                   return (
                     <tr key={turno} className="text-center hover:bg-slate-50">
@@ -1325,7 +1468,9 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
                   );
                 })}
                 <tr className="bg-slate-200 font-black text-center border-t-2 border-slate-800">
-                  <td className="border border-slate-500 px-2 py-2 text-left">PROM. GRAL DE ESCUELA</td>
+                  <td className="border border-slate-500 px-2 py-2 text-left">
+                    {esUnSoloTurno ? `PROM. GRAL TURNO ${turnoVista.toUpperCase()}` : 'PROM. GRAL DE ESCUELA'}
+                  </td>
                   {GRADOS_SEG.map((g) => {
                     const mats = CAMPOS_FORMATIVOS_SEG[g].flatMap((cf) => cf.materias);
                     return (
@@ -1361,7 +1506,8 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           <div className="mb-3 bg-amber-50 border border-amber-300 text-amber-900 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 no-print print:hidden">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              <strong>{desempenoData.totalEscuela.sinCalificar}</strong> alumno(s) en existencia todavía no tienen ninguna calificación en este Momento; se excluyen temporalmente del rango 5.0 para no inflar reprobación falsa.
+              <strong>{desempenoData.totalEscuela.sinCalificar}</strong> alumno(s) en existencia{' '}
+              {esUnSoloTurno ? `del Turno ${turnoVista} ` : ''}todavía no tienen ninguna calificación en este Momento; se excluyen temporalmente del rango 5.0 para no inflar reprobación falsa.
             </span>
           </div>
         )}
@@ -1390,7 +1536,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
                 </tr>
               </thead>
               <tbody>
-                {TURNOS_SEG.map((turno) =>
+                {turnosVisibles.map((turno) =>
                   GRADOS_SEG.map((grado) => {
                     const r = desempenoData.filas[`${grado}-${turno}`];
                     return (
@@ -1419,32 +1565,35 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
                     );
                   })
                 )}
-                {GRADOS_SEG.map((grado, idx) => {
-                  const r = desempenoData.totalesGrado[grado];
-                  return (
-                    <tr key={`des-${grado}`} className="bg-blue-50/70 font-bold text-center">
-                      {idx === 0 && (
-                        <td rowSpan="3" className="border border-slate-400 px-2 py-1.5 text-left font-black bg-blue-100/70">
-                          TOTALES POR GRADO
-                        </td>
-                      )}
-                      <td className="border border-slate-400 px-2 py-1.5 text-left">{GRADO_LABELS[grado]}</td>
-                      <td className="border border-slate-400 px-2 py-1.5">{r.matricula}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{r.r5}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct5)}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{r.r6}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct6)}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{r.r7}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct7)}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{r.r8}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct8)}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{r.comprobacion}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pctComprobacion)}</td>
-                    </tr>
-                  );
-                })}
+                {!esUnSoloTurno &&
+                  GRADOS_SEG.map((grado, idx) => {
+                    const r = desempenoData.totalesGrado[grado];
+                    return (
+                      <tr key={`des-${grado}`} className="bg-blue-50/70 font-bold text-center">
+                        {idx === 0 && (
+                          <td rowSpan="3" className="border border-slate-400 px-2 py-1.5 text-left font-black bg-blue-100/70">
+                            TOTALES POR GRADO
+                          </td>
+                        )}
+                        <td className="border border-slate-400 px-2 py-1.5 text-left">{GRADO_LABELS[grado]}</td>
+                        <td className="border border-slate-400 px-2 py-1.5">{r.matricula}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{r.r5}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct5)}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{r.r6}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct6)}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{r.r7}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct7)}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{r.r8}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct8)}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{r.comprobacion}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pctComprobacion)}</td>
+                      </tr>
+                    );
+                  })}
                 <tr className="bg-slate-200 font-black text-center border-t-2 border-slate-800">
-                  <td colSpan="2" className="border border-slate-500 px-2 py-2 text-left">TOTAL DE LA ESCUELA</td>
+                  <td colSpan="2" className="border border-slate-500 px-2 py-2 text-left">
+                    {esUnSoloTurno ? `TOTAL TURNO ${turnoVista.toUpperCase()}` : 'TOTAL DE LA ESCUELA'}
+                  </td>
                   <td className="border border-slate-500 px-2 py-2">{desempenoData.totalEscuela.matricula}</td>
                   <td className="border border-slate-500 px-1.5 py-2">{desempenoData.totalEscuela.r5}</td>
                   <td className="border border-slate-500 px-1.5 py-2">{fmtPct(desempenoData.totalEscuela.pct5)}</td>
@@ -1479,10 +1628,15 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             <p className="text-[11px] text-slate-600">
               Calcula automáticamente desde los escaneos QR del periodo ({meta.fechaInicio} a {meta.fechaCorte}) o edita cualquier casilla si falló el lector.
             </p>
-            {(isMatutinoFrozen || isVespertinoFrozen) && !isAllFrozen && (
+            {!esUnSoloTurno && (isMatutinoFrozen || isVespertinoFrozen) && !isAllFrozen && (
               <p className="text-[11px] font-bold text-amber-700">
                 🔒 Turno {isMatutinoFrozen ? 'Matutino' : 'Vespertino'} ya está congelado; solo Turno{' '}
                 {isMatutinoFrozen ? 'Vespertino' : 'Matutino'} se puede editar o recalcular desde QR.
+              </p>
+            )}
+            {esUnSoloTurno && isVistaFrozen && (
+              <p className="text-[11px] font-bold text-amber-700">
+                🔒 Turno {turnoVista} ya está congelado; descongélalo arriba si necesitas editar su asistencia.
               </p>
             )}
             {currentMoment.qrResumen && (
@@ -1496,7 +1650,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-white px-2.5 py-1.5 rounded-lg border border-slate-300 cursor-pointer">
               <input
                 type="checkbox"
-                disabled={isAllFrozen}
+                disabled={isVistaFrozen}
                 checked={currentMoment.autoSinFaltas}
                 onChange={(e) =>
                   updateMomentField((cur) => ({ ...cur, autoSinFaltas: e.target.checked }))
@@ -1508,7 +1662,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             <button
               type="button"
               onClick={handleCalcularAsistenciaQR}
-              disabled={loadingQR || isAllFrozen}
+              disabled={loadingQR || isVistaFrozen}
               className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition disabled:opacity-50"
             >
               <QrCode className="w-3.5 h-3.5" />
@@ -1517,7 +1671,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             <button
               type="button"
               onClick={handleClearAsistencia}
-              disabled={isAllFrozen}
+              disabled={isVistaFrozen}
               className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold flex items-center gap-1 transition disabled:opacity-50"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Limpiar a 0
@@ -1525,7 +1679,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             <button
               type="button"
               onClick={handleSaveAsistenciaAndMeta}
-              disabled={savingCloud || isAllFrozen}
+              disabled={savingCloud || isVistaFrozen}
               className="px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold flex items-center gap-1.5 transition disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" /> Guardar Asistencia
@@ -1558,7 +1712,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
                 </tr>
               </thead>
               <tbody>
-                {TURNOS_SEG.map((turno) =>
+                {turnosVisibles.map((turno) =>
                   GRADOS_SEG.map((grado) => {
                     const rowKey = `${grado}-${turno}`;
                     const r = asistenciaData.filas[rowKey];
@@ -1654,32 +1808,35 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
                     );
                   })
                 )}
-                {GRADOS_SEG.map((grado, idx) => {
-                  const r = asistenciaData.totalesGrado[grado];
-                  return (
-                    <tr key={`asi-${grado}`} className="bg-blue-50/70 font-bold text-center">
-                      {idx === 0 && (
-                        <td rowSpan="3" className="border border-slate-400 px-2 py-1.5 text-left font-black bg-blue-100/70">
-                          TOTALES POR GRADO
-                        </td>
-                      )}
-                      <td className="border border-slate-400 px-2 py-1.5 text-left">{GRADO_LABELS[grado]}</td>
-                      <td className="border border-slate-400 px-2 py-1.5">{r.matricula}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{r.f1_5}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct1_5)}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{r.f6_10}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct6_10)}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{r.fMas10}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pctMas10)}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{r.sinFaltas}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pctSinFaltas)}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{r.total}</td>
-                      <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pctTotal)}</td>
-                    </tr>
-                  );
-                })}
+                {!esUnSoloTurno &&
+                  GRADOS_SEG.map((grado, idx) => {
+                    const r = asistenciaData.totalesGrado[grado];
+                    return (
+                      <tr key={`asi-${grado}`} className="bg-blue-50/70 font-bold text-center">
+                        {idx === 0 && (
+                          <td rowSpan="3" className="border border-slate-400 px-2 py-1.5 text-left font-black bg-blue-100/70">
+                            TOTALES POR GRADO
+                          </td>
+                        )}
+                        <td className="border border-slate-400 px-2 py-1.5 text-left">{GRADO_LABELS[grado]}</td>
+                        <td className="border border-slate-400 px-2 py-1.5">{r.matricula}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{r.f1_5}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct1_5)}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{r.f6_10}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pct6_10)}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{r.fMas10}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pctMas10)}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{r.sinFaltas}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pctSinFaltas)}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{r.total}</td>
+                        <td className="border border-slate-400 px-1.5 py-1.5">{fmtPct(r.pctTotal)}</td>
+                      </tr>
+                    );
+                  })}
                 <tr className="bg-slate-200 font-black text-center border-t-2 border-slate-800">
-                  <td colSpan="2" className="border border-slate-500 px-2 py-2 text-left">TOTAL DE LA ESCUELA</td>
+                  <td colSpan="2" className="border border-slate-500 px-2 py-2 text-left">
+                    {esUnSoloTurno ? `TOTAL TURNO ${turnoVista.toUpperCase()}` : 'TOTAL DE LA ESCUELA'}
+                  </td>
                   <td className="border border-slate-500 px-2 py-2">{asistenciaData.totalEscuela.matricula}</td>
                   <td className="border border-slate-500 px-1.5 py-2">{asistenciaData.totalEscuela.f1_5}</td>
                   <td className="border border-slate-500 px-1.5 py-2">{fmtPct(asistenciaData.totalEscuela.pct1_5)}</td>

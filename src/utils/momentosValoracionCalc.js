@@ -1069,3 +1069,114 @@ export const combinarMomentoConCongeladosPorTurno = ({
     }
   };
 };
+
+/**
+ * Filtra las 4 hojas de un Momento para mostrar y totalizar un único turno ('Matutino' o 'Vespertino')
+ * o ambos ('Todos').
+ */
+export const filtrarMomentoPorTurno = (
+  { matricula, aprovechamiento, desempeno, asistencia } = {},
+  turnoFiltro = 'Todos'
+) => {
+  if (turnoFiltro !== 'Matutino' && turnoFiltro !== 'Vespertino') {
+    return {
+      matricula,
+      aprovechamiento,
+      desempeno,
+      asistencia,
+      turnosVisibles: [...TURNOS_SEG],
+      turnoActivo: 'Todos'
+    };
+  }
+
+  // 1. MATRÍCULA (solo turno activo)
+  const matFilas = {};
+  const matTotalesGrado = {};
+  const matTotalEscuela = emptyMatRow();
+  GRADOS_SEG.forEach((g) => {
+    const key = `${g}-${turnoFiltro}`;
+    const cloned = cloneMatRow(matricula?.filas?.[key]);
+    matFilas[key] = cloned;
+    matTotalesGrado[g] = cloneMatRow(cloned);
+    matTotalEscuela.grupos += cloned.grupos;
+    matTotalEscuela.inicial.h += cloned.inicial.h;
+    matTotalEscuela.inicial.m += cloned.inicial.m;
+    matTotalEscuela.altas.h += cloned.altas.h;
+    matTotalEscuela.altas.m += cloned.altas.m;
+    matTotalEscuela.bajas.h += cloned.bajas.h;
+    matTotalEscuela.bajas.m += cloned.bajas.m;
+  });
+  finalizeMatRow(matTotalEscuela);
+
+  // 2. APROVECHAMIENTO (escuela igual al promedio exclusivo del turno seleccionado)
+  const turnoAprov = cloneAprovTurno(aprovechamiento?.turnos?.[turnoFiltro]);
+  const sinCalifTurno =
+    aprovechamiento?.alumnosSinCalificacionPorTurno?.[turnoFiltro] ?? 0;
+
+  // 3. DESEMPEÑO (solo turno activo)
+  const desFilas = {};
+  const desTotalesGrado = {};
+  const desTotalEscuela = emptyDesempenoRow();
+  GRADOS_SEG.forEach((g) => {
+    const key = `${g}-${turnoFiltro}`;
+    const cloned = cloneDesempenoRow(desempeno?.filas?.[key]);
+    desFilas[key] = cloned;
+    desTotalesGrado[g] = cloneDesempenoRow(cloned);
+    desTotalEscuela.matricula += cloned.matricula;
+    desTotalEscuela.r5 += cloned.r5;
+    desTotalEscuela.r6 += cloned.r6;
+    desTotalEscuela.r7 += cloned.r7;
+    desTotalEscuela.r8 += cloned.r8;
+    desTotalEscuela.sinCalificar += cloned.sinCalificar;
+  });
+  finalizeDesempenoRow(desTotalEscuela);
+
+  // 4. ASISTENCIA (solo turno activo)
+  const asiFilas = {};
+  const asiTotalesGrado = {};
+  const asiTotalEscuela = emptyAsistenciaRow();
+  GRADOS_SEG.forEach((g) => {
+    const key = `${g}-${turnoFiltro}`;
+    const cloned = cloneAsistenciaRow(asistencia?.filas?.[key]);
+    asiFilas[key] = cloned;
+    asiTotalesGrado[g] = cloneAsistenciaRow(cloned);
+    asiTotalEscuela.matricula += cloned.matricula;
+    asiTotalEscuela.f1_5 += cloned.f1_5;
+    asiTotalEscuela.f6_10 += cloned.f6_10;
+    asiTotalEscuela.fMas10 += cloned.fMas10;
+    asiTotalEscuela.sinFaltas += cloned.sinFaltas;
+  });
+  finalizeAsistenciaRow(asiTotalEscuela);
+
+  return {
+    matricula: {
+      filas: matFilas,
+      totalesGrado: matTotalesGrado,
+      totalEscuela: matTotalEscuela,
+      existenciaAlumnos: matricula?.existenciaAlumnos || {}
+    },
+    aprovechamiento: {
+      turnos: {
+        [turnoFiltro]: turnoAprov
+      },
+      escuela: cloneAprovTurno(turnoAprov),
+      alumnosSinCalificacion: sinCalifTurno,
+      alumnosSinCalificacionPorTurno: {
+        [turnoFiltro]: sinCalifTurno
+      },
+      celdasFaltantes: aprovechamiento?.celdasFaltantes ?? 0
+    },
+    desempeno: {
+      filas: desFilas,
+      totalesGrado: desTotalesGrado,
+      totalEscuela: desTotalEscuela
+    },
+    asistencia: {
+      filas: asiFilas,
+      totalesGrado: asiTotalesGrado,
+      totalEscuela: asiTotalEscuela
+    },
+    turnosVisibles: [turnoFiltro],
+    turnoActivo: turnoFiltro
+  };
+};
