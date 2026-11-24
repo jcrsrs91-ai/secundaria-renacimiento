@@ -384,6 +384,7 @@ const avgNonNull = (arr) => {
  */
 export const calcularAprovechamientoMomento = (existenciaAlumnos = {}, momentoId = 1) => {
   const turnos = {};
+  const alumnosSinCalificacionPorTurno = { Matutino: 0, Vespertino: 0 };
   let alumnosSinCalificacion = 0;
   let celdasFaltantes = 0;
 
@@ -418,7 +419,10 @@ export const calcularAprovechamientoMomento = (existenciaAlumnos = {}, momentoId
         const hasAny = matList.some(
           (mat) => getCalificacionMateriaHastaMomento(s, mat.id, momentoId) !== null
         );
-        if (!hasAny) alumnosSinCalificacion++;
+        if (!hasAny) {
+          alumnosSinCalificacion++;
+          alumnosSinCalificacionPorTurno[turno]++;
+        }
       });
 
       promGrado[grado] = avgNonNull(matValsForGrado);
@@ -461,6 +465,7 @@ export const calcularAprovechamientoMomento = (existenciaAlumnos = {}, momentoId
       promTurno: escuelaPromGeneral
     },
     alumnosSinCalificacion,
+    alumnosSinCalificacionPorTurno,
     celdasFaltantes
   };
 };
@@ -735,4 +740,332 @@ export const construirTablaAsistencia = (
   finalizeAsistenciaRow(totalEscuela);
 
   return { filas, totalesGrado, totalEscuela };
+};
+
+const cloneMatRow = (src) => {
+  const r = emptyMatRow();
+  if (!src) return r;
+  r.grupos = Number(src.grupos) || 0;
+  r.inicial = { h: Number(src.inicial?.h) || 0, m: Number(src.inicial?.m) || 0, t: Number(src.inicial?.t) || 0 };
+  r.altas = { h: Number(src.altas?.h) || 0, m: Number(src.altas?.m) || 0, t: Number(src.altas?.t) || 0 };
+  r.bajas = { h: Number(src.bajas?.h) || 0, m: Number(src.bajas?.m) || 0, t: Number(src.bajas?.t) || 0 };
+  finalizeMatRow(r);
+  return r;
+};
+
+const cloneAprovTurno = (src) => ({
+  materias: { ...(src?.materias || {}) },
+  promGrado: { ...(src?.promGrado || {}) },
+  promTurno: src?.promTurno ?? null
+});
+
+const cloneDesempenoRow = (src) => {
+  const r = emptyDesempenoRow();
+  if (!src) return r;
+  r.matricula = Number(src.matricula) || 0;
+  r.r5 = Number(src.r5) || 0;
+  r.r6 = Number(src.r6) || 0;
+  r.r7 = Number(src.r7) || 0;
+  r.r8 = Number(src.r8) || 0;
+  r.sinCalificar = Number(src.sinCalificar) || 0;
+  finalizeDesempenoRow(r);
+  return r;
+};
+
+const cloneAsistenciaRow = (src) => {
+  const r = emptyAsistenciaRow();
+  if (!src) return r;
+  r.matricula = Number(src.matricula) || 0;
+  r.f1_5 = Number(src.f1_5) || 0;
+  r.f6_10 = Number(src.f6_10) || 0;
+  r.fMas10 = Number(src.fMas10) || 0;
+  r.sinFaltas = Number(src.sinFaltas) || 0;
+  finalizeAsistenciaRow(r);
+  return r;
+};
+
+/**
+ * Extrae una instantánea serializable de las 4 hojas únicamente para un turno ('Matutino' o 'Vespertino').
+ */
+export const extraerSnapshotTurno = ({
+  turno,
+  matricula,
+  aprovechamiento,
+  desempeno,
+  asistencia,
+  frozenBy = 'Desconocido',
+  fechaCorte = '',
+  frozenAt = new Date().toISOString()
+}) => {
+  if (!TURNOS_SEG.includes(turno)) {
+    throw new Error(`Turno inválido para snapshot: ${turno}`);
+  }
+  const matriculaFilas = {};
+  const desempenoFilas = {};
+  const asistenciaFilas = {};
+
+  GRADOS_SEG.forEach((g) => {
+    const key = `${g}-${turno}`;
+    matriculaFilas[key] = cloneMatRow(matricula?.filas?.[key]);
+    desempenoFilas[key] = cloneDesempenoRow(desempeno?.filas?.[key]);
+    asistenciaFilas[key] = cloneAsistenciaRow(asistencia?.filas?.[key]);
+  });
+
+  return {
+    turno,
+    frozenAt,
+    frozenBy,
+    fechaCorte,
+    matriculaFilas,
+    aprovechamientoTurno: cloneAprovTurno(aprovechamiento?.turnos?.[turno]),
+    alumnosSinCalificacion:
+      aprovechamiento?.alumnosSinCalificacionPorTurno?.[turno] ?? 0,
+    desempenoFilas,
+    asistenciaFilas
+  };
+};
+
+/**
+ * Normaliza el estado de congelado por turno, migrando en memoria el formato global previo si existiera.
+ */
+export const normalizarCongeladoTurnos = (momentData) => {
+  if (momentData?.congeladoTurnos) {
+    return {
+      Matutino: momentData.congeladoTurnos.Matutino || null,
+      Vespertino: momentData.congeladoTurnos.Vespertino || null
+    };
+  }
+
+  if (momentData?.congelado) {
+    const leg = momentData.congelado;
+    const legacySinCalif = leg.aprovechamiento?.alumnosSinCalificacion ?? 0;
+    const legacySinCalifPorTurno = leg.aprovechamiento?.alumnosSinCalificacionPorTurno || {
+      Matutino: legacySinCalif,
+      Vespertino: 0
+    };
+    const aprovWithTurno = {
+      ...(leg.aprovechamiento || {}),
+      alumnosSinCalificacionPorTurno: legacySinCalifPorTurno
+    };
+    return {
+      Matutino: extraerSnapshotTurno({
+        turno: 'Matutino',
+        matricula: leg.matricula,
+        aprovechamiento: aprovWithTurno,
+        desempeno: leg.desempeno,
+        asistencia: leg.asistencia,
+        frozenBy: leg.frozenBy || 'Desconocido',
+        fechaCorte: momentData?.meta?.fechaCorte || '',
+        frozenAt: leg.frozenAt || new Date().toISOString()
+      }),
+      Vespertino: extraerSnapshotTurno({
+        turno: 'Vespertino',
+        matricula: leg.matricula,
+        aprovechamiento: aprovWithTurno,
+        desempeno: leg.desempeno,
+        asistencia: leg.asistencia,
+        frozenBy: leg.frozenBy || 'Desconocido',
+        fechaCorte: momentData?.meta?.fechaCorte || '',
+        frozenAt: leg.frozenAt || new Date().toISOString()
+      })
+    };
+  }
+
+  return { Matutino: null, Vespertino: null };
+};
+
+/**
+ * Combina datos en vivo con los snapshots congelados independientes por turno
+ * y recalcula TOTALES POR GRADO, TOTAL DE LA ESCUELA y PROM. GRAL DE ESCUELA.
+ */
+export const combinarMomentoConCongeladosPorTurno = ({
+  liveMatricula,
+  liveAprovechamiento,
+  liveDesempeno,
+  liveAsistencia,
+  congeladoTurnos = {}
+}) => {
+  // 1. MATRÍCULA
+  const matFilas = {};
+  TURNOS_SEG.forEach((t) => {
+    const snap = congeladoTurnos?.[t];
+    GRADOS_SEG.forEach((g) => {
+      const key = `${g}-${t}`;
+      const src = snap?.matriculaFilas?.[key] || liveMatricula?.filas?.[key];
+      matFilas[key] = cloneMatRow(src);
+    });
+  });
+
+  const matTotalesGrado = {};
+  GRADOS_SEG.forEach((g) => {
+    const row = emptyMatRow();
+    TURNOS_SEG.forEach((t) => {
+      const src = matFilas[`${g}-${t}`];
+      row.grupos += src.grupos;
+      row.inicial.h += src.inicial.h;
+      row.inicial.m += src.inicial.m;
+      row.altas.h += src.altas.h;
+      row.altas.m += src.altas.m;
+      row.bajas.h += src.bajas.h;
+      row.bajas.m += src.bajas.m;
+    });
+    finalizeMatRow(row);
+    matTotalesGrado[g] = row;
+  });
+
+  const matTotalEscuela = emptyMatRow();
+  GRADOS_SEG.forEach((g) => {
+    const src = matTotalesGrado[g];
+    matTotalEscuela.grupos += src.grupos;
+    matTotalEscuela.inicial.h += src.inicial.h;
+    matTotalEscuela.inicial.m += src.inicial.m;
+    matTotalEscuela.altas.h += src.altas.h;
+    matTotalEscuela.altas.m += src.altas.m;
+    matTotalEscuela.bajas.h += src.bajas.h;
+    matTotalEscuela.bajas.m += src.bajas.m;
+  });
+  finalizeMatRow(matTotalEscuela);
+
+  // 2. APROVECHAMIENTO
+  const aprovTurnos = {};
+  const sinCalifPorTurno = {};
+  let alumnosSinCalificacion = 0;
+
+  TURNOS_SEG.forEach((t) => {
+    const snap = congeladoTurnos?.[t];
+    aprovTurnos[t] = snap?.aprovechamientoTurno
+      ? cloneAprovTurno(snap.aprovechamientoTurno)
+      : cloneAprovTurno(liveAprovechamiento?.turnos?.[t]);
+    const sc = snap
+      ? (Number(snap.alumnosSinCalificacion) || 0)
+      : (Number(liveAprovechamiento?.alumnosSinCalificacionPorTurno?.[t]) || 0);
+    sinCalifPorTurno[t] = sc;
+    alumnosSinCalificacion += sc;
+  });
+
+  const escuelaMaterias = {};
+  GRADOS_SEG.forEach((grado) => {
+    (MATERIAS_IDS_POR_GRADO[grado] || []).forEach((mat) => {
+      escuelaMaterias[mat.id] = avgNonNull(
+        TURNOS_SEG.map((t) => aprovTurnos[t].materias[mat.id])
+      );
+    });
+  });
+
+  const escuelaPromGrado = {};
+  GRADOS_SEG.forEach((grado) => {
+    escuelaPromGrado[grado] = avgNonNull(
+      TURNOS_SEG.map((t) => aprovTurnos[t].promGrado[grado])
+    );
+  });
+
+  const escuelaPromTurno = avgNonNull(
+    TURNOS_SEG.map((t) => aprovTurnos[t].promTurno)
+  );
+
+  // 3. DESEMPEÑO ALCANZADO
+  const desFilas = {};
+  TURNOS_SEG.forEach((t) => {
+    const snap = congeladoTurnos?.[t];
+    GRADOS_SEG.forEach((g) => {
+      const key = `${g}-${t}`;
+      const src = snap?.desempenoFilas?.[key] || liveDesempeno?.filas?.[key];
+      desFilas[key] = cloneDesempenoRow(src);
+    });
+  });
+
+  const desTotalesGrado = {};
+  GRADOS_SEG.forEach((g) => {
+    const row = emptyDesempenoRow();
+    TURNOS_SEG.forEach((t) => {
+      const src = desFilas[`${g}-${t}`];
+      row.matricula += src.matricula;
+      row.r5 += src.r5;
+      row.r6 += src.r6;
+      row.r7 += src.r7;
+      row.r8 += src.r8;
+      row.sinCalificar += src.sinCalificar;
+    });
+    finalizeDesempenoRow(row);
+    desTotalesGrado[g] = row;
+  });
+
+  const desTotalEscuela = emptyDesempenoRow();
+  GRADOS_SEG.forEach((g) => {
+    const src = desTotalesGrado[g];
+    desTotalEscuela.matricula += src.matricula;
+    desTotalEscuela.r5 += src.r5;
+    desTotalEscuela.r6 += src.r6;
+    desTotalEscuela.r7 += src.r7;
+    desTotalEscuela.r8 += src.r8;
+    desTotalEscuela.sinCalificar += src.sinCalificar;
+  });
+  finalizeDesempenoRow(desTotalEscuela);
+
+  // 4. ASISTENCIA
+  const asiFilas = {};
+  TURNOS_SEG.forEach((t) => {
+    const snap = congeladoTurnos?.[t];
+    GRADOS_SEG.forEach((g) => {
+      const key = `${g}-${t}`;
+      const src = snap?.asistenciaFilas?.[key] || liveAsistencia?.filas?.[key];
+      asiFilas[key] = cloneAsistenciaRow(src);
+    });
+  });
+
+  const asiTotalesGrado = {};
+  GRADOS_SEG.forEach((g) => {
+    const row = emptyAsistenciaRow();
+    TURNOS_SEG.forEach((t) => {
+      const src = asiFilas[`${g}-${t}`];
+      row.matricula += src.matricula;
+      row.f1_5 += src.f1_5;
+      row.f6_10 += src.f6_10;
+      row.fMas10 += src.fMas10;
+      row.sinFaltas += src.sinFaltas;
+    });
+    finalizeAsistenciaRow(row);
+    asiTotalesGrado[g] = row;
+  });
+
+  const asiTotalEscuela = emptyAsistenciaRow();
+  GRADOS_SEG.forEach((g) => {
+    const src = asiTotalesGrado[g];
+    asiTotalEscuela.matricula += src.matricula;
+    asiTotalEscuela.f1_5 += src.f1_5;
+    asiTotalEscuela.f6_10 += src.f6_10;
+    asiTotalEscuela.fMas10 += src.fMas10;
+    asiTotalEscuela.sinFaltas += src.sinFaltas;
+  });
+  finalizeAsistenciaRow(asiTotalEscuela);
+
+  return {
+    matricula: {
+      filas: matFilas,
+      totalesGrado: matTotalesGrado,
+      totalEscuela: matTotalEscuela,
+      existenciaAlumnos: liveMatricula?.existenciaAlumnos || {}
+    },
+    aprovechamiento: {
+      turnos: aprovTurnos,
+      escuela: {
+        materias: escuelaMaterias,
+        promGrado: escuelaPromGrado,
+        promTurno: escuelaPromTurno
+      },
+      alumnosSinCalificacion,
+      alumnosSinCalificacionPorTurno: sinCalifPorTurno,
+      celdasFaltantes: liveAprovechamiento?.celdasFaltantes ?? 0
+    },
+    desempeno: {
+      filas: desFilas,
+      totalesGrado: desTotalesGrado,
+      totalEscuela: desTotalEscuela
+    },
+    asistencia: {
+      filas: asiFilas,
+      totalesGrado: asiTotalesGrado,
+      totalEscuela: asiTotalEscuela
+    }
+  };
 };

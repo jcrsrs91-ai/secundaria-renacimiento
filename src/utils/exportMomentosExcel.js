@@ -61,15 +61,15 @@ const buildMomentosStylesXml = () => `<?xml version="1.0" encoding="UTF-8" stand
     <numFmt numFmtId="166" formatCode="0.0%"/>
   </numFmts>
   <fonts count="9">
-    <font><sz val="9"/><name val="Arial"/><color rgb="FF0F172A"/></font>
-    <font><b/><sz val="9"/><name val="Arial"/><color rgb="FF0F172A"/></font>
+    <font><sz val="10"/><name val="Arial"/><color rgb="FF0F172A"/></font>
     <font><b/><sz val="10"/><name val="Arial"/><color rgb="FF0F172A"/></font>
     <font><b/><sz val="11"/><name val="Arial"/><color rgb="FF0F172A"/></font>
-    <font><b/><sz val="8"/><name val="Arial"/><color rgb="FF1E293B"/></font>
-    <font><b/><sz val="9"/><name val="Arial"/><color rgb="FF1E3A8A"/></font>
-    <font><b/><sz val="9"/><name val="Arial"/><color rgb="FF991B1B"/></font>
-    <font><b/><sz val="9"/><name val="Arial"/><color rgb="FF065F46"/></font>
-    <font><i/><sz val="8"/><name val="Arial"/><color rgb="FF475569"/></font>
+    <font><b/><sz val="13"/><name val="Arial"/><color rgb="FF0F172A"/></font>
+    <font><b/><sz val="9"/><name val="Arial"/><color rgb="FF1E293B"/></font>
+    <font><b/><sz val="10"/><name val="Arial"/><color rgb="FF1E3A8A"/></font>
+    <font><b/><sz val="10"/><name val="Arial"/><color rgb="FF991B1B"/></font>
+    <font><b/><sz val="10"/><name val="Arial"/><color rgb="FF065F46"/></font>
+    <font><i/><sz val="9"/><name val="Arial"/><color rgb="FF475569"/></font>
   </fonts>
   <fills count="9">
     <fill><patternFill patternType="none"/></fill>
@@ -143,12 +143,12 @@ const wrapWorksheetXml = ({ lastCol, lastRow, colsXml, rowsXml, mergeCells, isSe
   <sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>
   <dimension ref="A1:${lastCol}${lastRow}"/>
   <sheetViews><sheetView ${isSelected ? 'tabSelected="1" ' : ''}workbookViewId="0"/></sheetViews>
-  <sheetFormatPr defaultRowHeight="17"/>
+  <sheetFormatPr defaultRowHeight="20"/>
   <cols>${colsXml}</cols>
   <sheetData>${rowsXml.join('')}</sheetData>
   <mergeCells count="${mergeCells.length}">${mergeCells.map((m) => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>
-  <printOptions horizontalCentered="1" verticalCentered="0"/>
-  <pageMargins left="0.25" right="0.25" top="0.3" bottom="0.3" header="0.1" footer="0.1"/>
+  <printOptions horizontalCentered="1" verticalCentered="1"/>
+  <pageMargins left="0.2" right="0.2" top="0.25" bottom="0.25" header="0.1" footer="0.1"/>
   <pageSetup paperSize="1" orientation="landscape" fitToWidth="1" fitToHeight="1"/>
 </worksheet>`;
 
@@ -171,7 +171,7 @@ const buildInstitucionalHeaderRows = (totalCols, momentoCfg, meta, mergeCells) =
       cells.push(buildCell(c, r, { value: c === 1 ? texto : '', style }));
     }
     mergeCells.push(`A${r}:${lastColLetter}${r}`);
-    rows.push(makeRow(r, r === 5 ? 20 : 16, cells));
+    rows.push(makeRow(r, r === 5 ? 24 : 18, cells));
   });
 
   // Filas 6, 7, 8 adaptables al ancho de la hoja
@@ -192,7 +192,7 @@ const buildInstitucionalHeaderRows = (totalCols, momentoCfg, meta, mergeCells) =
       `${colIndexToLetter(cMid + 1)}6:${colIndexToLetter(cRight)}6`,
       `${colIndexToLetter(cRight + 1)}6:${lastColLetter}6`
     );
-    rows.push(makeRow(6, 17, cells));
+    rows.push(makeRow(6, 19, cells));
   }
 
   // Fila 7: Localidad | Municipio | Región
@@ -209,7 +209,7 @@ const buildInstitucionalHeaderRows = (totalCols, momentoCfg, meta, mergeCells) =
       `${colIndexToLetter(cMid + 1)}7:${colIndexToLetter(cRight)}7`,
       `${colIndexToLetter(cRight + 1)}7:${lastColLetter}7`
     );
-    rows.push(makeRow(7, 17, cells));
+    rows.push(makeRow(7, 19, cells));
   }
 
   // Fila 8: Director | Total de docentes
@@ -224,7 +224,7 @@ const buildInstitucionalHeaderRows = (totalCols, momentoCfg, meta, mergeCells) =
       `A8:${colIndexToLetter(cRight)}8`,
       `${colIndexToLetter(cRight + 1)}8:${lastColLetter}8`
     );
-    rows.push(makeRow(8, 17, cells));
+    rows.push(makeRow(8, 19, cells));
   }
 
   return rows;
@@ -242,7 +242,7 @@ const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula }) => {
       buildCell(i + 1, 9, { value: i === 0 ? 'MATRÍCULA GENERAL' : '', style: 1 })
     );
     mergeCells.push('A9:P9');
-    rows.push(makeRow(9, 20, cells));
+    rows.push(makeRow(9, 24, cells));
   }
 
   // Fila 10 y 11: Encabezados de tabla
@@ -284,8 +284,8 @@ const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula }) => {
       buildCell(16, 11, { value: 'TOTAL', style: 5 })
     ];
     mergeCells.push('A10:A11', 'B10:B11', 'C10:C11', 'D10:F10', 'G10:I10', 'J10:L10', 'M10:O10');
-    rows.push(makeRow(10, 26, h10));
-    rows.push(makeRow(11, 18, h11));
+    rows.push(makeRow(10, 32, h10));
+    rows.push(makeRow(11, 22, h11));
   }
 
   const pushMatriculaRow = (r, labelA, labelB, d, kind = 'data', formulaSources = null) => {
@@ -325,7 +325,7 @@ const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula }) => {
       buildCell(15, r, { value: d.existencia.t, type: 'n', formula: `SUM(M${r}:N${r})`, style: stExis }),
       buildCell(16, r, { value: pctVal, type: 'n', formula: `IF((F${r}+I${r})=0,0,L${r}/(F${r}+I${r}))`, style: stPct })
     ];
-    rows.push(makeRow(r, isGlobal ? 20 : 18, cells));
+    rows.push(makeRow(r, isGlobal ? 26 : 23, cells));
   };
 
   // Filas 12-14 Matutino, 15-17 Vespertino
@@ -349,7 +349,7 @@ const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula }) => {
   mergeCells.push('A21:B21');
 
   // Fila 22 y 23 Firma y fecha
-  rows.push(makeRow(22, 14, []));
+  rows.push(makeRow(22, 18, []));
   const fCells = Array.from({ length: TOTAL_COLS }, (_, i) => {
     const c = i + 1;
     if (c === 1) return buildCell(c, 23, { value: `FECHA: ${formatearFechaLargaSEG(meta.fechaEmision) || ''}`, style: 3 });
@@ -357,14 +357,14 @@ const buildMatriculaSheetXml = ({ momentoCfg, meta, matricula }) => {
     return buildCell(c, 23, { value: '', style: 0 });
   });
   mergeCells.push('A23:F23', 'K23:O23');
-  rows.push(makeRow(23, 22, fCells));
+  rows.push(makeRow(23, 28, fCells));
 
   const colsXml = [
-    '<col min="1" max="1" width="17" customWidth="1"/>',
-    '<col min="2" max="2" width="13" customWidth="1"/>',
-    '<col min="3" max="3" width="11" customWidth="1"/>',
-    '<col min="4" max="15" width="7.2" customWidth="1"/>',
-    '<col min="16" max="16" width="12" customWidth="1"/>'
+    '<col min="1" max="1" width="18" customWidth="1"/>',
+    '<col min="2" max="2" width="14" customWidth="1"/>',
+    '<col min="3" max="3" width="12" customWidth="1"/>',
+    '<col min="4" max="15" width="7.8" customWidth="1"/>',
+    '<col min="16" max="16" width="13" customWidth="1"/>'
   ].join('');
 
   return wrapWorksheetXml({
@@ -383,10 +383,10 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
   const rows = buildInstitucionalHeaderRows(TOTAL_COLS, momentoCfg, meta, mergeCells);
 
   // Fila 9 & 10
-  rows.push(makeRow(9, 20, Array.from({ length: TOTAL_COLS }, (_, i) => buildCell(i + 1, 9, { value: i === 0 ? 'APROVECHAMIENTO (PROMEDIOS)' : '', style: 1 }))));
+  rows.push(makeRow(9, 24, Array.from({ length: TOTAL_COLS }, (_, i) => buildCell(i + 1, 9, { value: i === 0 ? 'APROVECHAMIENTO (PROMEDIOS)' : '', style: 1 }))));
   mergeCells.push('A9:AG9');
 
-  rows.push(makeRow(10, 18, Array.from({ length: TOTAL_COLS }, (_, i) => buildCell(i + 1, 10, { value: i === 0 ? 'CAMPOS FORMATIVOS' : '', style: 5 }))));
+  rows.push(makeRow(10, 22, Array.from({ length: TOTAL_COLS }, (_, i) => buildCell(i + 1, 10, { value: i === 0 ? 'CAMPOS FORMATIVOS' : '', style: 5 }))));
   mergeCells.push('A10:AG10');
 
   // Fila 11: Grados y promedios por grado
@@ -404,7 +404,7 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
       return buildCell(c, 11, { value: '', style: 5 });
     });
     mergeCells.push('A11:A13', 'B11:K11', 'L11:L13', 'M11:U11', 'V11:V13', 'W11:AE11', 'AF11:AF13', 'AG11:AG13');
-    rows.push(makeRow(11, 20, c11));
+    rows.push(makeRow(11, 26, c11));
   }
 
   // Fila 12: Campos Formativos por Grado & Fila 13: Disciplinas
@@ -429,8 +429,8 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
       });
     });
 
-    rows.push(makeRow(12, 26, c12));
-    rows.push(makeRow(13, 68, c13));
+    rows.push(makeRow(12, 32, c12));
+    rows.push(makeRow(13, 82, c13));
   }
 
   // Filas 14 (MATUTINO) y 15 (VESPERTINO)
@@ -467,7 +467,7 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
     const pgTurno = tData.promTurno;
     cs.push(buildCell(33, r, { value: pgTurno !== null ? pgTurno : '', type: 'n', formula: `IFERROR(AVERAGE(L${r},V${r},AF${r}),"")`, style: 12 }));
 
-    rows.push(makeRow(r, 20, cs));
+    rows.push(makeRow(r, 28, cs));
   });
 
   // Fila 16: PROM. GRAL DE ESCUELA (=IFERROR(AVERAGE(col14:col15),"") en B..AG)
@@ -495,22 +495,22 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
         })
       );
     }
-    rows.push(makeRow(16, 22, cs));
+    rows.push(makeRow(16, 30, cs));
   }
 
   // Nota y pie de firma
-  rows.push(makeRow(17, 12, []));
+  rows.push(makeRow(17, 16, []));
   rows.push(
     makeRow(
       18,
-      18,
+      22,
       Array.from({ length: TOTAL_COLS }, (_, i) =>
         buildCell(i + 1, 18, { value: i === 0 ? momentoCfg.notaAprovechamiento : '', style: 21 })
       )
     )
   );
   mergeCells.push('A18:AG18');
-  rows.push(makeRow(19, 14, []));
+  rows.push(makeRow(19, 18, []));
 
   const fCells = Array.from({ length: TOTAL_COLS }, (_, i) => {
     const c = i + 1;
@@ -519,16 +519,16 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento }) => 
     return buildCell(c, 20, { value: '', style: 0 });
   });
   mergeCells.push('A20:J20', 'M20:V20');
-  rows.push(makeRow(20, 22, fCells));
+  rows.push(makeRow(20, 28, fCells));
 
   const colsXml = [
-    '<col min="1" max="1" width="21" customWidth="1"/>',
-    '<col min="2" max="11" width="5.2" customWidth="1"/>',
-    '<col min="12" max="12" width="7.2" customWidth="1"/>',
-    '<col min="13" max="21" width="5.2" customWidth="1"/>',
-    '<col min="22" max="22" width="7.2" customWidth="1"/>',
-    '<col min="23" max="31" width="5.2" customWidth="1"/>',
-    '<col min="32" max="33" width="8.0" customWidth="1"/>'
+    '<col min="1" max="1" width="22" customWidth="1"/>',
+    '<col min="2" max="11" width="5.6" customWidth="1"/>',
+    '<col min="12" max="12" width="7.8" customWidth="1"/>',
+    '<col min="13" max="21" width="5.6" customWidth="1"/>',
+    '<col min="22" max="22" width="7.8" customWidth="1"/>',
+    '<col min="23" max="31" width="5.6" customWidth="1"/>',
+    '<col min="32" max="33" width="8.6" customWidth="1"/>'
   ].join('');
 
   return wrapWorksheetXml({
@@ -558,7 +558,7 @@ const buildIndicatorMatrixSheetXml = ({
   rows.push(
     makeRow(
       9,
-      20,
+      24,
       Array.from({ length: TOTAL_COLS }, (_, i) =>
         buildCell(i + 1, 9, { value: i === 0 ? tituloHoja : '', style: 1 })
       )
@@ -591,8 +591,8 @@ const buildIndicatorMatrixSheetXml = ({
       buildCell(13, 11, { value: '%', style: 5 })
     ];
     mergeCells.push('A10:A11', 'B10:B11', 'C10:C11', 'D10:M10');
-    rows.push(makeRow(10, 20, h10));
-    rows.push(makeRow(11, 34, h11));
+    rows.push(makeRow(10, 24, h10));
+    rows.push(makeRow(11, 40, h11));
   }
 
   const pushMatrixRow = (r, labelA, labelB, rawObj, kind = 'data', formulaSources = null) => {
@@ -629,7 +629,7 @@ const buildIndicatorMatrixSheetXml = ({
       buildCell(12, r, { value: tot, type: 'n', formula: `D${r}+F${r}+H${r}+J${r}`, style: stCheck }),
       buildCell(13, r, { value: pct(tot), type: 'n', formula: `IF(C${r}=0,0,L${r}/C${r})`, style: stPct })
     ];
-    rows.push(makeRow(r, isGlobal ? 20 : 18, cells));
+    rows.push(makeRow(r, isGlobal ? 26 : 23, cells));
   };
 
   let rowCursor = 12;
@@ -648,7 +648,7 @@ const buildIndicatorMatrixSheetXml = ({
   pushMatrixRow(21, 'TOTAL DE LA ESCUELA', '', dataSource.totalEscuela, 'global', { range: [18, 20] });
   mergeCells.push('A21:B21');
 
-  rows.push(makeRow(22, 14, []));
+  rows.push(makeRow(22, 18, []));
   const fCells = Array.from({ length: TOTAL_COLS }, (_, i) => {
     const c = i + 1;
     if (c === 1) return buildCell(c, 23, { value: `FECHA: ${formatearFechaLargaSEG(meta.fechaEmision) || ''}`, style: 3 });
@@ -656,13 +656,13 @@ const buildIndicatorMatrixSheetXml = ({
     return buildCell(c, 23, { value: '', style: 0 });
   });
   mergeCells.push('A23:E23', 'H23:L23');
-  rows.push(makeRow(23, 22, fCells));
+  rows.push(makeRow(23, 28, fCells));
 
   const colsXml = [
-    '<col min="1" max="1" width="18" customWidth="1"/>',
-    '<col min="2" max="2" width="14" customWidth="1"/>',
-    '<col min="3" max="3" width="11" customWidth="1"/>',
-    '<col min="4" max="13" width="10" customWidth="1"/>'
+    '<col min="1" max="1" width="19" customWidth="1"/>',
+    '<col min="2" max="2" width="15" customWidth="1"/>',
+    '<col min="3" max="3" width="12" customWidth="1"/>',
+    '<col min="4" max="13" width="10.8" customWidth="1"/>'
   ].join('');
 
   return wrapWorksheetXml({
