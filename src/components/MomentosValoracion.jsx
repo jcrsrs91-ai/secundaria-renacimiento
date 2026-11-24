@@ -11,7 +11,8 @@ import {
   CheckCircle2,
   Sliders,
   X,
-  RotateCcw
+  RotateCcw,
+  BarChart3
 } from 'lucide-react';
 import { db } from '../firebase';
 import {
@@ -44,6 +45,7 @@ import {
   construirTablaAsistencia
 } from '../utils/momentosValoracionCalc';
 import { exportarMomentosValoracionExcel } from '../utils/exportMomentosExcel';
+import MomentosGraficasCTE from './MomentosGraficasCTE';
 
 const buildDefaultMeta = (mId, config) => {
   const ciclo = config?.cicloEscolarActual || '2026-2027';
@@ -86,6 +88,8 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
   const [loadingQR, setLoadingQR] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [showMetaPanel, setShowMetaPanel] = useState(false);
+  const [showCharts, setShowCharts] = useState(true);
+  const [includeChartsInPrint, setIncludeChartsInPrint] = useState(true);
   const [printScope, setPrintScope] = useState(null); // null | 'active' | 'all'
 
   const cicloKey = useMemo(() => {
@@ -370,7 +374,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
     setPrintScope(scope);
     setTimeout(() => {
       window.print();
-    }, 90);
+    }, 180);
   };
 
   const renderOfficialSheetHeader = (sheetTitle) => (
@@ -440,11 +444,32 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
     </div>
   );
 
+  const renderCTECharts = (sheetKey) => {
+    if (!showCharts) return null;
+    if (activeSheet !== sheetKey && printScope !== 'all') return null;
+    return (
+      <div
+        className={`mt-6 pt-5 border-t-2 border-dashed border-slate-200 break-inside-avoid ${
+          includeChartsInPrint ? '' : 'print:hidden'
+        }`}
+      >
+        <MomentosGraficasCTE
+          sheet={sheetKey}
+          matricula={matriculaData}
+          aprovechamiento={aprovechamientoData}
+          desempeno={desempenoData}
+          asistencia={asistenciaData}
+          momentoTitulo={momentoCfg.corto}
+          cicloEscolar={meta.cicloEscolar}
+        />
+      </div>
+    );
+  };
+
   const corteLabel = formatearFechaLargaSEG(meta.fechaCorte) || meta.fechaCorte;
 
   const isSheetVisible = (sheetKey) => {
-    if (activeSheet === sheetKey) return 'block';
-    if (printScope === 'all') return 'hidden print:block';
+    if (activeSheet === sheetKey || printScope === 'all') return 'block';
     return 'hidden print:hidden';
   };
 
@@ -504,6 +529,30 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
             >
               <Sliders className="w-3.5 h-3.5 text-sky-400" /> Datos / Fechas
             </button>
+            <button
+              type="button"
+              onClick={() => setShowCharts((v) => !v)}
+              className={`px-3 py-2 rounded-lg border text-xs font-bold flex items-center gap-1.5 transition ${
+                showCharts
+                  ? 'bg-indigo-500/25 text-indigo-200 border-indigo-400/50 hover:bg-indigo-500/35'
+                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+              }`}
+              title="Mostrar u ocultar las gráficas ejecutivas para Consejo Técnico Escolar"
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-indigo-300" />
+              {showCharts ? 'Gráficas CTE: Visibles' : 'Gráficas CTE: Ocultas'}
+            </button>
+            {showCharts && (
+              <label className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-slate-800/80 border border-slate-700 text-[11px] font-bold text-slate-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeChartsInPrint}
+                  onChange={(e) => setIncludeChartsInPrint(e.target.checked)}
+                  className="rounded border-slate-500 text-indigo-500"
+                />
+                Imprimir gráficas
+              </label>
+            )}
             <button
               type="button"
               onClick={handleDownloadExcel}
@@ -797,6 +846,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           </table>
         </div>
         {renderOfficialFooter()}
+        {renderCTECharts('matricula')}
       </section>
 
       {/* =================================================================
@@ -898,6 +948,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           </table>
         </div>
         {renderOfficialFooter(momentoCfg.notaAprovechamiento)}
+        {renderCTECharts('aprovechamiento')}
       </section>
 
       {/* =================================================================
@@ -1000,6 +1051,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           </table>
         </div>
         {renderOfficialFooter()}
+        {renderCTECharts('desempeno')}
       </section>
 
       {/* =================================================================
@@ -1218,6 +1270,7 @@ export default function MomentosValoracion({ alumnos = [], onClose }) {
           </table>
         </div>
         {renderOfficialFooter()}
+        {renderCTECharts('asistencia')}
       </section>
     </div>
   );
