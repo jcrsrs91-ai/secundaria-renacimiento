@@ -30,6 +30,7 @@ import DesertoresPrint from '../../components/DesertoresPrint';
 import NoInscritosPrint from '../../components/NoInscritosPrint';
 import BecasReport from '../../components/BecasReport';
 import Formato911 from '../../components/Formato911';
+import MomentosValoracion from '../../components/MomentosValoracion';
 import RegularizacionPrint from '../../components/RegularizacionPrint';
 import KardexPrint from '../../components/KardexPrint';
 import ListaClausuraPrint from '../../components/ListaClausuraPrint';
@@ -1206,6 +1207,7 @@ export default function ControlEscolar() {
               <option value="asistencia">Listas de Asistencia</option>
             </optgroup>
             <optgroup label="Estadística SEP / 911">
+              <option value="momentosValoracion">Momentos de Valoración (SEG)</option>
               <option value="estadistica911">Estadística 911</option>
               <option value="matricula">Estadística Matrícula</option>
               <option value="matriculaGrupos">Matrícula por Grupos</option>
@@ -1221,6 +1223,7 @@ export default function ControlEscolar() {
             {[
               { id: 'activos', label: `Directorio (${activos.length})` },
               { id: 'calificaciones', label: 'Calificaciones' },
+              { id: 'momentosValoracion', label: 'Momentos SEG' },
               { id: 'pendientes', label: `Pendientes (${pendientes.length})` },
               { id: 'pagados', label: `Pagados (${tramitesPagados.filter(t => t.estado === 'Pendiente').length})` },
               { id: 'asistencia', label: 'Asistencia' }
@@ -1260,6 +1263,9 @@ export default function ControlEscolar() {
           </button>
           <button onClick={() => setActiveTab('estadistica911')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'estadistica911' ? 'bg-indigo-600 text-white shadow-indigo-200 ring-2 ring-indigo-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
             Estadística 911
+          </button>
+          <button onClick={() => setActiveTab('momentosValoracion')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${activeTab === 'momentosValoracion' ? 'bg-rose-700 text-white shadow-rose-200 ring-2 ring-rose-700 ring-offset-1' : 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100'}`}>
+            Momentos de Valoración (SEG)
           </button>
   
 <button onClick={() => setActiveTab('activos')} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${activeTab === 'activos' ? 'bg-primary-600 text-white shadow-primary-200 ring-2 ring-primary-600 ring-offset-1' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
@@ -2803,6 +2809,9 @@ export default function ControlEscolar() {
         )}
         {!loading && activeTab === 'estadistica911' && !printMode && (
           <Formato911 rawActivos={_rawDirectorio} globalShiftFilter={globalShiftFilter} materiasPorGrado={materiasPorGrado} />
+        )}
+        {!loading && activeTab === 'momentosValoracion' && !printMode && (
+          <MomentosValoracion alumnos={_rawDirectorio} onClose={() => setActiveTab('activos')} />
         )}
 
         {/* IMPRESIÓN MODALES INDIVIDUALES */}
