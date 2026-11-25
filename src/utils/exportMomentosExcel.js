@@ -1,7 +1,5 @@
 import JSZip from 'jszip';
 import fileSaver from 'file-saver';
-
-const saveAs = fileSaver?.saveAs || fileSaver;
 import {
   GRADOS_SEG,
   TURNOS_SEG,
@@ -10,6 +8,24 @@ import {
   CAMPOS_FORMATIVOS_SEG,
   formatearFechaLargaSEG
 } from './momentosValoracionCalc.js';
+
+const saveAsFn = typeof fileSaver === 'function' ? fileSaver : fileSaver?.saveAs;
+
+const triggerBrowserBlobDownload = (blob, filename) => {
+  if (typeof saveAsFn === 'function') {
+    saveAsFn(blob, filename);
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 
 const colIndexToLetter = (colIdx) => {
   let temp;
@@ -33,13 +49,21 @@ const escapeXml = (unsafe) => {
     .replace(/'/g, '&apos;');
 };
 
+const escapeFormulaXml = (formula) => {
+  if (formula === null || formula === undefined) return '';
+  return String(formula)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+};
+
 const buildCell = (colIdx, rowIdx, { value = '', type = 's', formula = null, style = 0 } = {}) => {
   const ref = `${colIndexToLetter(colIdx)}${rowIdx}`;
   if (formula !== null && formula !== undefined) {
     if (value !== null && value !== undefined && value !== '' && !isNaN(Number(value))) {
-      return `<c r="${ref}" s="${style}"><f>${escapeXml(formula)}</f><v>${Number(value)}</v></c>`;
+      return `<c r="${ref}" s="${style}"><f>${escapeFormulaXml(formula)}</f><v>${Number(value)}</v></c>`;
     }
-    return `<c r="${ref}" s="${style}" t="str"><f>${escapeXml(formula)}</f><v></v></c>`;
+    return `<c r="${ref}" s="${style}" t="str"><f>${escapeFormulaXml(formula)}</f><v/></c>`;
   }
   if (value === '' || value === null || value === undefined) {
     return `<c r="${ref}" s="${style}"/>`;
@@ -61,26 +85,26 @@ const buildMomentosStylesXml = () => `<?xml version="1.0" encoding="UTF-8" stand
     <numFmt numFmtId="166" formatCode="0.0%"/>
   </numFmts>
   <fonts count="9">
-    <font><sz val="10"/><name val="Arial"/><color rgb="FF0F172A"/></font>
-    <font><b/><sz val="10"/><name val="Arial"/><color rgb="FF0F172A"/></font>
-    <font><b/><sz val="11"/><name val="Arial"/><color rgb="FF0F172A"/></font>
-    <font><b/><sz val="13"/><name val="Arial"/><color rgb="FF0F172A"/></font>
-    <font><b/><sz val="9"/><name val="Arial"/><color rgb="FF1E293B"/></font>
-    <font><b/><sz val="10"/><name val="Arial"/><color rgb="FF1E3A8A"/></font>
-    <font><b/><sz val="10"/><name val="Arial"/><color rgb="FF991B1B"/></font>
-    <font><b/><sz val="10"/><name val="Arial"/><color rgb="FF065F46"/></font>
-    <font><i/><sz val="9"/><name val="Arial"/><color rgb="FF475569"/></font>
+    <font><sz val="10"/><color rgb="FF0F172A"/><name val="Arial"/></font>
+    <font><b/><sz val="10"/><color rgb="FF0F172A"/><name val="Arial"/></font>
+    <font><b/><sz val="11"/><color rgb="FF0F172A"/><name val="Arial"/></font>
+    <font><b/><sz val="13"/><color rgb="FF0F172A"/><name val="Arial"/></font>
+    <font><b/><sz val="9"/><color rgb="FF1E293B"/><name val="Arial"/></font>
+    <font><b/><sz val="10"/><color rgb="FF1E3A8A"/><name val="Arial"/></font>
+    <font><b/><sz val="10"/><color rgb="FF991B1B"/><name val="Arial"/></font>
+    <font><b/><sz val="10"/><color rgb="FF065F46"/><name val="Arial"/></font>
+    <font><i/><sz val="9"/><color rgb="FF475569"/><name val="Arial"/></font>
   </fonts>
   <fills count="9">
     <fill><patternFill patternType="none"/></fill>
     <fill><patternFill patternType="gray125"/></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FFE2E8F0"/></patternFill></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FFDBEAFE"/></patternFill></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FFCBD5E1"/></patternFill></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FFFCE7F3"/></patternFill></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FFFEE2E2"/></patternFill></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FFDCFCE7"/></patternFill></fill>
-    <fill><patternFill patternType="solid"><fgColor rgb="FFF8FAFC"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFE2E8F0"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFDBEAFE"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFCBD5E1"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFCE7F3"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFFEE2E2"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFDCFCE7"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFF8FAFC"/><bgColor indexed="64"/></patternFill></fill>
   </fills>
   <borders count="4">
     <border><left/><right/><top/><bottom/><diagonal/></border>
@@ -162,12 +186,22 @@ const buildInstitucionalHeaderRows = (
   const rows = [];
   const lastColLetter = colIndexToLetter(totalCols);
   const esUnSoloTurno = TURNOS_SEG.includes(turnoVista);
+  const ciclo = meta.cicloEscolar || '2026-2027';
+  const escuela = meta.escuelaNombre || 'TÉCNICA N° 68 "RENACIMIENTO"';
+  const cct = meta.cct || '12DST0077B';
+  const zona = meta.zonaEscolar ?? '24';
+  const localidad = meta.localidad || 'ACAPULCO DE JUÁREZ';
+  const municipio = meta.municipio || 'ACAPULCO DE JUÁREZ';
+  const region = meta.region || 'ACAPULCO - COYUCA';
+  const director = meta.director || 'PROFR. JUAN CARLOS TABOADA BARAJAS';
+  const docentes = meta.totalDocentes ?? 0;
+
   const titulos = [
     'SECRETARÍA DE EDUCACIÓN',
     'SUBSECRETARÍA DE EDUCACIÓN BÁSICA',
     'DIRECCIÓN GENERAL DE EDUCACIÓN SECUNDARIA',
     `DEPARTAMENTO DE SECUNDARIAS: ${meta.departamento || 'TÉCNICAS'}`,
-    `${momentoCfg.titulo}${esUnSoloTurno ? ` — TURNO ${turnoVista.toUpperCase()}` : ''}. CICLO ESCOLAR ${meta.cicloEscolar}`
+    `${momentoCfg.titulo}${esUnSoloTurno ? ` — TURNO ${turnoVista.toUpperCase()}` : ''}. CICLO ESCOLAR ${ciclo}`
   ];
 
   titulos.forEach((texto, idx) => {
@@ -189,9 +223,9 @@ const buildInstitucionalHeaderRows = (
   {
     const cells = Array.from({ length: totalCols }, (_, i) => {
       const c = i + 1;
-      if (c === 1) return buildCell(c, 6, { value: `ESCUELA SECUNDARIA: ${meta.escuelaNombre}`, style: 3 });
-      if (c === cMid + 1) return buildCell(c, 6, { value: `C.C.T.: ${meta.cct}`, style: 3 });
-      if (c === cRight + 1) return buildCell(c, 6, { value: `ZONA ESCOLAR: ${meta.zonaEscolar}`, style: 3 });
+      if (c === 1) return buildCell(c, 6, { value: `ESCUELA SECUNDARIA: ${escuela}`, style: 3 });
+      if (c === cMid + 1) return buildCell(c, 6, { value: `C.C.T.: ${cct}`, style: 3 });
+      if (c === cRight + 1) return buildCell(c, 6, { value: `ZONA ESCOLAR: ${zona}`, style: 3 });
       return buildCell(c, 6, { value: '', style: 3 });
     });
     mergeCells.push(
@@ -206,9 +240,9 @@ const buildInstitucionalHeaderRows = (
   {
     const cells = Array.from({ length: totalCols }, (_, i) => {
       const c = i + 1;
-      if (c === 1) return buildCell(c, 7, { value: `LOCALIDAD: ${meta.localidad}`, style: 3 });
-      if (c === cMid + 1) return buildCell(c, 7, { value: `MPIO.: ${meta.municipio}`, style: 3 });
-      if (c === cRight + 1) return buildCell(c, 7, { value: `REGIÓN: ${meta.region}`, style: 3 });
+      if (c === 1) return buildCell(c, 7, { value: `LOCALIDAD: ${localidad}`, style: 3 });
+      if (c === cMid + 1) return buildCell(c, 7, { value: `MPIO.: ${municipio}`, style: 3 });
+      if (c === cRight + 1) return buildCell(c, 7, { value: `REGIÓN: ${region}`, style: 3 });
       return buildCell(c, 7, { value: '', style: 3 });
     });
     mergeCells.push(
@@ -222,11 +256,11 @@ const buildInstitucionalHeaderRows = (
   // Fila 8: Director | Total de docentes
   {
     const docLabel = esUnSoloTurno
-      ? `TOTAL DE DOCENTES (${turnoVista.toUpperCase()}): ${meta.totalDocentes}`
-      : `TOTAL DE DOCENTES: ${meta.totalDocentes}`;
+      ? `TOTAL DE DOCENTES (${turnoVista.toUpperCase()}): ${docentes}`
+      : `TOTAL DE DOCENTES: ${docentes}`;
     const cells = Array.from({ length: totalCols }, (_, i) => {
       const c = i + 1;
-      if (c === 1) return buildCell(c, 8, { value: `NOMBRE DEL DIRECTOR (A): ${meta.director}`, style: 3 });
+      if (c === 1) return buildCell(c, 8, { value: `NOMBRE DEL DIRECTOR (A): ${director}`, style: 3 });
       if (c === cRight + 1) return buildCell(c, 8, { value: docLabel, style: 3 });
       return buildCell(c, 8, { value: '', style: 3 });
     });
@@ -467,24 +501,24 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento, turno
       cs.push(buildCell(2 + mi, r, { value: val !== null ? val : '', type: val !== null ? 'n' : 's', style: 11 }));
     });
     const pg1 = tData.promGrado['1er Grado'];
-    cs.push(buildCell(12, r, { value: pg1 !== null ? pg1 : '', type: 'n', formula: `IFERROR(AVERAGE(B${r}:K${r}),"")`, style: 12 }));
+    cs.push(buildCell(12, r, { value: pg1 !== null ? pg1 : '', type: 'n', formula: `IFERROR(TRUNC(AVERAGE(B${r}:K${r}),1),"")`, style: 12 }));
 
     materiaList2.forEach((m, mi) => {
       const val = tData.materias[m.id];
       cs.push(buildCell(13 + mi, r, { value: val !== null ? val : '', type: val !== null ? 'n' : 's', style: 11 }));
     });
     const pg2 = tData.promGrado['2do Grado'];
-    cs.push(buildCell(22, r, { value: pg2 !== null ? pg2 : '', type: 'n', formula: `IFERROR(AVERAGE(M${r}:U${r}),"")`, style: 12 }));
+    cs.push(buildCell(22, r, { value: pg2 !== null ? pg2 : '', type: 'n', formula: `IFERROR(TRUNC(AVERAGE(M${r}:U${r}),1),"")`, style: 12 }));
 
     materiaList3.forEach((m, mi) => {
       const val = tData.materias[m.id];
       cs.push(buildCell(23 + mi, r, { value: val !== null ? val : '', type: val !== null ? 'n' : 's', style: 11 }));
     });
     const pg3 = tData.promGrado['3er Grado'];
-    cs.push(buildCell(32, r, { value: pg3 !== null ? pg3 : '', type: 'n', formula: `IFERROR(AVERAGE(W${r}:AE${r}),"")`, style: 12 }));
+    cs.push(buildCell(32, r, { value: pg3 !== null ? pg3 : '', type: 'n', formula: `IFERROR(TRUNC(AVERAGE(W${r}:AE${r}),1),"")`, style: 12 }));
 
     const pgTurno = tData.promTurno;
-    cs.push(buildCell(33, r, { value: pgTurno !== null ? pgTurno : '', type: 'n', formula: `IFERROR(AVERAGE(L${r},V${r},AF${r}),"")`, style: 12 }));
+    cs.push(buildCell(33, r, { value: pgTurno !== null ? pgTurno : '', type: 'n', formula: `IFERROR(TRUNC(AVERAGE(L${r},V${r},AF${r}),1),"")`, style: 12 }));
 
     rows.push(makeRow(r, 28, cs));
   });
@@ -515,7 +549,7 @@ const buildAprovechamientoSheetXml = ({ momentoCfg, meta, aprovechamiento, turno
         buildCell(c, totalRowNum, {
           value: val !== null && val !== undefined ? val : '',
           type: 'n',
-          formula: `IFERROR(AVERAGE(${colL}14:${colL}${lastShiftRow}),"")`,
+          formula: `IFERROR(TRUNC(AVERAGE(${colL}14:${colL}${lastShiftRow}),1),"")`,
           style: 13
         })
       );
@@ -806,7 +840,7 @@ export const generarWorkbookMomentosBuffer = async ({
     '[Content_Types].xml',
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-officedocument.relationships+xml"/>
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
   ${sheetOverrides}
@@ -858,7 +892,11 @@ export const generarWorkbookMomentosBuffer = async ({
     zip.file(`xl/worksheets/sheet${s.idx}.xml`, s.xml);
   });
 
-  return zip.generateAsync({ type: 'uint8array' });
+  return zip.generateAsync({
+    type: 'uint8array',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 }
+  });
 };
 
 export const exportarMomentosValoracionExcel = async (params) => {
@@ -870,6 +908,6 @@ export const exportarMomentosValoracionExcel = async (params) => {
   const blob = new Blob([bytes], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });
-  saveAs(blob, filename);
+  triggerBrowserBlobDownload(blob, filename);
   return filename;
 };
