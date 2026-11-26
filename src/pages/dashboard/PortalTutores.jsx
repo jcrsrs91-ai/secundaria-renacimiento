@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs, orderBy, limit, onSnapshot, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva, getPromedioTrimestrePASEG, getPromedioGeneralPASEG, autoAcentuar } from '../../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva, getPromedioTrimestrePASEG, getPromedioGeneralPASEG, quitarAcentosNombre } from '../../utils/format';
 import BoletaPrint from '../../components/BoletaPrint';
 import { inferirTurnoChat, HORARIOS_TURNO } from '../../components/FloatingBuzonWidget';
 
@@ -279,7 +279,7 @@ export default function PortalTutores() {
               </div>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold uppercase">
-                  {autoAcentuar(`${liveStudent.nombres || ''} ${liveStudent.apellidoPaterno || ''} ${liveStudent.apellidoMaterno || ''}`.trim())}
+                  {quitarAcentosNombre(`${liveStudent.nombres || ''} ${liveStudent.apellidoPaterno || ''} ${liveStudent.apellidoMaterno || ''}`.trim())}
                 </h2>
                 <p className="text-slate-300 mt-1 text-sm sm:text-base">
                   Matrícula: <span className="font-mono font-semibold text-white">{liveStudent.matricula}</span> | {liveStudent.grado} Grupo "{liveStudent.grupo || '-'}" ({liveStudent.turno || 'Matutino'})

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Award, Printer, X, Medal } from 'lucide-react';
+import { formatNombreAlumno } from '../utils/format';
 
 export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
   const [fecha, setFecha] = useState(() => new Date().toISOString().split('T')[0]);
@@ -121,7 +122,7 @@ export default function DiplomaPrint({ alumnos = [], turno, onClose }) {
       <div className="w-full flex flex-col items-center print-wrapper">
         {alumnos.map((ganador, index) => {
           const { student, average, place, periodoName } = ganador;
-          const nombreCompleto = `${student.nombres} ${student.apellidoPaterno} ${student.apellidoMaterno}`.toUpperCase();
+          const nombreCompleto = formatNombreAlumno(student, { orden: 'nombres', upper: true });
           const placeText = place === 1 ? 'PRIMER LUGAR' : place === 2 ? 'SEGUNDO LUGAR' : 'TERCER LUGAR';
           
           return (

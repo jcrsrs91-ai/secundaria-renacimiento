@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, formatNombreAlumno } from '../utils/format';
 import { getStudentGender } from './ListaAsistenciaPrint';
 
 export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = '', grupo = '' }) {
@@ -130,7 +130,7 @@ export default function CuadroFinalPrint({ alumnos = [], materias = [], grado = 
                 <tr key={al.id} className={isBaja ? 'bg-slate-200/70 text-slate-500' : ''}>
                   <td className="border border-black p-0.5 text-center font-bold">{idx + 1}</td>
                   <td className={`border border-black p-0.5 font-medium truncate uppercase whitespace-nowrap ${isBaja ? 'line-through text-slate-500' : ''}`}>
-                    {al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}
+                    {formatNombreAlumno(al)}
                     {isBaja && <span className="ml-1 font-black text-red-700 no-underline">(BAJA)</span>}
                   </td>
                   {isBaja ? (

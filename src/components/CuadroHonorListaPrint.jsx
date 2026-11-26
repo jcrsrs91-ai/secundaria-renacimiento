@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { Printer, X, Trophy } from 'lucide-react';
+import { formatNombreAlumno } from '../utils/format';
 
 export default function CuadroHonorListaPrint({ ganadores = [], grado, turno, periodoName, onClose }) {
   const { config } = useGlobalConfig();
@@ -82,7 +83,7 @@ export default function CuadroHonorListaPrint({ ganadores = [], grado, turno, pe
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white print:divide-slate-400">
                   {ganadores.map((g, idx) => {
-                    const nombreCompleto = `${g.student.apellidoPaterno} ${g.student.apellidoMaterno} ${g.student.nombres}`.toUpperCase();
+                    const nombreCompleto = formatNombreAlumno(g.student, { upper: true });
                     let lugarBadge = '';
                     if (g.place === 1) lugarBadge = '1ER LUGAR';
                     else if (g.place === 2) lugarBadge = '2DO LUGAR';

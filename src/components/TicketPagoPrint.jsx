@@ -1,4 +1,5 @@
 import React from 'react';
+import { quitarAcentosNombre } from '../utils/format';
 
 export default function TicketPagoPrint({ pago }) {
   if (!pago) return null;
@@ -49,7 +50,7 @@ export default function TicketPagoPrint({ pago }) {
         {/* Datos del Alumno */}
         <div className="w-full text-[11px] mb-2 border-b border-black pb-2">
           <p><strong>Alumno(a):</strong></p>
-          <p className="uppercase leading-tight">{pago.alumno_nombre}</p>
+          <p className="uppercase leading-tight">{quitarAcentosNombre(pago.alumno_nombre)}</p>
           <div className="flex justify-between mt-1">
             <span><strong>CURP:</strong></span>
             <span>{pago.alumno_curp || 'S/N'}</span>

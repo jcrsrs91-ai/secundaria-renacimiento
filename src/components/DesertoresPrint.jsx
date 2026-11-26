@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
+import { formatNombreAlumno } from '../utils/format';
 import { UserMinus, Printer, X, Calendar, MapPin, AlertCircle, Hash, GraduationCap } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
 
@@ -165,7 +166,7 @@ export default function DesertoresPrint({ bajas = [], onClose, onPrintBajaTrasla
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-white print:divide-slate-400">
                     {bajasOrdenadas.map((s, idx) => {
-                      const nombreCompleto = `${s.apellidoPaterno} ${s.apellidoMaterno} ${s.nombres}`.toUpperCase();
+                      const nombreCompleto = formatNombreAlumno(s, { upper: true });
                       const gradoGrupo = `${s.grado[0]} "${s.grupo}"`;
                       const motivo = (s.motivoBaja || 'CAUSA NO ESPECIFICADA').toUpperCase();
                       return (

@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import {
-  autoAcentuar,
+  quitarAcentosNombre,
   roundToIntNumber,
   truncateTo1Dec,
   getCalificacionTrimestreEfectiva
@@ -258,7 +258,7 @@ export const descargarListaAsistenciaEditableExcel = async ({
     const rawName = st.isEmpty
       ? ''
       : `${st.apellidoPaterno || ''} ${st.apellidoMaterno || ''} ${st.nombres || ''}`.replace(/\s+/g, ' ').trim();
-    const fullName = rawName ? autoAcentuar(rawName).toUpperCase() : '';
+    const fullName = rawName ? quitarAcentosNombre(rawName).toUpperCase() : '';
     const gen = st.isEmpty ? '' : getStudentGender(st);
     const stEval = (!st.isEmpty && evalData[st.id]) ? evalData[st.id] : {};
 
@@ -1295,7 +1295,7 @@ export const descargarCuadroMateriaExcel = async ({
         const rawName = isEmpty
           ? ''
           : `${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.replace(/\s+/g, ' ').trim();
-        const fullName = rawName ? autoAcentuar(rawName).toUpperCase() : '';
+        const fullName = rawName ? quitarAcentosNombre(rawName).toUpperCase() : '';
         const gen = isEmpty ? '' : getStudentGender(student);
 
         const rowCells = [];

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { roundToIntGrade, autoAcentuar } from '../utils/format';
+import { roundToIntGrade, autoAcentuar, formatNombreAlumno } from '../utils/format';
 import { TALLER_POR_GRUPO } from './ListaAsistenciaPrint';
 import { parseFechaFlexible, obtenerFechaBajaTexto, formatearFechaCorta, isBeforeSept30, fechaCortaAInputDate, inputDateAFechaCorta } from '../utils/dateRules';
 import { db, auth } from '../firebase';
@@ -184,9 +184,7 @@ export default function BajaTrasladoPrint({
 
   const motivoLimpio = (motivoBajaActivo || 'Cambio de domicilio').trim().toUpperCase();
 
-  const nombreCompleto = `${autoAcentuar(student.apellidoPaterno || '')} ${autoAcentuar(student.apellidoMaterno || '')} ${autoAcentuar(student.nombres || '')}`
-    .replace(/\s+/g, ' ')
-    .trim();
+  const nombreCompleto = formatNombreAlumno(student);
 
   const filasMaterias = materias.map(mat => {
     const t1 = roundToIntGrade(student.calificaciones?.['t1']?.[mat.id], '');

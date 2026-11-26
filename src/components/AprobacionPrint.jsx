@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { AlertCircle, Printer, X } from 'lucide-react';
-import { truncateTo1Dec, getCalificacionFinal } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal, formatNombreAlumno } from '../utils/format';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) {
@@ -257,7 +257,7 @@ export default function AprobacionPrint({ activos, materiasPorGrado, onClose }) 
               Para que las estadísticas por género cuadren, corrígelos en el Directorio.
             </p>
             <ul className="mt-2 text-xs text-red-600 list-disc list-inside max-h-32 overflow-y-auto">
-              {sinGenero.map(s => <li key={s.id}>{s.nombres} {s.apellidoPaterno} - {s.grado} {s.grupo} (Registrado como: '{s.genero || 'Vacío'}')</li>)}
+              {sinGenero.map(s => <li key={s.id}>{formatNombreAlumno(s, { orden: 'nombres' })} - {s.grado} {s.grupo} (Registrado como: '{s.genero || 'Vacío'}')</li>)}
             </ul>
           </div>
         )}

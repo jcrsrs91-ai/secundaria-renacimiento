@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { Printer, X, GraduationCap, Users, User, Award, Filter } from 'lucide-react';
+import { quitarAcentosNombre, formatNombreAlumno } from '../utils/format';
 
 export default function BecasReport({ activos = [], onClose }) {
   const { config } = useGlobalConfig();
@@ -293,7 +294,7 @@ export default function BecasReport({ activos = [], onClose }) {
                         {filteredBecados.map((s, i) => (
                            <tr key={s.id} className="hover:bg-slate-50 print:break-inside-avoid">
                              <td className="p-3 text-center text-slate-400">{i + 1}</td>
-                             <td className="p-3 font-bold text-slate-800">{s.apellidos} {s.nombre}</td>
+                             <td className="p-3 font-bold text-slate-800">{quitarAcentosNombre(s.apellidos ? `${s.apellidos} ${s.nombre || ''}`.trim() : formatNombreAlumno(s))}</td>
                              <td className="p-3 text-center text-slate-600">{s.grado ? String(s.grado).charAt(0) : '?'}°</td>
                              <td className="p-3 text-center font-bold text-slate-700">"{s.grupo || '-'}"</td>
                              <td className="p-3 text-center text-xs uppercase tracking-wider text-slate-500">{s.turno}</td>

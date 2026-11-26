@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
+import { formatNombreAlumno } from '../utils/format';
 
 const numeroALetras = (num) => {
   const palabras = {
@@ -196,7 +197,7 @@ export default function ConstanciaEERPrint({ student, regularizadas = [], adeudo
                 <span>SEGUNDO APELLIDO</span>
               </div>
               <div className="text-center font-bold text-base py-1 uppercase">
-                {student.nombres} {student.apellidoPaterno} {student.apellidoMaterno}
+                {formatNombreAlumno(student, { orden: 'nombres' })}
               </div>
             </div>
             <div className="w-1/3">

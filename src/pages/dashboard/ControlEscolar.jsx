@@ -41,7 +41,7 @@ import AcuseRecepcionModal from '../../components/AcuseRecepcionModal';
 import AcuseRecepcionPrint from '../../components/AcuseRecepcionPrint';
 import ExpedienteModal from '../../components/ExpedienteModal';
 import { FolderOpen } from 'lucide-react';
-import { autoAcentuar, getCalificacionFinal, roundToIntNumber } from '../../utils/format';
+import { autoAcentuar, quitarAcentosNombre, getCalificacionFinal, roundToIntNumber } from '../../utils/format';
 import { searchIncludes } from '../../utils/search';
 import { sortStudents } from '../../utils/sortUtils';
 import { registrarMovimiento } from '../../utils/bitacora';
@@ -206,10 +206,10 @@ export default function ControlEscolar() {
            }
         }
         
-        // Aplicar reglas ortográficas (Acentos) a nivel global en memoria
-        if (data.nombres) data.nombres = autoAcentuar(data.nombres);
-        if (data.apellidoPaterno) data.apellidoPaterno = autoAcentuar(data.apellidoPaterno);
-        if (data.apellidoMaterno) data.apellidoMaterno = autoAcentuar(data.apellidoMaterno);
+        // Quitar acentos únicamente en los nombres de los alumnos en memoria (sin modificar Firestore)
+        if (data.nombres) data.nombres = quitarAcentosNombre(data.nombres);
+        if (data.apellidoPaterno) data.apellidoPaterno = quitarAcentosNombre(data.apellidoPaterno);
+        if (data.apellidoMaterno) data.apellidoMaterno = quitarAcentosNombre(data.apellidoMaterno);
           
           // Limpieza de datos criticos y auto-correccion en base de datos
           if (data.grupo) {
@@ -1114,9 +1114,9 @@ export default function ControlEscolar() {
     const dataToExport = filteredDirectorio.map(a => ({
       'Matrícula': a.matricula || '',
       'CURP': a.curp || '',
-      'Primer Apellido': a.apellidoPaterno || '',
-      'Segundo Apellido': a.apellidoMaterno || '',
-      'Nombre(s)': a.nombres || '',
+      'Primer Apellido': quitarAcentosNombre(a.apellidoPaterno || ''),
+      'Segundo Apellido': quitarAcentosNombre(a.apellidoMaterno || ''),
+      'Nombre(s)': quitarAcentosNombre(a.nombres || ''),
       'Grado': a.grado || '',
       'Grupo': a.grupo || '',
       'Turno': a.turno || '',

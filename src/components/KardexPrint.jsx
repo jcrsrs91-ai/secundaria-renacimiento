@@ -1,12 +1,12 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer } from 'lucide-react';
-import { getCalificacionFinal, roundToIntNumber } from '../utils/format';
+import { getCalificacionFinal, roundToIntNumber, formatNombreAlumno } from '../utils/format';
 
 export default function KardexPrint({ student, materiasPorGrado, onClose }) {
   if (!student) return null;
 
-  const nombreCompleto = `${student.nombres} ${student.apellidoPaterno} ${student.apellidoMaterno}`.toUpperCase();
+  const nombreCompleto = formatNombreAlumno(student, { orden: 'nombres', upper: true });
   
   // Calculate final grade for a given materia in a given historical year (or current year if applicable)
   const getHistorialMateria = (gradoKey, materiaId) => {

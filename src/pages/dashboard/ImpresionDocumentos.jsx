@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { Printer, Save, Users } from 'lucide-react';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
+import { formatNombreAlumno } from '../../utils/format';
 
 const numeroALetras = (numStr) => {
   if (!numStr) return "";
@@ -225,7 +226,7 @@ const ImpresionDocumentos = () => {
                     <tr key={student.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-2 text-sm text-slate-500">{idx + 1}</td>
                       <td className="px-4 py-2">
-                        <div className="text-sm font-bold text-slate-800">{student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}</div>
+                        <div className="text-sm font-bold text-slate-800">{formatNombreAlumno(student)}</div>
                         <div className="text-xs text-slate-400">{student.curp}</div>
                       </td>
                       <td className="px-4 py-2">
@@ -293,7 +294,7 @@ const ImpresionDocumentos = () => {
           }
         `}</style>
         {filteredStudents.map((student, index) => {
-          const nombreCompleto = `${student.nombres} ${student.apellidoPaterno} ${student.apellidoMaterno}`.toUpperCase();
+          const nombreCompleto = formatNombreAlumno(student, { orden: 'nombres', upper: true });
           const promedioLetra = numeroALetras(student.promedio_certificado);
           const fechaNacFormateada = formatearFechaNacimiento(student.fechaNacimiento, student.curp);
           

@@ -15,6 +15,7 @@ import EtiquetasPrint from '../../components/EtiquetasPrint';
 import ActaBajaPrint from '../../components/ActaBajaPrint';
 import { downloadExcelFriendlyCsv } from '../../utils/exportCsv';
 import { searchIncludes } from '../../utils/search';
+import { quitarAcentosNombre } from '../../utils/format';
 
 // Funciones auxiliares para el manejo de rangos de folios de inventario
 const generateCodeRange = (baseCode, quantity) => {
@@ -514,7 +515,7 @@ export default function Contraloria() {
     
     const csvData = dataToExport.map(p => ({
       'Folio': p.folio || '',
-      'Alumno/Persona': p.alumno || p.nombre || '',
+      'Alumno/Persona': quitarAcentosNombre(p.alumno || p.nombre || ''),
       'Concepto': p.concepto || '',
       'Monto': p.monto || '',
       'Método': p.metodo || 'Efectivo',
@@ -2871,7 +2872,7 @@ Esta acción no se puede deshacer.`);
                   <div>
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Recibimos de:</span>
                     <div className="text-lg font-bold text-slate-900 bg-slate-50/50 px-4 py-3 border-b-2 border-slate-200">
-                      {receiptPago.alumno || receiptPago.nombre}
+                      {quitarAcentosNombre(receiptPago.alumno || receiptPago.nombre)}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-6">

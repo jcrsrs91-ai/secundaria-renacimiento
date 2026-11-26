@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { CheckCircle, AlertTriangle, ShieldCheck, User, Phone, Info } from 'lucide-react';
+import { quitarAcentosNombre } from '../../utils/format';
 
 export default function VerificacionCredencial() {
   const { matricula } = useParams();
@@ -102,7 +103,7 @@ export default function VerificacionCredencial() {
              
              {/* Información Escolar */}
              <h1 className="text-2xl font-black text-slate-800 text-center uppercase leading-tight mb-1">
-               {student.nombres} <br/> {student.apellidoPaterno} {student.apellidoMaterno}
+               {quitarAcentosNombre(student.nombres)} <br/> {quitarAcentosNombre(student.apellidoPaterno)} {quitarAcentosNombre(student.apellidoMaterno)}
              </h1>
              
              <p className="text-slate-500 font-medium tracking-widest text-sm mb-1">

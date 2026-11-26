@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { sortStudents } from '../utils/sortUtils';
+import { formatNombreAlumno } from '../utils/format';
 
 export default function ListaClausuraPrint({ students, grupo, asesor }) {
   // Cálculo automático de la generación
@@ -55,7 +56,7 @@ export default function ListaClausuraPrint({ students, grupo, asesor }) {
           </thead>
           <tbody>
             {sortedStudents.map((alumno, idx) => {
-              const fullName = `${alumno.apellidoPaterno || ''} ${alumno.apellidoMaterno || ''} ${alumno.nombres || ''}`.trim().toUpperCase();
+              const fullName = formatNombreAlumno(alumno, { upper: true });
               return (
                 <tr key={alumno.id || idx} className="border-b border-slate-200">
                   <td className="py-0.5 px-1 text-sm font-black text-slate-900 tracking-wide text-center">{fullName}</td>

@@ -5,7 +5,7 @@ import { DollarSign, PackageOpen, Plus, FileText, CheckCircle2, Printer, X, Edit
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
 import { QRCodeSVG } from 'qrcode.react';
-import { autoAcentuar } from '../../utils/format';
+import { quitarAcentosNombre } from '../../utils/format';
 import { searchIncludes } from '../../utils/search';
 import { downloadExcelFriendlyCsv } from '../../utils/exportCsv';
 import { registrarMovimiento } from '../../utils/bitacora';
@@ -422,7 +422,7 @@ export default function Inventario() {
     
     const csvData = dataToExport.map(p => ({
       'Folio': p.folio || '',
-      'Alumno/Persona': p.alumno || p.nombre || '',
+      'Alumno/Persona': quitarAcentosNombre(p.alumno || p.nombre || ''),
       'Concepto': p.concepto || '',
       'Monto': p.monto || '',
       'Método': p.metodo || 'Efectivo',
@@ -6215,7 +6215,7 @@ Esta acción no se puede deshacer.`);
                   <div>
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Recibimos de:</span>
                     <div className="text-lg font-bold text-slate-900 bg-slate-50/50 px-4 py-3 border-b-2 border-slate-200">
-                      {receiptPago.alumno || receiptPago.nombre}
+                      {quitarAcentosNombre(receiptPago.alumno || receiptPago.nombre)}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-6">

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { AlertCircle, Printer, X } from 'lucide-react';
-import { truncateTo1Dec, getCalificacionFinal, getCalificacionTrimestreEfectiva } from '../utils/format';
+import { truncateTo1Dec, getCalificacionFinal, getCalificacionTrimestreEfectiva, formatNombreAlumno } from '../utils/format';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function EficienciaTerminalPrint({ activos = [], bajas = [], materiasPorGrado = {}, onClose }) {
@@ -474,7 +474,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
             <ul className="list-disc pl-5 text-xs text-slate-700 space-y-1">
               {alumnosContabilizados.sort(sortStudents).map(s => (
                 <li key={s.id}>
-                  <span className="font-bold">{s.apellidoPaterno} {s.apellidoMaterno} {s.nombres}</span> - {s.grado} {s.grupo} ({s.turno}) - {s.status} - Género: {s.genero || 'N/A'}
+                  <span className="font-bold">{formatNombreAlumno(s)}</span> - {s.grado} {s.grupo} ({s.turno}) - {s.status} - Género: {s.genero || 'N/A'}
                 </li>
               ))}
             </ul>
@@ -492,7 +492,7 @@ export default function EficienciaTerminalPrint({ activos = [], bajas = [], mate
                 <ul className="list-disc pl-5 text-xs text-sky-900 space-y-1">
                   {alumnosOmitidos.sort(sortStudents).map(s => (
                     <li key={s.id}>
-                      <span className="font-bold">{s.apellidoPaterno} {s.apellidoMaterno} {s.nombres}</span> - {s.grado} {s.grupo} ({s.turno}) <br/>
+                      <span className="font-bold">{formatNombreAlumno(s)}</span> - {s.grado} {s.grupo} ({s.turno}) <br/>
                       <span className="text-sky-600 bg-sky-100 px-1 rounded ml-2">Motivo: {s.motivo}</span>
                     </li>
                   ))}

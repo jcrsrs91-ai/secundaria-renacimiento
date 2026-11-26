@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, FileText, CheckCircle } from 'lucide-react';
-import { autoAcentuar } from '../utils/format';
+import { autoAcentuar, formatNombreAlumno } from '../utils/format';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
@@ -110,7 +110,7 @@ export default function AcuseRecepcionModal({ student, onClose, onGenerate }) {
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre Completo</label>
                   <div className="p-2 bg-white border border-slate-200 rounded text-sm text-slate-800 font-medium">
-                    {autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}
+                    {formatNombreAlumno(student)}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">

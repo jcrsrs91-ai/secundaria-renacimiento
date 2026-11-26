@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva, getPromedioTrimestrePASEG, autoAcentuar } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva, getPromedioTrimestrePASEG, quitarAcentosNombre } from '../utils/format';
 
 export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
   const { config } = useGlobalConfig();
@@ -122,7 +122,7 @@ export default function BoletaPrint({ students = [], materiasPorGrado = {} }) {
                 </div>
                 <div className="border border-slate-300 rounded p-2">
                   <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Datos del Alumno</div>
-                  <div className="text-xs font-black text-slate-800 uppercase">Nombre: <span className="font-medium text-slate-600">{autoAcentuar(`${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.trim())}</span></div>
+                  <div className="text-xs font-black text-slate-800 uppercase">Nombre: <span className="font-medium text-slate-600">{quitarAcentosNombre(`${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.trim())}</span></div>
                   <div className="text-xs font-black text-slate-800 uppercase">CURP: <span className="font-medium text-slate-600">{student.curp}</span></div>
                   <div className="text-xs font-black text-slate-800 uppercase">Grado y Grupo: <span className="font-medium text-slate-600">{student.grado} "{student.grupo}"</span></div>
                 </div>

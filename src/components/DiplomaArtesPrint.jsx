@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import { X, Printer, Music, Sparkles, Star, Palette } from 'lucide-react';
-import { autoAcentuar } from '../utils/format';
+import { formatNombreAlumno } from '../utils/format';
 
 export default function DiplomaArtesPrint({ student, turno, onClose }) {
   const { config } = useGlobalConfig();
@@ -154,7 +154,7 @@ export default function DiplomaArtesPrint({ student, turno, onClose }) {
                     className="text-4xl font-black text-slate-900 tracking-wide text-center drop-shadow-sm leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-full px-2"
                     style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                   >
-                    {autoAcentuar(student.nombres)} {autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)}
+                    {formatNombreAlumno(student, { orden: 'nombres' })}
                   </h2>
                   <p className="text-sm font-black text-sky-700 mt-3 tracking-[0.2em] uppercase">
                     ALUMNO DE {student.grado} GRUPO "{student.grupo}"

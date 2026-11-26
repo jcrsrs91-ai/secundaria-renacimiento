@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Printer, X, ShieldAlert } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
+import { formatNombreAlumno } from '../utils/format';
 
 export default function DirectorioEmergenciaPrint({ onClose }) {
   const [students, setStudents] = useState([]);
@@ -119,7 +120,7 @@ export default function DirectorioEmergenciaPrint({ onClose }) {
               filtered.map((student, idx) => (
                 <tr key={student.id} className="break-inside-avoid">
                   <td className="border border-slate-800 p-1.5 font-bold uppercase">
-                    {student.apellidoPaterno} {student.apellidoMaterno} {student.nombres}
+                    {formatNombreAlumno(student)}
                   </td>
                   <td className="border border-slate-800 p-1.5 text-[10px] leading-tight">
                     {student.calle} {student.numero ? `#${student.numero}` : ''}, Col. {student.colonia}, C.P. {student.cp}

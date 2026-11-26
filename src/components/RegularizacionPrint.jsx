@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { getCalificacionFinal, getCalificacionTrimestreEfectiva } from '../utils/format';
+import { getCalificacionFinal, getCalificacionTrimestreEfectiva, formatNombreAlumno } from '../utils/format';
 import { FileText, Calendar, PlusCircle, X, Save, History } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
@@ -372,7 +372,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                 {filteredData.map((item, index) => (
                   <tr key={item.student.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                     <td className="border border-slate-300 px-3 py-2">
-                      <div className="font-bold text-slate-800 uppercase">{item.student.apellidoPaterno} {item.student.apellidoMaterno} {item.student.nombres}</div>
+                      <div className="font-bold text-slate-800 uppercase">{formatNombreAlumno(item.student)}</div>
                       <div className="flex justify-between items-center mt-1">
                         <div className="text-xs text-slate-500">{item.student.matricula}</div>
                         {onPrintConstanciaEER && (
@@ -510,7 +510,7 @@ export default function RegularizacionPrint({ activos, materiasPorGrado, onCaptu
                   <option value="">Selecciona un alumno...</option>
                   {sortedActivos.map(al => (
                     <option key={al.id} value={al.id}>
-                      {al.grado} "{al.grupo}" - {al.apellidoPaterno} {al.apellidoMaterno} {al.nombres}
+                      {al.grado} "{al.grupo}" - {formatNombreAlumno(al)}
                     </option>
                   ))}
                 </select>

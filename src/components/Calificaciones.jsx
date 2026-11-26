@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 import toast from 'react-hot-toast';
 import { db } from '../firebase';
 import { doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { truncateTo1Dec, roundToIntGrade, roundToIntNumber, getCalificacionFinal, getCalificacionTrimestreEfectiva, autoAcentuar } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, roundToIntNumber, getCalificacionFinal, getCalificacionTrimestreEfectiva, quitarAcentosNombre } from '../utils/format';
 import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
 import { registrarMovimiento } from '../utils/bitacora';
 import { useAuth } from '../context/AuthContext';
@@ -476,10 +476,11 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     const headers = ['No_Lista', 'Matricula', 'Nombre Completo', ...materias.map(m => m.name)];
     const data = alumnos.map((al, idx) => {
       const isBaja = (al.status || '').toLowerCase() === 'baja';
+      const nombreCsv = quitarAcentosNombre(`${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''} ${al.nombres || ''}`.trim());
       const row = [
         idx + 1,
         al.matricula,
-        `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}${isBaja ? ' (BAJA)' : ''}`
+        `${nombreCsv}${isBaja ? ' (BAJA)' : ''}`
       ];
       materias.forEach(mat => {
         row.push(isBaja ? 'BAJA' : (localGrades[al.id]?.[mat.id] || ''));
@@ -501,7 +502,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     const headers = ['N°', 'Matrícula', 'Nombre del Alumno', ...materias.map(m => m.name), 'Promedio General PASEG', 'Materias Reprobadas'];
     const data = alumnos.map((al, idx) => {
       const isBaja = (al.status || '').toLowerCase() === 'baja';
-      const row = [idx + 1, al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}${isBaja ? ' (BAJA)' : ''}`];
+      const nombreCsv = quitarAcentosNombre(`${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''} ${al.nombres || ''}`.trim());
+      const row = [idx + 1, al.matricula, `${nombreCsv}${isBaja ? ' (BAJA)' : ''}`];
       if (isBaja) {
         materias.forEach(() => row.push('BAJA'));
         row.push('BAJA', '-');
@@ -535,7 +537,8 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
 
     const data = alumnos.map((al, idx) => {
       const isBaja = (al.status || '').toLowerCase() === 'baja';
-      const row = [idx + 1, al.matricula, `${al.apellidoPaterno} ${al.apellidoMaterno} ${al.nombres}${isBaja ? ' (BAJA)' : ''}`];
+      const nombreCsv = quitarAcentosNombre(`${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''} ${al.nombres || ''}`.trim());
+      const row = [idx + 1, al.matricula, `${nombreCsv}${isBaja ? ' (BAJA)' : ''}`];
       if (isBaja) {
         materias.forEach(() => row.push('BAJA', 'BAJA', 'BAJA', 'BAJA'));
         row.push('BAJA');
@@ -1034,7 +1037,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-xs font-bold text-slate-800 sticky left-10 z-10 bg-inherit border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                             <span className={isBaja ? 'line-through text-slate-400' : ''}>
-                              {autoAcentuar(`${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''}`.trim())} <span className="font-medium">{autoAcentuar(al.nombres || '')}</span>
+                              {quitarAcentosNombre(`${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''}`.trim())} <span className="font-medium">{quitarAcentosNombre(al.nombres || '')}</span>
                             </span>
                             {!isBaja && al.tipoIngreso === 'Alta' && (
                               <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-black bg-emerald-100 text-emerald-800 rounded border border-emerald-300">ALTA</span>

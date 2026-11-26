@@ -9,7 +9,7 @@ import { registrarMovimiento, detectarCambiosExpediente } from '../utils/bitacor
 import HojaInscripcionPrint from './HojaInscripcionPrint';
 import ConstanciaPrint from './ConstanciaPrint';
 import BajaTrasladoPrint from './BajaTrasladoPrint';
-import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva } from '../utils/format';
+import { truncateTo1Dec, roundToIntGrade, getCalificacionFinal, getCalificacionTrimestreEfectiva, quitarAcentosNombre } from '../utils/format';
 
 export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, onSave, readOnly = false }) {
   const { currentUser, userPermissions, userRole } = useAuth();
@@ -1030,8 +1030,8 @@ export default function HojaDeVida({ student, materiasPorGrado = {}, onClose, on
                  </div>
 
                  <div className="flex-1 text-center md:text-left relative z-10 mt-2 md:mt-12 w-full">
-                    <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tight">{student.apellidoPaterno} {student.apellidoMaterno}</h3>
-                    <h4 className="text-xl font-medium text-slate-600 uppercase mb-6">{student.nombres}</h4>
+                    <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tight">{quitarAcentosNombre(student.apellidoPaterno)} {quitarAcentosNombre(student.apellidoMaterno)}</h3>
+                    <h4 className="text-xl font-medium text-slate-600 uppercase mb-6">{quitarAcentosNombre(student.nombres)}</h4>
                     
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm bg-slate-50 p-4 rounded-xl border border-slate-200">
                       <div><p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Grado</p><p className="font-bold text-slate-800 text-lg">{student.grado}</p></div>

@@ -151,6 +151,35 @@ export const getPromedioGeneralPASEG = (student, materias = []) => {
   return Math.floor((sum / count + 0.00001) * 10) / 10;
 };
 
+export const quitarAcentosNombre = (text) => {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .normalize('NFC')
+    .replace(/ñ/g, '\uE001')
+    .replace(/Ñ/g, '\uE002')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\uE001/g, 'ñ')
+    .replace(/\uE002/g, 'Ñ')
+    .normalize('NFC');
+};
+
+export const formatNombreAlumno = (student, { orden = 'apellidos', upper = false } = {}) => {
+  if (!student) return '';
+  const pat = student.apellidoPaterno || '';
+  const mat = student.apellidoMaterno || '';
+  const nom = student.nombres || '';
+  const parts = orden === 'nombres' ? [nom, pat, mat] : [pat, mat, nom];
+  const joined = parts
+    .map((p) => String(p || '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const clean = quitarAcentosNombre(joined);
+  return upper ? clean.toUpperCase() : clean;
+};
+
 export const autoAcentuar = (text) => {
   if (!text) return '';
   const dictionary = {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
+import { quitarAcentosNombre, formatNombreAlumno } from '../utils/format';
 
 export default function HojaInscripcionPrint({ data }) {
   const { config } = useGlobalConfig();
@@ -84,8 +85,8 @@ export default function HojaInscripcionPrint({ data }) {
             <div className="mb-1.5">
               <h4 className="font-bold text-xs uppercase bg-gray-800 text-white px-2 py-0.5 mb-0">2. Datos Personales del Alumno</h4>
               <div className="grid grid-cols-4 gap-x-2 gap-y-0.5 text-xs border border-gray-300 px-2 py-1 border-b-0 leading-tight">
-                <div className="col-span-2"><span className="font-bold text-gray-600 text-[10px]">Apellidos:</span> <br/><span className="font-semibold uppercase text-xs">{data.apellidoPaterno} {data.apellidoMaterno}</span></div>
-                <div className="col-span-2"><span className="font-bold text-gray-600 text-[10px]">Nombre(s):</span> <br/><span className="font-semibold uppercase text-xs">{data.nombres}</span></div>
+                <div className="col-span-2"><span className="font-bold text-gray-600 text-[10px]">Apellidos:</span> <br/><span className="font-semibold uppercase text-xs">{quitarAcentosNombre(data.apellidoPaterno)} {quitarAcentosNombre(data.apellidoMaterno)}</span></div>
+                <div className="col-span-2"><span className="font-bold text-gray-600 text-[10px]">Nombre(s):</span> <br/><span className="font-semibold uppercase text-xs">{quitarAcentosNombre(data.nombres)}</span></div>
                 <div className="col-span-2"><span className="font-bold text-gray-600 text-[10px]">CURP:</span> <br/><span className="font-semibold uppercase tracking-widest text-xs">{data.curp}</span></div>
                 <div><span className="font-bold text-gray-600 text-[10px]">Fecha Nacimiento:</span> <br/><span className="font-semibold uppercase text-xs">{data.fechaNacimiento || '-'}</span></div>
                 <div><span className="font-bold text-gray-600 text-[10px]">Género:</span> <br/><span className="font-semibold uppercase text-xs">{data.genero || '-'}</span></div>
@@ -173,7 +174,7 @@ export default function HojaInscripcionPrint({ data }) {
               </div>
               <div>
                 <div className="border-t-2 border-black pt-1 w-full mx-auto font-bold uppercase truncate">
-                  {data.nombres} {data.apellidoPaterno} {data.apellidoMaterno}
+                  {formatNombreAlumno(data, { orden: 'nombres' })}
                 </div>
                 <p className="text-[10px] text-gray-700 leading-tight">Firma del Alumno(a)</p>
               </div>

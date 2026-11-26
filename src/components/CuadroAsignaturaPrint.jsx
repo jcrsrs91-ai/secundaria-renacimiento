@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
 import {
-  autoAcentuar,
+  quitarAcentosNombre,
   roundToIntGrade,
   roundToIntNumber,
   truncateTo1Dec,
@@ -590,7 +590,7 @@ export default function CuadroAsignaturaPrint({
                     : `${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`
                         .replace(/\s+/g, ' ')
                         .trim();
-                  const fullName = rawName ? autoAcentuar(rawName).toUpperCase() : '';
+                  const fullName = rawName ? quitarAcentosNombre(rawName).toUpperCase() : '';
                   const gen = student.isEmpty ? '' : getStudentGender(student);
 
                   const t1 = getTrimData(student, mId, 't1', localEval);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { sortStudents } from '../utils/sortUtils';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
-import { autoAcentuar } from '../utils/format';
+import { quitarAcentosNombre } from '../utils/format';
 
 export const TALLER_POR_GRUPO = {
   A: 'Climatización y refrigeración',
@@ -304,7 +304,7 @@ export default function ListaAsistenciaPrint({
               const isBaja = !student.isEmpty && (student.status || '').toLowerCase() === 'baja';
               const isAlta = !student.isEmpty && !isBaja && student.tipoIngreso === 'Alta';
               const rawName = student.isEmpty ? '' : `${student.apellidoPaterno || ''} ${student.apellidoMaterno || ''} ${student.nombres || ''}`.replace(/\s+/g, ' ').trim();
-              const fullName = rawName ? autoAcentuar(rawName).toUpperCase() : '';
+              const fullName = rawName ? quitarAcentosNombre(rawName).toUpperCase() : '';
               const effectiveLen = fullName.length + (isAlta || isBaja ? 6 : 0);
               const nameSizeClass = effectiveLen > 34
                 ? 'text-[8.1px] tracking-tighter'

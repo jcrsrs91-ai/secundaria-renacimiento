@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X, Printer } from 'lucide-react';
-import { autoAcentuar } from '../utils/format';
+import { autoAcentuar, formatNombreAlumno } from '../utils/format';
 
 export default function AcuseRecepcionPrint({ data, onClose }) {
   const [fecha, setFecha] = useState('');
@@ -108,7 +108,7 @@ export default function AcuseRecepcionPrint({ data, onClose }) {
               <tr>
                 <td className="font-bold py-1 align-bottom">Nombre del Alumno(a):</td>
                 <td className="border-b border-black w-1/2 py-1 align-bottom uppercase">
-                  {autoAcentuar(student.apellidoPaterno)} {autoAcentuar(student.apellidoMaterno)} {autoAcentuar(student.nombres)}
+                  {formatNombreAlumno(student)}
                 </td>
                 <td className="font-bold text-right pr-2 py-1 align-bottom">Grado/Grupo/Turno:</td>
                 <td className="border-b border-black py-1 align-bottom uppercase">
