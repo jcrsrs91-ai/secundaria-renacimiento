@@ -415,7 +415,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
   }, [alumnosGrupo, evalData]);
 
   // Guardar calificaciones, celdas diarias y encabezados de fecha/contenido en Firestore en un solo lote atómico (writeBatch)
-  const handleSaveGrades = async (silent = false) => {
+  const handleSaveGrades = async (silent = false, overrides = null) => {
     if (isSaving) return false;
     if (!canSaveAnything) {
       toast.error('La captura (ordinaria y recuperación) para este trimestre ha sido bloqueada por Control Escolar.');
@@ -423,12 +423,16 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     }
     if (alumnosGrupo.length === 0) return false;
 
+    const targetEvalData = overrides?.evalData ?? evalData;
+    const targetContenidos = overrides?.contenidosFecha ?? contenidosFecha;
+    const targetDocente = (overrides?.docenteNombre ?? docenteNombre).trim();
+
     // Validar rango oficial SEP/PASEG (5.0 a 10.0) en Calif. Trim. y Rec. Trim. antes de guardar
     for (const al of alumnosGrupo) {
       const isBaja = (al.status || '').toLowerCase() === 'baja';
       if (isBaja) continue;
       if (!isReadOnlyForCurrentUser) {
-        const rawCalif = (evalData[al.id]?.calificacion ?? '').toString().trim();
+        const rawCalif = (targetEvalData[al.id]?.calificacion ?? '').toString().trim().replace(',', '.');
         if (rawCalif !== '') {
           const num = parseFloat(rawCalif);
           if (isNaN(num) || num < 5 || num > 10) {
@@ -438,7 +442,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         }
       }
       if (canEditRecuperacion) {
-        const rawRec = (evalData[al.id]?.recuperacion ?? '').toString().trim();
+        const rawRec = (targetEvalData[al.id]?.recuperacion ?? '').toString().trim().replace(',', '.');
         if (rawRec !== '') {
           const numRec = parseFloat(rawRec);
           if (isNaN(numRec) || numRec < 5 || numRec > 10) {
@@ -466,9 +470,11 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         const isBaja = (al.status || '').toLowerCase() === 'baja';
         if (isBaja) return;
 
-        const row = evalData[al.id] || {};
-        const califEnteraOficial = roundToIntGrade(row.calificacion, '');
-        const recEnteraOficial = roundToIntGrade(row.recuperacion, '');
+        const row = targetEvalData[al.id] || {};
+        const califNorm = row.calificacion !== undefined && row.calificacion !== null ? String(row.calificacion).replace(',', '.') : '';
+        const recNorm = row.recuperacion !== undefined && row.recuperacion !== null ? String(row.recuperacion).replace(',', '.') : '';
+        const califEnteraOficial = roundToIntGrade(califNorm, '');
+        const recEnteraOficial = roundToIntGrade(recNorm, '');
         const newPayload = {
           dias: row.dias || {},
           faltas: row.faltas ?? '',
@@ -481,10 +487,10 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
           examen: row.examen ?? '',
           participacion: row.participacion ?? '',
           extraEval: row.extraEval ?? '',
-          calificacion: califEnteraOficial !== '' ? califEnteraOficial : (row.calificacion ?? ''),
-          recuperacion: recEnteraOficial !== '' ? recEnteraOficial : (row.recuperacion ?? ''),
+          calificacion: califEnteraOficial !== '' ? califEnteraOficial : califNorm,
+          recuperacion: recEnteraOficial !== '' ? recEnteraOficial : recNorm,
           observaciones: row.observaciones ?? '',
-          docente: docenteNombre.trim()
+          docente: targetDocente
         };
 
         const oldCalif = (al.calificaciones?.[trimestre]?.[materiaId] ?? '').toString();
@@ -545,9 +551,9 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         materiaId,
         asignatura: asignaturaActual,
         trimestre,
-        docente: docenteNombre.trim(),
+        docente: targetDocente,
         emailDocente: currentUser?.email || '',
-        contenidosFecha: contenidosFecha || {},
+        contenidosFecha: targetContenidos || {},
         existenciaT: stats.existenciaT,
         totalEvaluados: stats.totalEvaluados,
         regularesT: stats.regularesT === '' ? 0 : stats.regularesT,
@@ -564,7 +570,7 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
         currentUser?.email,
         userRole === 'docente' ? 'Portal Docente' : 'Control Escolar (Calificaciones)',
         'Captura por Disciplina',
-        `Guardó calificaciones de ${asignaturaActual} (${grado} "${grupo}" - Trimestre ${TRIMESTRE_LABELS[trimestre] || trimestre}) | Docente: ${docenteNombre.trim() || 'S/N'} | Modificados: ${changedCount} | Evaluados: ${stats.totalEvaluados}/${stats.existenciaT} | Prom: ${stats.promedioAprovechamiento || '-'}`
+        `Guardó calificaciones de ${asignaturaActual} (${grado} "${grupo}" - Trimestre ${TRIMESTRE_LABELS[trimestre] || trimestre}) | Docente: ${targetDocente || 'S/N'} | Modificados: ${changedCount} | Evaluados: ${stats.totalEvaluados}/${stats.existenciaT} | Prom: ${stats.promedioAprovechamiento || '-'}`
       ).catch(console.error);
 
       setHasUnsavedChanges(false);
@@ -655,24 +661,36 @@ export default function EvaluacionDocenteWidget({ students = [] }) {
     try {
       const result = await importarListaAsistenciaEditableExcel(file, alumnosGrupo);
       if (result.matchedCount > 0) {
-        if (result.docenteDetectado && !docenteNombre) {
-          setDocenteNombre(autoAcentuar(result.docenteDetectado));
+        const nextDocente = (result.docenteDetectado && !docenteNombre)
+          ? autoAcentuar(result.docenteDetectado)
+          : docenteNombre;
+        if (nextDocente !== docenteNombre) {
+          setDocenteNombre(nextDocente);
         }
-        if (Object.keys(result.contenidosFecha || {}).length > 0) {
-          setContenidosFecha(prev => ({ ...prev, ...result.contenidosFecha }));
+        const nextContenidos = Object.keys(result.contenidosFecha || {}).length > 0
+          ? { ...contenidosFecha, ...result.contenidosFecha }
+          : contenidosFecha;
+        if (nextContenidos !== contenidosFecha) {
+          setContenidosFecha(nextContenidos);
         }
-        setEvalData(prev => {
-          const next = { ...prev };
-          Object.keys(result.importedEval).forEach(stId => {
-            next[stId] = {
-              ...(next[stId] || {}),
-              ...result.importedEval[stId]
-            };
-          });
-          return next;
+        const nextEvalData = { ...evalData };
+        Object.keys(result.importedEval).forEach(stId => {
+          nextEvalData[stId] = {
+            ...(nextEvalData[stId] || {}),
+            ...result.importedEval[stId]
+          };
         });
+        setEvalData(nextEvalData);
         setHasUnsavedChanges(true);
-        toast.success(`¡Se cargaron las calificaciones y asistencias de ${result.matchedCount} alumnos desde el Excel! Da clic en "Guardar Calificaciones en Sistema".`);
+
+        const savedOk = await handleSaveGrades(false, {
+          evalData: nextEvalData,
+          contenidosFecha: nextContenidos,
+          docenteNombre: nextDocente
+        });
+        if (!savedOk) {
+          toast.success(`Se cargaron ${result.matchedCount} alumnos desde Excel; revisa cualquier celda marcada antes de guardar.`);
+        }
       } else {
         toast.error('No se encontraron coincidencias de alumnos en el archivo Excel seleccionado.');
       }

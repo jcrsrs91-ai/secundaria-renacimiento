@@ -636,6 +636,12 @@ export const descargarListaAsistenciaEditableExcel = async ({
   saveAs(blob, fileName);
 };
 
+const parseNumExcel = (val) => {
+  const cleaned = String(val ?? '').trim().replace(',', '.');
+  if (!cleaned) return NaN;
+  return parseFloat(cleaned);
+};
+
 /**
  * Lee un archivo Excel (.xlsx) de Lista de Asistencia y Evaluación entregado por el docente
  * y extrae automáticamente las fechas/contenidos, las 20 celdas diarias, faltas, tareas,
@@ -654,7 +660,13 @@ export const importarListaAsistenciaEditableExcel = async (file, alumnosGrupo = 
     const ssDoc = parser.parseFromString(ssXml, 'application/xml');
     const siNodes = ssDoc.getElementsByTagName('si');
     for (let i = 0; i < siNodes.length; i++) {
-      const tNodes = siNodes[i].getElementsByTagName('t');
+      // Excluir texto fonético (<rPh>) para no contaminar nombres o encabezados
+      const clone = siNodes[i].cloneNode(true);
+      const rPhNodes = clone.getElementsByTagName('rPh');
+      while (rPhNodes.length > 0) {
+        rPhNodes[0].parentNode.removeChild(rPhNodes[0]);
+      }
+      const tNodes = clone.getElementsByTagName('t');
       let text = '';
       for (let j = 0; j < tNodes.length; j++) {
         text += tNodes[j].textContent || '';
@@ -663,7 +675,13 @@ export const importarListaAsistenciaEditableExcel = async (file, alumnosGrupo = 
     }
   }
 
-  const sheetFile = zip.file('xl/worksheets/sheet1.xml');
+  let sheetFile = zip.file('xl/worksheets/sheet1.xml');
+  if (!sheetFile) {
+    const firstSheetName = Object.keys(zip.files)
+      .filter(k => /^xl\/worksheets\/sheet\d+\.xml$/i.test(k))
+      .sort()[0];
+    if (firstSheetName) sheetFile = zip.file(firstSheetName);
+  }
   if (!sheetFile) {
     throw new Error('El archivo Excel no contiene una hoja válida.');
   }
@@ -677,17 +695,16 @@ export const importarListaAsistenciaEditableExcel = async (file, alumnosGrupo = 
   const rowsMap = {};
   for (let i = 0; i < rowNodes.length; i++) {
     const rowEl = rowNodes[i];
-    const rAttr = parseInt(rowEl.getAttribute('r'), 10);
-    if (isNaN(rAttr)) continue;
+    const parsedRowAttr = parseInt(rowEl.getAttribute('r'), 10);
+    const rAttr = !isNaN(parsedRowAttr) ? parsedRowAttr : (i + 1);
     rowsMap[rAttr] = {};
 
     const cNodes = rowEl.getElementsByTagName('c');
     for (let j = 0; j < cNodes.length; j++) {
       const cEl = cNodes[j];
       const ref = cEl.getAttribute('r') || '';
-      const colMatch = ref.match(/^([A-Z]+)/);
-      if (!colMatch) continue;
-      const colLetter = colMatch[1];
+      const colMatch = ref.match(/^([A-Z]+)/i);
+      const colLetter = colMatch ? colMatch[1].toUpperCase() : colIndexToLetter(j + 1);
       const tAttr = cEl.getAttribute('t');
 
       let val = '';
@@ -805,7 +822,7 @@ export const importarListaAsistenciaEditableExcel = async (file, alumnosGrupo = 
       const valD = rowCells[colL] ?? '';
       if (valD !== '') {
         dias[`d${d}`] = valD;
-        const numD = parseFloat(valD);
+        const numD = parseNumExcel(valD);
         if (!isNaN(numD)) {
           sumaDias += numD;
           countDias++;
@@ -820,29 +837,33 @@ export const importarListaAsistenciaEditableExcel = async (file, alumnosGrupo = 
       const colL = colIndexToLetter(tareaOffset + t);
       const valT = rowCells[colL] ?? '';
       tareas[`t${t}`] = valT;
-      if (valT !== '' && !isNaN(parseFloat(valT))) evalNums.push(parseFloat(valT));
+      const parsedT = parseNumExcel(valT);
+      if (!isNaN(parsedT)) evalNums.push(parsedT);
     }
 
     const examen = rowCells[examCol] ?? '';
     const participacion = rowCells[partCol] ?? '';
     const extraEval = rowCells[otroCol] ?? '';
-    if (examen !== '' && !isNaN(parseFloat(examen))) evalNums.push(parseFloat(examen));
-    if (participacion !== '' && !isNaN(parseFloat(participacion))) evalNums.push(parseFloat(participacion));
-    if (extraEval !== '' && !isNaN(parseFloat(extraEval))) evalNums.push(parseFloat(extraEval));
+    const parsedExam = parseNumExcel(examen);
+    const parsedPart = parseNumExcel(participacion);
+    const parsedExtra = parseNumExcel(extraEval);
+    if (!isNaN(parsedExam)) evalNums.push(parsedExam);
+    if (!isNaN(parsedPart)) evalNums.push(parsedPart);
+    if (!isNaN(parsedExtra)) evalNums.push(parsedExtra);
 
     let califFinalStr = '';
-    const rawCalif = rowCells[califCol] ?? '';
-    if (rawCalif !== '' && !isNaN(parseFloat(rawCalif))) {
-      califFinalStr = String(Math.round(parseFloat(rawCalif)));
+    const parsedRawCalif = parseNumExcel(rowCells[califCol] ?? '');
+    if (!isNaN(parsedRawCalif)) {
+      califFinalStr = String(Math.max(5, Math.min(10, Math.round(parsedRawCalif))));
     } else if (evalNums.length > 0) {
       const avg = evalNums.reduce((a, b) => a + b, 0) / evalNums.length;
-      califFinalStr = String(Math.round(avg));
+      califFinalStr = String(Math.max(5, Math.min(10, Math.round(avg))));
     } else if (countDias > 0) {
       const totalCeldasClase = Math.max(
         Object.keys(contenidosFecha).filter(k => k.startsWith('d') && contenidosFecha[k]).length,
         countDias
       );
-      califFinalStr = String(Math.round(sumaDias / totalCeldasClase));
+      califFinalStr = String(Math.max(5, Math.min(10, Math.round(sumaDias / totalCeldasClase))));
     }
 
     const observaciones = rowCells[obsCol] ?? '';

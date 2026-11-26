@@ -6,6 +6,7 @@ import { db } from '../firebase';
 import { doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { truncateTo1Dec, roundToIntGrade, roundToIntNumber, getCalificacionFinal, getCalificacionTrimestreEfectiva, quitarAcentosNombre } from '../utils/format';
 import { downloadExcelFriendlyCsv } from '../utils/exportCsv';
+import { parseCalificacionesPlantilla } from '../utils/importCalificacionesPlantilla';
 import { registrarMovimiento } from '../utils/bitacora';
 import { useAuth } from '../context/AuthContext';
 import { useGlobalConfig } from '../hooks/useGlobalConfig';
@@ -97,11 +98,10 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     }));
   };
 
-  // Detectar cuántos alumnos activos realmente tienen calificaciones modificadas respecto a la base de datos
-  const alumnosConCambios = useMemo(() => {
+  const calcularCambiosDeSabana = (targetLocalGrades) => {
     const list = [];
     alumnosActivosGrupo.forEach(al => {
-      const rawGrades = localGrades[al.id] || {};
+      const rawGrades = targetLocalGrades[al.id] || {};
       const currentSaved =
         sabanaCaptureMode === 'recuperacion'
           ? (al.recuperacion?.[trimestre] || {})
@@ -110,7 +110,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       let hasDiff = false;
 
       materias.forEach(mat => {
-        const r = (rawGrades[mat.id] ?? '').toString().trim();
+        const r = (rawGrades[mat.id] ?? '').toString().trim().replace(',', '.');
         const newVal = r === '' ? '' : (roundToIntNumber(r) !== null ? String(roundToIntNumber(r)) : '');
         roundedGrades[mat.id] = newVal;
 
@@ -118,7 +118,7 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
           sabanaCaptureMode === 'recuperacion'
             ? (currentSaved[mat.id] ?? al.evaluacionDetalle?.[trimestre]?.[mat.id]?.recuperacion ?? '')
             : (currentSaved[mat.id] ?? '')
-        ).toString().trim();
+        ).toString().trim().replace(',', '.');
         const oldVal = oldRaw === '' ? '' : (roundToIntNumber(oldRaw) !== null ? String(roundToIntNumber(oldRaw)) : '');
         if (newVal !== oldVal) {
           hasDiff = true;
@@ -133,7 +133,14 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
       }
     });
     return list;
-  }, [alumnosActivosGrupo, localGrades, materias, trimestre, sabanaCaptureMode]);
+  };
+
+  // Detectar cuántos alumnos activos realmente tienen calificaciones modificadas respecto a la base de datos
+  const alumnosConCambios = useMemo(
+    () => calcularCambiosDeSabana(localGrades),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [alumnosActivosGrupo, localGrades, materias, trimestre, sabanaCaptureMode]
+  );
 
   // Navegación rápida tipo Excel con Enter y Flechas en la Sábana General de Secretarios (salta automáticamente filas de Baja)
   const handleCellKeyDown = (e, rowIdx, colIdx) => {
@@ -379,25 +386,28 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     }
   };
 
-  const handleSaveAll = async () => {
-    if (isSaving) return;
+  const saveGradesToFirestore = async (targetLocalGrades, customContext = null) => {
+    if (isSaving) return false;
 
     // Validar que todas las calificaciones capturadas de alumnos activos estén en escala oficial PASEG (5 a 10)
     for (const al of alumnosActivosGrupo) {
-      const grades = localGrades[al.id] || {};
+      const grades = targetLocalGrades[al.id] || {};
       for (const mat of materias) {
-        const raw = (grades[mat.id] ?? '').toString().trim();
+        const raw = (grades[mat.id] ?? '').toString().trim().replace(',', '.');
         if (raw !== '') {
           const num = parseFloat(raw);
           if (isNaN(num) || num < 5 || num > 10) {
             alert(`Atención: La calificación "${raw}" en ${mat.name} para ${al.apellidoPaterno} ${al.nombres} no es válida.\n\nEn PASEG la escala oficial es de 5 a 10.`);
-            return;
+            return false;
           }
         }
       }
     }
 
-    const totalModificados = alumnosConCambios.length;
+    const cambios = calcularCambiosDeSabana(targetLocalGrades);
+    const totalModificados = cambios.length;
+    const accionBitacora = customContext?.accionBitacora
+      || (sabanaCaptureMode === 'recuperacion' ? 'Captura Recuperación Trimestral' : 'Captura Sábana General');
 
     setIsSaving(true);
     setSaveStatusModal({
@@ -410,30 +420,33 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
 
     try {
       if (totalModificados > 0) {
-        // Guardar en un solo lote atómico (writeBatch) únicamente los alumnos que tuvieron cambios reales
         const fieldRoot = sabanaCaptureMode === 'recuperacion' ? 'recuperacion' : 'calificaciones';
-        const batch = writeBatch(db);
-        alumnosConCambios.forEach(({ student, newTrimestreData }) => {
-          const docRef = doc(db, 'students', student.id);
-          batch.update(docRef, {
-            [`${fieldRoot}.${trimestre}`]: newTrimestreData
+        for (let i = 0; i < cambios.length; i += 400) {
+          const batch = writeBatch(db);
+          cambios.slice(i, i + 400).forEach(({ student, newTrimestreData }) => {
+            const docRef = doc(db, 'students', student.id);
+            batch.update(docRef, {
+              [`${fieldRoot}.${trimestre}`]: newTrimestreData
+            });
           });
-        });
-        await batch.commit();
+          await batch.commit();
+        }
 
         // Registrar en bitácora en segundo plano sin bloquear la pantalla del usuario
         registrarMovimiento(
           currentUser?.email,
           'Control Escolar (Calificaciones)',
-          sabanaCaptureMode === 'recuperacion' ? 'Captura Recuperación Trimestral' : 'Captura Sábana General',
-          `Guardó calificaciones (${sabanaCaptureMode === 'recuperacion' ? 'RECUPERACIÓN' : 'ORDINARIO'}) en sábana general de ${grado} "${grupo}" (${trimestre.toUpperCase()}) — ${totalModificados} alumno(s) actualizados.`
+          accionBitacora,
+          `Guardó calificaciones (${sabanaCaptureMode === 'recuperacion' ? 'RECUPERACIÓN' : 'ORDINARIO'}) en sábana general de ${grado} "${grupo}" (${trimestre.toUpperCase()}) — ${totalModificados} alumno(s) actualizados.${customContext?.detalleExtra ? ` ${customContext.detalleExtra}` : ''}`
         ).catch(console.error);
       }
 
       setDirtyStudents({});
-      const msgExito = totalModificados > 0
-        ? `¡Terminó de guardar! Se actualizaron ${totalModificados} alumno(s) de ${grado} "${grupo}" (${TRIMESTRE_NAMES[trimestre]}) al instante.`
-        : `¡Terminó de guardar! Todas las calificaciones de ${grado} "${grupo}" ya estaban sincronizadas.`;
+      const msgExito = customContext?.successSummary
+        ? `${customContext.successSummary} (${totalModificados > 0 ? `${totalModificados} alumno(s) guardados en Firestore` : 'todas las cifras ya coincidían en el sistema'}).`
+        : totalModificados > 0
+          ? `¡Terminó de guardar! Se actualizaron ${totalModificados} alumno(s) de ${grado} "${grupo}" (${TRIMESTRE_NAMES[trimestre]}) al instante.`
+          : `¡Terminó de guardar! Todas las calificaciones de ${grado} "${grupo}" ya estaban sincronizadas.`;
 
       setSuccessMsg(msgExito);
       setSaveStatusModal({
@@ -442,18 +455,23 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
         text: msgExito
       });
       toast.success(msgExito);
-      setTimeout(() => setSuccessMsg(''), 4000);
+      setTimeout(() => setSuccessMsg(''), 5000);
       setTimeout(() => {
         setSaveStatusModal(prev => (prev?.phase === 'done' ? null : prev));
-      }, 1800);
+      }, 2200);
+      setIsSaving(false);
+      return true;
     } catch (error) {
       console.error(error);
       setSaveStatusModal(null);
       toast.error('Error al guardar calificaciones.');
       alert('Error al guardar calificaciones.');
+      setIsSaving(false);
+      return false;
     }
-    setIsSaving(false);
   };
+
+  const handleSaveAll = () => saveGradesToFirestore(localGrades);
 
   // Atajo de teclado Ctrl + S para guardar rápidamente desde cualquier celda de la sábana
   useEffect(() => {
@@ -563,60 +581,86 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
     downloadExcelFriendlyCsv(`Concentrado_Parciales_${grado}_${grupo}.csv`, csvContent);
   };
 
-  const handleUploadCSV = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      let content = event.target.result;
-      if (content.startsWith("sep=,\n") || content.startsWith("sep=,\r\n")) {
-         content = content.substring(content.indexOf('\n') + 1);
-      } else if (content.startsWith("\uFEFFsep=,\n") || content.startsWith("\uFEFFsep=,\r\n")) {
-         content = "\uFEFF" + content.substring(content.indexOf('\n') + 1);
-      }
-
-      Papa.parse(content, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header) => header.trim().toUpperCase(),
-      complete: (results) => {
-        const newLocalGrades = { ...localGrades };
-        let matchCount = 0;
-
-        results.data.forEach(row => {
-          const matricula = row['MATRICULA'] || row['MATRÍCULA'];
-          const student = alumnosActivosGrupo.find(a => (a.matricula || '').toUpperCase() === (matricula || '').toUpperCase());
-          if (student) {
-            matchCount++;
-            materias.forEach(mat => {
-              const subjectKey = mat.name.toUpperCase();
-              const cellVal = (row[subjectKey] ?? '').toString().trim();
-              if (cellVal !== '' && cellVal !== 'BAJA') {
-                newLocalGrades[student.id][mat.id] = cellVal;
-              }
-            });
-          }
-        });
-
-        if (matchCount > 0) {
-          const dirtyMap = {};
-          alumnosActivosGrupo.forEach(a => { dirtyMap[a.id] = true; });
-          setDirtyStudents(dirtyMap);
-          setLocalGrades(newLocalGrades);
-          alert(`Se cargaron calificaciones para ${matchCount} alumnos. ¡No olvides darle al botón Guardar!`);
-        } else {
-          alert("No se encontraron coincidencias de matrícula en este grupo.");
-        }
-      },
-      error: (err) => {
-        alert("Error al leer el archivo CSV.");
-        console.error(err);
-      }
-    });
-    };
-    reader.readAsText(file);
+  const handleUploadCSV = async (e) => {
+    const file = e.target.files?.[0];
     e.target.value = '';
+    if (!file) return;
+    if (alumnosActivosGrupo.length === 0) {
+      toast.error(`No hay alumnos activos en ${grado} "${grupo}".`);
+      return;
+    }
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const parsed = await parseCalificacionesPlantilla({
+        arrayBuffer,
+        fileName: file.name,
+        alumnosActivosGrupo,
+        materias
+      });
+
+      if (parsed.matchedStudentsCount === 0) {
+        const msgNoMatch = `No se encontraron coincidencias de matrícula ni nombre para ${grado} "${grupo}". Verifica que el archivo corresponda a este grado y grupo.`;
+        toast.error(msgNoMatch);
+        alert(msgNoMatch);
+        return;
+      }
+
+      if (parsed.gradesLoadedCount === 0) {
+        const invalidDetalle = parsed.invalidCells.length > 0
+          ? `\n\nCeldas fuera de escala PASEG (5 a 10):\n` +
+            parsed.invalidCells.slice(0, 6).map(c => `- ${c.studentName} (${c.materiaName}): "${c.raw}"`).join('\n')
+          : '';
+        const faltantes = parsed.missingSubjects.length > 0
+          ? ` No reconocidas: ${parsed.missingSubjects.map(m => m.name).join(', ')}.`
+          : '';
+        const msgVacio = `Se reconocieron ${parsed.matchedStudentsCount} alumno(s) y ${parsed.matchedSubjects.length}/${materias.length} materias, pero no se encontraron calificaciones válidas (5 a 10).${faltantes}${invalidDetalle}`;
+        toast.error('No se encontraron calificaciones válidas para cargar en la plantilla.');
+        alert(msgVacio);
+        return;
+      }
+
+      const nextGrades = {};
+      Object.keys(localGrades).forEach(id => {
+        nextGrades[id] = { ...(localGrades[id] || {}) };
+      });
+      const dirtyMap = { ...dirtyStudents };
+      Object.keys(parsed.gradesByStudent).forEach(stId => {
+        nextGrades[stId] = {
+          ...(nextGrades[stId] || {}),
+          ...parsed.gradesByStudent[stId]
+        };
+        dirtyMap[stId] = true;
+      });
+
+      setDirtyStudents(dirtyMap);
+      setLocalGrades(nextGrades);
+
+      if (parsed.invalidCells.length > 0) {
+        const previewInvalid = parsed.invalidCells
+          .slice(0, 6)
+          .map(c => `- ${c.studentName} · ${c.materiaName}: "${c.raw}"`)
+          .join('\n');
+        const extraMas = parsed.invalidCells.length > 6 ? `\n... y ${parsed.invalidCells.length - 6} más.` : '';
+        toast.error(`Se detectaron ${parsed.invalidCells.length} calificación(es) fuera de rango (5 a 10). Revisa antes de guardar.`);
+        alert(
+          `Se cargaron ${parsed.gradesLoadedCount} calificaciones válidas (${parsed.studentsWithGradesCount} alumnos · ${parsed.matchedSubjects.length}/${materias.length} materias), ` +
+          `pero ${parsed.invalidCells.length} celda(s) tienen valores inválidos:\n\n${previewInvalid}${extraMas}\n\nCorrígelas o déjalas válidas y haz clic en Guardar.`
+        );
+        return;
+      }
+
+      const resumenImport = `¡Plantilla importada y guardada! ${parsed.gradesLoadedCount} calificaciones de ${parsed.studentsWithGradesCount} alumnos · ${parsed.matchedSubjects.length}/${materias.length} materias`;
+      await saveGradesToFirestore(nextGrades, {
+        accionBitacora: 'Importación Plantilla Calificaciones',
+        successSummary: resumenImport,
+        detalleExtra: `Archivo: ${file.name} (${parsed.gradesLoadedCount} calif., ${parsed.matchedSubjects.length}/${materias.length} materias)`
+      });
+    } catch (err) {
+      console.error('Error al leer la plantilla:', err);
+      toast.error('No se pudo leer el archivo. Verifica que sea una plantilla CSV o Excel (.xlsx) válida.');
+      alert('Error al leer el archivo. Verifica que sea CSV o Excel (.xlsx) válido.');
+    }
   };
 
   return (
@@ -858,9 +902,12 @@ export default function Calificaciones({ activos, materiasPorGrado, onPrintBolet
               <button onClick={handleDownloadTemplate} className="flex items-center px-3.5 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium text-sm">
                 <Download className="w-4 h-4 mr-1.5 text-slate-500" /> Plantilla
               </button>
-              <label className="cursor-pointer flex items-center px-3.5 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition font-medium text-sm">
-                <Upload className="w-4 h-4 mr-1.5" /> Subir CSV
-                <input type="file" accept=".csv" className="hidden" onChange={handleUploadCSV} />
+              <label
+                className="cursor-pointer flex items-center px-3.5 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition font-medium text-sm"
+                title="Sube la plantilla en CSV o Excel (.xlsx); las calificaciones válidas se guardan automáticamente"
+              >
+                <Upload className="w-4 h-4 mr-1.5" /> Subir Plantilla
+                <input type="file" accept=".csv,.txt,.xlsx" className="hidden" onChange={handleUploadCSV} />
               </label>
               <button
                 type="button"
