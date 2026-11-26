@@ -321,16 +321,27 @@ export const parseCalificacionesPlantilla = async ({
   const byMatricula = new Map();
   const byNameApellidos = new Map();
   const byNameNombres = new Map();
+  const studentNameKeysMap = new Map();
 
   alumnosActivosGrupo.forEach((al) => {
     const matKey = String(al.matricula || '').trim().toUpperCase();
-    if (matKey) byMatricula.set(matKey, al);
+    if (matKey) {
+      if (!byMatricula.has(matKey)) byMatricula.set(matKey, []);
+      byMatricula.get(matKey).push(al);
+    }
 
     const apKey = normalizeStudentNameKey(`${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''} ${al.nombres || ''}`);
     const nomKey = normalizeStudentNameKey(`${al.nombres || ''} ${al.apellidoPaterno || ''} ${al.apellidoMaterno || ''}`);
+    studentNameKeysMap.set(al, { apKey, nomKey });
     if (apKey) byNameApellidos.set(apKey, al);
     if (nomKey) byNameNombres.set(nomKey, al);
   });
+
+  const matchesStudentName = (al, nameCell) => {
+    if (!al || !nameCell) return false;
+    const keys = studentNameKeysMap.get(al);
+    return Boolean(keys && (keys.apKey === nameCell || keys.nomKey === nameCell));
+  };
 
   const gradesByStudent = {};
   const matchedStudentIds = new Set();
@@ -340,19 +351,34 @@ export const parseCalificacionesPlantilla = async ({
 
   rows.forEach((row) => {
     let student = null;
+    const matCell = matriculaCol ? String(row[matriculaCol] ?? '').trim().toUpperCase() : '';
+    const nameCell = nombreCol ? normalizeStudentNameKey(row[nombreCol] ?? '') : '';
 
-    if (matriculaCol) {
-      const matCell = String(row[matriculaCol] ?? '').trim().toUpperCase();
-      if (matCell) {
-        student = byMatricula.get(matCell) || null;
+    if (matCell) {
+      const candidates = byMatricula.get(matCell) || [];
+      if (candidates.length === 1) {
+        const candidate = candidates[0];
+        if (!nameCell || matchesStudentName(candidate, nameCell)) {
+          student = candidate;
+        } else {
+          // Si una plantilla previa aún trae matrícula desactualizada/duplicada, priorizar coincidencia exacta por nombre
+          student = byNameApellidos.get(nameCell) || byNameNombres.get(nameCell) || candidate;
+        }
+      } else if (candidates.length > 1) {
+        if (nameCell) {
+          student =
+            candidates.find((c) => matchesStudentName(c, nameCell)) ||
+            byNameApellidos.get(nameCell) ||
+            byNameNombres.get(nameCell) ||
+            null;
+        } else {
+          student = candidates[0];
+        }
       }
     }
 
-    if (!student && nombreCol) {
-      const nameCell = normalizeStudentNameKey(row[nombreCol] ?? '');
-      if (nameCell) {
-        student = byNameApellidos.get(nameCell) || byNameNombres.get(nameCell) || null;
-      }
+    if (!student && nameCell) {
+      student = byNameApellidos.get(nameCell) || byNameNombres.get(nameCell) || null;
     }
 
     if (!student) return;
